@@ -26,7 +26,11 @@ import {
   Download, 
   Save, 
   ArrowLeft,
-  Eye
+  Eye,
+  Menu,
+  ChevronsUpDown,
+  Edit,
+  Check
 } from 'lucide-react';
 import { generateInvoicePdf } from '@/utils/pdfUtils';
 import { formatCurrency, generateInvoiceNumber, formatDate } from '@/utils/invoiceUtils';
@@ -37,6 +41,22 @@ import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import {
+  Drawer,
+  DrawerClose,
+  DrawerContent,
+  DrawerDescription,
+  DrawerFooter,
+  DrawerHeader,
+  DrawerTitle,
+  DrawerTrigger,
+} from "@/components/ui/drawer";
+import { Checkbox } from "@/components/ui/checkbox";
+import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from "@/components/ui/collapsible";
 
 // Form schema for invoice validation
 const invoiceFormSchema = z.object({
@@ -67,6 +87,9 @@ const CreateInvoice = () => {
   const [activeTab, setActiveTab] = useState('edit');
   const previewRef = useRef<HTMLDivElement>(null);
   const [invoicePreview, setInvoicePreview] = useState<Invoice | null>(null);
+  const [openLineItemDrawer, setOpenLineItemDrawer] = useState(false);
+  const [currentItemIndex, setCurrentItemIndex] = useState<number | null>(null);
+  const [isLineItemsOpen, setIsLineItemsOpen] = useState(true);
 
   // Form setup
   const form = useForm<InvoiceFormValues>({
@@ -98,17 +121,30 @@ const CreateInvoice = () => {
 
   // Add new line item
   const addItem = () => {
-    setItems([
-      ...items,
-      { id: `${items.length + 1}`, description: '', quantity: 1, rate: 0, total: 0 }
-    ]);
+    const newItem = { id: `${items.length + 1}`, description: '', quantity: 1, rate: 0, total: 0 };
+    setItems([...items, newItem]);
+    
+    if (isMobile) {
+      setCurrentItemIndex(items.length);
+      setOpenLineItemDrawer(true);
+    }
   };
 
   // Remove line item
   const removeItem = (index: number) => {
     if (items.length > 1) {
       setItems(items.filter((_, i) => i !== index));
+      if (openLineItemDrawer && currentItemIndex === index) {
+        setOpenLineItemDrawer(false);
+        setCurrentItemIndex(null);
+      }
     }
+  };
+
+  // Edit line item on mobile
+  const editItem = (index: number) => {
+    setCurrentItemIndex(index);
+    setOpenLineItemDrawer(true);
   };
 
   // Calculate invoice totals
@@ -189,8 +225,82 @@ const CreateInvoice = () => {
 
   const selectedCustomer = customers.find(c => c.id === form.watch('customerId'));
 
+  // Render line item form in drawer for mobile
+  const renderLineItemDrawer = () => {
+    if (currentItemIndex === null || currentItemIndex >= items.length) return null;
+    
+    const currentItem = items[currentItemIndex];
+    
+    return (
+      <DrawerContent className="max-h-[80vh]">
+        <DrawerHeader>
+          <DrawerTitle>Edit Line Item</DrawerTitle>
+          <DrawerDescription>
+            Make changes to this line item.
+          </DrawerDescription>
+        </DrawerHeader>
+        <div className="p-4 space-y-4">
+          <div className="space-y-2">
+            <label className="text-sm font-medium">Description</label>
+            <Input
+              value={currentItem.description}
+              onChange={(e) => updateItem(currentItemIndex, 'description', e.target.value)}
+              placeholder="Item description"
+              className="w-full"
+            />
+          </div>
+          <div className="space-y-2">
+            <label className="text-sm font-medium">Quantity</label>
+            <Input
+              type="number"
+              min="1"
+              value={currentItem.quantity}
+              onChange={(e) => updateItem(currentItemIndex, 'quantity', Number(e.target.value))}
+              className="w-full"
+              inputMode="numeric"
+            />
+          </div>
+          <div className="space-y-2">
+            <label className="text-sm font-medium">Rate</label>
+            <Input
+              type="number"
+              min="0"
+              step="0.01"
+              value={currentItem.rate}
+              onChange={(e) => updateItem(currentItemIndex, 'rate', Number(e.target.value))}
+              className="w-full"
+              inputMode="decimal"
+            />
+          </div>
+          <div className="pt-2">
+            <div className="flex justify-between items-center text-sm font-medium">
+              <span>Total:</span>
+              <span>{formatCurrency(currentItem.total, form.getValues('currency'))}</span>
+            </div>
+          </div>
+        </div>
+        <DrawerFooter className="flex-row justify-between space-x-2">
+          <Button 
+            variant="destructive" 
+            onClick={() => removeItem(currentItemIndex)}
+            className="flex-1"
+          >
+            <Trash2 className="mr-2 h-4 w-4" />
+            Delete
+          </Button>
+          <DrawerClose asChild>
+            <Button className="flex-1">
+              <Check className="mr-2 h-4 w-4" />
+              Done
+            </Button>
+          </DrawerClose>
+        </DrawerFooter>
+      </DrawerContent>
+    );
+  };
+
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 pb-20">
       <div className="flex justify-between items-center">
         <div className="flex items-center gap-2">
           <Button 
@@ -201,15 +311,15 @@ const CreateInvoice = () => {
           >
             <ArrowLeft size={16} />
           </Button>
-          <h1 className="text-2xl md:text-3xl font-bold">Create New Invoice</h1>
+          <h1 className="text-xl md:text-3xl font-bold truncate">Create Invoice</h1>
         </div>
       </div>
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-        <TabsList className="grid w-full grid-cols-2">
+        <TabsList className="grid w-full grid-cols-2 mb-4">
           <TabsTrigger value="edit" className="flex items-center gap-2">
-            <FileText size={16} />
-            <span>Edit</span>
+            <Edit size={16} />
+            <span>{!isMobile && "Edit"}</span>
           </TabsTrigger>
           <TabsTrigger 
             value="preview" 
@@ -217,16 +327,16 @@ const CreateInvoice = () => {
             onClick={generatePreview}
           >
             <Eye size={16} />
-            <span>Preview</span>
+            <span>{!isMobile && "Preview"}</span>
           </TabsTrigger>
         </TabsList>
 
         <TabsContent value="edit">
-          <Card className="mb-6">
+          <Card>
             <CardContent className="pt-6">
               <Form {...form}>
                 <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     {/* Customer Selection */}
                     <FormField
                       control={form.control}
@@ -243,7 +353,7 @@ const CreateInvoice = () => {
                                 <SelectValue placeholder="Select a customer" />
                               </SelectTrigger>
                             </FormControl>
-                            <SelectContent>
+                            <SelectContent position={isMobile ? "popper" : "item-aligned"}>
                               {customers.map(customer => (
                                 <SelectItem key={customer.id} value={customer.id}>
                                   {customer.name}
@@ -272,7 +382,7 @@ const CreateInvoice = () => {
                                 <SelectValue placeholder="Select currency" />
                               </SelectTrigger>
                             </FormControl>
-                            <SelectContent>
+                            <SelectContent position={isMobile ? "popper" : "item-aligned"}>
                               <SelectItem value="USD">USD ($)</SelectItem>
                               <SelectItem value="EUR">EUR (€)</SelectItem>
                               <SelectItem value="GBP">GBP (£)</SelectItem>
@@ -298,7 +408,7 @@ const CreateInvoice = () => {
                                 <Button
                                   variant={"outline"}
                                   className={cn(
-                                    "w-full pl-3 text-left font-normal",
+                                    "w-full pl-3 text-left font-normal justify-between",
                                     !field.value && "text-muted-foreground"
                                   )}
                                 >
@@ -307,7 +417,7 @@ const CreateInvoice = () => {
                                   ) : (
                                     <span>Pick a date</span>
                                   )}
-                                  <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
+                                  <CalendarIcon className="h-4 w-4 opacity-50" />
                                 </Button>
                               </FormControl>
                             </PopoverTrigger>
@@ -317,6 +427,7 @@ const CreateInvoice = () => {
                                 selected={field.value}
                                 onSelect={field.onChange}
                                 initialFocus
+                                className={cn("p-3 pointer-events-auto")}
                               />
                             </PopoverContent>
                           </Popover>
@@ -338,7 +449,7 @@ const CreateInvoice = () => {
                                 <Button
                                   variant={"outline"}
                                   className={cn(
-                                    "w-full pl-3 text-left font-normal",
+                                    "w-full pl-3 text-left font-normal justify-between",
                                     !field.value && "text-muted-foreground"
                                   )}
                                 >
@@ -347,7 +458,7 @@ const CreateInvoice = () => {
                                   ) : (
                                     <span>Pick a date</span>
                                   )}
-                                  <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
+                                  <CalendarIcon className="h-4 w-4 opacity-50" />
                                 </Button>
                               </FormControl>
                             </PopoverTrigger>
@@ -357,6 +468,7 @@ const CreateInvoice = () => {
                                 selected={field.value}
                                 onSelect={field.onChange}
                                 initialFocus
+                                className={cn("p-3 pointer-events-auto")}
                               />
                             </PopoverContent>
                           </Popover>
@@ -366,158 +478,291 @@ const CreateInvoice = () => {
                     />
                   </div>
 
-                  {/* Line Items */}
+                  {/* Line Items Section */}
                   <div className="space-y-4">
-                    <div className="flex justify-between items-center">
-                      <h3 className="text-lg font-medium">Line Items</h3>
-                      <Button 
-                        type="button" 
-                        onClick={addItem}
-                        variant="outline"
-                        size="sm"
-                        className="flex items-center gap-1"
-                      >
-                        <Plus size={16} />
-                        <span>Add Item</span>
-                      </Button>
-                    </div>
-                    
-                    <div className="overflow-x-auto">
-                      <table className="min-w-full">
-                        <thead>
-                          <tr className="border-b">
-                            <th className="text-left py-2 text-sm font-medium">Description</th>
-                            <th className="text-right py-2 text-sm font-medium">Qty</th>
-                            <th className="text-right py-2 text-sm font-medium">Rate</th>
-                            <th className="text-right py-2 text-sm font-medium">Total</th>
-                            <th className="py-2 w-10"></th>
-                          </tr>
-                        </thead>
-                        <tbody>
-                          {items.map((item, index) => (
-                            <tr key={item.id} className="border-b last:border-b-0">
-                              <td className="py-2 pr-2">
-                                <Input
-                                  value={item.description}
-                                  onChange={(e) => updateItem(index, 'description', e.target.value)}
-                                  placeholder="Item description"
-                                  className="w-full"
-                                />
-                              </td>
-                              <td className="py-2 px-2">
-                                <Input
-                                  type="number"
-                                  min="1"
-                                  value={item.quantity}
-                                  onChange={(e) => updateItem(index, 'quantity', Number(e.target.value))}
-                                  className="w-full text-right"
-                                />
-                              </td>
-                              <td className="py-2 px-2">
-                                <Input
-                                  type="number"
-                                  min="0"
-                                  step="0.01"
-                                  value={item.rate}
-                                  onChange={(e) => updateItem(index, 'rate', Number(e.target.value))}
-                                  className="w-full text-right"
-                                />
-                              </td>
-                              <td className="py-2 px-2 text-right">
-                                {formatCurrency(item.total, form.getValues('currency'))}
-                              </td>
-                              <td className="py-2 pl-2">
-                                <Button
-                                  type="button"
-                                  onClick={() => removeItem(index)}
-                                  variant="ghost"
-                                  size="icon"
-                                  className="h-8 w-8"
-                                  disabled={items.length <= 1}
-                                >
-                                  <Trash2 size={16} />
-                                </Button>
-                              </td>
-                            </tr>
-                          ))}
-                        </tbody>
-                        <tfoot>
-                          <tr className="border-t">
-                            <td colSpan={3} className="text-right py-2 font-medium">Subtotal</td>
-                            <td className="text-right py-2">{formatCurrency(subtotal, form.getValues('currency'))}</td>
-                            <td></td>
-                          </tr>
-                          <tr>
-                            <td colSpan={3} className="text-right py-2 font-medium">Tax</td>
-                            <td className="text-right py-2">{formatCurrency(taxAmount, form.getValues('currency'))}</td>
-                            <td></td>
-                          </tr>
-                          <tr className="border-t">
-                            <td colSpan={3} className="text-right py-2 font-medium">Total</td>
-                            <td className="text-right py-2 font-bold">{formatCurrency(total, form.getValues('currency'))}</td>
-                            <td></td>
-                          </tr>
-                        </tfoot>
-                      </table>
-                    </div>
+                    <Collapsible 
+                      open={isLineItemsOpen} 
+                      onOpenChange={setIsLineItemsOpen}
+                      className="border rounded-md p-2"
+                    >
+                      <CollapsibleTrigger className="flex w-full justify-between items-center p-2">
+                        <h3 className="text-lg font-medium">Line Items</h3>
+                        <ChevronsUpDown size={16} />
+                      </CollapsibleTrigger>
+
+                      <CollapsibleContent className="pt-2">
+                        {isMobile ? (
+                          /* Mobile Line Items List */
+                          <div className="space-y-2">
+                            {items.map((item, index) => (
+                              <div
+                                key={item.id}
+                                className="flex justify-between items-center border-b pb-2"
+                                onClick={() => editItem(index)}
+                              >
+                                <div className="flex-1">
+                                  <div className="font-medium">{item.description || "Untitled Item"}</div>
+                                  <div className="text-sm text-muted-foreground">
+                                    {item.quantity} × {formatCurrency(item.rate, form.getValues('currency'))}
+                                  </div>
+                                </div>
+                                <div className="text-right">
+                                  <div>{formatCurrency(item.total, form.getValues('currency'))}</div>
+                                  <button
+                                    type="button"
+                                    className="text-muted-foreground hover:text-destructive text-sm"
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      removeItem(index);
+                                    }}
+                                  >
+                                    <Trash2 size={16} />
+                                  </button>
+                                </div>
+                              </div>
+                            ))}
+                            
+                            <Button 
+                              type="button" 
+                              onClick={addItem}
+                              variant="outline"
+                              size="sm"
+                              className="w-full flex items-center justify-center gap-2"
+                            >
+                              <Plus size={16} />
+                              <span>Add Item</span>
+                            </Button>
+
+                            {/* Mobile Line Item Drawer */}
+                            <Drawer open={openLineItemDrawer} onOpenChange={setOpenLineItemDrawer}>
+                              {renderLineItemDrawer()}
+                            </Drawer>
+                          </div>
+                        ) : (
+                          /* Desktop Line Items Table */
+                          <div className="overflow-x-auto">
+                            <table className="min-w-full">
+                              <thead>
+                                <tr className="border-b">
+                                  <th className="text-left py-2 text-sm font-medium">Description</th>
+                                  <th className="text-right py-2 text-sm font-medium">Qty</th>
+                                  <th className="text-right py-2 text-sm font-medium">Rate</th>
+                                  <th className="text-right py-2 text-sm font-medium">Total</th>
+                                  <th className="py-2 w-10"></th>
+                                </tr>
+                              </thead>
+                              <tbody>
+                                {items.map((item, index) => (
+                                  <tr key={item.id} className="border-b last:border-b-0">
+                                    <td className="py-2 pr-2">
+                                      <Input
+                                        value={item.description}
+                                        onChange={(e) => updateItem(index, 'description', e.target.value)}
+                                        placeholder="Item description"
+                                        className="w-full"
+                                      />
+                                    </td>
+                                    <td className="py-2 px-2">
+                                      <Input
+                                        type="number"
+                                        min="1"
+                                        value={item.quantity}
+                                        onChange={(e) => updateItem(index, 'quantity', Number(e.target.value))}
+                                        className="w-full text-right"
+                                      />
+                                    </td>
+                                    <td className="py-2 px-2">
+                                      <Input
+                                        type="number"
+                                        min="0"
+                                        step="0.01"
+                                        value={item.rate}
+                                        onChange={(e) => updateItem(index, 'rate', Number(e.target.value))}
+                                        className="w-full text-right"
+                                      />
+                                    </td>
+                                    <td className="py-2 px-2 text-right">
+                                      {formatCurrency(item.total, form.getValues('currency'))}
+                                    </td>
+                                    <td className="py-2 pl-2">
+                                      <Button
+                                        type="button"
+                                        onClick={() => removeItem(index)}
+                                        variant="ghost"
+                                        size="icon"
+                                        className="h-8 w-8"
+                                        disabled={items.length <= 1}
+                                      >
+                                        <Trash2 size={16} />
+                                      </Button>
+                                    </td>
+                                  </tr>
+                                ))}
+                              </tbody>
+                              <tfoot>
+                                <tr>
+                                  <td colSpan={5} className="py-2">
+                                    <Button 
+                                      type="button" 
+                                      onClick={addItem}
+                                      variant="outline"
+                                      size="sm"
+                                      className="flex items-center gap-1"
+                                    >
+                                      <Plus size={16} />
+                                      <span>Add Item</span>
+                                    </Button>
+                                  </td>
+                                </tr>
+                              </tfoot>
+                            </table>
+                          </div>
+                        )}
+                        
+                        {/* Totals - Mobile and Desktop */}
+                        <div className={cn(
+                          "border-t mt-4 pt-2 space-y-1",
+                          isMobile ? "px-2" : ""
+                        )}>
+                          <div className="flex justify-between">
+                            <span className="font-medium">Subtotal</span>
+                            <span>{formatCurrency(subtotal, form.getValues('currency'))}</span>
+                          </div>
+                          <div className="flex justify-between">
+                            <span className="font-medium">Tax</span>
+                            <span>{formatCurrency(taxAmount, form.getValues('currency'))}</span>
+                          </div>
+                          <div className="flex justify-between border-t pt-1">
+                            <span className="font-bold">Total</span>
+                            <span className="font-bold">{formatCurrency(total, form.getValues('currency'))}</span>
+                          </div>
+                        </div>
+                      </CollapsibleContent>
+                    </Collapsible>
                   </div>
 
-                  {/* Notes & Terms */}
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <FormField
-                      control={form.control}
-                      name="notes"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Notes</FormLabel>
-                          <FormControl>
-                            <Textarea
-                              placeholder="Notes - visible to customer"
-                              className="resize-none h-32"
-                              {...field}
-                            />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                    <FormField
-                      control={form.control}
-                      name="terms"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Terms & Conditions</FormLabel>
-                          <FormControl>
-                            <Textarea
-                              placeholder="Terms and conditions"
-                              className="resize-none h-32"
-                              {...field}
-                            />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                  </div>
+                  {/* Notes & Terms - Collapsible for mobile */}
+                  {isMobile ? (
+                    <Collapsible className="border rounded-md p-2">
+                      <CollapsibleTrigger className="flex w-full justify-between items-center p-2">
+                        <h3 className="text-lg font-medium">Notes & Terms</h3>
+                        <ChevronsUpDown size={16} />
+                      </CollapsibleTrigger>
+                      <CollapsibleContent className="pt-2 space-y-4">
+                        <FormField
+                          control={form.control}
+                          name="notes"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>Notes</FormLabel>
+                              <FormControl>
+                                <Textarea
+                                  placeholder="Notes - visible to customer"
+                                  className="resize-none h-24"
+                                  {...field}
+                                />
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                        <FormField
+                          control={form.control}
+                          name="terms"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>Terms & Conditions</FormLabel>
+                              <FormControl>
+                                <Textarea
+                                  placeholder="Terms and conditions"
+                                  className="resize-none h-24"
+                                  {...field}
+                                />
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                      </CollapsibleContent>
+                    </Collapsible>
+                  ) : (
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                      <FormField
+                        control={form.control}
+                        name="notes"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Notes</FormLabel>
+                            <FormControl>
+                              <Textarea
+                                placeholder="Notes - visible to customer"
+                                className="resize-none h-32"
+                                {...field}
+                              />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                      <FormField
+                        control={form.control}
+                        name="terms"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Terms & Conditions</FormLabel>
+                            <FormControl>
+                              <Textarea
+                                placeholder="Terms and conditions"
+                                className="resize-none h-32"
+                                {...field}
+                              />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                    </div>
+                  )}
                   
-                  {/* Actions */}
-                  <div className="flex flex-col sm:flex-row justify-end items-center gap-2">
-                    <Button 
-                      type="button" 
-                      variant="outline"
-                      className="w-full sm:w-auto" 
-                      onClick={generatePreview}
-                    >
-                      Preview Invoice
-                    </Button>
-                    <Button 
-                      type="submit" 
-                      className="w-full sm:w-auto flex items-center gap-2"
-                    >
-                      <Save size={16} />
-                      <span>Save Invoice</span>
-                    </Button>
-                  </div>
+                  {/* Actions - Fixed at bottom for mobile */}
+                  {isMobile ? (
+                    <div className="fixed bottom-0 left-0 right-0 p-4 bg-background border-t z-10 flex gap-2">
+                      <Button 
+                        type="button" 
+                        variant="outline"
+                        className="flex-1" 
+                        onClick={generatePreview}
+                      >
+                        <Eye size={16} className="mr-1" />
+                        Preview
+                      </Button>
+                      <Button 
+                        type="submit" 
+                        className="flex-1"
+                      >
+                        <Save size={16} className="mr-1" />
+                        Save
+                      </Button>
+                    </div>
+                  ) : (
+                    <div className="flex flex-col sm:flex-row justify-end items-center gap-2">
+                      <Button 
+                        type="button" 
+                        variant="outline"
+                        className="w-full sm:w-auto" 
+                        onClick={generatePreview}
+                      >
+                        Preview Invoice
+                      </Button>
+                      <Button 
+                        type="submit" 
+                        className="w-full sm:w-auto flex items-center gap-2"
+                      >
+                        <Save size={16} />
+                        <span>Save Invoice</span>
+                      </Button>
+                    </div>
+                  )}
                 </form>
               </Form>
             </CardContent>
@@ -526,8 +771,11 @@ const CreateInvoice = () => {
 
         <TabsContent value="preview">
           {invoicePreview && (
-            <div className="space-y-6">
-              <div className="flex justify-end mb-4">
+            <div className="space-y-4">
+              <div className={cn(
+                "flex justify-end",
+                isMobile ? "mb-2" : "mb-4"
+              )}>
                 <Button
                   onClick={handleDownloadPdf}
                   className="flex items-center gap-2"
@@ -538,22 +786,45 @@ const CreateInvoice = () => {
               </div>
               
               <Card>
-                <CardContent className="p-6">
-                  <div ref={previewRef} className="bg-white p-6 shadow-sm">
-                    <div className="flex flex-col md:flex-row justify-between mb-8">
+                <CardContent className={cn(
+                  "bg-white shadow-sm overflow-auto",
+                  isMobile ? "p-3" : "p-6"
+                )}>
+                  <div 
+                    ref={previewRef} 
+                    className={cn(
+                      "min-w-[300px]",
+                      isMobile ? "text-sm" : ""
+                    )}
+                  >
+                    <div className={cn(
+                      "flex flex-col justify-between mb-6",
+                      !isMobile && "md:flex-row"
+                    )}>
                       <div>
-                        <h2 className="text-2xl font-bold mb-2">
+                        <h2 className={cn(
+                          "font-bold mb-2",
+                          isMobile ? "text-xl" : "text-2xl"
+                        )}>
                           {businessProfile?.name || "Your Business Name"}
                         </h2>
-                        <div className="text-sm text-gray-600">
+                        <div className="text-gray-600">
                           <p>{businessProfile?.address || ""}</p>
                           <p>{businessProfile?.city || ""}, {businessProfile?.state || ""} {businessProfile?.zip || ""}</p>
                           <p>{businessProfile?.email || ""}</p>
                           <p>{businessProfile?.phone || ""}</p>
                         </div>
                       </div>
-                      <div className="mt-4 md:mt-0 text-right">
-                        <h1 className="text-2xl font-bold text-gray-800">INVOICE</h1>
+                      <div className={cn(
+                        "text-right",
+                        isMobile ? "mt-4" : "mt-0"
+                      )}>
+                        <h1 className={cn(
+                          "font-bold text-gray-800",
+                          isMobile ? "text-xl" : "text-2xl"
+                        )}>
+                          INVOICE
+                        </h1>
                         <p className="text-gray-600"># {invoicePreview.invoiceNumber}</p>
                         <p className="text-gray-600 mt-2">Date: {invoicePreview.date}</p>
                         <p className="text-gray-600">Due Date: {invoicePreview.dueDate}</p>
@@ -575,71 +846,133 @@ const CreateInvoice = () => {
                       )}
                     </div>
                     
-                    <table className="min-w-full mb-6">
-                      <thead>
-                        <tr className="bg-gray-100">
-                          <th className="text-left py-3 px-4 font-medium text-gray-600">Item</th>
-                          <th className="text-center py-3 px-4 font-medium text-gray-600">Quantity</th>
-                          <th className="text-right py-3 px-4 font-medium text-gray-600">Rate</th>
-                          <th className="text-right py-3 px-4 font-medium text-gray-600">Amount</th>
-                        </tr>
-                      </thead>
-                      <tbody>
+                    {/* Mobile vs Desktop Invoice Items */}
+                    {isMobile ? (
+                      <div className="mb-6 space-y-3">
                         {invoicePreview.items.map((item, index) => (
-                          <tr key={index} className="border-b border-gray-200">
-                            <td className="py-3 px-4 text-gray-800">{item.description || "Untitled Item"}</td>
-                            <td className="py-3 px-4 text-center text-gray-800">{item.quantity}</td>
-                            <td className="py-3 px-4 text-right text-gray-800">
-                              {formatCurrency(item.rate, invoicePreview.currency)}
-                            </td>
-                            <td className="py-3 px-4 text-right text-gray-800">
-                              {formatCurrency(item.total, invoicePreview.currency)}
+                          <div key={index} className="border-b border-gray-200 pb-2 last:border-b-0">
+                            <div className="font-medium">{item.description || "Untitled Item"}</div>
+                            <div className="flex justify-between mt-1">
+                              <div className="text-gray-600">
+                                {item.quantity} × {formatCurrency(item.rate, invoicePreview.currency)}
+                              </div>
+                              <div className="text-gray-800 font-medium">
+                                {formatCurrency(item.total, invoicePreview.currency)}
+                              </div>
+                            </div>
+                          </div>
+                        ))}
+                        
+                        <div className="pt-2 space-y-1">
+                          <div className="flex justify-between">
+                            <span className="text-gray-600">Subtotal</span>
+                            <span className="text-gray-800">
+                              {formatCurrency(invoicePreview.subtotal, invoicePreview.currency)}
+                            </span>
+                          </div>
+                          <div className="flex justify-between">
+                            <span className="text-gray-600">Tax</span>
+                            <span className="text-gray-800">
+                              {formatCurrency(invoicePreview.taxAmount, invoicePreview.currency)}
+                            </span>
+                          </div>
+                          <div className="flex justify-between pt-1 border-t border-gray-200">
+                            <span className="font-bold">Total</span>
+                            <span className="font-bold text-gray-800">
+                              {formatCurrency(invoicePreview.total, invoicePreview.currency)}
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+                    ) : (
+                      <table className="min-w-full mb-6">
+                        <thead>
+                          <tr className="bg-gray-100">
+                            <th className="text-left py-3 px-4 font-medium text-gray-600">Item</th>
+                            <th className="text-center py-3 px-4 font-medium text-gray-600">Quantity</th>
+                            <th className="text-right py-3 px-4 font-medium text-gray-600">Rate</th>
+                            <th className="text-right py-3 px-4 font-medium text-gray-600">Amount</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {invoicePreview.items.map((item, index) => (
+                            <tr key={index} className="border-b border-gray-200">
+                              <td className="py-3 px-4 text-gray-800">{item.description || "Untitled Item"}</td>
+                              <td className="py-3 px-4 text-center text-gray-800">{item.quantity}</td>
+                              <td className="py-3 px-4 text-right text-gray-800">
+                                {formatCurrency(item.rate, invoicePreview.currency)}
+                              </td>
+                              <td className="py-3 px-4 text-right text-gray-800">
+                                {formatCurrency(item.total, invoicePreview.currency)}
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                        <tfoot>
+                          <tr>
+                            <td colSpan={3} className="text-right py-3 px-4 font-medium text-gray-600">Subtotal</td>
+                            <td className="text-right py-3 px-4 text-gray-800">
+                              {formatCurrency(invoicePreview.subtotal, invoicePreview.currency)}
                             </td>
                           </tr>
-                        ))}
-                      </tbody>
-                      <tfoot>
-                        <tr>
-                          <td colSpan={3} className="text-right py-3 px-4 font-medium text-gray-600">Subtotal</td>
-                          <td className="text-right py-3 px-4 text-gray-800">
-                            {formatCurrency(invoicePreview.subtotal, invoicePreview.currency)}
-                          </td>
-                        </tr>
-                        <tr>
-                          <td colSpan={3} className="text-right py-3 px-4 font-medium text-gray-600">Tax</td>
-                          <td className="text-right py-3 px-4 text-gray-800">
-                            {formatCurrency(invoicePreview.taxAmount, invoicePreview.currency)}
-                          </td>
-                        </tr>
-                        <tr>
-                          <td colSpan={3} className="text-right py-3 px-4 font-bold text-gray-800">Total</td>
-                          <td className="text-right py-3 px-4 font-bold text-gray-800">
-                            {formatCurrency(invoicePreview.total, invoicePreview.currency)}
-                          </td>
-                        </tr>
-                      </tfoot>
-                    </table>
+                          <tr>
+                            <td colSpan={3} className="text-right py-3 px-4 font-medium text-gray-600">Tax</td>
+                            <td className="text-right py-3 px-4 text-gray-800">
+                              {formatCurrency(invoicePreview.taxAmount, invoicePreview.currency)}
+                            </td>
+                          </tr>
+                          <tr>
+                            <td colSpan={3} className="text-right py-3 px-4 font-bold text-gray-800">Total</td>
+                            <td className="text-right py-3 px-4 font-bold text-gray-800">
+                              {formatCurrency(invoicePreview.total, invoicePreview.currency)}
+                            </td>
+                          </tr>
+                        </tfoot>
+                      </table>
+                    )}
                     
+                    {/* Notes and Terms */}
                     {invoicePreview.notes && (
-                      <div className="mb-6">
-                        <h3 className="font-medium text-gray-600 mb-2">Notes:</h3>
-                        <p className="text-gray-800">{invoicePreview.notes}</p>
+                      <div className="mb-4">
+                        <h3 className="font-medium text-gray-600 mb-1">Notes:</h3>
+                        <p className="text-gray-800 whitespace-pre-wrap">{invoicePreview.notes}</p>
                       </div>
                     )}
                     
                     {invoicePreview.terms && (
-                      <div className="mb-6">
-                        <h3 className="font-medium text-gray-600 mb-2">Terms & Conditions:</h3>
-                        <p className="text-gray-800">{invoicePreview.terms}</p>
+                      <div className="mb-4">
+                        <h3 className="font-medium text-gray-600 mb-1">Terms & Conditions:</h3>
+                        <p className="text-gray-800 whitespace-pre-wrap">{invoicePreview.terms}</p>
                       </div>
                     )}
                     
-                    <div className="text-center text-gray-500 text-sm mt-8">
+                    <div className="text-center text-gray-500 text-sm mt-6">
                       Thank you for your business!
                     </div>
                   </div>
                 </CardContent>
               </Card>
+              
+              {/* Mobile Action Bar */}
+              {isMobile && (
+                <div className="fixed bottom-0 left-0 right-0 p-4 bg-background border-t z-10 flex gap-2">
+                  <Button 
+                    variant="outline"
+                    className="flex-1"
+                    onClick={() => setActiveTab('edit')}
+                  >
+                    <Edit size={16} className="mr-1" />
+                    Edit
+                  </Button>
+                  <Button 
+                    onClick={handleDownloadPdf}
+                    className="flex-1"
+                  >
+                    <Download size={16} className="mr-1" />
+                    Download
+                  </Button>
+                </div>
+              )}
             </div>
           )}
         </TabsContent>
