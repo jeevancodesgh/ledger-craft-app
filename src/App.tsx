@@ -4,6 +4,7 @@ import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+import { ToastProvider } from "@/hooks/use-toast";
 import { AppProvider } from "./context/AppContext";
 import { AuthProvider } from "./context/AuthContext";
 import { AppLayout } from "./components/layout/AppLayout";
@@ -22,22 +23,24 @@ const App = () => (
   <QueryClientProvider client={queryClient}>
     <BrowserRouter>
       <AuthProvider>
-        <AppProvider>
-          <TooltipProvider>
-            <Toaster />
-            <Sonner />
-            <Routes>
-              <Route path="/login" element={<Login />} />
-              <Route path="/signup" element={<Signup />} />
-              <Route path="/" element={<AppLayout><Dashboard /></AppLayout>} />
-              <Route path="/invoices" element={<AppLayout><Invoices /></AppLayout>} />
-              <Route path="/invoices/new" element={<AppLayout><CreateInvoice /></AppLayout>} />
-              <Route path="/customers" element={<AppLayout><Customers /></AppLayout>} />
-              <Route path="/settings" element={<AppLayout><Settings /></AppLayout>} />
-              <Route path="*" element={<NotFound />} />
-            </Routes>
-          </TooltipProvider>
-        </AppProvider>
+        <ToastProvider>
+          <AppProvider>
+            <TooltipProvider>
+              <Toaster />
+              <Sonner />
+              <Routes>
+                <Route path="/login" element={<Login />} />
+                <Route path="/signup" element={<Signup />} />
+                <Route path="/" element={<AppLayout><Dashboard /></AppLayout>} />
+                <Route path="/invoices" element={<AppLayout><Invoices /></AppLayout>} />
+                <Route path="/invoices/new" element={<AppLayout><CreateInvoice /></AppLayout>} />
+                <Route path="/customers" element={<AppLayout><Customers /></AppLayout>} />
+                <Route path="/settings" element={<AppLayout><Settings /></AppLayout>} />
+                <Route path="*" element={<NotFound />} />
+              </Routes>
+            </TooltipProvider>
+          </AppProvider>
+        </ToastProvider>
       </AuthProvider>
     </BrowserRouter>
   </QueryClientProvider>
