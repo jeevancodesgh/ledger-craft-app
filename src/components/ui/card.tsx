@@ -77,4 +77,41 @@ const CardFooter = React.forwardRef<
 ))
 CardFooter.displayName = "CardFooter"
 
-export { Card, CardHeader, CardFooter, CardTitle, CardDescription, CardContent }
+// Export PDF-optimized card components for better rendering in PDFs
+const PDFCard = React.forwardRef<
+  HTMLDivElement,
+  React.HTMLAttributes<HTMLDivElement>
+>(({ className, ...props }, ref) => (
+  <div
+    ref={ref}
+    className={cn(
+      "rounded-lg border bg-white text-black shadow-none print:shadow-none",
+      className
+    )}
+    {...props}
+  />
+))
+PDFCard.displayName = "PDFCard"
+
+const PDFCardContent = React.forwardRef<
+  HTMLDivElement,
+  React.HTMLAttributes<HTMLDivElement>
+>(({ className, ...props }, ref) => (
+  <div 
+    ref={ref} 
+    className={cn("p-6 bg-white text-black", className)} 
+    {...props} 
+  />
+))
+PDFCardContent.displayName = "PDFCardContent"
+
+export { 
+  Card, 
+  CardHeader, 
+  CardFooter, 
+  CardTitle, 
+  CardDescription, 
+  CardContent,
+  PDFCard,
+  PDFCardContent
+}
