@@ -1,4 +1,3 @@
-
 import { supabase } from '@/integrations/supabase/client';
 import { 
   Customer, Invoice, BusinessProfile, LineItem,
@@ -333,7 +332,8 @@ export const invoiceService = {
   },
 
   async createInvoice(invoice: Omit<Invoice, 'id' | 'createdAt' | 'updatedAt'>, lineItems: Omit<LineItem, 'id' | 'invoiceId' | 'createdAt' | 'updatedAt'>[]): Promise<Invoice> {
-    const supabaseInvoice = mapInvoiceToSupabaseInvoice(invoice);
+    // Convert invoice to Supabase format - make sure to await the result
+    const supabaseInvoice = await mapInvoiceToSupabaseInvoice(invoice);
     
     const { data: invoiceData, error: invoiceError } = await supabase
       .from('invoices')
