@@ -23,19 +23,25 @@ const mapSupabaseCustomerToCustomer = (customer: SupabaseCustomer): Customer => 
   updatedAt: customer.updated_at
 });
 
-const mapCustomerToSupabaseCustomer = (customer: Omit<Customer, 'id' | 'createdAt' | 'updatedAt'>): Omit<SupabaseCustomer, 'id' | 'created_at' | 'updated_at'> => ({
-  name: customer.name,
-  email: customer.email,
-  address: customer.address || null,
-  city: customer.city || null,
-  state: customer.state || null,
-  zip: customer.zip || null,
-  country: customer.country || 'USA',
-  phone: customer.phone || null,
-  is_vip: customer.isVip || false,
-  tags: customer.tags || null,
-  user_id: customer.userId || supabase.auth.getUser().then(res => res.data.user?.id) || ''
-});
+const mapCustomerToSupabaseCustomer = async (customer: Omit<Customer, 'id' | 'createdAt' | 'updatedAt'>): Promise<Omit<SupabaseCustomer, 'id' | 'created_at' | 'updated_at'>> => {
+  // Get current user ID
+  const { data: { user } } = await supabase.auth.getUser();
+  const userId = user?.id || '';
+
+  return {
+    name: customer.name,
+    email: customer.email,
+    address: customer.address || null,
+    city: customer.city || null,
+    state: customer.state || null,
+    zip: customer.zip || null,
+    country: customer.country || 'USA',
+    phone: customer.phone || null,
+    is_vip: customer.isVip || false,
+    tags: customer.tags || null,
+    user_id: customer.userId || userId
+  };
+};
 
 const mapSupabaseInvoiceToInvoice = (invoice: SupabaseInvoice, items: SupabaseLineItem[] = []): Invoice => ({
   id: invoice.id,
@@ -75,21 +81,27 @@ const mapSupabaseInvoiceToInvoice = (invoice: SupabaseInvoice, items: SupabaseLi
   updatedAt: invoice.updated_at
 });
 
-const mapInvoiceToSupabaseInvoice = (invoice: Omit<Invoice, 'id' | 'createdAt' | 'updatedAt'>): Omit<SupabaseInvoice, 'id' | 'created_at' | 'updated_at'> => ({
-  invoice_number: invoice.invoiceNumber,
-  customer_id: invoice.customerId,
-  date: invoice.date,
-  due_date: invoice.dueDate,
-  subtotal: invoice.subtotal,
-  tax_amount: invoice.taxAmount,
-  discount: invoice.discount || null,
-  total: invoice.total,
-  status: invoice.status,
-  notes: invoice.notes || null,
-  terms: invoice.terms || null,
-  currency: invoice.currency,
-  user_id: invoice.userId || supabase.auth.getUser().then(res => res.data.user?.id) || ''
-});
+const mapInvoiceToSupabaseInvoice = async (invoice: Omit<Invoice, 'id' | 'createdAt' | 'updatedAt'>): Promise<Omit<SupabaseInvoice, 'id' | 'created_at' | 'updated_at'>> => {
+  // Get current user ID
+  const { data: { user } } = await supabase.auth.getUser();
+  const userId = user?.id || '';
+
+  return {
+    invoice_number: invoice.invoiceNumber,
+    customer_id: invoice.customerId,
+    date: invoice.date,
+    due_date: invoice.dueDate,
+    subtotal: invoice.subtotal,
+    tax_amount: invoice.taxAmount,
+    discount: invoice.discount || null,
+    total: invoice.total,
+    status: invoice.status,
+    notes: invoice.notes || null,
+    terms: invoice.terms || null,
+    currency: invoice.currency,
+    user_id: invoice.userId || userId
+  };
+};
 
 const mapSupabaseBusinessProfileToBusinessProfile = (profile: SupabaseBusinessProfile): BusinessProfile => ({
   id: profile.id,
@@ -113,24 +125,30 @@ const mapSupabaseBusinessProfileToBusinessProfile = (profile: SupabaseBusinessPr
   updatedAt: profile.updated_at
 });
 
-const mapBusinessProfileToSupabaseBusinessProfile = (profile: Omit<BusinessProfile, 'id' | 'createdAt' | 'updatedAt'>): Omit<SupabaseBusinessProfile, 'id' | 'created_at' | 'updated_at'> => ({
-  name: profile.name,
-  email: profile.email,
-  phone: profile.phone || null,
-  address: profile.address || null,
-  city: profile.city || null,
-  state: profile.state || null,
-  zip: profile.zip || null,
-  country: profile.country || 'USA',
-  tax_id: profile.taxId || null,
-  logo_url: profile.logoUrl || null,
-  website: profile.website || null,
-  default_tax_rate: profile.defaultTaxRate || null,
-  default_terms: profile.defaultTerms || null,
-  default_notes: profile.defaultNotes || null,
-  bank_info: profile.bankInfo || null,
-  user_id: profile.userId || supabase.auth.getUser().then(res => res.data.user?.id) || ''
-});
+const mapBusinessProfileToSupabaseBusinessProfile = async (profile: Omit<BusinessProfile, 'id' | 'createdAt' | 'updatedAt'>): Promise<Omit<SupabaseBusinessProfile, 'id' | 'created_at' | 'updated_at'>> => {
+  // Get current user ID
+  const { data: { user } } = await supabase.auth.getUser();
+  const userId = user?.id || '';
+
+  return {
+    name: profile.name,
+    email: profile.email,
+    phone: profile.phone || null,
+    address: profile.address || null,
+    city: profile.city || null,
+    state: profile.state || null,
+    zip: profile.zip || null,
+    country: profile.country || 'USA',
+    tax_id: profile.taxId || null,
+    logo_url: profile.logoUrl || null,
+    website: profile.website || null,
+    default_tax_rate: profile.defaultTaxRate || null,
+    default_terms: profile.defaultTerms || null,
+    default_notes: profile.defaultNotes || null,
+    bank_info: profile.bankInfo || null,
+    user_id: profile.userId || userId
+  };
+};
 
 // Customer service functions
 export const customerService = {
@@ -164,7 +182,7 @@ export const customerService = {
   },
 
   async createCustomer(customer: Omit<Customer, 'id' | 'createdAt' | 'updatedAt'>): Promise<Customer> {
-    const supabaseCustomer = mapCustomerToSupabaseCustomer(customer);
+    const supabaseCustomer = await mapCustomerToSupabaseCustomer(customer);
     
     const { data, error } = await supabase
       .from('customers')
@@ -197,7 +215,7 @@ export const customerService = {
     };
     
     // Convert to Supabase format
-    const supabaseCustomer = mapCustomerToSupabaseCustomer(mergedCustomer as Omit<Customer, 'id' | 'createdAt' | 'updatedAt'>);
+    const supabaseCustomer = await mapCustomerToSupabaseCustomer(mergedCustomer as Omit<Customer, 'id' | 'createdAt' | 'updatedAt'>);
     
     const { data, error } = await supabase
       .from('customers')
@@ -554,8 +572,8 @@ export const invoiceService = {
 // Business Profile service functions
 export const businessProfileService = {
   async getBusinessProfile(): Promise<BusinessProfile | null> {
-    const user = await supabase.auth.getUser();
-    if (!user.data.user?.id) {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user?.id) {
       console.error('No authenticated user found');
       return null;
     }
@@ -563,7 +581,7 @@ export const businessProfileService = {
     const { data, error } = await supabase
       .from('business_profiles')
       .select('*')
-      .eq('user_id', user.data.user.id)
+      .eq('user_id', user.id)
       .limit(1)
       .maybeSingle();
 
@@ -576,24 +594,24 @@ export const businessProfileService = {
   },
 
   async createOrUpdateBusinessProfile(profile: Omit<BusinessProfile, 'id' | 'createdAt' | 'updatedAt'>): Promise<BusinessProfile> {
-    const user = await supabase.auth.getUser();
-    if (!user.data.user?.id) {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user?.id) {
       throw new Error('No authenticated user');
     }
     
     // Add the user_id to the profile
     const profileWithUserId = {
       ...profile,
-      userId: user.data.user.id
+      userId: user.id
     };
     
-    const supabaseProfile = mapBusinessProfileToSupabaseBusinessProfile(profileWithUserId);
+    const supabaseProfile = await mapBusinessProfileToSupabaseBusinessProfile(profileWithUserId);
     
     // First check if profile exists
     const { data: existingProfile } = await supabase
       .from('business_profiles')
       .select('id')
-      .eq('user_id', user.data.user.id)
+      .eq('user_id', user.id)
       .limit(1);
     
     let result;
