@@ -9,6 +9,7 @@ import { AuthProvider } from "./context/AuthContext";
 import { AppLayout } from "./components/layout/AppLayout";
 import Dashboard from "./pages/Dashboard";
 import Invoices from "./pages/Invoices";
+import CreateInvoice from "./pages/CreateInvoice";
 import Customers from "./pages/Customers";
 import Settings from "./pages/Settings";
 import NotFound from "./pages/NotFound";
@@ -30,6 +31,7 @@ const App = () => (
               <Route path="/signup" element={<Signup />} />
               <Route path="/" element={<AppLayout><Dashboard /></AppLayout>} />
               <Route path="/invoices" element={<AppLayout><Invoices /></AppLayout>} />
+              <Route path="/invoices/new" element={<AppLayout><CreateInvoice /></AppLayout>} />
               <Route path="/customers" element={<AppLayout><Customers /></AppLayout>} />
               <Route path="/settings" element={<AppLayout><Settings /></AppLayout>} />
               <Route path="*" element={<NotFound />} />

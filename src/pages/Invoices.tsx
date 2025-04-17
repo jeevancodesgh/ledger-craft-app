@@ -5,6 +5,7 @@ import { Card } from '@/components/ui/card';
 import { formatCurrency, getStatusColor } from '@/utils/invoiceUtils';
 import { Button } from '@/components/ui/button';
 import { Plus } from 'lucide-react';
+import { Link } from 'react-router-dom';
 
 const Invoices = () => {
   const { invoices, isLoadingInvoices } = useAppContext();
@@ -17,9 +18,11 @@ const Invoices = () => {
     <div className="space-y-6">
       <div className="flex justify-between items-center">
         <h1 className="text-3xl font-bold">Invoices</h1>
-        <Button className="flex items-center gap-2 bg-invoice-teal hover:bg-invoice-teal/90">
-          <Plus size={18} />
-          <span>New Invoice</span>
+        <Button className="flex items-center gap-2 bg-invoice-teal hover:bg-invoice-teal/90" asChild>
+          <Link to="/invoices/new">
+            <Plus size={18} />
+            <span>New Invoice</span>
+          </Link>
         </Button>
       </div>
       
