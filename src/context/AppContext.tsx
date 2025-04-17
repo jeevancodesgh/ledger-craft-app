@@ -1,7 +1,7 @@
 
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { Customer, Invoice, BusinessProfile } from '@/types';
-import { customerApi, invoiceApi, businessProfileApi, dashboardApi } from '@/services/api';
+import { customerService, invoiceService, businessProfileService, dashboardService } from '@/services/supabaseService';
 import { useToast } from '@/hooks/use-toast';
 
 interface DashboardStats {
@@ -79,7 +79,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const refreshCustomers = async () => {
     setIsLoadingCustomers(true);
     try {
-      const data = await customerApi.getCustomers();
+      const data = await customerService.getCustomers();
       setCustomers(data);
     } catch (error) {
       console.error('Error loading customers:', error);
@@ -95,7 +95,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
   
   const getCustomer = async (id: string) => {
     try {
-      return await customerApi.getCustomer(id);
+      const customer = await customerService.getCustomer(id);
+      return customer || undefined;
     } catch (error) {
       console.error('Error getting customer:', error);
       toast({
@@ -109,7 +110,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
   
   const createCustomer = async (customer: Omit<Customer, 'id'>) => {
     try {
-      const newCustomer = await customerApi.createCustomer(customer);
+      const newCustomer = await customerService.createCustomer(customer);
       await refreshCustomers();
       toast({
         title: 'Success',
@@ -129,7 +130,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
   
   const updateCustomer = async (customer: Customer) => {
     try {
-      const updatedCustomer = await customerApi.updateCustomer(customer);
+      const updatedCustomer = await customerService.updateCustomer(customer.id, customer);
       await refreshCustomers();
       toast({
         title: 'Success',
@@ -149,7 +150,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
   
   const deleteCustomer = async (id: string) => {
     try {
-      await customerApi.deleteCustomer(id);
+      await customerService.deleteCustomer(id);
       await refreshCustomers();
       toast({
         title: 'Success',
@@ -170,7 +171,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const refreshInvoices = async () => {
     setIsLoadingInvoices(true);
     try {
-      const data = await invoiceApi.getInvoices();
+      const data = await invoiceService.getInvoices();
       setInvoices(data);
     } catch (error) {
       console.error('Error loading invoices:', error);
@@ -186,7 +187,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
   
   const getInvoice = async (id: string) => {
     try {
-      return await invoiceApi.getInvoice(id);
+      const invoice = await invoiceService.getInvoice(id);
+      return invoice || undefined;
     } catch (error) {
       console.error('Error getting invoice:', error);
       toast({
@@ -200,7 +202,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
   
   const getInvoicesForCustomer = async (customerId: string) => {
     try {
-      return await invoiceApi.getInvoicesForCustomer(customerId);
+      return await invoiceService.getInvoicesForCustomer(customerId);
     } catch (error) {
       console.error('Error getting customer invoices:', error);
       toast({
@@ -214,7 +216,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
   
   const createInvoice = async (invoice: Omit<Invoice, 'id' | 'invoiceNumber' | 'createdAt' | 'updatedAt'>) => {
     try {
-      const newInvoice = await invoiceApi.createInvoice(invoice);
+      const { items, ...invoiceData } = invoice as any;
+      const newInvoice = await invoiceService.createInvoice(invoiceData, items);
       await refreshInvoices();
       toast({
         title: 'Success',
@@ -234,7 +237,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
   
   const updateInvoice = async (invoice: Invoice) => {
     try {
-      const updatedInvoice = await invoiceApi.updateInvoice(invoice);
+      const updatedInvoice = await invoiceService.updateInvoice(invoice.id, invoice);
       await refreshInvoices();
       toast({
         title: 'Success',
@@ -254,7 +257,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
   
   const deleteInvoice = async (id: string) => {
     try {
-      await invoiceApi.deleteInvoice(id);
+      await invoiceService.deleteInvoice(id);
       await refreshInvoices();
       toast({
         title: 'Success',
@@ -273,7 +276,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
   
   const updateInvoiceStatus = async (id: string, status: Invoice['status']) => {
     try {
-      const updatedInvoice = await invoiceApi.updateInvoiceStatus(id, status);
+      const updatedInvoice = await invoiceService.updateInvoiceStatus(id, status);
       await refreshInvoices();
       toast({
         title: 'Success',
@@ -295,7 +298,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const refreshBusinessProfile = async () => {
     setIsLoadingProfile(true);
     try {
-      const data = await businessProfileApi.getBusinessProfile();
+      const data = await businessProfileService.getBusinessProfile();
       setBusinessProfile(data);
     } catch (error) {
       console.error('Error loading business profile:', error);
@@ -311,7 +314,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
   
   const updateBusinessProfile = async (profile: BusinessProfile) => {
     try {
-      const updatedProfile = await businessProfileApi.updateBusinessProfile(profile);
+      const updatedProfile = await businessProfileService.createOrUpdateBusinessProfile(profile);
       setBusinessProfile(updatedProfile);
       toast({
         title: 'Success',
@@ -333,15 +336,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const refreshDashboardStats = async () => {
     setIsLoadingStats(true);
     try {
-      const [stats, revenueByMonth] = await Promise.all([
-        dashboardApi.getStats(),
-        dashboardApi.getRevenueByMonth()
-      ]);
-      
-      setDashboardStats({
-        ...stats,
-        revenueByMonth
-      });
+      const stats = await dashboardService.getDashboardStats();
+      setDashboardStats(stats);
     } catch (error) {
       console.error('Error loading dashboard stats:', error);
       toast({

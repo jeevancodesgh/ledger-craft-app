@@ -1,22 +1,234 @@
 
-import React from 'react';
-import { useAppContext } from '@/context/AppContext';
+import React, { useState, useEffect } from 'react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Plus, Star } from 'lucide-react';
+import { Plus, Star, Pencil, Trash } from 'lucide-react';
+import { customerService } from '@/services/supabaseService';
+import { Customer } from '@/types';
+import { useToast } from '@/hooks/use-toast';
+import { Spinner } from '@/components/ui/spinner';
+import { 
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+  DialogTrigger
+} from '@/components/ui/dialog';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { 
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage
+} from '@/components/ui/form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { useForm } from 'react-hook-form';
+import * as z from 'zod';
+
+const customerFormSchema = z.object({
+  name: z.string().min(2, { message: 'Name must be at least 2 characters' }),
+  email: z.string().email({ message: 'Please enter a valid email' }),
+  phone: z.string().optional(),
+  address: z.string().optional(),
+  city: z.string().optional(),
+  state: z.string().optional(),
+  zip: z.string().optional(),
+  country: z.string().default('USA'),
+  is_vip: z.boolean().default(false)
+});
 
 const Customers = () => {
-  const { customers, isLoadingCustomers } = useAppContext();
+  const { toast } = useToast();
+  const [customers, setCustomers] = useState<Customer[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [openCreateDialog, setOpenCreateDialog] = useState(false);
+  const [editingCustomer, setEditingCustomer] = useState<Customer | null>(null);
+  const [deleteCustomerId, setDeleteCustomerId] = useState<string | null>(null);
   
-  if (isLoadingCustomers) {
-    return <div className="flex justify-center items-center h-64">Loading customers...</div>;
+  const form = useForm<z.infer<typeof customerFormSchema>>({
+    resolver: zodResolver(customerFormSchema),
+    defaultValues: {
+      name: '',
+      email: '',
+      phone: '',
+      address: '',
+      city: '',
+      state: '',
+      zip: '',
+      country: 'USA',
+      is_vip: false
+    }
+  });
+  
+  useEffect(() => {
+    fetchCustomers();
+  }, []);
+  
+  useEffect(() => {
+    if (editingCustomer) {
+      form.reset({
+        name: editingCustomer.name,
+        email: editingCustomer.email,
+        phone: editingCustomer.phone || '',
+        address: editingCustomer.address || '',
+        city: editingCustomer.city || '',
+        state: editingCustomer.state || '',
+        zip: editingCustomer.zip || '',
+        country: editingCustomer.country || 'USA',
+        is_vip: editingCustomer.isVip || false
+      });
+    } else {
+      form.reset({
+        name: '',
+        email: '',
+        phone: '',
+        address: '',
+        city: '',
+        state: '',
+        zip: '',
+        country: 'USA',
+        is_vip: false
+      });
+    }
+  }, [editingCustomer, form]);
+  
+  const fetchCustomers = async () => {
+    try {
+      setLoading(true);
+      const data = await customerService.getCustomers();
+      setCustomers(data);
+    } catch (error) {
+      console.error('Error fetching customers:', error);
+      toast({
+        title: 'Error',
+        description: 'Failed to load customers',
+        variant: 'destructive',
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+  
+  const handleCreateCustomer = async (values: z.infer<typeof customerFormSchema>) => {
+    try {
+      const newCustomer = {
+        name: values.name,
+        email: values.email,
+        phone: values.phone || null,
+        address: values.address || null,
+        city: values.city || null,
+        state: values.state || null,
+        zip: values.zip || null,
+        country: values.country,
+        isVip: values.is_vip
+      };
+      
+      await customerService.createCustomer(newCustomer);
+      
+      toast({
+        title: 'Success',
+        description: 'Customer created successfully',
+      });
+      
+      setOpenCreateDialog(false);
+      fetchCustomers();
+    } catch (error) {
+      console.error('Error creating customer:', error);
+      toast({
+        title: 'Error',
+        description: 'Failed to create customer',
+        variant: 'destructive',
+      });
+    }
+  };
+  
+  const handleUpdateCustomer = async (values: z.infer<typeof customerFormSchema>) => {
+    if (!editingCustomer) return;
+    
+    try {
+      const updatedCustomer = {
+        name: values.name,
+        email: values.email,
+        phone: values.phone || null,
+        address: values.address || null,
+        city: values.city || null,
+        state: values.state || null,
+        zip: values.zip || null,
+        country: values.country,
+        isVip: values.is_vip
+      };
+      
+      await customerService.updateCustomer(editingCustomer.id, updatedCustomer);
+      
+      toast({
+        title: 'Success',
+        description: 'Customer updated successfully',
+      });
+      
+      setEditingCustomer(null);
+      fetchCustomers();
+    } catch (error) {
+      console.error('Error updating customer:', error);
+      toast({
+        title: 'Error',
+        description: 'Failed to update customer',
+        variant: 'destructive',
+      });
+    }
+  };
+  
+  const handleDeleteCustomer = async () => {
+    if (!deleteCustomerId) return;
+    
+    try {
+      await customerService.deleteCustomer(deleteCustomerId);
+      
+      toast({
+        title: 'Success',
+        description: 'Customer deleted successfully',
+      });
+      
+      setDeleteCustomerId(null);
+      fetchCustomers();
+    } catch (error) {
+      console.error('Error deleting customer:', error);
+      toast({
+        title: 'Error',
+        description: 'Failed to delete customer',
+        variant: 'destructive',
+      });
+    }
+  };
+  
+  const onSubmit = (values: z.infer<typeof customerFormSchema>) => {
+    if (editingCustomer) {
+      handleUpdateCustomer(values);
+    } else {
+      handleCreateCustomer(values);
+    }
+  };
+
+  if (loading) {
+    return (
+      <div className="flex justify-center items-center h-64">
+        <Spinner className="h-8 w-8" />
+      </div>
+    );
   }
 
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
         <h1 className="text-3xl font-bold">Customers</h1>
-        <Button className="flex items-center gap-2 bg-invoice-teal hover:bg-invoice-teal/90">
+        <Button 
+          className="flex items-center gap-2 bg-invoice-teal hover:bg-invoice-teal/90"
+          onClick={() => setOpenCreateDialog(true)}
+        >
           <Plus size={18} />
           <span>New Customer</span>
         </Button>
@@ -40,7 +252,7 @@ const Customers = () => {
                   Location
                 </th>
                 <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
-                  Status
+                  Tags
                 </th>
                 <th scope="col" className="px-6 py-3 text-right text-xs font-medium text-muted-foreground uppercase tracking-wider">
                   Actions
@@ -48,50 +260,253 @@ const Customers = () => {
               </tr>
             </thead>
             <tbody className="bg-card divide-y divide-border">
-              {customers.map((customer) => (
-                <tr key={customer.id} className="hover:bg-muted/30">
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="flex items-center">
-                      <div className="text-sm font-medium">
-                        {customer.name} {customer.isVip && (
-                          <Star className="inline-block h-3 w-3 text-amber-400 ml-1" />
-                        )}
-                      </div>
-                    </div>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm">
-                    {customer.email}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm">
-                    {customer.phone || 'N/A'}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm">
-                    {customer.city}, {customer.state}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    {customer.tags && customer.tags.length > 0 ? (
-                      <div className="flex flex-wrap gap-1">
-                        {customer.tags.map((tag) => (
-                          <span key={tag} className="px-2 py-0.5 bg-blue-100 text-blue-800 text-xs rounded">
-                            {tag}
-                          </span>
-                        ))}
-                      </div>
-                    ) : (
-                      <span className="text-muted-foreground text-sm">No tags</span>
-                    )}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-right">
-                    <Button variant="ghost" className="h-8 px-2">
-                      View
-                    </Button>
+              {customers.length === 0 ? (
+                <tr>
+                  <td colSpan={6} className="px-6 py-4 text-center text-muted-foreground">
+                    No customers found. Create your first customer to get started.
                   </td>
                 </tr>
-              ))}
+              ) : (
+                customers.map((customer) => (
+                  <tr key={customer.id} className="hover:bg-muted/30">
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <div className="flex items-center">
+                        <div className="text-sm font-medium">
+                          {customer.name} {customer.isVip && (
+                            <Star className="inline-block h-3 w-3 text-amber-400 ml-1" />
+                          )}
+                        </div>
+                      </div>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm">
+                      {customer.email}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm">
+                      {customer.phone || 'N/A'}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm">
+                      {customer.city && customer.state ? `${customer.city}, ${customer.state}` : 'N/A'}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      {customer.tags && customer.tags.length > 0 ? (
+                        <div className="flex flex-wrap gap-1">
+                          {customer.tags.map((tag) => (
+                            <span key={tag} className="px-2 py-0.5 bg-blue-100 text-blue-800 text-xs rounded">
+                              {tag}
+                            </span>
+                          ))}
+                        </div>
+                      ) : (
+                        <span className="text-muted-foreground text-sm">No tags</span>
+                      )}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-right">
+                      <div className="flex justify-end gap-2">
+                        <Button 
+                          variant="ghost" 
+                          size="icon" 
+                          onClick={() => setEditingCustomer(customer)}
+                        >
+                          <Pencil className="h-4 w-4" />
+                        </Button>
+                        <Button 
+                          variant="ghost" 
+                          size="icon" 
+                          className="text-red-500" 
+                          onClick={() => setDeleteCustomerId(customer.id)}
+                        >
+                          <Trash className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    </td>
+                  </tr>
+                ))
+              )}
             </tbody>
           </table>
         </div>
       </Card>
+      
+      {/* Create/Edit Customer Dialog */}
+      <Dialog 
+        open={openCreateDialog || !!editingCustomer} 
+        onOpenChange={(open) => {
+          if (!open) {
+            setOpenCreateDialog(false);
+            setEditingCustomer(null);
+          }
+        }}
+      >
+        <DialogContent className="sm:max-w-[425px]">
+          <DialogHeader>
+            <DialogTitle>
+              {editingCustomer ? 'Edit Customer' : 'Create Customer'}
+            </DialogTitle>
+            <DialogDescription>
+              {editingCustomer 
+                ? 'Update the customer details below.' 
+                : 'Fill in the customer details below to create a new customer.'}
+            </DialogDescription>
+          </DialogHeader>
+          
+          <Form {...form}>
+            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+              <FormField
+                control={form.control}
+                name="name"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Name</FormLabel>
+                    <FormControl>
+                      <Input {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              
+              <FormField
+                control={form.control}
+                name="email"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Email</FormLabel>
+                    <FormControl>
+                      <Input type="email" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              
+              <FormField
+                control={form.control}
+                name="phone"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Phone</FormLabel>
+                    <FormControl>
+                      <Input {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              
+              <div className="grid grid-cols-2 gap-4">
+                <FormField
+                  control={form.control}
+                  name="address"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Address</FormLabel>
+                      <FormControl>
+                        <Input {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                
+                <FormField
+                  control={form.control}
+                  name="city"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>City</FormLabel>
+                      <FormControl>
+                        <Input {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
+              
+              <div className="grid grid-cols-3 gap-4">
+                <FormField
+                  control={form.control}
+                  name="state"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>State</FormLabel>
+                      <FormControl>
+                        <Input {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                
+                <FormField
+                  control={form.control}
+                  name="zip"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Zip</FormLabel>
+                      <FormControl>
+                        <Input {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                
+                <FormField
+                  control={form.control}
+                  name="country"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Country</FormLabel>
+                      <FormControl>
+                        <Input {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
+              
+              <DialogFooter>
+                <Button type="submit">
+                  {editingCustomer ? 'Update' : 'Create'}
+                </Button>
+              </DialogFooter>
+            </form>
+          </Form>
+        </DialogContent>
+      </Dialog>
+      
+      {/* Delete Confirmation Dialog */}
+      <Dialog 
+        open={!!deleteCustomerId} 
+        onOpenChange={(open) => {
+          if (!open) setDeleteCustomerId(null);
+        }}
+      >
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Confirm Deletion</DialogTitle>
+            <DialogDescription>
+              Are you sure you want to delete this customer? This action cannot be undone.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => setDeleteCustomerId(null)}
+            >
+              Cancel
+            </Button>
+            <Button 
+              variant="destructive" 
+              onClick={handleDeleteCustomer}
+            >
+              Delete
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
