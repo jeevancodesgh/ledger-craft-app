@@ -1,8 +1,7 @@
-
 import React, { useState, useEffect } from 'react';
-import { Card } from '@/components/ui/card';
+import { Card, CardContent, CardFooter, CardHeader } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Plus, Star, Pencil, Trash } from 'lucide-react';
+import { Plus, Star, Pencil, Trash, Mail, Phone, MapPin, ChevronRight } from 'lucide-react';
 import { customerService } from '@/services/supabaseService';
 import { Customer } from '@/types';
 import { useToast } from '@/hooks/use-toast';
@@ -13,8 +12,7 @@ import {
   DialogDescription,
   DialogHeader,
   DialogTitle,
-  DialogFooter,
-  DialogTrigger
+  DialogFooter
 } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -29,6 +27,8 @@ import {
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useForm } from 'react-hook-form';
 import * as z from 'zod';
+import { useIsMobile } from '@/hooks/use-mobile';
+import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '@/components/ui/table';
 
 const customerFormSchema = z.object({
   name: z.string().min(2, { message: 'Name must be at least 2 characters' }),
@@ -49,6 +49,7 @@ const Customers = () => {
   const [openCreateDialog, setOpenCreateDialog] = useState(false);
   const [editingCustomer, setEditingCustomer] = useState<Customer | null>(null);
   const [deleteCustomerId, setDeleteCustomerId] = useState<string | null>(null);
+  const isMobile = useIsMobile();
   
   const form = useForm<z.infer<typeof customerFormSchema>>({
     resolver: zodResolver(customerFormSchema),
@@ -234,100 +235,163 @@ const Customers = () => {
         </Button>
       </div>
       
-      <Card className="overflow-hidden">
-        <div className="overflow-x-auto">
-          <table className="min-w-full divide-y divide-border">
-            <thead className="bg-muted/50">
-              <tr>
-                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
-                  Name
-                </th>
-                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
-                  Email
-                </th>
-                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
-                  Phone
-                </th>
-                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
-                  Location
-                </th>
-                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
-                  Tags
-                </th>
-                <th scope="col" className="px-6 py-3 text-right text-xs font-medium text-muted-foreground uppercase tracking-wider">
-                  Actions
-                </th>
-              </tr>
-            </thead>
-            <tbody className="bg-card divide-y divide-border">
-              {customers.length === 0 ? (
-                <tr>
-                  <td colSpan={6} className="px-6 py-4 text-center text-muted-foreground">
-                    No customers found. Create your first customer to get started.
-                  </td>
-                </tr>
-              ) : (
-                customers.map((customer) => (
-                  <tr key={customer.id} className="hover:bg-muted/30">
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="flex items-center">
-                        <div className="text-sm font-medium">
-                          {customer.name} {customer.isVip && (
-                            <Star className="inline-block h-3 w-3 text-amber-400 ml-1" />
-                          )}
-                        </div>
-                      </div>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm">
-                      {customer.email}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm">
-                      {customer.phone || 'N/A'}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm">
-                      {customer.city && customer.state ? `${customer.city}, ${customer.state}` : 'N/A'}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      {customer.tags && customer.tags.length > 0 ? (
-                        <div className="flex flex-wrap gap-1">
-                          {customer.tags.map((tag) => (
-                            <span key={tag} className="px-2 py-0.5 bg-blue-100 text-blue-800 text-xs rounded">
-                              {tag}
-                            </span>
-                          ))}
-                        </div>
-                      ) : (
-                        <span className="text-muted-foreground text-sm">No tags</span>
+      {isMobile ? (
+        <div className="grid grid-cols-1 gap-4">
+          {customers.length === 0 ? (
+            <Card className="flex items-center justify-center h-32 text-muted-foreground">
+              No customers found. Create your first customer to get started.
+            </Card>
+          ) : (
+            customers.map((customer) => (
+              <Card key={customer.id} className="overflow-hidden">
+                <CardHeader className="pb-2">
+                  <div className="flex justify-between items-start">
+                    <div className="flex items-center">
+                      <h3 className="text-lg font-medium">
+                        {customer.name}
+                      </h3>
+                      {customer.isVip && (
+                        <Star className="h-4 w-4 text-amber-400 ml-1" />
                       )}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-right">
-                      <div className="flex justify-end gap-2">
-                        <Button 
-                          variant="ghost" 
-                          size="icon" 
-                          onClick={() => setEditingCustomer(customer)}
-                        >
-                          <Pencil className="h-4 w-4" />
-                        </Button>
-                        <Button 
-                          variant="ghost" 
-                          size="icon" 
-                          className="text-red-500" 
-                          onClick={() => setDeleteCustomerId(customer.id)}
-                        >
-                          <Trash className="h-4 w-4" />
-                        </Button>
+                    </div>
+                    <div className="flex space-x-1">
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-8 w-8"
+                        onClick={() => setEditingCustomer(customer)}
+                      >
+                        <Pencil className="h-4 w-4" />
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-8 w-8 text-red-500"
+                        onClick={() => setDeleteCustomerId(customer.id)}
+                      >
+                        <Trash className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  </div>
+                </CardHeader>
+                <CardContent className="pt-2 pb-2">
+                  <div className="space-y-1">
+                    <div className="flex items-center text-sm">
+                      <Mail className="w-4 h-4 mr-2 text-muted-foreground" />
+                      <span>{customer.email}</span>
+                    </div>
+                    {customer.phone && (
+                      <div className="flex items-center text-sm">
+                        <Phone className="w-4 h-4 mr-2 text-muted-foreground" />
+                        <span>{customer.phone}</span>
                       </div>
-                    </td>
-                  </tr>
-                ))
-              )}
-            </tbody>
-          </table>
+                    )}
+                    {(customer.city || customer.state) && (
+                      <div className="flex items-center text-sm">
+                        <MapPin className="w-4 h-4 mr-2 text-muted-foreground" />
+                        <span>{customer.city && customer.state ? `${customer.city}, ${customer.state}` : customer.city || customer.state}</span>
+                      </div>
+                    )}
+                  </div>
+                  {customer.tags && customer.tags.length > 0 && (
+                    <div className="flex flex-wrap gap-1 mt-3">
+                      {customer.tags.map((tag) => (
+                        <span key={tag} className="px-2 py-0.5 bg-blue-100 text-blue-800 text-xs rounded">
+                          {tag}
+                        </span>
+                      ))}
+                    </div>
+                  )}
+                </CardContent>
+                <CardFooter className="flex justify-end pt-2">
+                  <Button variant="ghost" className="h-8 px-3 text-xs flex items-center">
+                    View Details
+                    <ChevronRight className="ml-1 w-4 h-4" />
+                  </Button>
+                </CardFooter>
+              </Card>
+            ))
+          )}
         </div>
-      </Card>
+      ) : (
+        <Card className="overflow-hidden">
+          <div className="overflow-x-auto">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Name</TableHead>
+                  <TableHead>Email</TableHead>
+                  <TableHead>Phone</TableHead>
+                  <TableHead>Location</TableHead>
+                  <TableHead>Tags</TableHead>
+                  <TableHead className="text-right">Actions</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {customers.length === 0 ? (
+                  <TableRow>
+                    <TableCell colSpan={6} className="text-center text-muted-foreground">
+                      No customers found. Create your first customer to get started.
+                    </TableCell>
+                  </TableRow>
+                ) : (
+                  customers.map((customer) => (
+                    <TableRow key={customer.id}>
+                      <TableCell>
+                        <div className="flex items-center">
+                          <div className="text-sm font-medium">
+                            {customer.name} {customer.isVip && (
+                              <Star className="inline-block h-3 w-3 text-amber-400 ml-1" />
+                            )}
+                          </div>
+                        </div>
+                      </TableCell>
+                      <TableCell>{customer.email}</TableCell>
+                      <TableCell>{customer.phone || 'N/A'}</TableCell>
+                      <TableCell>
+                        {customer.city && customer.state ? `${customer.city}, ${customer.state}` : 'N/A'}
+                      </TableCell>
+                      <TableCell>
+                        {customer.tags && customer.tags.length > 0 ? (
+                          <div className="flex flex-wrap gap-1">
+                            {customer.tags.map((tag) => (
+                              <span key={tag} className="px-2 py-0.5 bg-blue-100 text-blue-800 text-xs rounded">
+                                {tag}
+                              </span>
+                            ))}
+                          </div>
+                        ) : (
+                          <span className="text-muted-foreground text-sm">No tags</span>
+                        )}
+                      </TableCell>
+                      <TableCell className="text-right">
+                        <div className="flex justify-end gap-2">
+                          <Button 
+                            variant="ghost" 
+                            size="icon" 
+                            onClick={() => setEditingCustomer(customer)}
+                          >
+                            <Pencil className="h-4 w-4" />
+                          </Button>
+                          <Button 
+                            variant="ghost" 
+                            size="icon" 
+                            className="text-red-500" 
+                            onClick={() => setDeleteCustomerId(customer.id)}
+                          >
+                            <Trash className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  ))
+                )}
+              </TableBody>
+            </Table>
+          </div>
+        </Card>
+      )}
       
-      {/* Create/Edit Customer Dialog */}
       <Dialog 
         open={openCreateDialog || !!editingCustomer} 
         onOpenChange={(open) => {
@@ -477,7 +541,6 @@ const Customers = () => {
         </DialogContent>
       </Dialog>
       
-      {/* Delete Confirmation Dialog */}
       <Dialog 
         open={!!deleteCustomerId} 
         onOpenChange={(open) => {
