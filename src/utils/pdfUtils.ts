@@ -60,7 +60,10 @@ export const generatePdfFromElement = async (
           const styles = clonedElement.querySelectorAll('*');
           styles.forEach(el => {
             if (el instanceof HTMLElement) {
-              el.style.fontDisplay = 'auto';
+              // Remove the fontDisplay property as it's not in the TypeScript definition
+              // Use proper styling for PDF rendering
+              el.style.color = 'black';
+              
               // Force any lazy-loaded images to load
               if (el instanceof HTMLImageElement && !el.complete) {
                 el.src = el.src;
@@ -90,7 +93,8 @@ export const generatePdfFromElement = async (
         const sourceY = i * canvas.height / pagesNeeded;
         const sourceHeight = canvas.height / pagesNeeded;
         
-        // Add the appropriate portion of the image to the current page
+        // Fix: Use the correct number of arguments for addImage
+        // Documentation: pdf.addImage(imageData, format, x, y, width, height, alias, compression, rotation)
         pdf.addImage(
           imgData,
           'PNG',
@@ -100,8 +104,7 @@ export const generatePdfFromElement = async (
           scaledHeight / pagesNeeded,
           '',
           'FAST',
-          0,
-          i * -scaledHeight / pagesNeeded
+          0
         );
       }
     } else {
