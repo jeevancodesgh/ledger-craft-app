@@ -232,7 +232,7 @@ const CreateInvoice = () => {
     const currentItem = items[currentItemIndex];
     
     return (
-      <DrawerContent className="max-h-[80vh]">
+      <DrawerContent className="max-h-[85vh]">
         <DrawerHeader>
           <DrawerTitle>Edit Line Item</DrawerTitle>
           <DrawerDescription>
@@ -300,26 +300,26 @@ const CreateInvoice = () => {
   };
 
   return (
-    <div className="space-y-6 pb-20">
-      <div className="flex justify-between items-center">
+    <div className="space-y-4 pb-20 px-0 -mx-4 sm:mx-0 sm:px-0">
+      <div className="flex justify-between items-center px-4 sm:px-0">
         <div className="flex items-center gap-2">
           <Button 
             variant="ghost" 
             size="sm" 
             onClick={() => navigate('/invoices')}
-            className="mr-2"
+            className="mr-0"
           >
             <ArrowLeft size={16} />
           </Button>
-          <h1 className="text-xl md:text-3xl font-bold truncate">Create Invoice</h1>
+          <h1 className="text-lg md:text-3xl font-bold truncate">Create Invoice</h1>
         </div>
       </div>
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-        <TabsList className="grid w-full grid-cols-2 mb-4">
+        <TabsList className="grid w-full grid-cols-2 mb-4 mx-4 sm:mx-0">
           <TabsTrigger value="edit" className="flex items-center gap-2">
             <Edit size={16} />
-            <span>{!isMobile && "Edit"}</span>
+            <span>Edit</span>
           </TabsTrigger>
           <TabsTrigger 
             value="preview" 
@@ -327,15 +327,15 @@ const CreateInvoice = () => {
             onClick={generatePreview}
           >
             <Eye size={16} />
-            <span>{!isMobile && "Preview"}</span>
+            <span>Preview</span>
           </TabsTrigger>
         </TabsList>
 
-        <TabsContent value="edit">
+        <TabsContent value="edit" className="px-4 sm:px-0">
           <Card>
-            <CardContent className="pt-6">
+            <CardContent className="pt-4 pb-2 px-3 sm:p-6 sm:pt-6">
               <Form {...form}>
-                <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+                <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     {/* Customer Selection */}
                     <FormField
@@ -353,7 +353,7 @@ const CreateInvoice = () => {
                                 <SelectValue placeholder="Select a customer" />
                               </SelectTrigger>
                             </FormControl>
-                            <SelectContent position={isMobile ? "popper" : "item-aligned"}>
+                            <SelectContent position="popper" className="min-w-[var(--radix-select-trigger-width)]">
                               {customers.map(customer => (
                                 <SelectItem key={customer.id} value={customer.id}>
                                   {customer.name}
@@ -382,7 +382,7 @@ const CreateInvoice = () => {
                                 <SelectValue placeholder="Select currency" />
                               </SelectTrigger>
                             </FormControl>
-                            <SelectContent position={isMobile ? "popper" : "item-aligned"}>
+                            <SelectContent position="popper" className="min-w-[var(--radix-select-trigger-width)]">
                               <SelectItem value="USD">USD ($)</SelectItem>
                               <SelectItem value="EUR">EUR (€)</SelectItem>
                               <SelectItem value="GBP">GBP (£)</SelectItem>
@@ -769,26 +769,27 @@ const CreateInvoice = () => {
           </Card>
         </TabsContent>
 
-        <TabsContent value="preview">
+        <TabsContent value="preview" className="px-0 -mx-4 sm:mx-0 sm:px-0 h-full">
           {invoicePreview && (
-            <div className="space-y-4">
-              <div className={cn(
-                "flex justify-end",
-                isMobile ? "mb-2" : "mb-4"
-              )}>
-                <Button
-                  onClick={handleDownloadPdf}
-                  className="flex items-center gap-2"
-                >
-                  <Download size={16} />
-                  <span>Download PDF</span>
-                </Button>
-              </div>
+            <div className="space-y-4 h-full">
+              {!isMobile && (
+                <div className="flex justify-end px-4 mb-4">
+                  <Button
+                    onClick={handleDownloadPdf}
+                    className="flex items-center gap-2"
+                  >
+                    <Download size={16} />
+                    <span>Download PDF</span>
+                  </Button>
+                </div>
+              )}
               
-              <Card>
+              <Card className={cn(
+                isMobile ? "rounded-none border-x-0 h-[calc(100vh-10rem)]" : ""
+              )}>
                 <CardContent className={cn(
-                  "bg-white shadow-sm overflow-auto",
-                  isMobile ? "p-3" : "p-6"
+                  "bg-white overflow-auto",
+                  isMobile ? "p-3 h-full" : "p-6 shadow-sm"
                 )}>
                   <div 
                     ref={previewRef} 
