@@ -16,6 +16,7 @@ import Settings from "./pages/Settings";
 import NotFound from "./pages/NotFound";
 import Login from "./pages/Login";
 import Signup from "./pages/Signup";
+import ProtectedRoute from "./components/auth/ProtectedRoute";
 
 const queryClient = new QueryClient();
 
@@ -31,11 +32,31 @@ const App = () => (
               <Routes>
                 <Route path="/login" element={<Login />} />
                 <Route path="/signup" element={<Signup />} />
-                <Route path="/" element={<AppLayout><Dashboard /></AppLayout>} />
-                <Route path="/invoices" element={<AppLayout><Invoices /></AppLayout>} />
-                <Route path="/invoices/new" element={<AppLayout><CreateInvoice /></AppLayout>} />
-                <Route path="/customers" element={<AppLayout><Customers /></AppLayout>} />
-                <Route path="/settings" element={<AppLayout><Settings /></AppLayout>} />
+                <Route path="/" element={
+                  <ProtectedRoute>
+                    <AppLayout><Dashboard /></AppLayout>
+                  </ProtectedRoute>
+                } />
+                <Route path="/invoices" element={
+                  <ProtectedRoute>
+                    <AppLayout><Invoices /></AppLayout>
+                  </ProtectedRoute>
+                } />
+                <Route path="/invoices/new" element={
+                  <ProtectedRoute>
+                    <AppLayout><CreateInvoice /></AppLayout>
+                  </ProtectedRoute>
+                } />
+                <Route path="/customers" element={
+                  <ProtectedRoute>
+                    <AppLayout><Customers /></AppLayout>
+                  </ProtectedRoute>
+                } />
+                <Route path="/settings" element={
+                  <ProtectedRoute>
+                    <AppLayout><Settings /></AppLayout>
+                  </ProtectedRoute>
+                } />
                 <Route path="*" element={<NotFound />} />
               </Routes>
             </TooltipProvider>

@@ -2,6 +2,7 @@
 import React from 'react';
 import { NavLink } from 'react-router-dom';
 import { cn } from '@/lib/utils';
+import { useAuth } from '@/context/AuthContext';
 import { 
   LayoutDashboard, 
   FileText, 
@@ -16,6 +17,8 @@ interface SidebarProps {
 }
 
 export function Sidebar({ collapsed }: SidebarProps) {
+  const { user } = useAuth();
+  
   const navItems = [
     { name: 'Dashboard', path: '/', icon: LayoutDashboard },
     { name: 'Invoices', path: '/invoices', icon: FileText },
@@ -78,14 +81,20 @@ export function Sidebar({ collapsed }: SidebarProps) {
               collapsed && "mx-auto"
             )}
           >
-            U
+            {user?.email ? user.email.charAt(0).toUpperCase() : 'U'}
           </div>
           <div className={cn(
             "ml-3 transition-all duration-300",
             collapsed ? "opacity-0 w-0" : "opacity-100"
           )}>
-            <p className="text-sm font-medium text-sidebar-foreground">User</p>
-            <p className="text-xs text-sidebar-foreground/70">user@example.com</p>
+            <p className="text-sm font-medium text-sidebar-foreground truncate max-w-[140px]">
+              {user?.email || 'User'}
+            </p>
+            {user?.user_metadata?.full_name && (
+              <p className="text-xs text-sidebar-foreground/70">
+                {user.user_metadata.full_name}
+              </p>
+            )}
           </div>
         </div>
       </div>

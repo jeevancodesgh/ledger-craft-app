@@ -1,12 +1,29 @@
 
 import React from 'react';
-import { Bell, Menu, Search } from 'lucide-react';
+import { Bell, Menu, Search, LogOut } from 'lucide-react';
+import { useAuth } from '@/context/AuthContext';
+import { Button } from '@/components/ui/button';
+import { useToast } from '@/hooks/use-toast';
+import { useNavigate } from 'react-router-dom';
 
 interface HeaderProps {
   toggleSidebar: () => void;
 }
 
 export function Header({ toggleSidebar }: HeaderProps) {
+  const { user, signOut } = useAuth();
+  const { toast } = useToast();
+  const navigate = useNavigate();
+
+  const handleSignOut = async () => {
+    await signOut();
+    toast({
+      title: 'Signed out successfully',
+      description: 'You have been logged out of your account.'
+    });
+    navigate('/login');
+  };
+
   return (
     <header className="h-16 bg-background border-b border-border flex items-center px-6 sticky top-0 z-10">
       <button 
@@ -34,6 +51,17 @@ export function Header({ toggleSidebar }: HeaderProps) {
           <Bell className="h-5 w-5" />
           <span className="absolute top-1 right-1 w-2 h-2 bg-invoice-coral rounded-full"></span>
         </button>
+        
+        {user && (
+          <div className="flex items-center gap-2">
+            <span className="text-sm hidden md:block">
+              {user.email}
+            </span>
+            <Button variant="ghost" size="icon" onClick={handleSignOut} title="Sign Out">
+              <LogOut className="h-5 w-5" />
+            </Button>
+          </div>
+        )}
       </div>
     </header>
   );
