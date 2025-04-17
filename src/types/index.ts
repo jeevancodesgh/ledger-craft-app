@@ -3,41 +3,51 @@ export interface Customer {
   id: string;
   name: string;
   email: string;
-  address: string;
-  city: string;
-  state: string;
-  zip: string;
+  address: string | null;
+  city: string | null;
+  state: string | null;
+  zip: string | null;
   country: string;
-  phone?: string;
-  isVip?: boolean;
-  tags?: string[];
+  phone?: string | null;
+  isVip?: boolean | null;
+  tags?: string[] | null;
+  userId?: string; // Added for Supabase compatibility
+  createdAt?: string;
+  updatedAt?: string;
 }
 
 export interface BusinessProfile {
+  id?: string;
   name: string;
   email: string;
-  phone?: string;
-  address: string;
-  city: string;
-  state: string;
-  zip: string;
+  phone?: string | null;
+  address: string | null;
+  city: string | null;
+  state: string | null;
+  zip: string | null;
   country: string;
-  taxId?: string;
-  logoUrl?: string;
-  website?: string;
-  defaultTaxRate?: number;
-  defaultTerms?: string;
-  defaultNotes?: string;
-  bankInfo?: string;
+  taxId?: string | null;
+  logoUrl?: string | null;
+  website?: string | null;
+  defaultTaxRate?: number | null;
+  defaultTerms?: string | null;
+  defaultNotes?: string | null;
+  bankInfo?: string | null;
+  userId?: string; // Added for Supabase compatibility
+  createdAt?: string;
+  updatedAt?: string;
 }
 
 export interface LineItem {
   id: string;
+  invoiceId?: string; // Added for Supabase compatibility
   description: string;
   quantity: number;
   rate: number;
-  tax?: number;
+  tax?: number | null;
   total: number;
+  createdAt?: string;
+  updatedAt?: string;
 }
 
 export type InvoiceStatus = 'draft' | 'sent' | 'paid' | 'overdue';
@@ -52,12 +62,88 @@ export interface Invoice {
   items: LineItem[];
   subtotal: number;
   taxAmount: number;
-  discount?: number;
+  discount?: number | null;
   total: number;
   status: InvoiceStatus;
-  notes?: string;
-  terms?: string;
+  notes?: string | null;
+  terms?: string | null;
   currency: string;
-  createdAt: string;
-  updatedAt: string;
+  userId?: string; // Added for Supabase compatibility
+  createdAt?: string;
+  updatedAt?: string;
+}
+
+// Helper interfaces for Supabase compatibility
+export interface SupabaseCustomer {
+  id: string;
+  name: string;
+  email: string;
+  address: string | null;
+  city: string | null;
+  state: string | null;
+  zip: string | null;
+  country: string;
+  phone: string | null;
+  is_vip: boolean | null;
+  tags: string[] | null;
+  user_id: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface SupabaseInvoice {
+  id: string;
+  invoice_number: string;
+  customer_id: string;
+  date: string;
+  due_date: string;
+  subtotal: number;
+  tax_amount: number;
+  discount: number | null;
+  total: number;
+  status: InvoiceStatus;
+  notes: string | null;
+  terms: string | null;
+  currency: string;
+  user_id: string;
+  created_at: string;
+  updated_at: string;
+  customers?: {
+    name: string;
+    email: string;
+  };
+}
+
+export interface SupabaseLineItem {
+  id: string;
+  invoice_id: string;
+  description: string;
+  quantity: number;
+  rate: number;
+  tax: number | null;
+  total: number;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface SupabaseBusinessProfile {
+  id: string;
+  name: string;
+  email: string;
+  phone: string | null;
+  address: string | null;
+  city: string | null;
+  state: string | null;
+  zip: string | null;
+  country: string;
+  tax_id: string | null;
+  logo_url: string | null;
+  website: string | null;
+  default_tax_rate: number | null;
+  default_terms: string | null;
+  default_notes: string | null;
+  bank_info: string | null;
+  user_id: string;
+  created_at: string;
+  updated_at: string;
 }
