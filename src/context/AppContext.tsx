@@ -1,4 +1,3 @@
-
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { Customer, Invoice, BusinessProfile } from '@/types';
 import { customerService, invoiceService, businessProfileService, dashboardService } from '@/services/supabaseService';
@@ -35,7 +34,7 @@ interface AppContextType {
   // Invoice methods
   getInvoice: (id: string) => Promise<Invoice | undefined>;
   getInvoicesForCustomer: (customerId: string) => Promise<Invoice[]>;
-  createInvoice: (invoice: Omit<Invoice, 'id' | 'invoiceNumber' | 'createdAt' | 'updatedAt'>) => Promise<Invoice>;
+  createInvoice: (invoice: Omit<Invoice, 'id' | 'createdAt' | 'updatedAt'>) => Promise<Invoice>;
   updateInvoice: (invoice: Invoice) => Promise<Invoice>;
   deleteInvoice: (id: string) => Promise<void>;
   updateInvoiceStatus: (id: string, status: Invoice['status']) => Promise<Invoice | undefined>;
@@ -214,7 +213,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
     }
   };
   
-  const createInvoice = async (invoice: Omit<Invoice, 'id' | 'invoiceNumber' | 'createdAt' | 'updatedAt'>) => {
+  const createInvoice = async (invoice: Omit<Invoice, 'id' | 'createdAt' | 'updatedAt'>) => {
     try {
       const { items, ...invoiceData } = invoice as any;
       const newInvoice = await invoiceService.createInvoice(invoiceData, items);
