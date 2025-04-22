@@ -4,7 +4,6 @@ import { useAppContext } from '@/context/AppContext';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { z } from 'zod';
 import { useForm } from 'react-hook-form';
@@ -85,11 +84,22 @@ const Settings = () => {
   const onSubmit = async (data: ProfileFormValues) => {
     setIsSaving(true);
     try {
-      // Convert form data to BusinessProfile type
+      // Convert form data to BusinessProfile type - ensuring required fields are present
       const profileData: BusinessProfile = {
-        ...data,
-        id: businessProfile?.id,
+        name: data.name,
+        email: data.email,
+        country: data.country,
+        phone: data.phone || null,
+        website: data.website || null,
+        taxId: data.taxId || null,
         defaultTaxRate: data.defaultTaxRate as number | null,
+        address: data.address || null,
+        city: data.city || null,
+        state: data.state || null,
+        zip: data.zip || null,
+        defaultTerms: data.defaultTerms || null,
+        defaultNotes: data.defaultNotes || null,
+        id: businessProfile?.id,
       };
 
       await updateBusinessProfile(profileData);
