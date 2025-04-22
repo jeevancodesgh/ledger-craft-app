@@ -11,6 +11,7 @@ import { AppLayout } from "./components/layout/AppLayout";
 import Dashboard from "./pages/Dashboard";
 import Invoices from "./pages/Invoices";
 import CreateInvoice from "./pages/CreateInvoice";
+import EditInvoice from "./pages/EditInvoice";
 import Customers from "./pages/Customers";
 import Settings from "./pages/Settings";
 import NotFound from "./pages/NotFound";
@@ -45,6 +46,11 @@ const App = () => (
                 <Route path="/invoices/new" element={
                   <ProtectedRoute>
                     <AppLayout><CreateInvoice /></AppLayout>
+                  </ProtectedRoute>
+                } />
+                <Route path="/invoices/:id/edit" element={
+                  <ProtectedRoute>
+                    <AppLayout><EditInvoice /></AppLayout>
                   </ProtectedRoute>
                 } />
                 <Route path="/customers" element={

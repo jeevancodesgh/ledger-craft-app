@@ -6,6 +6,8 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Loader2 } from "lucide-react";
 import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { Select } from "@/components/ui/select";
 
 const EditInvoicePage = () => {
   const { id } = useParams<{ id: string }>();
@@ -37,8 +39,8 @@ const EditInvoicePage = () => {
       .finally(() => setLoading(false));
   }, [id, getInvoice]);
 
-  // On customers refresh, we could provide a select for the customer too
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+  // Updated to handle select elements as well
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     setLocalForm({ ...localForm, [e.target.name]: e.target.value });
   };
 
