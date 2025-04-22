@@ -1,4 +1,3 @@
-
 import React, { useState, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
@@ -58,8 +57,28 @@ import {
   CollapsibleTrigger,
 } from "@/components/ui/collapsible";
 
+// Add new helper to generate next invoice number based on business profile format and sequence
+function getNextInvoiceNumber(format: string | null, sequence: number | null): string {
+  // Default format: INV-YYYY-MM-DD-001
+  const today = new Date();
+  const year = today.getFullYear();
+  const month = String(today.getMonth() + 1).padStart(2, '0');
+  const day = String(today.getDate()).padStart(2, '0');
+  const seq = (sequence || 0) + 1;
+  const paddedSeq = String(seq).padStart(3, '0');
+
+  let result = (format || 'INV-YYYY-MM-DD-001')
+    .replace(/YYYY/g, year.toString())
+    .replace(/MM/g, month)
+    .replace(/DD/g, day)
+    .replace(/001|SEQ/g, paddedSeq);
+
+  return result;
+}
+
 // Form schema for invoice validation
 const invoiceFormSchema = z.object({
+  invoiceNumber: z.string().min(1, 'Invoice number is required'),
   customerId: z.string().min(1, 'Customer is required'),
   date: z.date({
     required_error: "Invoice date is required",
@@ -91,10 +110,14 @@ const CreateInvoice = () => {
   const [currentItemIndex, setCurrentItemIndex] = useState<number | null>(null);
   const [isLineItemsOpen, setIsLineItemsOpen] = useState(true);
 
+  // Track invoice number in form state
+  const [invoiceNumber, setInvoiceNumber] = useState('');
+
   // Form setup
   const form = useForm<InvoiceFormValues>({
     resolver: zodResolver(invoiceFormSchema),
     defaultValues: {
+      invoiceNumber: '',
       customerId: '',
       date: new Date(),
       dueDate: new Date(new Date().setDate(new Date().getDate() + 30)),
@@ -103,6 +126,27 @@ const CreateInvoice = () => {
       currency: 'USD',
     }
   });
+
+  // On mount or when businessProfile changes, generate next invoice number
+  useEffect(() => {
+    if (businessProfile) {
+      const nextNumber = getNextInvoiceNumber(
+        businessProfile.invoiceNumberFormat,
+        businessProfile.invoiceNumberSequence
+      );
+      setInvoiceNumber(nextNumber);
+      // Update form value directly for consistency
+      form.setValue('invoiceNumber', nextNumber);
+    }
+  // only run when businessProfile appears
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [businessProfile]);
+
+  // Update local and form state if user changes it
+  const handleInvoiceNumberChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setInvoiceNumber(e.target.value);
+    form.setValue('invoiceNumber', e.target.value);
+  };
 
   // Update line item
   const updateItem = (index: number, field: keyof LineItem, value: any) => {
@@ -168,7 +212,7 @@ const CreateInvoice = () => {
     
     const previewInvoice: Invoice = {
       id: 'preview',
-      invoiceNumber: generateInvoiceNumber(),
+      invoiceNumber: formValues.invoiceNumber,
       customerId: formValues.customerId,
       customer: customers.find(c => c.id === formValues.customerId),
       date: formatDate(formValues.date),
@@ -193,6 +237,7 @@ const CreateInvoice = () => {
   const onSubmit = async (values: InvoiceFormValues) => {
     try {
       await createInvoice({
+        invoiceNumber: values.invoiceNumber, // <== include in payload
         customerId: values.customerId,
         date: formatDate(values.date),
         dueDate: formatDate(values.dueDate),
@@ -336,6 +381,29 @@ const CreateInvoice = () => {
             <CardContent className="pt-4 pb-2 px-3 sm:p-6 sm:pt-6">
               <Form {...form}>
                 <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+                  {/* Invoice Number Field - new */}
+                  <div className="mb-3">
+                    <FormField
+                      control={form.control}
+                      name="invoiceNumber"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Invoice Number</FormLabel>
+                          <FormControl>
+                            <Input
+                              {...field}
+                              value={invoiceNumber}
+                              onChange={handleInvoiceNumberChange}
+                              placeholder="Invoice Number"
+                              className="w-full"
+                              autoComplete="off"
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  </div>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     {/* Customer Selection */}
                     <FormField
@@ -867,119 +935,4 @@ const CreateInvoice = () => {
                         <div className="pt-2 space-y-1">
                           <div className="flex justify-between">
                             <span className="text-gray-600">Subtotal</span>
-                            <span className="text-gray-800">
-                              {formatCurrency(invoicePreview.subtotal, invoicePreview.currency)}
-                            </span>
-                          </div>
-                          <div className="flex justify-between">
-                            <span className="text-gray-600">Tax</span>
-                            <span className="text-gray-800">
-                              {formatCurrency(invoicePreview.taxAmount, invoicePreview.currency)}
-                            </span>
-                          </div>
-                          <div className="flex justify-between pt-1 border-t border-gray-200">
-                            <span className="font-bold">Total</span>
-                            <span className="font-bold text-gray-800">
-                              {formatCurrency(invoicePreview.total, invoicePreview.currency)}
-                            </span>
-                          </div>
-                        </div>
-                      </div>
-                    ) : (
-                      <table className="min-w-full mb-6">
-                        <thead>
-                          <tr className="bg-gray-100">
-                            <th className="text-left py-3 px-4 font-medium text-gray-600">Item</th>
-                            <th className="text-center py-3 px-4 font-medium text-gray-600">Quantity</th>
-                            <th className="text-right py-3 px-4 font-medium text-gray-600">Rate</th>
-                            <th className="text-right py-3 px-4 font-medium text-gray-600">Amount</th>
-                          </tr>
-                        </thead>
-                        <tbody>
-                          {invoicePreview.items.map((item, index) => (
-                            <tr key={index} className="border-b border-gray-200">
-                              <td className="py-3 px-4 text-gray-800">{item.description || "Untitled Item"}</td>
-                              <td className="py-3 px-4 text-center text-gray-800">{item.quantity}</td>
-                              <td className="py-3 px-4 text-right text-gray-800">
-                                {formatCurrency(item.rate, invoicePreview.currency)}
-                              </td>
-                              <td className="py-3 px-4 text-right text-gray-800">
-                                {formatCurrency(item.total, invoicePreview.currency)}
-                              </td>
-                            </tr>
-                          ))}
-                        </tbody>
-                        <tfoot>
-                          <tr>
-                            <td colSpan={3} className="text-right py-3 px-4 font-medium text-gray-600">Subtotal</td>
-                            <td className="text-right py-3 px-4 text-gray-800">
-                              {formatCurrency(invoicePreview.subtotal, invoicePreview.currency)}
-                            </td>
-                          </tr>
-                          <tr>
-                            <td colSpan={3} className="text-right py-3 px-4 font-medium text-gray-600">Tax</td>
-                            <td className="text-right py-3 px-4 text-gray-800">
-                              {formatCurrency(invoicePreview.taxAmount, invoicePreview.currency)}
-                            </td>
-                          </tr>
-                          <tr>
-                            <td colSpan={3} className="text-right py-3 px-4 font-bold text-gray-800">Total</td>
-                            <td className="text-right py-3 px-4 font-bold text-gray-800">
-                              {formatCurrency(invoicePreview.total, invoicePreview.currency)}
-                            </td>
-                          </tr>
-                        </tfoot>
-                      </table>
-                    )}
-                    
-                    {/* Notes and Terms */}
-                    {invoicePreview.notes && (
-                      <div className="mb-4">
-                        <h3 className="font-medium text-gray-600 mb-1">Notes:</h3>
-                        <p className="text-gray-800 whitespace-pre-wrap">{invoicePreview.notes}</p>
-                      </div>
-                    )}
-                    
-                    {invoicePreview.terms && (
-                      <div className="mb-4">
-                        <h3 className="font-medium text-gray-600 mb-1">Terms & Conditions:</h3>
-                        <p className="text-gray-800 whitespace-pre-wrap">{invoicePreview.terms}</p>
-                      </div>
-                    )}
-                    
-                    <div className="text-center text-gray-500 text-sm mt-6">
-                      Thank you for your business!
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-              
-              {/* Mobile Action Bar */}
-              {isMobile && (
-                <div className="fixed bottom-0 left-0 right-0 p-4 bg-background border-t z-10 flex gap-2">
-                  <Button 
-                    variant="outline"
-                    className="flex-1"
-                    onClick={() => setActiveTab('edit')}
-                  >
-                    <Edit size={16} className="mr-1" />
-                    Edit
-                  </Button>
-                  <Button 
-                    onClick={handleDownloadPdf}
-                    className="flex-1"
-                  >
-                    <Download size={16} className="mr-1" />
-                    Download
-                  </Button>
-                </div>
-              )}
-            </div>
-          )}
-        </TabsContent>
-      </Tabs>
-    </div>
-  );
-};
-
-export default CreateInvoice;
+                            <span className="text-gray-80
