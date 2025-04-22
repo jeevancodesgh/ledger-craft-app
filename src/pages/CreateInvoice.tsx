@@ -1,3 +1,4 @@
+
 import React, { useState, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
@@ -21,18 +22,16 @@ import {
   CalendarIcon, 
   Plus, 
   Trash2, 
-  FileText, 
   Download, 
   Save, 
   ArrowLeft,
   Eye,
-  Menu,
   ChevronsUpDown,
   Edit,
   Check
 } from 'lucide-react';
 import { generateInvoicePdf } from '@/utils/pdfUtils';
-import { formatCurrency, generateInvoiceNumber, formatDate } from '@/utils/invoiceUtils';
+import { formatCurrency, formatDate } from '@/utils/invoiceUtils';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Calendar } from '@/components/ui/calendar';
 import { LineItem, Invoice } from '@/types';
@@ -48,9 +47,7 @@ import {
   DrawerFooter,
   DrawerHeader,
   DrawerTitle,
-  DrawerTrigger,
 } from "@/components/ui/drawer";
-import { Checkbox } from "@/components/ui/checkbox";
 import {
   Collapsible,
   CollapsibleContent,
@@ -935,4 +932,99 @@ const CreateInvoice = () => {
                         <div className="pt-2 space-y-1">
                           <div className="flex justify-between">
                             <span className="text-gray-600">Subtotal</span>
-                            <span className="text-gray-80
+                            <span className="text-gray-800">{formatCurrency(invoicePreview.subtotal, invoicePreview.currency)}</span>
+                          </div>
+                          <div className="flex justify-between">
+                            <span className="text-gray-600">Tax</span>
+                            <span className="text-gray-800">{formatCurrency(invoicePreview.taxAmount, invoicePreview.currency)}</span>
+                          </div>
+                          <div className="flex justify-between border-t pt-2 mt-2">
+                            <span className="font-bold">Total</span>
+                            <span className="font-bold">{formatCurrency(invoicePreview.total, invoicePreview.currency)}</span>
+                          </div>
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="mb-8">
+                        <table className="min-w-full">
+                          <thead>
+                            <tr className="border-b">
+                              <th className="text-left py-2 text-gray-600">Description</th>
+                              <th className="text-right py-2 text-gray-600">Qty</th>
+                              <th className="text-right py-2 text-gray-600">Rate</th>
+                              <th className="text-right py-2 text-gray-600">Total</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {invoicePreview.items.map((item, index) => (
+                              <tr key={index} className="border-b">
+                                <td className="py-2">{item.description || "Untitled Item"}</td>
+                                <td className="py-2 text-right">{item.quantity}</td>
+                                <td className="py-2 text-right">{formatCurrency(item.rate, invoicePreview.currency)}</td>
+                                <td className="py-2 text-right">{formatCurrency(item.total, invoicePreview.currency)}</td>
+                              </tr>
+                            ))}
+                          </tbody>
+                          <tfoot>
+                            <tr>
+                              <td colSpan={2} className="pt-2"></td>
+                              <td className="pt-2 text-right font-medium">Subtotal</td>
+                              <td className="pt-2 text-right">{formatCurrency(invoicePreview.subtotal, invoicePreview.currency)}</td>
+                            </tr>
+                            <tr>
+                              <td colSpan={2}></td>
+                              <td className="text-right font-medium">Tax</td>
+                              <td className="text-right">{formatCurrency(invoicePreview.taxAmount, invoicePreview.currency)}</td>
+                            </tr>
+                            <tr className="border-t">
+                              <td colSpan={2}></td>
+                              <td className="pt-2 text-right font-bold">Total</td>
+                              <td className="pt-2 text-right font-bold">{formatCurrency(invoicePreview.total, invoicePreview.currency)}</td>
+                            </tr>
+                          </tfoot>
+                        </table>
+                      </div>
+                    )}
+                    
+                    {/* Notes and Terms */}
+                    {(invoicePreview.notes || invoicePreview.terms) && (
+                      <div className="border-t border-gray-200 pt-6 space-y-4">
+                        {invoicePreview.notes && (
+                          <div>
+                            <h3 className="font-medium mb-2">Notes</h3>
+                            <p className="text-gray-600 whitespace-pre-line">{invoicePreview.notes}</p>
+                          </div>
+                        )}
+                        {invoicePreview.terms && (
+                          <div>
+                            <h3 className="font-medium mb-2">Terms & Conditions</h3>
+                            <p className="text-gray-600 whitespace-pre-line">{invoicePreview.terms}</p>
+                          </div>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                </CardContent>
+              </Card>
+              
+              {/* Mobile PDF Download Button */}
+              {isMobile && (
+                <div className="fixed bottom-0 left-0 right-0 p-4 bg-background border-t z-10">
+                  <Button
+                    onClick={handleDownloadPdf}
+                    className="w-full flex items-center justify-center gap-2"
+                  >
+                    <Download size={16} />
+                    <span>Download PDF</span>
+                  </Button>
+                </div>
+              )}
+            </div>
+          )}
+        </TabsContent>
+      </Tabs>
+    </div>
+  );
+};
+
+export default CreateInvoice;
