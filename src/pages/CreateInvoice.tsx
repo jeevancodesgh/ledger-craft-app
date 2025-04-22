@@ -234,7 +234,7 @@ const CreateInvoice = () => {
   const onSubmit = async (values: InvoiceFormValues) => {
     try {
       await createInvoice({
-        invoiceNumber: values.invoiceNumber, // <== include in payload
+        invoiceNumber: values.invoiceNumber,
         customerId: values.customerId,
         date: formatDate(values.date),
         dueDate: formatDate(values.dueDate),
