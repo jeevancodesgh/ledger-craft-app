@@ -21,6 +21,8 @@ export type Database = {
           default_terms: string | null
           email: string
           id: string
+          invoice_number_format: string | null
+          invoice_number_sequence: number | null
           logo_url: string | null
           name: string
           phone: string | null
@@ -42,6 +44,8 @@ export type Database = {
           default_terms?: string | null
           email: string
           id?: string
+          invoice_number_format?: string | null
+          invoice_number_sequence?: number | null
           logo_url?: string | null
           name: string
           phone?: string | null
@@ -63,6 +67,8 @@ export type Database = {
           default_terms?: string | null
           email?: string
           id?: string
+          invoice_number_format?: string | null
+          invoice_number_sequence?: number | null
           logo_url?: string | null
           name?: string
           phone?: string | null

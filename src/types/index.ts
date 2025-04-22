@@ -1,4 +1,3 @@
-
 export interface Customer {
   id: string;
   name: string;
@@ -33,9 +32,11 @@ export interface BusinessProfile {
   defaultTerms?: string | null;
   defaultNotes?: string | null;
   bankInfo?: string | null;
-  userId?: string; // Added for Supabase compatibility
+  userId?: string;
   createdAt?: string;
   updatedAt?: string;
+  invoiceNumberFormat?: string | null;
+  invoiceNumberSequence?: number | null;
 }
 
 export interface LineItem {
@@ -146,4 +147,6 @@ export interface SupabaseBusinessProfile {
   user_id: string;
   created_at: string;
   updated_at: string;
+  invoice_number_format: string | null;
+  invoice_number_sequence: number | null;
 }

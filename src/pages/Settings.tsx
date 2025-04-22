@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { useAppContext } from '@/context/AppContext';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -13,14 +12,13 @@ import { BusinessProfile } from '@/types';
 import { useToast } from '@/hooks/use-toast';
 import { Loader2 } from 'lucide-react';
 
-// Define the form schema
 const profileFormSchema = z.object({
   name: z.string().min(1, { message: "Business name is required" }),
   email: z.string().email({ message: "Please enter a valid email address" }),
   phone: z.string().optional(),
   website: z.string().optional(),
   taxId: z.string().optional(),
-  defaultTaxRate: z.union([z.number(), z.string()]).optional().transform(value => 
+  defaultTaxRate: z.union([z.number(), z.string()]).optional().transform(value =>
     value === '' ? null : typeof value === 'string' ? parseFloat(value) : value
   ),
   address: z.string().optional(),
@@ -30,6 +28,10 @@ const profileFormSchema = z.object({
   country: z.string().default('USA'),
   defaultTerms: z.string().optional(),
   defaultNotes: z.string().optional(),
+  invoiceNumberFormat: z.string().min(2, { message: "Format required" }).optional(),
+  invoiceNumberSequence: z.union([z.number(), z.string()]).optional().transform(value =>
+    value === '' ? null : typeof value === 'string' ? parseInt(value, 10) : value
+  ),
 });
 
 type ProfileFormValues = z.infer<typeof profileFormSchema>;
@@ -40,7 +42,6 @@ const Settings = () => {
   const { toast } = useToast();
   const [activeTab, setActiveTab] = useState("profile");
 
-  // Set up the form with the business profile data
   const form = useForm<ProfileFormValues>({
     resolver: zodResolver(profileFormSchema),
     defaultValues: {
@@ -57,10 +58,11 @@ const Settings = () => {
       country: businessProfile?.country || 'USA',
       defaultTerms: businessProfile?.defaultTerms || '',
       defaultNotes: businessProfile?.defaultNotes || '',
+      invoiceNumberFormat: businessProfile?.invoiceNumberFormat || 'INV-{YYYY}-{SEQ}',
+      invoiceNumberSequence: businessProfile?.invoiceNumberSequence ?? 1
     },
   });
 
-  // Update form values when business profile loads
   React.useEffect(() => {
     if (businessProfile && !isLoadingProfile) {
       form.reset({
@@ -77,6 +79,8 @@ const Settings = () => {
         country: businessProfile.country || 'USA',
         defaultTerms: businessProfile.defaultTerms || '',
         defaultNotes: businessProfile.defaultNotes || '',
+        invoiceNumberFormat: businessProfile.invoiceNumberFormat || 'INV-{YYYY}-{SEQ}',
+        invoiceNumberSequence: businessProfile.invoiceNumberSequence ?? 1
       });
     }
   }, [businessProfile, isLoadingProfile, form]);
@@ -84,7 +88,6 @@ const Settings = () => {
   const onSubmit = async (data: ProfileFormValues) => {
     setIsSaving(true);
     try {
-      // Convert form data to BusinessProfile type - ensuring required fields are present
       const profileData: BusinessProfile = {
         name: data.name,
         email: data.email,
@@ -100,19 +103,20 @@ const Settings = () => {
         defaultTerms: data.defaultTerms || null,
         defaultNotes: data.defaultNotes || null,
         id: businessProfile?.id,
+        invoiceNumberFormat: data.invoiceNumberFormat?.trim() || 'INV-{YYYY}-{SEQ}',
+        invoiceNumberSequence: data.invoiceNumberSequence ?? 1
       };
-
       await updateBusinessProfile(profileData);
       toast({
         title: "Success",
-        description: "Business profile updated successfully",
+        description: "Business profile updated successfully"
       });
     } catch (error) {
       console.error("Error saving profile:", error);
       toast({
         title: "Error",
         description: "Failed to update business profile",
-        variant: "destructive",
+        variant: "destructive"
       });
     } finally {
       setIsSaving(false);
@@ -126,14 +130,12 @@ const Settings = () => {
   return (
     <div className="space-y-6">
       <h1 className="text-3xl font-bold">Settings</h1>
-      
       <Tabs defaultValue="profile" value={activeTab} onValueChange={setActiveTab}>
         <TabsList>
           <TabsTrigger value="profile">Business Profile</TabsTrigger>
           <TabsTrigger value="preferences">Preferences</TabsTrigger>
           <TabsTrigger value="appearance">Appearance</TabsTrigger>
         </TabsList>
-        
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)}>
             <TabsContent value="profile" className="mt-4">
@@ -293,6 +295,45 @@ const Settings = () => {
                         )}
                       />
                     </div>
+                    
+                    <FormField
+                      control={form.control}
+                      name="invoiceNumberFormat"
+                      render={({ field }) => (
+                        <FormItem className="space-y-2 md:col-span-2">
+                          <FormLabel>Invoice Number Format</FormLabel>
+                          <FormControl>
+                            <Input placeholder="e.g. INV-{YYYY}-{MM}-{DD}-{SEQ}" {...field} />
+                          </FormControl>
+                          <div className="text-xs text-muted-foreground">
+                            Use <span className="font-mono">{'{YYYY}'}</span> for year, <span className="font-mono">{'{MM}'}</span> for month, <span className="font-mono">{'{DD}'}</span> for day, <span className="font-mono">{'{SEQ}'}</span> for sequence.<br />
+                            Example: <span className="font-mono">INV-{'{YYYY}'}-{'{SEQ}'}</span> → <span className="font-mono">INV-2025-001</span>
+                          </div>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    
+                    <FormField
+                      control={form.control}
+                      name="invoiceNumberSequence"
+                      render={({ field }) => (
+                        <FormItem className="space-y-2">
+                          <FormLabel>Next Sequence Number</FormLabel>
+                          <FormControl>
+                            <Input
+                              type="number"
+                              min={1}
+                              step={1}
+                              placeholder="1"
+                              {...field}
+                              onChange={e => field.onChange(Number(e.target.value))}
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
                   </div>
                 </CardContent>
               </Card>
@@ -357,9 +398,9 @@ const Settings = () => {
             </TabsContent>
             
             <div className="mt-6">
-              <Button 
-                type="submit" 
-                className="bg-invoice-teal hover:bg-invoice-teal/90" 
+              <Button
+                type="submit"
+                className="bg-invoice-teal hover:bg-invoice-teal/90"
                 disabled={isSaving}
               >
                 {isSaving ? (

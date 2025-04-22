@@ -121,10 +121,14 @@ const mapSupabaseBusinessProfileToBusinessProfile = (profile: SupabaseBusinessPr
   bankInfo: profile.bank_info,
   userId: profile.user_id,
   createdAt: profile.created_at,
-  updatedAt: profile.updated_at
+  updatedAt: profile.updated_at,
+  invoiceNumberFormat: profile.invoice_number_format,
+  invoiceNumberSequence: profile.invoice_number_sequence
 });
 
-const mapBusinessProfileToSupabaseBusinessProfile = async (profile: Omit<BusinessProfile, 'id' | 'createdAt' | 'updatedAt'>): Promise<Omit<SupabaseBusinessProfile, 'id' | 'created_at' | 'updated_at'>> => {
+const mapBusinessProfileToSupabaseBusinessProfile = async (
+  profile: Omit<BusinessProfile, 'id' | 'createdAt' | 'updatedAt'>
+): Promise<Omit<SupabaseBusinessProfile, 'id' | 'created_at' | 'updated_at'>> => {
   // Get current user ID
   const { data: { user } } = await supabase.auth.getUser();
   const userId = user?.id || '';
@@ -145,7 +149,9 @@ const mapBusinessProfileToSupabaseBusinessProfile = async (profile: Omit<Busines
     default_terms: profile.defaultTerms || null,
     default_notes: profile.defaultNotes || null,
     bank_info: profile.bankInfo || null,
-    user_id: profile.userId || userId
+    user_id: profile.userId || userId,
+    invoice_number_format: profile.invoiceNumberFormat || null,
+    invoice_number_sequence: profile.invoiceNumberSequence ?? null
   };
 };
 
