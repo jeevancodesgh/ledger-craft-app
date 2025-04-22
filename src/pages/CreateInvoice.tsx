@@ -54,9 +54,7 @@ import {
 } from "@/components/ui/collapsible";
 import InvoiceForm from "@/components/invoice/InvoiceForm";
 
-// Add new helper to generate next invoice number based on business profile format and sequence
 function getNextInvoiceNumber(format: string | null, sequence: number | null): string {
-  // Default format: INV-YYYY-MM-DD-001
   const today = new Date();
   const year = today.getFullYear();
   const month = String(today.getMonth() + 1).padStart(2, '0');
@@ -73,7 +71,6 @@ function getNextInvoiceNumber(format: string | null, sequence: number | null): s
   return result;
 }
 
-// Form schema for invoice validation
 const invoiceFormSchema = z.object({
   invoiceNumber: z.string().min(1, 'Invoice number is required'),
   customerId: z.string().min(1, 'Customer is required'),
@@ -94,7 +91,15 @@ const CreateInvoice = () => {
   const { customers, isLoadingCustomers, createInvoice, businessProfile } = useAppContext();
   const navigate = useNavigate();
 
-  const handleSubmit = async (values: any, items: any, total: number, subtotal: number, taxAmount: number) => {
+  const handleSubmit = async (
+    values: any,
+    items: any,
+    total: number,
+    subtotal: number,
+    taxAmount: number,
+    additionalCharges: number,
+    discount: number
+  ) => {
     try {
       await createInvoice({
         invoiceNumber: values.invoiceNumber,
@@ -109,6 +114,8 @@ const CreateInvoice = () => {
         currency: values.currency,
         notes: values.notes,
         terms: values.terms,
+        additionalCharges: additionalCharges,
+        discount: discount,
       });
       navigate('/invoices');
     } catch (error) {

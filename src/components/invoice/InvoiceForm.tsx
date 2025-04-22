@@ -1,4 +1,3 @@
-
 import React, { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useForm } from "react-hook-form";
@@ -50,7 +49,7 @@ interface InvoiceFormProps {
   customers: Customer[];
   businessProfile: BusinessProfile | null;
   isLoadingCustomers: boolean;
-  onSubmit: (values: any, lineItems: LineItem[], total: number, subtotal: number, taxAmount: number) => Promise<void>;
+  onSubmit: (values: any, lineItems: LineItem[], total: number, subtotal: number, taxAmount: number, additionalCharges: number, discount: number) => Promise<void>;
   onCancel: () => void;
 }
 
@@ -62,6 +61,8 @@ const invoiceFormSchema = z.object({
   notes: z.string().optional(),
   terms: z.string().optional(),
   currency: z.string().default('USD'),
+  additionalCharges: z.coerce.number().nonnegative("Must be a positive amount").default(0), // new
+  discount: z.coerce.number().nonnegative("Must be a positive amount").default(0), // new
 });
 
 type InvoiceFormValues = z.infer<typeof invoiceFormSchema>;
@@ -94,6 +95,12 @@ const InvoiceForm: React.FC<InvoiceFormProps> = ({
   const [isLineItemsOpen, setIsLineItemsOpen] = useState(true);
   // Invoice Number (local state so user can type & edit it)
   const [invoiceNumber, setInvoiceNumber] = useState(initialValues?.invoiceNumber || "");
+  const [additionalCharges, setAdditionalCharges] = useState(
+    initialValues?.additionalCharges ?? 0
+  );
+  const [discount, setDiscount] = useState(
+    initialValues?.discount ?? 0
+  );
 
   // RHF Form setup
   const form = useForm<InvoiceFormValues>({
@@ -114,6 +121,8 @@ const InvoiceForm: React.FC<InvoiceFormProps> = ({
       notes: initialValues?.notes || businessProfile?.defaultNotes || "",
       terms: initialValues?.terms || businessProfile?.defaultTerms || "",
       currency: initialValues?.currency || "USD",
+      additionalCharges: initialValues?.additionalCharges ?? 0,
+      discount: initialValues?.discount ?? 0,
     }
   });
 
@@ -142,11 +151,15 @@ const InvoiceForm: React.FC<InvoiceFormProps> = ({
         notes: initialValues.notes || businessProfile?.defaultNotes || "",
         terms: initialValues.terms || businessProfile?.defaultTerms || "",
         currency: initialValues.currency || "USD",
+        additionalCharges: initialValues.additionalCharges ?? 0,
+        discount: initialValues.discount ?? 0,
       });
       setInvoiceNumber(initialValues.invoiceNumber || "");
       setItems(initialValues.items && initialValues.items.length > 0
         ? initialValues.items
         : [{ id: "1", description: "", quantity: 1, rate: 0, total: 0 }]);
+      setAdditionalCharges(initialValues.additionalCharges ?? 0);
+      setDiscount(initialValues.discount ?? 0);
     }
     // eslint-disable-next-line
   }, [initialValues]);
@@ -166,8 +179,8 @@ const InvoiceForm: React.FC<InvoiceFormProps> = ({
       return sum + (Number(item.rate) * Number(item.quantity) * taxRate) / 100;
     }, 0);
     setTaxAmount(newTaxAmount);
-    setTotal(newSubtotal + newTaxAmount);
-  }, [items]);
+    setTotal(newSubtotal + newTaxAmount + Number(additionalCharges) - Number(discount));
+  }, [items, additionalCharges, discount]);
 
   // Line items operations
   const updateItem = (idx: number, field: keyof LineItem, value: any) => {
@@ -202,6 +215,17 @@ const InvoiceForm: React.FC<InvoiceFormProps> = ({
     setOpenLineItemDrawer(true);
   };
 
+  const handleAdditionalChargesChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const v = Number(e.target.value);
+    setAdditionalCharges(isNaN(v) ? 0 : v);
+    form.setValue("additionalCharges", isNaN(v) ? 0 : v);
+  };
+  const handleDiscountChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const v = Number(e.target.value);
+    setDiscount(isNaN(v) ? 0 : v);
+    form.setValue("discount", isNaN(v) ? 0 : v);
+  };
+
   // Invoice Preview
   const generatePreview = () => {
     const vals = form.getValues();
@@ -222,6 +246,8 @@ const InvoiceForm: React.FC<InvoiceFormProps> = ({
       terms: vals.terms,
       createdAt: initialValues?.createdAt || new Date().toISOString(),
       updatedAt: new Date().toISOString(),
+      additionalCharges: additionalCharges,
+      discount: discount,
     };
     setInvoicePreview(previewInvoice);
     setActiveTab("preview");
@@ -312,7 +338,15 @@ const InvoiceForm: React.FC<InvoiceFormProps> = ({
 
   // Form submit handler
   const localOnSubmit = async (values: InvoiceFormValues) => {
-    await onSubmit(values, items, total, subtotal, taxAmount);
+    await onSubmit(
+      values,
+      items,
+      subtotal + taxAmount + Number(additionalCharges) - Number(discount), // total
+      subtotal,
+      taxAmount,
+      Number(additionalCharges),
+      Number(discount)
+    );
   };
 
   const selectedCustomer = customers.find(c => c.id === form.watch('customerId'));
@@ -518,6 +552,52 @@ const InvoiceForm: React.FC<InvoiceFormProps> = ({
                       )}
                     />
                   </div>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {/* Additional Charges */}
+                    <FormField
+                      control={form.control}
+                      name="additionalCharges"
+                      render={() => (
+                        <FormItem>
+                          <FormLabel>Additional Charges</FormLabel>
+                          <FormControl>
+                            <Input
+                              type="number"
+                              min={0}
+                              step="0.01"
+                              value={additionalCharges}
+                              onChange={handleAdditionalChargesChange}
+                              placeholder="e.g. shipping, handling"
+                              className="w-full"
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    {/* Discount */}
+                    <FormField
+                      control={form.control}
+                      name="discount"
+                      render={() => (
+                        <FormItem>
+                          <FormLabel>Discount</FormLabel>
+                          <FormControl>
+                            <Input
+                              type="number"
+                              min={0}
+                              step="0.01"
+                              value={discount}
+                              onChange={handleDiscountChange}
+                              placeholder="Any deduction"
+                              className="w-full"
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  </div>
                   {/* Line Items Section */}
                   <div className="space-y-4">
                     <Collapsible
@@ -662,6 +742,14 @@ const InvoiceForm: React.FC<InvoiceFormProps> = ({
                           <div className="flex justify-between">
                             <span className="font-medium">Tax</span>
                             <span>{formatCurrency(taxAmount, form.getValues('currency'))}</span>
+                          </div>
+                          <div className="flex justify-between">
+                            <span className="font-medium">Additional Charges</span>
+                            <span>{formatCurrency(Number(additionalCharges), form.getValues('currency'))}</span>
+                          </div>
+                          <div className="flex justify-between">
+                            <span className="font-medium">Discount</span>
+                            <span>-{formatCurrency(Number(discount), form.getValues('currency'))}</span>
                           </div>
                           <div className="flex justify-between border-t pt-1">
                             <span className="font-bold">Total</span>
@@ -898,6 +986,14 @@ const InvoiceForm: React.FC<InvoiceFormProps> = ({
                             <span className="text-gray-600">Tax</span>
                             <span className="text-gray-800">{formatCurrency(invoicePreview.taxAmount, invoicePreview.currency)}</span>
                           </div>
+                          <div className="flex justify-between">
+                            <span className="text-gray-600">Additional Charges</span>
+                            <span className="text-gray-800">{formatCurrency(invoicePreview.additionalCharges ?? additionalCharges, invoicePreview.currency)}</span>
+                          </div>
+                          <div className="flex justify-between">
+                            <span className="text-gray-600">Discount</span>
+                            <span className="text-gray-800">-{formatCurrency(invoicePreview.discount ?? discount, invoicePreview.currency)}</span>
+                          </div>
                           <div className="flex justify-between border-t pt-1">
                             <span className="font-bold">Total</span>
                             <span className="font-bold">{formatCurrency(invoicePreview.total, invoicePreview.currency)}</span>
@@ -935,6 +1031,16 @@ const InvoiceForm: React.FC<InvoiceFormProps> = ({
                               <td colSpan={2}></td>
                               <td className="py-2 text-right font-medium">Tax</td>
                               <td className="py-2 text-right">{formatCurrency(invoicePreview.taxAmount, invoicePreview.currency)}</td>
+                            </tr>
+                            <tr>
+                              <td colSpan={2}></td>
+                              <td className="py-2 text-right font-medium">Additional Charges</td>
+                              <td className="py-2 text-right">{formatCurrency(invoicePreview.additionalCharges ?? additionalCharges, invoicePreview.currency)}</td>
+                            </tr>
+                            <tr>
+                              <td colSpan={2}></td>
+                              <td className="py-2 text-right font-medium">Discount</td>
+                              <td className="py-2 text-right">-{formatCurrency(invoicePreview.discount ?? discount, invoicePreview.currency)}</td>
                             </tr>
                             <tr className="border-t">
                               <td colSpan={2}></td>

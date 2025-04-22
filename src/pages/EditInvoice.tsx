@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { useAppContext } from "@/context/AppContext";
@@ -31,7 +30,15 @@ const EditInvoicePage = () => {
       .finally(() => setLoading(false));
   }, [id, getInvoice]);
 
-  const handleSave = async (values: any, items: any, total: number, subtotal: number, taxAmount: number) => {
+  const handleSave = async (
+    values: any,
+    items: any,
+    total: number,
+    subtotal: number,
+    taxAmount: number,
+    additionalCharges: number,
+    discount: number
+  ) => {
     if (!invoice) return;
     try {
       await updateInvoice({
@@ -41,6 +48,8 @@ const EditInvoicePage = () => {
         subtotal,
         taxAmount,
         total,
+        additionalCharges,
+        discount
       });
       navigate("/invoices");
     } catch (e: any) {
@@ -67,7 +76,6 @@ const EditInvoicePage = () => {
     );
   }
 
-  // Wait for invoice data before rendering form
   if (!invoice) return null;
 
   return (
