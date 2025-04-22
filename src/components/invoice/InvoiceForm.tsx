@@ -1,3 +1,4 @@
+
 import React, { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useForm } from "react-hook-form";
@@ -65,7 +66,7 @@ const invoiceFormSchema = z.object({
 
 type InvoiceFormValues = z.infer<typeof invoiceFormSchema>;
 
-export const InvoiceForm: React.FC<InvoiceFormProps> = ({
+const InvoiceForm: React.FC<InvoiceFormProps> = ({
   mode,
   initialValues,
   customers,
@@ -893,4 +894,84 @@ export const InvoiceForm: React.FC<InvoiceFormProps> = ({
                             <span className="text-gray-600">Subtotal</span>
                             <span className="text-gray-800">{formatCurrency(invoicePreview.subtotal, invoicePreview.currency)}</span>
                           </div>
-                          <div className
+                          <div className="flex justify-between">
+                            <span className="text-gray-600">Tax</span>
+                            <span className="text-gray-800">{formatCurrency(invoicePreview.taxAmount, invoicePreview.currency)}</span>
+                          </div>
+                          <div className="flex justify-between border-t pt-1">
+                            <span className="font-bold">Total</span>
+                            <span className="font-bold">{formatCurrency(invoicePreview.total, invoicePreview.currency)}</span>
+                          </div>
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="mb-6">
+                        <table className="min-w-full">
+                          <thead>
+                            <tr className="border-b">
+                              <th className="text-left py-2 text-sm font-medium">Description</th>
+                              <th className="text-right py-2 text-sm font-medium">Qty</th>
+                              <th className="text-right py-2 text-sm font-medium">Rate</th>
+                              <th className="text-right py-2 text-sm font-medium">Total</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {invoicePreview.items.map((item, index) => (
+                              <tr key={index} className="border-b last:border-b-0">
+                                <td className="py-2">{item.description || "Untitled Item"}</td>
+                                <td className="py-2 text-right">{item.quantity}</td>
+                                <td className="py-2 text-right">{formatCurrency(item.rate, invoicePreview.currency)}</td>
+                                <td className="py-2 text-right">{formatCurrency(item.total, invoicePreview.currency)}</td>
+                              </tr>
+                            ))}
+                          </tbody>
+                          <tfoot>
+                            <tr>
+                              <td colSpan={2}></td>
+                              <td className="py-2 text-right font-medium">Subtotal</td>
+                              <td className="py-2 text-right">{formatCurrency(invoicePreview.subtotal, invoicePreview.currency)}</td>
+                            </tr>
+                            <tr>
+                              <td colSpan={2}></td>
+                              <td className="py-2 text-right font-medium">Tax</td>
+                              <td className="py-2 text-right">{formatCurrency(invoicePreview.taxAmount, invoicePreview.currency)}</td>
+                            </tr>
+                            <tr className="border-t">
+                              <td colSpan={2}></td>
+                              <td className="py-2 text-right font-bold">Total</td>
+                              <td className="py-2 text-right font-bold">{formatCurrency(invoicePreview.total, invoicePreview.currency)}</td>
+                            </tr>
+                          </tfoot>
+                        </table>
+                      </div>
+                    )}
+                    
+                    {/* Notes & Terms */}
+                    {(invoicePreview.notes || invoicePreview.terms) && (
+                      <div className="border-t border-gray-200 pt-4 space-y-4">
+                        {invoicePreview.notes && (
+                          <div>
+                            <h3 className="font-medium text-gray-600 mb-1">Notes</h3>
+                            <p className="text-gray-600 whitespace-pre-line">{invoicePreview.notes}</p>
+                          </div>
+                        )}
+                        {invoicePreview.terms && (
+                          <div>
+                            <h3 className="font-medium text-gray-600 mb-1">Terms & Conditions</h3>
+                            <p className="text-gray-600 whitespace-pre-line">{invoicePreview.terms}</p>
+                          </div>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+          )}
+        </TabsContent>
+      </Tabs>
+    </div>
+  );
+};
+
+export default InvoiceForm;
