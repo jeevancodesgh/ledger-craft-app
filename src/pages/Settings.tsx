@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { useAppContext } from '@/context/AppContext';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -11,7 +10,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { BusinessProfile } from '@/types';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, upload } from 'lucide-react';
+import { Loader2, Upload } from 'lucide-react';  // Corrected import
 
 const profileFormSchema = z.object({
   name: z.string().min(1, { message: "Business name is required" }),
@@ -194,7 +193,7 @@ const Settings = () => {
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div className="md:col-span-2 flex flex-col items-start space-y-2">
                       <label htmlFor="logoUpload" className="cursor-pointer inline-flex items-center space-x-1">
-                        <Upload className="h-5 w-5 text-muted-foreground" />
+                        <Upload className="h-5 w-5 text-muted-foreground" />  {/* Corrected icon name */}
                         <span className="text-sm font-medium text-muted-foreground">Upload Logo</span>
                       </label>
                       <input
@@ -484,4 +483,3 @@ const Settings = () => {
 };
 
 export default Settings;
-
