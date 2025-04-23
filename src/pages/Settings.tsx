@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { useAppContext } from '@/context/AppContext';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -10,7 +11,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { BusinessProfile } from '@/types';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2 } from 'lucide-react';
+import { Loader2, upload } from 'lucide-react';
 
 const profileFormSchema = z.object({
   name: z.string().min(1, { message: "Business name is required" }),
@@ -32,6 +33,7 @@ const profileFormSchema = z.object({
   invoiceNumberSequence: z.union([z.number(), z.string()]).optional().transform(value =>
     value === '' ? null : typeof value === 'string' ? parseInt(value, 10) : value
   ),
+  logoFile: z.any().optional()  // We add an optional logoFile for file upload
 });
 
 type ProfileFormValues = z.infer<typeof profileFormSchema>;
@@ -41,6 +43,7 @@ const Settings = () => {
   const [isSaving, setIsSaving] = useState(false);
   const { toast } = useToast();
   const [activeTab, setActiveTab] = useState("profile");
+  const [previewLogoUrl, setPreviewLogoUrl] = useState<string | undefined>(businessProfile?.logoUrl || undefined);
 
   const form = useForm<ProfileFormValues>({
     resolver: zodResolver(profileFormSchema),
@@ -59,7 +62,8 @@ const Settings = () => {
       defaultTerms: businessProfile?.defaultTerms || '',
       defaultNotes: businessProfile?.defaultNotes || '',
       invoiceNumberFormat: businessProfile?.invoiceNumberFormat || 'INV-{YYYY}-{SEQ}',
-      invoiceNumberSequence: businessProfile?.invoiceNumberSequence ?? 1
+      invoiceNumberSequence: businessProfile?.invoiceNumberSequence ?? 1,
+      logoFile: undefined,
     },
   });
 
@@ -80,14 +84,43 @@ const Settings = () => {
         defaultTerms: businessProfile.defaultTerms || '',
         defaultNotes: businessProfile.defaultNotes || '',
         invoiceNumberFormat: businessProfile.invoiceNumberFormat || 'INV-{YYYY}-{SEQ}',
-        invoiceNumberSequence: businessProfile.invoiceNumberSequence ?? 1
+        invoiceNumberSequence: businessProfile.invoiceNumberSequence ?? 1,
+        logoFile: undefined,
       });
+      setPreviewLogoUrl(businessProfile.logoUrl || undefined);
     }
   }, [businessProfile, isLoadingProfile, form]);
 
   const onSubmit = async (data: ProfileFormValues) => {
     setIsSaving(true);
     try {
+      let logoUrlToSave = businessProfile?.logoUrl || null;
+
+      // Handle logo file upload if a file is provided
+      if (data.logoFile && data.logoFile.length > 0) {
+        const file = data.logoFile[0];
+        const fileExt = file.name.split('.').pop();
+        const fileName = `business-logo-${Date.now()}.${fileExt}`;
+        const filePath = `business-logos/${fileName}`;
+
+        // Upload file to Supabase Storage
+        const { data: uploadData, error: uploadError } = await fetch('/api/upload', {
+          method: 'POST',
+          body: (() => {
+            const formData = new FormData();
+            formData.append('file', file);
+            formData.append('path', filePath);
+            return formData;
+          })()
+        }).then(res => res.json());
+
+        if (uploadData && uploadData.path) {
+          logoUrlToSave = uploadData.path;
+        } else {
+          throw new Error(uploadError || "Failed to upload logo");
+        }
+      }
+
       const profileData: BusinessProfile = {
         name: data.name,
         email: data.email,
@@ -104,13 +137,15 @@ const Settings = () => {
         defaultNotes: data.defaultNotes || null,
         id: businessProfile?.id,
         invoiceNumberFormat: data.invoiceNumberFormat?.trim() || 'INV-{YYYY}-{SEQ}',
-        invoiceNumberSequence: data.invoiceNumberSequence ?? 1
+        invoiceNumberSequence: data.invoiceNumberSequence ?? 1,
+        logoUrl: logoUrlToSave,
       };
-      await updateBusinessProfile(profileData);
+      const updated = await updateBusinessProfile(profileData);
       toast({
         title: "Success",
         description: "Business profile updated successfully"
       });
+      setPreviewLogoUrl(updated.logoUrl || undefined);
     } catch (error) {
       console.error("Error saving profile:", error);
       toast({
@@ -120,6 +155,15 @@ const Settings = () => {
       });
     } finally {
       setIsSaving(false);
+    }
+  };
+
+  const handleLogoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files.length > 0) {
+      form.setValue("logoFile", e.target.files);
+      const file = e.target.files[0];
+      const previewUrl = URL.createObjectURL(file);
+      setPreviewLogoUrl(previewUrl);
     }
   };
 
@@ -148,6 +192,27 @@ const Settings = () => {
                 </CardHeader>
                 <CardContent>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="md:col-span-2 flex flex-col items-start space-y-2">
+                      <label htmlFor="logoUpload" className="cursor-pointer inline-flex items-center space-x-1">
+                        <Upload className="h-5 w-5 text-muted-foreground" />
+                        <span className="text-sm font-medium text-muted-foreground">Upload Logo</span>
+                      </label>
+                      <input
+                        id="logoUpload"
+                        type="file"
+                        accept="image/*"
+                        className="hidden"
+                        onChange={handleLogoChange}
+                      />
+                      {previewLogoUrl && (
+                        <img
+                          src={previewLogoUrl}
+                          alt="Business Logo Preview"
+                          className="max-h-24 max-w-xs object-contain rounded border border-gray-300"
+                        />
+                      )}
+                    </div>
+
                     <FormField
                       control={form.control}
                       name="name"
@@ -419,3 +484,4 @@ const Settings = () => {
 };
 
 export default Settings;
+
