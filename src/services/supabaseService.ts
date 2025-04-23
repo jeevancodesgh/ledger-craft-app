@@ -70,6 +70,7 @@ const mapSupabaseInvoiceToInvoice = (invoice: SupabaseInvoice, items: SupabaseLi
   subtotal: invoice.subtotal,
   taxAmount: invoice.tax_amount,
   discount: invoice.discount,
+  additionalCharges: invoice.additional_charges,
   total: invoice.total,
   status: invoice.status,
   notes: invoice.notes || undefined,
@@ -93,6 +94,7 @@ const mapInvoiceToSupabaseInvoice = async (invoice: Omit<Invoice, 'id' | 'create
     subtotal: invoice.subtotal,
     tax_amount: invoice.taxAmount,
     discount: invoice.discount || null,
+    additional_charges: invoice.additionalCharges || null,
     total: invoice.total,
     status: invoice.status,
     notes: invoice.notes || null,
@@ -396,6 +398,7 @@ export const invoiceService = {
     if (updatableInvoice.subtotal) updatedInvoiceFields.subtotal = updatableInvoice.subtotal;
     if (updatableInvoice.taxAmount !== undefined) updatedInvoiceFields.tax_amount = updatableInvoice.taxAmount;
     if (updatableInvoice.discount !== undefined) updatedInvoiceFields.discount = updatableInvoice.discount;
+    if (updatableInvoice.additionalCharges !== undefined) updatedInvoiceFields.additional_charges = updatableInvoice.additionalCharges;
     if (updatableInvoice.total) updatedInvoiceFields.total = updatableInvoice.total;
     if (updatableInvoice.status) updatedInvoiceFields.status = updatableInvoice.status;
     if (updatableInvoice.notes !== undefined) updatedInvoiceFields.notes = updatableInvoice.notes;
