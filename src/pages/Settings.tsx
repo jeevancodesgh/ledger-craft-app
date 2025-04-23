@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { useAppContext } from '@/context/AppContext';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -11,6 +12,7 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '
 import { BusinessProfile } from '@/types';
 import { useToast } from '@/hooks/use-toast';
 import { Loader2, Upload } from 'lucide-react';  // Corrected import
+import { supabase } from '@/integrations/supabase/client';
 
 const profileFormSchema = z.object({
   name: z.string().min(1, { message: "Business name is required" }),
@@ -102,21 +104,22 @@ const Settings = () => {
         const fileName = `business-logo-${Date.now()}.${fileExt}`;
         const filePath = `business-logos/${fileName}`;
 
-        // Upload file to Supabase Storage
-        const { data: uploadData, error: uploadError } = await fetch('/api/upload', {
-          method: 'POST',
-          body: (() => {
-            const formData = new FormData();
-            formData.append('file', file);
-            formData.append('path', filePath);
-            return formData;
-          })()
-        }).then(res => res.json());
+        // Upload file directly to Supabase Storage
+        const { data: uploadData, error: uploadError } = await supabase.storage
+          .from('business-assets')
+          .upload(filePath, file);
 
-        if (uploadData && uploadData.path) {
-          logoUrlToSave = uploadData.path;
-        } else {
-          throw new Error(uploadError || "Failed to upload logo");
+        if (uploadError) {
+          throw new Error(uploadError.message || "Failed to upload logo");
+        }
+
+        if (uploadData) {
+          // Get the public URL for the uploaded file
+          const { data: publicUrlData } = supabase.storage
+            .from('business-assets')
+            .getPublicUrl(filePath);
+            
+          logoUrlToSave = publicUrlData.publicUrl;
         }
       }
 
@@ -139,6 +142,7 @@ const Settings = () => {
         invoiceNumberSequence: data.invoiceNumberSequence ?? 1,
         logoUrl: logoUrlToSave,
       };
+      
       const updated = await updateBusinessProfile(profileData);
       toast({
         title: "Success",
