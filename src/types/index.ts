@@ -1,3 +1,4 @@
+
 export interface Customer {
   id: string;
   name: string;
@@ -64,6 +65,7 @@ export interface Invoice {
   subtotal: number;
   taxAmount: number;
   discount?: number | null;
+  additionalCharges?: number | null;
   total: number;
   status: InvoiceStatus;
   notes?: string | null;
@@ -101,6 +103,7 @@ export interface SupabaseInvoice {
   subtotal: number;
   tax_amount: number;
   discount: number | null;
+  additional_charges: number | null;
   total: number;
   status: InvoiceStatus;
   notes: string | null;
