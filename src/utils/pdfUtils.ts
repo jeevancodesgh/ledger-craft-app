@@ -1,3 +1,4 @@
+
 import { jsPDF } from 'jspdf';
 import html2canvas from 'html2canvas';
 import { Invoice } from '@/types';
@@ -48,7 +49,7 @@ export const generatePdfFromElement = async (
     
     // Enhanced rendering settings for better text quality
     const canvas = await html2canvas(element, {
-      scale: 2,
+      scale: 2, // Higher scale for better quality
       useCORS: true,
       allowTaint: true,
       backgroundColor: '#FFFFFF',
@@ -165,3 +166,4 @@ export const generateInvoicePdf = async (
     throw new Error(`Failed to generate invoice PDF: ${error instanceof Error ? error.message : String(error)}`);
   }
 };
+
