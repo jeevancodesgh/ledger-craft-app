@@ -55,7 +55,9 @@ const CreateInvoice = () => {
       onSubmit={handleSubmit}
       onCancel={() => navigate('/invoices')}
       defaultValues={{
-        invoiceNumber: defaultInvoiceNumber
+        invoiceNumber: defaultInvoiceNumber,
+        // Pass logo URL if available
+        logoUrl: businessProfile?.logo_url || undefined
       }}
     />
   );
