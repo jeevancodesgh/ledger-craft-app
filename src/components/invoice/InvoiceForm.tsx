@@ -40,8 +40,9 @@ import {
   CollapsibleContent,
   CollapsibleTrigger,
 } from "@/components/ui/collapsible";
+import TemplateSelector from './templates/TemplateSelector';
+import { invoiceTemplates, InvoiceTemplateId } from './templates/InvoiceTemplates';
 
-// Props for InvoiceForm
 type InvoiceFormMode = "create" | "edit";
 interface InvoiceFormProps {
   mode: InvoiceFormMode;
@@ -83,7 +84,6 @@ const InvoiceForm: React.FC<InvoiceFormProps> = ({
   const navigate = useNavigate();
   const isMobile = useIsMobile();
 
-  // Track line items state
   const [items, setItems] = useState<LineItem[]>(initialValues?.items && initialValues.items.length > 0
     ? initialValues.items
     : [{ id: "1", description: "", quantity: 1, unit: "each", rate: 0, total: 0 }]
@@ -97,7 +97,6 @@ const InvoiceForm: React.FC<InvoiceFormProps> = ({
   const [openLineItemDrawer, setOpenLineItemDrawer] = useState(false);
   const [currentItemIndex, setCurrentItemIndex] = useState<number | null>(null);
   const [isLineItemsOpen, setIsLineItemsOpen] = useState(true);
-  // Invoice Number (local state so user can type & edit it)
   const [invoiceNumber, setInvoiceNumber] = useState(
     initialValues?.invoiceNumber || defaultValues?.invoiceNumber || ""
   );
@@ -107,8 +106,8 @@ const InvoiceForm: React.FC<InvoiceFormProps> = ({
   const [discount, setDiscount] = useState(
     initialValues?.discount ?? 0
   );
+  const [selectedTemplate, setSelectedTemplate] = useState<InvoiceTemplateId>('classic');
 
-  // RHF Form setup
   const form = useForm<InvoiceFormValues>({
     resolver: zodResolver(invoiceFormSchema),
     defaultValues: {
@@ -132,13 +131,10 @@ const InvoiceForm: React.FC<InvoiceFormProps> = ({
     }
   });
 
-  // Keep local invoice number state in sync with RHF form
   useEffect(() => {
     form.setValue("invoiceNumber", invoiceNumber);
-    // eslint-disable-next-line
   }, [invoiceNumber]);
 
-  // When editing, reset form with initial invoice data when it comes in
   useEffect(() => {
     if (initialValues) {
       form.reset({
@@ -167,7 +163,6 @@ const InvoiceForm: React.FC<InvoiceFormProps> = ({
       setAdditionalCharges(initialValues.additionalCharges ?? 0);
       setDiscount(initialValues.discount ?? 0);
     }
-    // eslint-disable-next-line
   }, [initialValues]);
 
   const handleInvoiceNumberChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -175,11 +170,9 @@ const InvoiceForm: React.FC<InvoiceFormProps> = ({
     form.setValue('invoiceNumber', e.target.value);
   };
 
-  // Calculate invoice totals whenever items change
   useEffect(() => {
     const newSubtotal = items.reduce((sum, item) => sum + (Number(item.total) || 0), 0);
     setSubtotal(newSubtotal);
-    // Calculate tax (if implemented later)
     const newTaxAmount = items.reduce((sum, item) => {
       const taxRate = item.tax || 0;
       return sum + (Number(item.rate) * Number(item.quantity) * taxRate) / 100;
@@ -188,7 +181,6 @@ const InvoiceForm: React.FC<InvoiceFormProps> = ({
     setTotal(newSubtotal + newTaxAmount + Number(additionalCharges) - Number(discount));
   }, [items, additionalCharges, discount]);
 
-  // Line items operations
   const updateItem = (idx: number, field: keyof LineItem, value: any) => {
     const updated = [...items];
     updated[idx] = { ...updated[idx], [field]: value };
@@ -232,7 +224,6 @@ const InvoiceForm: React.FC<InvoiceFormProps> = ({
     form.setValue("discount", isNaN(v) ? 0 : v);
   };
 
-  // Invoice Preview
   const generatePreview = () => {
     const vals = form.getValues();
     const previewInvoice: Invoice = {
@@ -259,25 +250,22 @@ const InvoiceForm: React.FC<InvoiceFormProps> = ({
     setActiveTab("preview");
   };
 
-  // PDF download
   const handleDownloadPdf = async () => {
     if (previewRef.current && invoicePreview) {
       try {
-        await generateInvoicePdf(invoicePreview, previewRef.current);
+        await generateInvoicePdf(invoicePreview, previewRef.current, selectedTemplate);
       } catch (error) {
         console.error('Error generating PDF:', error);
       }
     }
   };
 
-  // Replace the unitOptions with compatible icons
   const unitOptions = [
     { value: "each", label: "Each", icon: Circle },
     { value: "kg", label: "Kilogram", icon: Weight },
-    { value: "g", label: "Gram", icon: Weight } // Using Weight for both kg and g
+    { value: "g", label: "Gram", icon: Weight }
   ];
 
-  // Mobile line item drawer render
   const renderLineItemDrawer = () => {
     if (currentItemIndex === null || currentItemIndex >= items.length) return null;
     const currentItem = items[currentItemIndex];
@@ -374,12 +362,11 @@ const InvoiceForm: React.FC<InvoiceFormProps> = ({
     );
   };
 
-  // Form submit handler
   const localOnSubmit = async (values: InvoiceFormValues) => {
     await onSubmit(
       values,
       items,
-      subtotal + taxAmount + Number(additionalCharges) - Number(discount), // total
+      subtotal + taxAmount + Number(additionalCharges) - Number(discount),
       subtotal,
       taxAmount,
       Number(additionalCharges),
@@ -389,7 +376,6 @@ const InvoiceForm: React.FC<InvoiceFormProps> = ({
 
   const selectedCustomer = customers.find(c => c.id === form.watch('customerId'));
 
-  // -- UI part (copied from CreateInvoice for now!) --
   return (
     <div className="space-y-4 pb-20 px-0 -mx-4 sm:mx-0 sm:px-0">
       <div className="flex justify-between items-center px-4 sm:px-0">
@@ -429,7 +415,6 @@ const InvoiceForm: React.FC<InvoiceFormProps> = ({
             <CardContent className="pt-4 pb-2 px-3 sm:p-6 sm:pt-6">
               <Form {...form}>
                 <form onSubmit={form.handleSubmit(localOnSubmit)} className="space-y-4">
-                  {/* Invoice Number */}
                   <div className="mb-3">
                     <FormField
                       control={form.control}
@@ -453,7 +438,6 @@ const InvoiceForm: React.FC<InvoiceFormProps> = ({
                     />
                   </div>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    {/* Customer */}
                     <FormField
                       control={form.control}
                       name="customerId"
@@ -481,7 +465,6 @@ const InvoiceForm: React.FC<InvoiceFormProps> = ({
                         </FormItem>
                       )}
                     />
-                    {/* Currency */}
                     <FormField
                       control={form.control}
                       name="currency"
@@ -509,7 +492,6 @@ const InvoiceForm: React.FC<InvoiceFormProps> = ({
                         </FormItem>
                       )}
                     />
-                    {/* Invoice Date */}
                     <FormField
                       control={form.control}
                       name="date"
@@ -549,7 +531,6 @@ const InvoiceForm: React.FC<InvoiceFormProps> = ({
                         </FormItem>
                       )}
                     />
-                    {/* Due Date */}
                     <FormField
                       control={form.control}
                       name="dueDate"
@@ -591,7 +572,6 @@ const InvoiceForm: React.FC<InvoiceFormProps> = ({
                     />
                   </div>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    {/* Additional Charges */}
                     <FormField
                       control={form.control}
                       name="additionalCharges"
@@ -613,7 +593,6 @@ const InvoiceForm: React.FC<InvoiceFormProps> = ({
                         </FormItem>
                       )}
                     />
-                    {/* Discount */}
                     <FormField
                       control={form.control}
                       name="discount"
@@ -636,7 +615,6 @@ const InvoiceForm: React.FC<InvoiceFormProps> = ({
                       )}
                     />
                   </div>
-                  {/* Line Items Section */}
                   <div className="space-y-4">
                     <Collapsible
                       open={isLineItemsOpen}
@@ -684,7 +662,6 @@ const InvoiceForm: React.FC<InvoiceFormProps> = ({
                               <Plus size={16} />
                               <span>Add Item</span>
                             </Button>
-                            {/* Mobile Line Item Drawer */}
                             <Drawer open={openLineItemDrawer} onOpenChange={setOpenLineItemDrawer}>
                               {renderLineItemDrawer()}
                             </Drawer>
@@ -791,7 +768,6 @@ const InvoiceForm: React.FC<InvoiceFormProps> = ({
                             </table>
                           </div>
                         )}
-                        {/* Totals */}
                         <div className={cn(
                           "border-t mt-4 pt-2 space-y-1",
                           isMobile ? "px-2" : ""
@@ -820,148 +796,87 @@ const InvoiceForm: React.FC<InvoiceFormProps> = ({
                       </CollapsibleContent>
                     </Collapsible>
                   </div>
-                  {/* Notes & Terms */}
-                  {isMobile ? (
-                    <Collapsible className="border rounded-md p-2">
-                      <CollapsibleTrigger className="flex w-full justify-between items-center p-2">
-                        <h3 className="text-lg font-medium">Notes & Terms</h3>
-                        <ChevronsUpDown size={16} />
-                      </CollapsibleTrigger>
-                      <CollapsibleContent className="pt-2 space-y-4">
-                        <FormField
-                          control={form.control}
-                          name="notes"
-                          render={({ field }) => (
-                            <FormItem>
-                              <FormLabel>Notes</FormLabel>
-                              <FormControl>
-                                <Textarea
-                                  placeholder="Notes - visible to customer"
-                                  className="resize-none h-24"
-                                  {...field}
-                                />
-                              </FormControl>
-                              <FormMessage />
-                            </FormItem>
-                          )}
-                        />
-                        <FormField
-                          control={form.control}
-                          name="terms"
-                          render={({ field }) => (
-                            <FormItem>
-                              <FormLabel>Terms & Conditions</FormLabel>
-                              <FormControl>
-                                <Textarea
-                                  placeholder="Terms and conditions"
-                                  className="resize-none h-24"
-                                  {...field}
-                                />
-                              </FormControl>
-                              <FormMessage />
-                            </FormItem>
-                          )}
-                        />
-                      </CollapsibleContent>
-                    </Collapsible>
-                  ) : (
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                      <FormField
-                        control={form.control}
-                        name="notes"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Notes</FormLabel>
-                            <FormControl>
-                              <Textarea
-                                placeholder="Notes - visible to customer"
-                                className="resize-none h-32"
-                                {...field}
-                              />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                      <FormField
-                        control={form.control}
-                        name="terms"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Terms & Conditions</FormLabel>
-                            <FormControl>
-                              <Textarea
-                                placeholder="Terms and conditions"
-                                className="resize-none h-32"
-                                {...field}
-                              />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                    </div>
-                  )}
-                  {/* Actions */}
-                  {isMobile ? (
-                    <div className="fixed bottom-0 left-0 right-0 p-4 bg-background border-t z-10 flex gap-2">
-                      <Button
-                        type="button"
-                        variant="outline"
-                        className="flex-1"
-                        onClick={generatePreview}
-                      >
-                        <Eye size={16} className="mr-1" />
-                        Preview
-                      </Button>
-                      <Button
-                        type="submit"
-                        className="flex-1"
-                      >
-                        <Save size={16} className="mr-1" />
-                        {mode === "edit" ? "Save" : "Save"}
-                      </Button>
-                    </div>
-                  ) : (
-                    <div className="flex flex-col sm:flex-row justify-end items-center gap-2">
-                      <Button
-                        type="button"
-                        variant="outline"
-                        className="w-full sm:w-auto"
-                        onClick={generatePreview}
-                      >
-                        Preview Invoice
-                      </Button>
-                      <Button
-                        type="submit"
-                        className="w-full sm:w-auto flex items-center gap-2"
-                      >
-                        <Save size={16} />
-                        <span>{mode === "edit" ? "Save Invoice" : "Save Invoice"}</span>
-                      </Button>
-                    </div>
-                  )}
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <FormField
+                      control={form.control}
+                      name="notes"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Notes</FormLabel>
+                          <FormControl>
+                            <Textarea
+                              placeholder="Notes - visible to customer"
+                              className="resize-none h-32"
+                              {...field}
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    <FormField
+                      control={form.control}
+                      name="terms"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Terms & Conditions</FormLabel>
+                          <FormControl>
+                            <Textarea
+                              placeholder="Terms and conditions"
+                              className="resize-none h-32"
+                              {...field}
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  </div>
+                  <div className="flex flex-col sm:flex-row justify-end items-center gap-2">
+                    <Button
+                      type="button"
+                      variant="outline"
+                      className="w-full sm:w-auto"
+                      onClick={generatePreview}
+                    >
+                      Preview Invoice
+                    </Button>
+                    <Button
+                      type="submit"
+                      className="w-full sm:w-auto flex items-center gap-2"
+                    >
+                      <Save size={16} />
+                      <span>{mode === "edit" ? "Save Invoice" : "Save Invoice"}</span>
+                    </Button>
+                  </div>
                 </form>
               </Form>
             </CardContent>
           </Card>
         </TabsContent>
-        {/* Preview Tab */}
         <TabsContent value="preview" className="px-0 -mx-4 sm:mx-0 sm:px-0 h-full">
           {invoicePreview && (
             <div className="space-y-4 h-full">
               {!isMobile && (
-                <div className="flex justify-end px-4 mb-4">
-                  <Button
-                    onClick={handleDownloadPdf}
-                    className="flex items-center gap-2"
-                  >
-                    <Download size={16} />
-                    <span>Download PDF</span>
-                  </Button>
+                <div className="px-4">
+                  <TemplateSelector
+                    templates={invoiceTemplates}
+                    selectedTemplate={selectedTemplate}
+                    onSelectTemplate={setSelectedTemplate}
+                  />
+                  <div className="flex justify-end mb-4">
+                    <Button
+                      onClick={handleDownloadPdf}
+                      className="flex items-center gap-2"
+                    >
+                      <Download size={16} />
+                      <span>Download PDF</span>
+                    </Button>
+                  </div>
                 </div>
               )}
               <Card className={cn(
+                "bg-white",
                 isMobile ? "rounded-none border-x-0 h-[calc(100vh-10rem)]" : ""
               )}>
                 <CardContent className={cn(
@@ -972,7 +887,8 @@ const InvoiceForm: React.FC<InvoiceFormProps> = ({
                     ref={previewRef}
                     className={cn(
                       "min-w-[300px]",
-                      isMobile ? "text-sm" : ""
+                      isMobile ? "text-sm" : "",
+                      `template-${selectedTemplate}`
                     )}
                   >
                     <div className={cn(
@@ -1022,7 +938,6 @@ const InvoiceForm: React.FC<InvoiceFormProps> = ({
                         <p className="text-gray-500">No customer selected</p>
                       )}
                     </div>
-                    {/* Invoice Items Table/Mobile */}
                     {isMobile ? (
                       <div className="mb-6 space-y-3">
                         {invoicePreview.items.map((item, index) => (
@@ -1114,24 +1029,24 @@ const InvoiceForm: React.FC<InvoiceFormProps> = ({
                         </table>
                       </div>
                     )}
-                    
-                    {/* Notes & Terms */}
-                    {(invoicePreview.notes || invoicePreview.terms) && (
-                      <div className="border-t border-gray-200 pt-4 space-y-4">
-                        {invoicePreview.notes && (
-                          <div>
-                            <h3 className="font-medium text-gray-600 mb-1">Notes</h3>
-                            <p className="text-gray-600 whitespace-pre-line">{invoicePreview.notes}</p>
-                          </div>
-                        )}
-                        {invoicePreview.terms && (
-                          <div>
-                            <h3 className="font-medium text-gray-600 mb-1">Terms & Conditions</h3>
-                            <p className="text-gray-600 whitespace-pre-line">{invoicePreview.terms}</p>
-                          </div>
-                        )}
-                      </div>
-                    )}
+                    <div className="notes-section border-t border-gray-200 pt-4 space-y-4">
+                      {(invoicePreview.notes || invoicePreview.terms) && (
+                        <div>
+                          {invoicePreview.notes && (
+                            <div>
+                              <h3 className="font-medium text-gray-600 mb-1">Notes</h3>
+                              <p className="text-gray-600 whitespace-pre-line">{invoicePreview.notes}</p>
+                            </div>
+                          )}
+                          {invoicePreview.terms && (
+                            <div>
+                              <h3 className="font-medium text-gray-600 mb-1">Terms & Conditions</h3>
+                              <p className="text-gray-600 whitespace-pre-line">{invoicePreview.terms}</p>
+                            </div>
+                          )}
+                        </div>
+                      )}
+                    </div>
                   </div>
                 </CardContent>
               </Card>
