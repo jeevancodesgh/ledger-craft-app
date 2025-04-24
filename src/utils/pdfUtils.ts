@@ -117,7 +117,7 @@ export const generatePdfFromElement = async (
       logging: false,
       onclone: (clonedDoc) => {
         // Fix any specific rendering issues in the cloned document if needed
-        const clonedElement = clonedDoc.body.querySelector('#' + preparedElement.id) as HTMLElement;
+        const clonedElement = clonedDoc.body.querySelector('[id="' + preparedElement.id + '"]') as HTMLElement;
         if (clonedElement) {
           // Ensure all elements are rendered properly in the clone
           const styles = clonedElement.querySelectorAll('*');
@@ -211,10 +211,13 @@ export const generateInvoicePdf = async (
   element: HTMLElement
 ): Promise<void> => {
   try {
-    // Apply optimal ID to the element for clone reference
-    if (!element.id) {
-      element.id = `invoice-pdf-${invoice.invoiceNumber}`;
-    }
+    // Generate a safe ID without special characters for CSS selector
+    const safeInvoiceNumber = invoice.invoiceNumber.replace(/[^\w\s-]/g, '_');
+    const safeElementId = `invoice-pdf-${safeInvoiceNumber}`;
+    
+    // Temporarily set a safe ID on the element
+    const originalId = element.id;
+    element.id = safeElementId;
     
     // Temporarily adjust element for optimal PDF generation
     const originalStyle = element.getAttribute('style') || '';
@@ -222,13 +225,16 @@ export const generateInvoicePdf = async (
     element.setAttribute('style', `${originalStyle}; background-color: white; color: black;`);
     
     // Setup file name with invoice number
-    const fileName = `Invoice-${invoice.invoiceNumber}.pdf`;
+    const fileName = `Invoice-${safeInvoiceNumber}.pdf`;
     
     // Generate the PDF
     await generatePdfFromElement(element, fileName);
     
-    // Restore original style
+    // Restore original style and ID
     element.setAttribute('style', originalStyle);
+    if (originalId) {
+      element.id = originalId;
+    }
   } catch (error) {
     console.error('Error generating invoice PDF:', error);
     throw new Error(`Failed to generate invoice PDF: ${error instanceof Error ? error.message : String(error)}`);

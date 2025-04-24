@@ -44,6 +44,15 @@ const EditInvoicePage = () => {
                 font-size: 12px !important;
                 color: black !important;
               }
+              /* Additional styles for better PDF rendering */
+              h3, h4, h5, h6 {
+                font-weight: 600 !important;
+                color: black !important;
+              }
+              p, div, span {
+                color: black !important;
+                line-height: 1.5 !important;
+              }
             }
           `;
           
