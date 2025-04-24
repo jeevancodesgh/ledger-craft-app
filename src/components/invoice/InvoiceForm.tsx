@@ -16,7 +16,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
-import { CalendarIcon, Plus, Trash2, Download, Save, ArrowLeft, Eye, ChevronsUpDown, Edit, Check } from 'lucide-react';
+import { CalendarIcon, Plus, Trash2, Download, Save, ArrowLeft, Eye, ChevronsUpDown, Edit, Check, Circle, Weight } from 'lucide-react';
 import { generateInvoicePdf } from "@/utils/pdfUtils";
 import { formatCurrency, formatDate } from "@/utils/invoiceUtils";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
@@ -40,7 +40,6 @@ import {
   CollapsibleContent,
   CollapsibleTrigger,
 } from "@/components/ui/collapsible";
-import { each, kg, g } from 'lucide-react';
 
 // Props for InvoiceForm
 type InvoiceFormMode = "create" | "edit";
@@ -271,10 +270,11 @@ const InvoiceForm: React.FC<InvoiceFormProps> = ({
     }
   };
 
+  // Replace the unitOptions with compatible icons
   const unitOptions = [
-    { value: "each", label: "Each", icon: each },
-    { value: "kg", label: "Kilogram", icon: kg },
-    { value: "g", label: "Gram", icon: g }
+    { value: "each", label: "Each", icon: Circle },
+    { value: "kg", label: "Kilogram", icon: Weight },
+    { value: "g", label: "Gram", icon: Weight } // Using Weight for both kg and g
   ];
 
   // Mobile line item drawer render

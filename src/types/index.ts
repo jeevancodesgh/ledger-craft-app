@@ -45,7 +45,7 @@ export interface LineItem {
   invoiceId?: string;
   description: string;
   quantity: number;
-  unit: string;  // New field
+  unit: string;  // Already has this field
   rate: number;
   tax?: number | null;
   total: number;
@@ -124,7 +124,7 @@ export interface SupabaseLineItem {
   invoice_id: string;
   description: string;
   quantity: number;
-  unit: string;  // New field
+  unit: string;  // This field already exists
   rate: number;
   tax: number | null;
   total: number;

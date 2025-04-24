@@ -67,6 +67,7 @@ const createSampleLineItems = (): LineItem[] => [
     id: `item-${Math.random().toString(36).substring(2, 9)}`,
     description: 'Web Development Services',
     quantity: 40,
+    unit: 'each', // Added unit property
     rate: 75,
     tax: 7.5,
     total: 40 * 75
@@ -75,6 +76,7 @@ const createSampleLineItems = (): LineItem[] => [
     id: `item-${Math.random().toString(36).substring(2, 9)}`,
     description: 'UI/UX Design',
     quantity: 25,
+    unit: 'each', // Added unit property
     rate: 90,
     tax: 7.5,
     total: 25 * 90
@@ -111,6 +113,7 @@ export const mockInvoices: Invoice[] = [
         id: `item-${Math.random().toString(36).substring(2, 9)}`,
         description: 'Consulting Services',
         quantity: 10,
+        unit: 'each', // Added unit property
         rate: 150,
         tax: 7.5,
         total: 10 * 150
@@ -137,6 +140,7 @@ export const mockInvoices: Invoice[] = [
         id: `item-${Math.random().toString(36).substring(2, 9)}`,
         description: 'Mobile App Development',
         quantity: 80,
+        unit: 'each', // Added unit property
         rate: 85,
         tax: 7.5,
         total: 80 * 85

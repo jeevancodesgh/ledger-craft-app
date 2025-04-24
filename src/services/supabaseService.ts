@@ -63,6 +63,7 @@ const mapSupabaseInvoiceToInvoice = (invoice: SupabaseInvoice | any, items: Supa
     invoiceId: item.invoice_id,
     description: item.description,
     quantity: item.quantity,
+    unit: item.unit || 'each', // Added unit with default value
     rate: item.rate,
     tax: item.tax,
     total: item.total
@@ -361,6 +362,7 @@ export const invoiceService = {
       const itemsWithInvoiceId = lineItems.map(item => ({
         description: item.description,
         quantity: item.quantity,
+        unit: item.unit || 'each', // Added unit with default value
         rate: item.rate,
         tax: item.tax || null,
         total: item.total,
@@ -433,6 +435,7 @@ export const invoiceService = {
       const newItems = items.map(item => ({
         description: item.description,
         quantity: item.quantity,
+        unit: item.unit || 'each', // Added unit with default value
         rate: item.rate,
         tax: item.tax || null,
         total: item.total,
@@ -495,6 +498,7 @@ export const invoiceService = {
       invoiceId: item.invoice_id,
       description: item.description,
       quantity: item.quantity,
+      unit: item.unit || 'each', // Added unit with default value
       rate: item.rate,
       tax: item.tax,
       total: item.total,
@@ -509,6 +513,7 @@ export const invoiceService = {
       .insert([{ 
         description: lineItem.description,
         quantity: lineItem.quantity,
+        unit: lineItem.unit || 'each', // Added unit with default value
         rate: lineItem.rate,
         tax: lineItem.tax || null,
         total: lineItem.total,
@@ -527,6 +532,7 @@ export const invoiceService = {
       invoiceId: data.invoice_id,
       description: data.description,
       quantity: data.quantity,
+      unit: data.unit || 'each', // Added unit with default value
       rate: data.rate,
       tax: data.tax,
       total: data.total,
@@ -539,6 +545,7 @@ export const invoiceService = {
     const updateData: any = {};
     if (lineItem.description !== undefined) updateData.description = lineItem.description;
     if (lineItem.quantity !== undefined) updateData.quantity = lineItem.quantity;
+    if (lineItem.unit !== undefined) updateData.unit = lineItem.unit; // Added unit
     if (lineItem.rate !== undefined) updateData.rate = lineItem.rate;
     if (lineItem.tax !== undefined) updateData.tax = lineItem.tax;
     if (lineItem.total !== undefined) updateData.total = lineItem.total;
@@ -560,6 +567,7 @@ export const invoiceService = {
       invoiceId: data.invoice_id,
       description: data.description,
       quantity: data.quantity,
+      unit: data.unit || 'each', // Added unit with default value
       rate: data.rate,
       tax: data.tax,
       total: data.total,
