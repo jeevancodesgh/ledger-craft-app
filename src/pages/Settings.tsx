@@ -1,5 +1,4 @@
-
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useAppContext } from '@/context/AppContext';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -11,7 +10,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { BusinessProfile } from '@/types';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, Upload } from 'lucide-react';  // Corrected import
+import { Loader2, Upload } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 
 const profileFormSchema = z.object({
@@ -34,13 +33,13 @@ const profileFormSchema = z.object({
   invoiceNumberSequence: z.union([z.number(), z.string()]).optional().transform(value =>
     value === '' ? null : typeof value === 'string' ? parseInt(value, 10) : value
   ),
-  logoFile: z.any().optional()  // We add an optional logoFile for file upload
+  logoFile: z.any().optional()
 });
 
 type ProfileFormValues = z.infer<typeof profileFormSchema>;
 
 const Settings = () => {
-  const { businessProfile, isLoadingProfile, updateBusinessProfile } = useAppContext();
+  const { businessProfile, isLoadingProfile, updateBusinessProfile, refreshBusinessProfile } = useAppContext();
   const [isSaving, setIsSaving] = useState(false);
   const { toast } = useToast();
   const [activeTab, setActiveTab] = useState("profile");
@@ -67,6 +66,10 @@ const Settings = () => {
       logoFile: undefined,
     },
   });
+
+  useEffect(() => {
+    refreshBusinessProfile();
+  }, []);
 
   React.useEffect(() => {
     if (businessProfile && !isLoadingProfile) {
@@ -97,14 +100,12 @@ const Settings = () => {
     try {
       let logoUrlToSave = businessProfile?.logoUrl || null;
 
-      // Handle logo file upload if a file is provided
       if (data.logoFile && data.logoFile.length > 0) {
         const file = data.logoFile[0];
         const fileExt = file.name.split('.').pop();
         const fileName = `business-logo-${Date.now()}.${fileExt}`;
         const filePath = `business-logos/${fileName}`;
 
-        // Upload file directly to Supabase Storage
         const { data: uploadData, error: uploadError } = await supabase.storage
           .from('business-assets')
           .upload(filePath, file);
@@ -114,7 +115,6 @@ const Settings = () => {
         }
 
         if (uploadData) {
-          // Get the public URL for the uploaded file
           const { data: publicUrlData } = supabase.storage
             .from('business-assets')
             .getPublicUrl(filePath);
@@ -197,7 +197,7 @@ const Settings = () => {
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div className="md:col-span-2 flex flex-col items-start space-y-2">
                       <label htmlFor="logoUpload" className="cursor-pointer inline-flex items-center space-x-1">
-                        <Upload className="h-5 w-5 text-muted-foreground" />  {/* Corrected icon name */}
+                        <Upload className="h-5 w-5 text-muted-foreground" />
                         <span className="text-sm font-medium text-muted-foreground">Upload Logo</span>
                       </label>
                       <input
