@@ -88,7 +88,6 @@ const PDFCard = React.forwardRef<
       "rounded-lg border bg-white text-black shadow-none print:shadow-none",
       className
     )}
-    data-pdf-component="true"
     {...props}
   />
 ))
@@ -100,35 +99,11 @@ const PDFCardContent = React.forwardRef<
 >(({ className, ...props }, ref) => (
   <div 
     ref={ref} 
-    className={cn("p-6 bg-white text-black font-medium", className)} 
-    style={{ fontSize: '12px', fontWeight: 500, lineHeight: 1.5 }}
-    data-pdf-component="true"
+    className={cn("p-6 bg-white text-black", className)} 
     {...props} 
   />
 ))
 PDFCardContent.displayName = "PDFCardContent"
-
-// Add a specific Notes component optimized for PDF rendering
-const PDFNotes = React.forwardRef<
-  HTMLDivElement,
-  React.HTMLAttributes<HTMLDivElement>
->(({ className, ...props }, ref) => (
-  <div 
-    ref={ref} 
-    className={cn("bg-white text-black font-medium notes-section", className)} 
-    style={{ 
-      fontSize: '12px', 
-      fontWeight: 500, 
-      lineHeight: 1.5,
-      color: '#000000',
-      marginTop: '8px',
-      padding: '4px' 
-    }}
-    data-section="notes"
-    {...props} 
-  />
-))
-PDFNotes.displayName = "PDFNotes"
 
 export { 
   Card, 
@@ -138,6 +113,5 @@ export {
   CardDescription, 
   CardContent,
   PDFCard,
-  PDFCardContent,
-  PDFNotes
+  PDFCardContent
 }

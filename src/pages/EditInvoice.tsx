@@ -25,53 +25,10 @@ const EditInvoicePage = () => {
           setError("Invoice not found");
         } else {
           setInvoice(invoiceFound);
-          
-          // Ensure the document is ready for PDF generation
-          document.documentElement.classList.add('pdf-ready');
-          
-          // Add specific styles for PDF rendering if needed
-          const styleEl = document.createElement('style');
-          styleEl.id = 'pdf-styles';
-          styleEl.textContent = `
-            @media print, (min-resolution: 300dpi) {
-              .notes-section, [data-section="notes"] {
-                font-weight: 500 !important;
-                font-size: 12px !important;
-                color: black !important;
-              }
-              .notes-section *, [data-section="notes"] * {
-                font-weight: 500 !important;
-                font-size: 12px !important;
-                color: black !important;
-              }
-              /* Additional styles for better PDF rendering */
-              h3, h4, h5, h6 {
-                font-weight: 600 !important;
-                color: black !important;
-              }
-              p, div, span {
-                color: black !important;
-                line-height: 1.5 !important;
-              }
-            }
-          `;
-          
-          if (!document.getElementById('pdf-styles')) {
-            document.head.appendChild(styleEl);
-          }
         }
       })
       .catch(() => setError("Error loading invoice"))
       .finally(() => setLoading(false));
-      
-    // Clean up PDF-specific styling on unmount
-    return () => {
-      document.documentElement.classList.remove('pdf-ready');
-      const styleEl = document.getElementById('pdf-styles');
-      if (styleEl) {
-        document.head.removeChild(styleEl);
-      }
-    };
   }, [id, getInvoice]);
 
   const handleSave = async (
