@@ -63,7 +63,7 @@ const mapSupabaseInvoiceToInvoice = (invoice: SupabaseInvoice | any, items: Supa
     invoiceId: item.invoice_id,
     description: item.description,
     quantity: item.quantity,
-    unit: item.unit || 'each', // Added unit with default value
+    unit: item.unit || 'each', // Handle missing unit field with default
     rate: item.rate,
     tax: item.tax,
     total: item.total
@@ -498,7 +498,7 @@ export const invoiceService = {
       invoiceId: item.invoice_id,
       description: item.description,
       quantity: item.quantity,
-      unit: item.unit || 'each', // Added unit with default value
+      unit: item.unit || 'each', // Handle missing unit field with default
       rate: item.rate,
       tax: item.tax,
       total: item.total,
@@ -532,7 +532,7 @@ export const invoiceService = {
       invoiceId: data.invoice_id,
       description: data.description,
       quantity: data.quantity,
-      unit: data.unit || 'each', // Added unit with default value
+      unit: data.unit || 'each', // Handle missing unit field with default
       rate: data.rate,
       tax: data.tax,
       total: data.total,
@@ -567,7 +567,7 @@ export const invoiceService = {
       invoiceId: data.invoice_id,
       description: data.description,
       quantity: data.quantity,
-      unit: data.unit || 'each', // Added unit with default value
+      unit: data.unit || 'each', // Handle missing unit field with default
       rate: data.rate,
       tax: data.tax,
       total: data.total,
