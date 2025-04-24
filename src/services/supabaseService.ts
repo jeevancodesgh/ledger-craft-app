@@ -4,7 +4,6 @@ import {
   SupabaseCustomer, SupabaseInvoice, SupabaseLineItem, SupabaseBusinessProfile
 } from '@/types';
 
-// Converters between our app types and Supabase types
 const mapSupabaseCustomerToCustomer = (customer: SupabaseCustomer): Customer => ({
   id: customer.id,
   name: customer.name,
@@ -23,7 +22,6 @@ const mapSupabaseCustomerToCustomer = (customer: SupabaseCustomer): Customer => 
 });
 
 const mapCustomerToSupabaseCustomer = async (customer: Omit<Customer, 'id' | 'createdAt' | 'updatedAt'>): Promise<Omit<SupabaseCustomer, 'id' | 'created_at' | 'updated_at'>> => {
-  // Get current user ID
   const { data: { user } } = await supabase.auth.getUser();
   const userId = user?.id || '';
 
@@ -63,7 +61,7 @@ const mapSupabaseInvoiceToInvoice = (invoice: SupabaseInvoice | any, items: Supa
     invoiceId: item.invoice_id,
     description: item.description,
     quantity: item.quantity,
-    unit: item.unit || 'each', // Handle missing unit field with default
+    unit: item.unit || 'each',
     rate: item.rate,
     tax: item.tax,
     total: item.total
@@ -83,7 +81,6 @@ const mapSupabaseInvoiceToInvoice = (invoice: SupabaseInvoice | any, items: Supa
 });
 
 const mapInvoiceToSupabaseInvoice = async (invoice: Omit<Invoice, 'id' | 'createdAt' | 'updatedAt'>): Promise<Omit<SupabaseInvoice, 'id' | 'created_at' | 'updated_at'>> => {
-  // Get current user ID
   const { data: { user } } = await supabase.auth.getUser();
   const userId = user?.id || '';
 
@@ -132,7 +129,6 @@ const mapSupabaseBusinessProfileToBusinessProfile = (profile: SupabaseBusinessPr
 const mapBusinessProfileToSupabaseBusinessProfile = async (
   profile: Omit<BusinessProfile, 'id' | 'createdAt' | 'updatedAt'>
 ): Promise<Omit<SupabaseBusinessProfile, 'id' | 'created_at' | 'updated_at'>> => {
-  // Get current user ID
   const { data: { user } } = await supabase.auth.getUser();
   const userId = user?.id || '';
 
@@ -158,7 +154,6 @@ const mapBusinessProfileToSupabaseBusinessProfile = async (
   };
 };
 
-// Customer service functions
 export const customerService = {
   async getCustomers(): Promise<Customer[]> {
     const { data, error } = await supabase
@@ -207,13 +202,11 @@ export const customerService = {
   },
 
   async updateCustomer(id: string, customer: Partial<Omit<Customer, 'id' | 'createdAt' | 'updatedAt'>>): Promise<Customer> {
-    // First get the existing customer to properly merge with updates
     const existingCustomer = await this.getCustomer(id);
     if (!existingCustomer) {
       throw new Error(`Customer with id ${id} not found`);
     }
     
-    // Merge existing with updates
     const mergedCustomer = {
       ...existingCustomer,
       ...customer,
@@ -222,7 +215,6 @@ export const customerService = {
       updatedAt: undefined
     };
     
-    // Convert to Supabase format
     const supabaseCustomer = await mapCustomerToSupabaseCustomer(mergedCustomer as Omit<Customer, 'id' | 'createdAt' | 'updatedAt'>);
     
     const { data, error } = await supabase
@@ -253,7 +245,6 @@ export const customerService = {
   }
 };
 
-// Invoice service functions
 export const invoiceService = {
   async getInvoices(): Promise<Invoice[]> {
     const { data: invoicesData, error: invoicesError } = await supabase
@@ -269,14 +260,12 @@ export const invoiceService = {
       throw invoicesError;
     }
     
-    // For each invoice, fetch its line items
     const invoices = await Promise.all((invoicesData as SupabaseInvoice[]).map(async (invoice) => {
       const { data: lineItemsData } = await supabase
         .from('line_items')
         .select('*')
         .eq('invoice_id', invoice.id);
       
-      // Cast to unknown first to avoid TypeScript errors with potentially missing fields
       return mapSupabaseInvoiceToInvoice(invoice as unknown as SupabaseInvoice, lineItemsData as SupabaseLineItem[]);
     }));
     
@@ -302,7 +291,6 @@ export const invoiceService = {
       return null;
     }
     
-    // Fetch line items for this invoice
     const { data: lineItemsData, error: lineItemsError } = await supabase
       .from('line_items')
       .select('*')
@@ -313,7 +301,6 @@ export const invoiceService = {
       throw lineItemsError;
     }
     
-    // Cast to unknown first to avoid TypeScript errors with potentially missing fields
     return mapSupabaseInvoiceToInvoice(invoiceData as unknown as SupabaseInvoice, lineItemsData as SupabaseLineItem[]);
   },
 
@@ -329,14 +316,12 @@ export const invoiceService = {
       throw invoicesError;
     }
     
-    // For each invoice, fetch its line items
     const invoices = await Promise.all((invoicesData as any[]).map(async (invoice) => {
       const { data: lineItemsData } = await supabase
         .from('line_items')
         .select('*')
         .eq('invoice_id', invoice.id);
       
-      // Cast to unknown first to avoid TypeScript errors with potentially missing fields
       return mapSupabaseInvoiceToInvoice(invoice as unknown as SupabaseInvoice, lineItemsData as SupabaseLineItem[]);
     }));
     
@@ -344,7 +329,6 @@ export const invoiceService = {
   },
 
   async createInvoice(invoice: Omit<Invoice, 'id' | 'createdAt' | 'updatedAt'>, lineItems: Omit<LineItem, 'id' | 'invoiceId' | 'createdAt' | 'updatedAt'>[]): Promise<Invoice> {
-    // Convert invoice to Supabase format - make sure to await the result
     const supabaseInvoice = await mapInvoiceToSupabaseInvoice(invoice);
     
     const { data: invoiceData, error: invoiceError } = await supabase
@@ -362,7 +346,7 @@ export const invoiceService = {
       const itemsWithInvoiceId = lineItems.map(item => ({
         description: item.description,
         quantity: item.quantity,
-        unit: item.unit || 'each', // Added unit with default value
+        unit: item.unit || 'each',
         rate: item.rate,
         tax: item.tax || null,
         total: item.total,
@@ -379,21 +363,17 @@ export const invoiceService = {
       }
     }
     
-    // Fetch the complete invoice with line items
     return this.getInvoice(invoiceData.id) as Promise<Invoice>;
   },
 
   async updateInvoice(id: string, invoice: Partial<Omit<Invoice, 'id' | 'createdAt' | 'updatedAt'>>): Promise<Invoice> {
-    // First get the existing invoice to properly merge with updates
     const existingInvoice = await this.getInvoice(id);
     if (!existingInvoice) {
       throw new Error(`Invoice with id ${id} not found`);
     }
     
-    // Extract only updatable fields
     const { items, customer, ...updatableInvoice } = invoice;
     
-    // Create a merged object with all fields mapped to Supabase format
     const updatedInvoiceFields: Partial<SupabaseInvoice> = {};
     
     if (updatableInvoice.invoiceNumber) updatedInvoiceFields.invoice_number = updatableInvoice.invoiceNumber;
@@ -422,20 +402,16 @@ export const invoiceService = {
       throw error;
     }
     
-    // Handle line items updates if provided
     if (items && items.length > 0) {
-      // For simplicity, we're replacing all line items
-      // Delete existing items
       await supabase
         .from('line_items')
         .delete()
         .eq('invoice_id', id);
         
-      // Insert new items
       const newItems = items.map(item => ({
         description: item.description,
         quantity: item.quantity,
-        unit: item.unit || 'each', // Added unit with default value
+        unit: item.unit || 'each',
         rate: item.rate,
         tax: item.tax || null,
         total: item.total,
@@ -447,12 +423,10 @@ export const invoiceService = {
         .insert(newItems);
     }
     
-    // Return the complete updated invoice
     return this.getInvoice(id) as Promise<Invoice>;
   },
 
   async deleteInvoice(id: string): Promise<void> {
-    // Line items will cascade delete due to our foreign key constraint
     const { error } = await supabase
       .from('invoices')
       .delete()
@@ -477,7 +451,6 @@ export const invoiceService = {
       throw error;
     }
     
-    // Return full invoice with line items
     return this.getInvoice(id) as Promise<Invoice>;
   },
 
@@ -498,7 +471,7 @@ export const invoiceService = {
       invoiceId: item.invoice_id,
       description: item.description,
       quantity: item.quantity,
-      unit: item.unit || 'each', // Handle missing unit field with default
+      unit: 'each',
       rate: item.rate,
       tax: item.tax,
       total: item.total,
@@ -513,7 +486,7 @@ export const invoiceService = {
       .insert([{ 
         description: lineItem.description,
         quantity: lineItem.quantity,
-        unit: lineItem.unit || 'each', // Added unit with default value
+        unit: lineItem.unit || 'each',
         rate: lineItem.rate,
         tax: lineItem.tax || null,
         total: lineItem.total,
@@ -532,7 +505,7 @@ export const invoiceService = {
       invoiceId: data.invoice_id,
       description: data.description,
       quantity: data.quantity,
-      unit: data.unit || 'each', // Handle missing unit field with default
+      unit: 'each',
       rate: data.rate,
       tax: data.tax,
       total: data.total,
@@ -545,7 +518,7 @@ export const invoiceService = {
     const updateData: any = {};
     if (lineItem.description !== undefined) updateData.description = lineItem.description;
     if (lineItem.quantity !== undefined) updateData.quantity = lineItem.quantity;
-    if (lineItem.unit !== undefined) updateData.unit = lineItem.unit; // Added unit
+    if (lineItem.unit !== undefined) updateData.unit = lineItem.unit;
     if (lineItem.rate !== undefined) updateData.rate = lineItem.rate;
     if (lineItem.tax !== undefined) updateData.tax = lineItem.tax;
     if (lineItem.total !== undefined) updateData.total = lineItem.total;
@@ -567,7 +540,7 @@ export const invoiceService = {
       invoiceId: data.invoice_id,
       description: data.description,
       quantity: data.quantity,
-      unit: data.unit || 'each', // Handle missing unit field with default
+      unit: 'each',
       rate: data.rate,
       tax: data.tax,
       total: data.total,
@@ -589,7 +562,6 @@ export const invoiceService = {
   }
 };
 
-// Business Profile service functions
 export const businessProfileService = {
   async getBusinessProfile(): Promise<BusinessProfile | null> {
     const { data: { user } } = await supabase.auth.getUser();
@@ -619,7 +591,6 @@ export const businessProfileService = {
       throw new Error('No authenticated user');
     }
     
-    // Add the user_id to the profile
     const profileWithUserId = {
       ...profile,
       userId: user.id
@@ -627,7 +598,6 @@ export const businessProfileService = {
     
     const supabaseProfile = await mapBusinessProfileToSupabaseBusinessProfile(profileWithUserId);
     
-    // First check if profile exists
     const { data: existingProfile } = await supabase
       .from('business_profiles')
       .select('id')
@@ -637,7 +607,6 @@ export const businessProfileService = {
     let result;
     
     if (existingProfile && existingProfile.length > 0) {
-      // Update existing profile
       const { data, error } = await supabase
         .from('business_profiles')
         .update(supabaseProfile)
@@ -652,7 +621,6 @@ export const businessProfileService = {
       
       result = data;
     } else {
-      // Create new profile
       const { data, error } = await supabase
         .from('business_profiles')
         .insert([supabaseProfile])
@@ -671,7 +639,6 @@ export const businessProfileService = {
   }
 };
 
-// Dashboard stats service
 export const dashboardService = {
   async getDashboardStats() {
     const user = await supabase.auth.getUser();
@@ -679,7 +646,6 @@ export const dashboardService = {
       throw new Error('No authenticated user');
     }
     
-    // Get all invoices for the current user
     const { data: invoices, error: invoicesError } = await supabase
       .from('invoices')
       .select('*')
@@ -690,7 +656,6 @@ export const dashboardService = {
       throw invoicesError;
     }
     
-    // Get customer count for the current user
     const { count: customerCount, error: customerError } = await supabase
       .from('customers')
       .select('*', { count: 'exact', head: true })
@@ -709,7 +674,6 @@ export const dashboardService = {
     const unpaidInvoices = invoices?.filter(i => i.status === 'sent').length || 0;
     const overdueInvoices = invoices?.filter(i => i.status === 'overdue').length || 0;
     
-    // Calculate revenue by month for the current year
     const currentYear = new Date().getFullYear();
     const monthlyRevenue = Array(12).fill(0).map((_, i) => ({ month: i + 1, revenue: 0 }));
     
