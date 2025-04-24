@@ -6,9 +6,23 @@ import { formatCurrency } from '@/utils/invoiceUtils';
 
 interface MinimalTemplateProps {
   invoice: Invoice;
+  companyName: string;
+  companyAddress: string;
+  clientName: string;
+  clientAddress: string;
+  taxRate: string;
+  tax: number;
 }
 
-const MinimalTemplate = ({ invoice }: MinimalTemplateProps) => {
+const MinimalTemplate = ({ 
+  invoice, 
+  companyName, 
+  companyAddress, 
+  clientName, 
+  clientAddress,
+  taxRate,
+  tax
+}: MinimalTemplateProps) => {
   return (
     <Card className="p-8 bg-white">
       <CardContent>
@@ -22,12 +36,12 @@ const MinimalTemplate = ({ invoice }: MinimalTemplateProps) => {
           {/* Company and Client Info */}
           <div className="flex justify-between text-sm">
             <div>
-              <p className="font-medium mb-1">{invoice.companyName}</p>
-              <p className="text-gray-600">{invoice.companyAddress}</p>
+              <p className="font-medium mb-1">{companyName}</p>
+              <p className="text-gray-600">{companyAddress}</p>
             </div>
             <div className="text-right">
-              <p className="font-medium mb-1">{invoice.clientName}</p>
-              <p className="text-gray-600">{invoice.clientAddress}</p>
+              <p className="font-medium mb-1">{clientName}</p>
+              <p className="text-gray-600">{clientAddress}</p>
             </div>
           </div>
 
@@ -63,8 +77,8 @@ const MinimalTemplate = ({ invoice }: MinimalTemplateProps) => {
                 <span>{formatCurrency(invoice.subtotal)}</span>
               </div>
               <div className="flex justify-between w-48">
-                <span className="text-gray-600">Tax ({invoice.taxRate}%)</span>
-                <span>{formatCurrency(invoice.tax)}</span>
+                <span className="text-gray-600">Tax ({taxRate}%)</span>
+                <span>{formatCurrency(tax)}</span>
               </div>
               <div className="flex justify-between w-48 font-medium border-t pt-2 mt-2">
                 <span>Total</span>

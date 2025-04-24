@@ -12,16 +12,27 @@ interface InvoicePreviewProps {
 }
 
 const InvoicePreview = ({ invoice, selectedTemplate }: InvoicePreviewProps) => {
+  // Create customer and business profile data from invoice
+  const templateData = {
+    invoice,
+    companyName: invoice.customer?.name || 'Company Name',
+    companyAddress: `${invoice.customer?.address || ''} ${invoice.customer?.city || ''} ${invoice.customer?.state || ''} ${invoice.customer?.zip || ''}`.trim(),
+    clientName: invoice.customer?.name || 'Client Name',
+    clientAddress: `${invoice.customer?.address || ''} ${invoice.customer?.city || ''} ${invoice.customer?.state || ''} ${invoice.customer?.zip || ''}`.trim(),
+    taxRate: ((invoice.taxAmount / invoice.subtotal) * 100).toFixed(2),
+    tax: invoice.taxAmount
+  };
+
   const renderTemplate = () => {
     switch (selectedTemplate) {
       case 'classic':
-        return <ClassicTemplate invoice={invoice} />;
+        return <ClassicTemplate {...templateData} />;
       case 'modern':
-        return <ModernTemplate invoice={invoice} />;
+        return <ModernTemplate {...templateData} />;
       case 'minimal':
-        return <MinimalTemplate invoice={invoice} />;
+        return <MinimalTemplate {...templateData} />;
       default:
-        return <ClassicTemplate invoice={invoice} />;
+        return <ClassicTemplate {...templateData} />;
     }
   };
 

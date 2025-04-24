@@ -6,9 +6,23 @@ import { formatCurrency } from '@/utils/invoiceUtils';
 
 interface ClassicTemplateProps {
   invoice: Invoice;
+  companyName: string;
+  companyAddress: string;
+  clientName: string;
+  clientAddress: string;
+  taxRate: string;
+  tax: number;
 }
 
-const ClassicTemplate = ({ invoice }: ClassicTemplateProps) => {
+const ClassicTemplate = ({ 
+  invoice, 
+  companyName, 
+  companyAddress, 
+  clientName, 
+  clientAddress,
+  taxRate,
+  tax
+}: ClassicTemplateProps) => {
   return (
     <Card className="p-8 bg-white">
       <CardContent>
@@ -20,16 +34,16 @@ const ClassicTemplate = ({ invoice }: ClassicTemplateProps) => {
               <p className="text-gray-600">#{invoice.invoiceNumber}</p>
             </div>
             <div className="text-right">
-              <p className="font-semibold">{invoice.companyName}</p>
-              <p className="text-gray-600">{invoice.companyAddress}</p>
+              <p className="font-semibold">{companyName}</p>
+              <p className="text-gray-600">{companyAddress}</p>
             </div>
           </div>
 
           {/* Client Info */}
           <div className="mt-8">
             <h2 className="text-lg font-semibold mb-2">Bill To:</h2>
-            <p>{invoice.clientName}</p>
-            <p>{invoice.clientAddress}</p>
+            <p>{clientName}</p>
+            <p>{clientAddress}</p>
           </div>
 
           {/* Invoice Details */}
@@ -63,8 +77,8 @@ const ClassicTemplate = ({ invoice }: ClassicTemplateProps) => {
                   <span>{formatCurrency(invoice.subtotal)}</span>
                 </div>
                 <div className="flex justify-between py-2">
-                  <span>Tax ({invoice.taxRate}%):</span>
-                  <span>{formatCurrency(invoice.tax)}</span>
+                  <span>Tax ({taxRate}%):</span>
+                  <span>{formatCurrency(tax)}</span>
                 </div>
                 <div className="flex justify-between py-2 font-bold">
                   <span>Total:</span>
