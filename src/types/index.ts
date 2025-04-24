@@ -42,9 +42,10 @@ export interface BusinessProfile {
 
 export interface LineItem {
   id: string;
-  invoiceId?: string; // Added for Supabase compatibility
+  invoiceId?: string;
   description: string;
   quantity: number;
+  unit: string;  // New field
   rate: number;
   tax?: number | null;
   total: number;
@@ -123,6 +124,7 @@ export interface SupabaseLineItem {
   invoice_id: string;
   description: string;
   quantity: number;
+  unit: string;  // New field
   rate: number;
   tax: number | null;
   total: number;

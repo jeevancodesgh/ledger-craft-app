@@ -40,6 +40,7 @@ import {
   CollapsibleContent,
   CollapsibleTrigger,
 } from "@/components/ui/collapsible";
+import { each, kg, g } from 'lucide-react';
 
 // Props for InvoiceForm
 type InvoiceFormMode = "create" | "edit";
@@ -86,7 +87,7 @@ const InvoiceForm: React.FC<InvoiceFormProps> = ({
   // Track line items state
   const [items, setItems] = useState<LineItem[]>(initialValues?.items && initialValues.items.length > 0
     ? initialValues.items
-    : [{ id: "1", description: "", quantity: 1, rate: 0, total: 0 }]
+    : [{ id: "1", description: "", quantity: 1, unit: "each", rate: 0, total: 0 }]
   );
   const [subtotal, setSubtotal] = useState(0);
   const [taxAmount, setTaxAmount] = useState(0);
@@ -163,7 +164,7 @@ const InvoiceForm: React.FC<InvoiceFormProps> = ({
       setInvoiceNumber(initialValues.invoiceNumber || "");
       setItems(initialValues.items && initialValues.items.length > 0
         ? initialValues.items
-        : [{ id: "1", description: "", quantity: 1, rate: 0, total: 0 }]);
+        : [{ id: "1", description: "", quantity: 1, unit: "each", rate: 0, total: 0 }]);
       setAdditionalCharges(initialValues.additionalCharges ?? 0);
       setDiscount(initialValues.discount ?? 0);
     }
@@ -200,7 +201,7 @@ const InvoiceForm: React.FC<InvoiceFormProps> = ({
     setItems(updated);
   };
   const addItem = () => {
-    const newItem = { id: `${items.length + 1}`, description: "", quantity: 1, rate: 0, total: 0 };
+    const newItem = { id: `${items.length + 1}`, description: "", quantity: 1, unit: "each", rate: 0, total: 0 };
     setItems([...items, newItem]);
     if (isMobile) {
       setCurrentItemIndex(items.length);
@@ -270,6 +271,12 @@ const InvoiceForm: React.FC<InvoiceFormProps> = ({
     }
   };
 
+  const unitOptions = [
+    { value: "each", label: "Each", icon: each },
+    { value: "kg", label: "Kilogram", icon: kg },
+    { value: "g", label: "Gram", icon: g }
+  ];
+
   // Mobile line item drawer render
   const renderLineItemDrawer = () => {
     if (currentItemIndex === null || currentItemIndex >= items.length) return null;
@@ -292,16 +299,41 @@ const InvoiceForm: React.FC<InvoiceFormProps> = ({
               className="w-full"
             />
           </div>
-          <div className="space-y-2">
-            <label className="text-sm font-medium">Quantity</label>
-            <Input
-              type="number"
-              min="1"
-              value={currentItem.quantity}
-              onChange={e => updateItem(currentItemIndex, "quantity", Number(e.target.value))}
-              className="w-full"
-              inputMode="numeric"
-            />
+          <div className="grid grid-cols-2 gap-2">
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Quantity</label>
+              <Input
+                type="number"
+                min="1"
+                value={currentItem.quantity}
+                onChange={e => updateItem(currentItemIndex, "quantity", Number(e.target.value))}
+                className="w-full"
+                inputMode="numeric"
+              />
+            </div>
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Unit</label>
+              <Select
+                value={currentItem.unit || "each"}
+                onValueChange={value => updateItem(currentItemIndex, "unit", value)}
+              >
+                <FormControl>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select unit" />
+                  </SelectTrigger>
+                </FormControl>
+                <SelectContent>
+                  {unitOptions.map(unit => (
+                    <SelectItem key={unit.value} value={unit.value}>
+                      <div className="flex items-center gap-2">
+                        <unit.icon className="h-4 w-4" />
+                        <span>{unit.label}</span>
+                      </div>
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
           </div>
           <div className="space-y-2">
             <label className="text-sm font-medium">Rate</label>
@@ -664,6 +696,7 @@ const InvoiceForm: React.FC<InvoiceFormProps> = ({
                                 <tr className="border-b">
                                   <th className="text-left py-2 text-sm font-medium">Description</th>
                                   <th className="text-right py-2 text-sm font-medium">Qty</th>
+                                  <th className="text-left py-2 text-sm font-medium">Unit</th>
                                   <th className="text-right py-2 text-sm font-medium">Rate</th>
                                   <th className="text-right py-2 text-sm font-medium">Total</th>
                                   <th className="py-2 w-10"></th>
@@ -688,6 +721,28 @@ const InvoiceForm: React.FC<InvoiceFormProps> = ({
                                         onChange={e => updateItem(index, "quantity", Number(e.target.value))}
                                         className="w-full text-right"
                                       />
+                                    </td>
+                                    <td className="py-2 px-2">
+                                      <Select
+                                        value={item.unit || "each"}
+                                        onValueChange={value => updateItem(index, "unit", value)}
+                                      >
+                                        <FormControl>
+                                          <SelectTrigger>
+                                            <SelectValue placeholder="Select unit" />
+                                          </SelectTrigger>
+                                        </FormControl>
+                                        <SelectContent>
+                                          {unitOptions.map(unit => (
+                                            <SelectItem key={unit.value} value={unit.value}>
+                                              <div className="flex items-center gap-2">
+                                                <unit.icon className="h-4 w-4" />
+                                                <span>{unit.label}</span>
+                                              </div>
+                                            </SelectItem>
+                                          ))}
+                                        </SelectContent>
+                                      </Select>
                                     </td>
                                     <td className="py-2 px-2">
                                       <Input
@@ -975,7 +1030,7 @@ const InvoiceForm: React.FC<InvoiceFormProps> = ({
                             <div className="font-medium">{item.description || "Untitled Item"}</div>
                             <div className="flex justify-between mt-1">
                               <div className="text-gray-600">
-                                {item.quantity} × {formatCurrency(item.rate, invoicePreview.currency)}
+                                {item.quantity} {item.unit} × {formatCurrency(item.rate, invoicePreview.currency)}
                               </div>
                               <div className="text-gray-800 font-medium">
                                 {formatCurrency(item.total, invoicePreview.currency)}
@@ -1013,6 +1068,7 @@ const InvoiceForm: React.FC<InvoiceFormProps> = ({
                             <tr className="border-b">
                               <th className="text-left py-2 text-sm font-medium">Description</th>
                               <th className="text-right py-2 text-sm font-medium">Qty</th>
+                              <th className="text-left py-2 text-sm font-medium">Unit</th>
                               <th className="text-right py-2 text-sm font-medium">Rate</th>
                               <th className="text-right py-2 text-sm font-medium">Total</th>
                             </tr>
@@ -1022,6 +1078,7 @@ const InvoiceForm: React.FC<InvoiceFormProps> = ({
                               <tr key={index} className="border-b last:border-b-0">
                                 <td className="py-2">{item.description || "Untitled Item"}</td>
                                 <td className="py-2 text-right">{item.quantity}</td>
+                                <td className="py-2">{item.unit}</td>
                                 <td className="py-2 text-right">{formatCurrency(item.rate, invoicePreview.currency)}</td>
                                 <td className="py-2 text-right">{formatCurrency(item.total, invoicePreview.currency)}</td>
                               </tr>
