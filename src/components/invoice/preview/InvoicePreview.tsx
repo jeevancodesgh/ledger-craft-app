@@ -12,7 +12,7 @@ interface InvoicePreviewProps {
 }
 
 const InvoicePreview = ({ invoice, selectedTemplate }: InvoicePreviewProps) => {
-  // Create customer and business profile data from invoice
+  // Create template data from invoice
   const templateData = {
     invoice,
     companyName: invoice.customer?.name || 'Company Name',

@@ -6,9 +6,23 @@ import { formatCurrency } from '@/utils/invoiceUtils';
 
 interface ModernTemplateProps {
   invoice: Invoice;
+  companyName: string;
+  companyAddress: string;
+  clientName: string;
+  clientAddress: string;
+  taxRate: string;
+  tax: number;
 }
 
-const ModernTemplate = ({ invoice }: ModernTemplateProps) => {
+const ModernTemplate = ({ 
+  invoice, 
+  companyName, 
+  companyAddress, 
+  clientName, 
+  clientAddress, 
+  taxRate, 
+  tax 
+}: ModernTemplateProps) => {
   return (
     <Card className="p-8 bg-gradient-to-br from-purple-50 to-white">
       <CardContent>
@@ -20,16 +34,16 @@ const ModernTemplate = ({ invoice }: ModernTemplateProps) => {
               <p className="text-gray-500 mt-1">#{invoice.invoiceNumber}</p>
             </div>
             <div className="text-right bg-purple-100 p-4 rounded-lg">
-              <p className="font-bold text-lg">{invoice.companyName}</p>
-              <p className="text-gray-600 mt-1">{invoice.companyAddress}</p>
+              <p className="font-bold text-lg">{companyName}</p>
+              <p className="text-gray-600 mt-1">{companyAddress}</p>
             </div>
           </div>
 
           {/* Client Info */}
           <div className="bg-white p-6 rounded-lg shadow-sm">
             <h2 className="text-lg font-semibold text-purple-600 mb-2">Bill To:</h2>
-            <p className="text-gray-800 font-medium">{invoice.clientName}</p>
-            <p className="text-gray-600">{invoice.clientAddress}</p>
+            <p className="text-gray-800 font-medium">{clientName}</p>
+            <p className="text-gray-600">{clientAddress}</p>
           </div>
 
           {/* Invoice Details */}
@@ -63,8 +77,8 @@ const ModernTemplate = ({ invoice }: ModernTemplateProps) => {
                   <span>{formatCurrency(invoice.subtotal)}</span>
                 </div>
                 <div className="flex justify-between py-2">
-                  <span className="text-gray-600">Tax ({invoice.taxRate}%):</span>
-                  <span>{formatCurrency(invoice.tax)}</span>
+                  <span className="text-gray-600">Tax ({taxRate}%):</span>
+                  <span>{formatCurrency(tax)}</span>
                 </div>
                 <div className="flex justify-between py-2 font-bold text-purple-600">
                   <span>Total:</span>
