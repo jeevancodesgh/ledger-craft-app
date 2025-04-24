@@ -1,4 +1,3 @@
-
 import { Invoice, LineItem } from '@/types';
 
 /**
@@ -85,4 +84,24 @@ export const updateInvoiceStatus = (invoice: Invoice): Invoice['status'] => {
   if (invoice.status === 'paid') return 'paid';
   
   return isInvoiceOverdue(invoice) ? 'overdue' : invoice.status;
+};
+
+/**
+ * Generates an invoice number based on business profile settings
+ */
+export const generateNextInvoiceNumber = (format: string | undefined | null, sequence: number | undefined | null): string => {
+  if (!format) {
+    return `INV-${Date.now()}`; // Fallback format
+  }
+
+  const currentDate = new Date();
+  const year = currentDate.getFullYear();
+  const month = String(currentDate.getMonth() + 1).padStart(2, '0');
+  const seq = sequence ? String(sequence).padStart(4, '0') : '0001';
+
+  // Replace placeholders in the format string
+  return format
+    .replace('{YYYY}', year.toString())
+    .replace('{MM}', month)
+    .replace('{SEQ}', seq);
 };

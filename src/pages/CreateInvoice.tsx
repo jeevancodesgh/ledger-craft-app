@@ -1,12 +1,18 @@
 
-import React from 'react';
+import React, { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAppContext } from '@/context/AppContext';
 import InvoiceForm from "@/components/invoice/InvoiceForm";
+import { generateNextInvoiceNumber } from '@/utils/invoiceUtils';
 
 const CreateInvoice = () => {
   const { customers, isLoadingCustomers, createInvoice, businessProfile } = useAppContext();
   const navigate = useNavigate();
+
+  const defaultInvoiceNumber = generateNextInvoiceNumber(
+    businessProfile?.invoiceNumberFormat,
+    businessProfile?.invoiceNumberSequence
+  );
 
   const handleSubmit = async (
     values: any,
@@ -19,7 +25,7 @@ const CreateInvoice = () => {
   ) => {
     try {
       await createInvoice({
-        invoiceNumber: values.invoiceNumber,
+        invoiceNumber: values.invoiceNumber || defaultInvoiceNumber,
         customerId: values.customerId,
         date: values.date.toISOString().split('T')[0],
         dueDate: values.dueDate.toISOString().split('T')[0],
@@ -48,6 +54,9 @@ const CreateInvoice = () => {
       isLoadingCustomers={isLoadingCustomers}
       onSubmit={handleSubmit}
       onCancel={() => navigate('/invoices')}
+      defaultValues={{
+        invoiceNumber: defaultInvoiceNumber
+      }}
     />
   );
 };

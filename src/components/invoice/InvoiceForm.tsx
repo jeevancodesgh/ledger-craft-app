@@ -51,6 +51,9 @@ interface InvoiceFormProps {
   isLoadingCustomers: boolean;
   onSubmit: (values: any, lineItems: LineItem[], total: number, subtotal: number, taxAmount: number, additionalCharges: number, discount: number) => Promise<void>;
   onCancel: () => void;
+  defaultValues?: {
+    invoiceNumber?: string;
+  };
 }
 
 const invoiceFormSchema = z.object({
@@ -75,6 +78,7 @@ const InvoiceForm: React.FC<InvoiceFormProps> = ({
   isLoadingCustomers,
   onSubmit,
   onCancel,
+  defaultValues
 }) => {
   const navigate = useNavigate();
   const isMobile = useIsMobile();
@@ -94,7 +98,9 @@ const InvoiceForm: React.FC<InvoiceFormProps> = ({
   const [currentItemIndex, setCurrentItemIndex] = useState<number | null>(null);
   const [isLineItemsOpen, setIsLineItemsOpen] = useState(true);
   // Invoice Number (local state so user can type & edit it)
-  const [invoiceNumber, setInvoiceNumber] = useState(initialValues?.invoiceNumber || "");
+  const [invoiceNumber, setInvoiceNumber] = useState(
+    initialValues?.invoiceNumber || defaultValues?.invoiceNumber || ""
+  );
   const [additionalCharges, setAdditionalCharges] = useState(
     initialValues?.additionalCharges ?? 0
   );
@@ -106,7 +112,7 @@ const InvoiceForm: React.FC<InvoiceFormProps> = ({
   const form = useForm<InvoiceFormValues>({
     resolver: zodResolver(invoiceFormSchema),
     defaultValues: {
-      invoiceNumber: initialValues?.invoiceNumber || "",
+      invoiceNumber: initialValues?.invoiceNumber || defaultValues?.invoiceNumber || "",
       customerId: initialValues?.customerId || "",
       date: initialValues?.date
         ? typeof initialValues.date === "string"
