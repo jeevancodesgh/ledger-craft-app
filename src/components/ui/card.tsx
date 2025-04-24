@@ -99,7 +99,8 @@ const PDFCardContent = React.forwardRef<
 >(({ className, ...props }, ref) => (
   <div 
     ref={ref} 
-    className={cn("p-6 bg-white text-black", className)} 
+    className={cn("p-6 bg-white text-black font-medium", className)} 
+    style={{ fontSize: '12px', fontWeight: 500, lineHeight: 1.5 }}
     {...props} 
   />
 ))

@@ -45,8 +45,71 @@ export const generatePdfFromElement = async (
     // Calculate x position to center content horizontally
     const xPosition = (pageWidth - scaledWidth) / 2;
     
+    // Before rendering, optimize text elements for PDF output
+    const prepElementForPdf = (element: HTMLElement) => {
+      // Create a clone to avoid modifying the original DOM
+      const clone = element.cloneNode(true) as HTMLElement;
+      
+      // Find all text elements, especially in the Notes section
+      const textElements = clone.querySelectorAll('p, span, div, h1, h2, h3, h4, h5, h6');
+      textElements.forEach(el => {
+        if (el instanceof HTMLElement) {
+          // Ensure proper font weight and size for better PDF rendering
+          const currentStyle = window.getComputedStyle(el);
+          const fontSize = parseFloat(currentStyle.fontSize);
+          
+          // Increase font weight slightly for better visibility in PDF
+          if (fontSize < 12) {
+            el.style.fontSize = '12px';
+          }
+          
+          // Force black color for text to ensure visibility
+          el.style.color = '#000000';
+          
+          // Improve font weight for better rendering
+          const fontWeight = parseInt(currentStyle.fontWeight);
+          if (fontWeight < 400) {
+            el.style.fontWeight = '400';
+          }
+          
+          // Ensure line height is adequate
+          el.style.lineHeight = '1.5';
+        }
+      });
+      
+      // Specifically target note sections which might have special styling
+      const noteSections = clone.querySelectorAll('.notes-section, [data-section="notes"]');
+      noteSections.forEach(section => {
+        if (section instanceof HTMLElement) {
+          section.style.fontWeight = '500';
+          section.style.fontSize = '12px';
+          section.style.color = '#000000';
+          section.style.padding = '4px';
+          
+          // Ensure all child text elements are properly styled
+          const noteTexts = section.querySelectorAll('p, span, div');
+          noteTexts.forEach(text => {
+            if (text instanceof HTMLElement) {
+              text.style.fontSize = '12px';
+              text.style.fontWeight = '500';
+              text.style.color = '#000000';
+              text.style.margin = '4px 0';
+            }
+          });
+        }
+      });
+      
+      return clone;
+    };
+    
+    // Prepare the element for PDF rendering
+    const preparedElement = prepElementForPdf(element);
+    document.body.appendChild(preparedElement);
+    preparedElement.style.position = 'absolute';
+    preparedElement.style.left = '-9999px';
+    
     // Render the element to a canvas with high quality settings
-    const canvas = await html2canvas(element, {
+    const canvas = await html2canvas(preparedElement, {
       scale: 2, // Higher scale for better resolution
       useCORS: true, // Enable CORS to load images
       allowTaint: true, // Allow loading of tainted images
@@ -54,13 +117,12 @@ export const generatePdfFromElement = async (
       logging: false,
       onclone: (clonedDoc) => {
         // Fix any specific rendering issues in the cloned document if needed
-        const clonedElement = clonedDoc.body.querySelector('#' + element.id) as HTMLElement;
+        const clonedElement = clonedDoc.body.querySelector('#' + preparedElement.id) as HTMLElement;
         if (clonedElement) {
           // Ensure all elements are rendered properly in the clone
           const styles = clonedElement.querySelectorAll('*');
           styles.forEach(el => {
             if (el instanceof HTMLElement) {
-              // Remove the fontDisplay property as it's not in the TypeScript definition
               // Use proper styling for PDF rendering
               el.style.color = 'black';
               
@@ -73,6 +135,9 @@ export const generatePdfFromElement = async (
         }
       }
     });
+    
+    // Remove the prepared element from DOM
+    document.body.removeChild(preparedElement);
     
     // Convert canvas to image data
     const imgData = canvas.toDataURL('image/png', 1.0);
@@ -93,8 +158,6 @@ export const generatePdfFromElement = async (
         const sourceY = i * canvas.height / pagesNeeded;
         const sourceHeight = canvas.height / pagesNeeded;
         
-        // Fix: Use the correct number of arguments for addImage
-        // Documentation: pdf.addImage(imageData, format, x, y, width, height, alias, compression, rotation)
         pdf.addImage(
           imgData,
           'PNG',
