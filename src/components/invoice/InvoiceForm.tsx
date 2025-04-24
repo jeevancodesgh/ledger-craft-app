@@ -891,39 +891,103 @@ const InvoiceForm: React.FC<InvoiceFormProps> = ({
                       `template-${selectedTemplate}`
                     )}
                   >
-                    <div className={cn(
-                      "flex flex-col justify-between mb-6",
-                      !isMobile && "md:flex-row"
-                    )}>
-                      <div>
-                        <h2 className={cn(
-                          "font-bold mb-2",
-                          isMobile ? "text-xl" : "text-2xl"
+                    {selectedTemplate === 'classic' && (
+                      <>
+                        <div className={cn(
+                          "flex flex-col justify-between mb-6",
+                          !isMobile && "md:flex-row"
                         )}>
-                          {businessProfile?.name || "Your Business Name"}
-                        </h2>
-                        <div className="text-gray-600">
-                          <p>{businessProfile?.address || ""}</p>
-                          <p>{businessProfile?.city || ""}, {businessProfile?.state || ""} {businessProfile?.zip || ""}</p>
-                          <p>{businessProfile?.email || ""}</p>
-                          <p>{businessProfile?.phone || ""}</p>
+                          <div>
+                            <h2 className={cn(
+                              "font-bold mb-2",
+                              isMobile ? "text-xl" : "text-2xl"
+                            )}>
+                              {businessProfile?.name || "Your Business Name"}
+                            </h2>
+                            <div className="text-gray-600">
+                              <p>{businessProfile?.address || ""}</p>
+                              <p>{businessProfile?.city || ""}, {businessProfile?.state || ""} {businessProfile?.zip || ""}</p>
+                              <p>{businessProfile?.email || ""}</p>
+                              <p>{businessProfile?.phone || ""}</p>
+                            </div>
+                          </div>
+                          <div className={cn(
+                            "text-right",
+                            isMobile ? "mt-4" : "mt-0"
+                          )}>
+                            <h1 className={cn(
+                              "font-bold text-gray-800",
+                              isMobile ? "text-xl" : "text-2xl"
+                            )}>
+                              INVOICE
+                            </h1>
+                            <p className="text-gray-600"># {invoicePreview.invoiceNumber}</p>
+                            <p className="text-gray-600 mt-2">Date: {invoicePreview.date}</p>
+                            <p className="text-gray-600">Due Date: {invoicePreview.dueDate}</p>
+                          </div>
                         </div>
-                      </div>
-                      <div className={cn(
-                        "text-right",
-                        isMobile ? "mt-4" : "mt-0"
-                      )}>
-                        <h1 className={cn(
-                          "font-bold text-gray-800",
-                          isMobile ? "text-xl" : "text-2xl"
-                        )}>
-                          INVOICE
-                        </h1>
-                        <p className="text-gray-600"># {invoicePreview.invoiceNumber}</p>
-                        <p className="text-gray-600 mt-2">Date: {invoicePreview.date}</p>
-                        <p className="text-gray-600">Due Date: {invoicePreview.dueDate}</p>
-                      </div>
-                    </div>
+                      </>
+                    )}
+
+                    {selectedTemplate === 'modern' && (
+                      <>
+                        <div className="bg-primary/10 -mx-6 -mt-6 p-6 mb-6">
+                          <div className="flex flex-col md:flex-row justify-between items-start md:items-center">
+                            <div>
+                              <h2 className="text-2xl font-bold text-primary mb-2">
+                                {businessProfile?.name || "Your Business Name"}
+                              </h2>
+                              <div className="text-gray-600">
+                                <p>{businessProfile?.address || ""}</p>
+                                <p>{businessProfile?.city || ""}, {businessProfile?.state || ""} {businessProfile?.zip || ""}</p>
+                              </div>
+                            </div>
+                            <div className="mt-4 md:mt-0 text-right">
+                              <h1 className="text-3xl font-bold text-primary">INVOICE</h1>
+                              <p className="text-gray-600 mt-1">#{invoicePreview.invoiceNumber}</p>
+                            </div>
+                          </div>
+                          <div className="flex flex-col md:flex-row justify-between mt-6">
+                            <div className="text-gray-600">
+                              <p>{businessProfile?.email || ""}</p>
+                              <p>{businessProfile?.phone || ""}</p>
+                            </div>
+                            <div className="mt-4 md:mt-0 text-right">
+                              <p className="text-gray-600">Date: {invoicePreview.date}</p>
+                              <p className="text-gray-600">Due Date: {invoicePreview.dueDate}</p>
+                            </div>
+                          </div>
+                        </div>
+                      </>
+                    )}
+
+                    {selectedTemplate === 'minimal' && (
+                      <>
+                        <div className="border-b pb-6 mb-6">
+                          <div className="grid grid-cols-2 gap-6">
+                            <div>
+                              <h2 className="text-xl font-medium mb-4">
+                                {businessProfile?.name || "Your Business Name"}
+                              </h2>
+                              <div className="text-gray-600 space-y-1">
+                                <p>{businessProfile?.address || ""}</p>
+                                <p>{businessProfile?.city || ""}, {businessProfile?.state || ""} {businessProfile?.zip || ""}</p>
+                                <p>{businessProfile?.email || ""}</p>
+                                <p>{businessProfile?.phone || ""}</p>
+                              </div>
+                            </div>
+                            <div className="text-right">
+                              <h1 className="text-xl font-medium mb-4">INVOICE #{invoicePreview.invoiceNumber}</h1>
+                              <div className="text-gray-600 space-y-1">
+                                <p>Date: {invoicePreview.date}</p>
+                                <p>Due Date: {invoicePreview.dueDate}</p>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      </>
+                    )}
+
                     <div className="border-t border-b border-gray-200 py-4 mb-6">
                       <h3 className="font-medium text-gray-600 mb-2">Bill To:</h3>
                       {selectedCustomer ? (
@@ -938,6 +1002,7 @@ const InvoiceForm: React.FC<InvoiceFormProps> = ({
                         <p className="text-gray-500">No customer selected</p>
                       )}
                     </div>
+
                     {isMobile ? (
                       <div className="mb-6 space-y-3">
                         {invoicePreview.items.map((item, index) => (
@@ -1029,6 +1094,7 @@ const InvoiceForm: React.FC<InvoiceFormProps> = ({
                         </table>
                       </div>
                     )}
+
                     <div className="notes-section border-t border-gray-200 pt-4 space-y-4">
                       {(invoicePreview.notes || invoicePreview.terms) && (
                         <div>

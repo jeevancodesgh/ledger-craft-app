@@ -28,3 +28,4 @@ export const invoiceTemplates: InvoiceTemplate[] = [
     preview: 'Minimalist layout focusing on essential information'
   }
 ];
+
