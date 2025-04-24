@@ -27,7 +27,7 @@ export interface BusinessProfile {
   zip: string | null;
   country: string;
   taxId?: string | null;
-  logoUrl?: string | null;
+  logoUrl?: string | null;  // Ensure consistent camelCase naming
   website?: string | null;
   defaultTaxRate?: number | null;
   defaultTerms?: string | null;
@@ -141,7 +141,7 @@ export interface SupabaseBusinessProfile {
   zip: string | null;
   country: string;
   tax_id: string | null;
-  logo_url: string | null;
+  logo_url: string | null;  // This stays snake_case for database mapping
   website: string | null;
   default_tax_rate: number | null;
   default_terms: string | null;

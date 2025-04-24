@@ -56,8 +56,7 @@ const CreateInvoice = () => {
       onCancel={() => navigate('/invoices')}
       defaultValues={{
         invoiceNumber: defaultInvoiceNumber,
-        // Pass logo URL if available
-        logoUrl: businessProfile?.logo_url || undefined
+        // We won't pass the logoUrl here since InvoiceForm already has access to businessProfile
       }}
     />
   );
