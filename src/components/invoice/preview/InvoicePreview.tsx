@@ -1,10 +1,11 @@
 
-import React from 'react';
+import React, { useRef } from 'react';
 import { Invoice } from '@/types';
 import { InvoiceTemplateId } from '../templates/InvoiceTemplates';
 import ClassicTemplate from './templates/ClassicTemplate';
 import ModernTemplate from './templates/ModernTemplate';
 import MinimalTemplate from './templates/MinimalTemplate';
+import CanvasPreview from './CanvasPreview';
 
 interface InvoicePreviewProps {
   invoice: Invoice;
@@ -12,6 +13,8 @@ interface InvoicePreviewProps {
 }
 
 const InvoicePreview = ({ invoice, selectedTemplate }: InvoicePreviewProps) => {
+  const contentRef = useRef<HTMLDivElement>(null);
+
   // Create template data from invoice
   const templateData = {
     invoice,
@@ -38,7 +41,10 @@ const InvoicePreview = ({ invoice, selectedTemplate }: InvoicePreviewProps) => {
 
   return (
     <div className="w-full bg-white shadow-sm rounded-lg">
-      {renderTemplate()}
+      <div ref={contentRef} className="hidden">
+        {renderTemplate()}
+      </div>
+      <CanvasPreview contentRef={contentRef} />
     </div>
   );
 };
