@@ -13,6 +13,7 @@ import { Download, Maximize2, Minimize2 } from 'lucide-react';
 import { generateInvoicePdf } from '@/utils/pdfUtils';
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
+import { useAppContext } from '@/context/AppContext';
 
 interface InvoicePreviewProps {
   invoice: Invoice;
@@ -25,6 +26,7 @@ const InvoicePreview = ({ invoice, selectedTemplate }: InvoicePreviewProps) => {
   const { toast } = useToast();
   const [isFullscreen, setIsFullscreen] = React.useState(false);
   const [isGeneratingPdf, setIsGeneratingPdf] = React.useState(false);
+  const { businessProfile } = useAppContext();
 
   // Create template data from invoice
   const templateData = {
@@ -34,7 +36,8 @@ const InvoicePreview = ({ invoice, selectedTemplate }: InvoicePreviewProps) => {
     clientName: invoice.customer?.name || 'Client Name',
     clientAddress: `${invoice.customer?.address || ''} ${invoice.customer?.city || ''} ${invoice.customer?.state || ''} ${invoice.customer?.zip || ''}`.trim(),
     taxRate: ((invoice.taxAmount / invoice.subtotal) * 100).toFixed(2),
-    tax: invoice.taxAmount
+    tax: invoice.taxAmount,
+    businessLogo: businessProfile?.logoUrl || '',
   };
 
   const handleDownloadPdf = async () => {
@@ -69,7 +72,7 @@ const InvoicePreview = ({ invoice, selectedTemplate }: InvoicePreviewProps) => {
         document.body.appendChild(pdfContainer);
         
         // Generate PDF from the specially prepared container
-        await generateInvoicePdf(invoice, pdfContainer, selectedTemplate);
+        await generateInvoicePdf(invoice, pdfContainer, selectedTemplate, businessProfile?.logoUrl);
         
         // Clean up
         document.body.removeChild(pdfContainer);

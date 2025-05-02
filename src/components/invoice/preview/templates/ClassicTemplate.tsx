@@ -3,6 +3,7 @@ import React from 'react';
 import { Invoice } from '@/types';
 import { Card, CardContent } from "@/components/ui/card";
 import { formatCurrency } from '@/utils/invoiceUtils';
+import { cn } from '@/lib/utils';
 
 interface ClassicTemplateProps {
   invoice: Invoice;
@@ -12,6 +13,7 @@ interface ClassicTemplateProps {
   clientAddress: string;
   taxRate: string;
   tax: number;
+  businessLogo?: string;
 }
 
 const ClassicTemplate = ({ 
@@ -21,7 +23,8 @@ const ClassicTemplate = ({
   clientName, 
   clientAddress,
   taxRate,
-  tax
+  tax,
+  businessLogo
 }: ClassicTemplateProps) => {
   return (
     <Card className="p-8 bg-white">
@@ -30,7 +33,16 @@ const ClassicTemplate = ({
           {/* Header */}
           <div className="flex justify-between">
             <div>
-              <h1 className="text-2xl font-bold">INVOICE</h1>
+              {businessLogo ? (
+                <div className="mb-3">
+                  <img 
+                    src={businessLogo} 
+                    alt={companyName} 
+                    className="max-h-16 max-w-[200px] object-contain"
+                  />
+                </div>
+              ) : null}
+              <h1 className={cn("text-2xl font-bold", businessLogo ? "mt-2" : "")}>INVOICE</h1>
               <p className="text-gray-600">#{invoice.invoiceNumber}</p>
             </div>
             <div className="text-right">

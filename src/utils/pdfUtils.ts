@@ -10,11 +10,25 @@ import { InvoiceTemplateId } from '@/components/invoice/templates/InvoiceTemplat
 export const generatePdfFromElement = async (
   element: HTMLElement, 
   fileName: string = 'invoice.pdf',
-  template: InvoiceTemplateId = 'classic'
+  template: InvoiceTemplateId = 'classic',
+  businessLogoUrl?: string
 ): Promise<void> => {
   try {
     // First, ensure all fonts and images are fully loaded before capture
     await document.fonts.ready;
+    
+    // If there's a logo, ensure it's loaded before capture
+    if (businessLogoUrl) {
+      await new Promise<void>((resolve) => {
+        const img = new Image();
+        img.onload = () => resolve();
+        img.onerror = () => {
+          console.warn('Failed to load business logo for PDF');
+          resolve();
+        };
+        img.src = businessLogoUrl;
+      });
+    }
     
     // Get the element's dimensions for proper scaling
     const rect = element.getBoundingClientRect();
@@ -96,6 +110,17 @@ export const generatePdfFromElement = async (
               }
             });
           });
+          
+          // Enhance logo rendering if present
+          const logoImg = clonedElement.querySelector('img[alt]');
+          if (logoImg instanceof HTMLImageElement && businessLogoUrl) {
+            logoImg.style.maxHeight = '60px';
+            logoImg.style.maxWidth = '200px';
+            logoImg.style.objectFit = 'contain';
+            logoImg.style.marginBottom = '10px';
+            logoImg.crossOrigin = 'Anonymous'; // For CORS images
+            logoImg.src = businessLogoUrl;
+          }
         }
       }
     });
@@ -183,7 +208,8 @@ export const generatePdfFromElement = async (
 export const generateInvoicePdf = async (
   invoice: Invoice,
   element: HTMLElement,
-  template: InvoiceTemplateId = 'classic'
+  template: InvoiceTemplateId = 'classic',
+  businessLogoUrl?: string
 ): Promise<void> => {
   try {
     // Sanitize invoice number for valid CSS selector
@@ -195,8 +221,8 @@ export const generateInvoicePdf = async (
     // Setup file name with invoice number
     const fileName = `Invoice-${invoice.invoiceNumber}.pdf`;
     
-    // Generate the PDF with template
-    await generatePdfFromElement(element, fileName, template);
+    // Generate the PDF with template and logo
+    await generatePdfFromElement(element, fileName, template, businessLogoUrl);
   } catch (error) {
     console.error('Error generating invoice PDF:', error);
     throw new Error(`Failed to generate invoice PDF: ${error instanceof Error ? error.message : String(error)}`);

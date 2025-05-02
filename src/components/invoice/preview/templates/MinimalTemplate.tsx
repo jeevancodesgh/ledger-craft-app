@@ -12,6 +12,7 @@ interface MinimalTemplateProps {
   clientAddress: string;
   taxRate: string;
   tax: number;
+  businessLogo?: string;
 }
 
 const MinimalTemplate = ({ 
@@ -21,14 +22,24 @@ const MinimalTemplate = ({
   clientName, 
   clientAddress,
   taxRate,
-  tax
+  tax,
+  businessLogo
 }: MinimalTemplateProps) => {
   return (
     <Card className="p-8 bg-white">
       <CardContent>
         <div className="max-w-3xl mx-auto space-y-6">
-          {/* Header */}
-          <div className="text-center mb-12">
+          {/* Header with Logo */}
+          <div className="text-center mb-8">
+            {businessLogo && (
+              <div className="flex justify-center mb-4">
+                <img 
+                  src={businessLogo} 
+                  alt={companyName} 
+                  className="max-h-16 object-contain"
+                />
+              </div>
+            )}
             <h1 className="text-2xl font-light tracking-wide">INVOICE</h1>
             <p className="text-gray-500 mt-2">#{invoice.invoiceNumber}</p>
           </div>
