@@ -1,3 +1,4 @@
+
 import React, { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useForm } from "react-hook-form";
@@ -437,6 +438,72 @@ const InvoiceForm: React.FC<InvoiceFormProps> = ({
   };
 
   const selectedCustomer = customers.find(c => c.id === form.watch('customerId'));
+
+  const handleSelectTemplate = (templateId: InvoiceTemplateId) => {
+    setSelectedTemplate(templateId);
+  };
+
+  // Mobile-optimized template selector
+  const mobileTemplateOptions = invoiceTemplates.map(template => ({
+    id: template.id,
+    name: template.name,
+  }));
+
+  const renderPreviewTab = () => {
+    if (!invoicePreview) return null;
+
+    return (
+      <div className="space-y-4">
+        {!isMobile && (
+          <div className="mb-4">
+            <h3 className="text-lg font-medium mb-2">Template</h3>
+            <TemplateSelector
+              templates={invoiceTemplates}
+              selectedTemplate={selectedTemplate}
+              onSelectTemplate={handleSelectTemplate}
+            />
+          </div>
+        )}
+        
+        {isMobile && (
+          <div className="mb-4 px-4">
+            <h3 className="text-sm font-medium mb-2">Template</h3>
+            <TemplateSelector
+              templates={invoiceTemplates}
+              selectedTemplate={selectedTemplate}
+              onSelectTemplate={handleSelectTemplate}
+              isMobile={true}
+            />
+          </div>
+        )}
+        
+        <InvoicePreview
+          invoice={invoicePreview}
+          selectedTemplate={selectedTemplate}
+        />
+        
+        {!isMobile && (
+          <div className="flex justify-end space-x-4 mt-6">
+            <Button 
+              variant="outline" 
+              onClick={() => setActiveTab("edit")}
+              className="gap-2"
+            >
+              <Edit className="h-4 w-4" />
+              <span>Edit</span>
+            </Button>
+            <Button 
+              onClick={handleDownloadPdf} 
+              className="gap-2"
+            >
+              <Download className="h-4 w-4" />
+              <span>Download PDF</span>
+            </Button>
+          </div>
+        )}
+      </div>
+    );
+  };
 
   return (
     <div className="space-y-4 pb-20 px-0 -mx-4 sm:mx-0 sm:px-0">
@@ -894,3 +961,33 @@ const InvoiceForm: React.FC<InvoiceFormProps> = ({
                           <div className="flex justify-between border-t pt-1">
                             <span className="font-bold">Total</span>
                             <span className="font-bold">{formatCurrency(total, form.getValues('currency'))}</span>
+                          </div>
+                        </div>
+                      </CollapsibleContent>
+                    </Collapsible>
+                  </div>
+
+                  <div className="pt-4 flex gap-2 justify-end">
+                    <Button type="button" variant="outline" onClick={onCancel}>
+                      Cancel
+                    </Button>
+                    <Button type="submit" className="gap-2">
+                      <Save size={16} />
+                      <span>{mode === "create" ? "Create Invoice" : "Save Changes"}</span>
+                    </Button>
+                  </div>
+                </form>
+              </Form>
+            </CardContent>
+          </Card>
+        </TabsContent>
+        
+        <TabsContent value="preview" className="h-full">
+          {renderPreviewTab()}
+        </TabsContent>
+      </Tabs>
+    </div>
+  );
+};
+
+export default InvoiceForm;
