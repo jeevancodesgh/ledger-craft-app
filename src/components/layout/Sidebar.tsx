@@ -8,15 +8,16 @@ import {
   FileText, 
   Users, 
   Settings, 
-  ChevronLeft,
-  ChevronRight
+  X
 } from 'lucide-react';
 
 interface SidebarProps {
   collapsed: boolean;
+  isMobile: boolean;
+  onCloseMobileMenu?: () => void;
 }
 
-export function Sidebar({ collapsed }: SidebarProps) {
+export function Sidebar({ collapsed, isMobile, onCloseMobileMenu }: SidebarProps) {
   const { user } = useAuth();
   
   const navItems = [
@@ -26,6 +27,67 @@ export function Sidebar({ collapsed }: SidebarProps) {
     { name: 'Settings', path: '/settings', icon: Settings },
   ];
 
+  // Mobile sidebar is a full-screen menu
+  if (isMobile) {
+    return (
+      <aside className="flex flex-col h-full bg-sidebar overflow-y-auto">
+        <div className="flex items-center justify-between p-4 border-b border-sidebar-border">
+          <h1 className="font-semibold text-xl text-white">
+            LedgerCraft
+          </h1>
+          {onCloseMobileMenu && (
+            <button 
+              onClick={onCloseMobileMenu}
+              className="text-sidebar-foreground hover:text-white"
+              aria-label="Close menu"
+            >
+              <X className="h-6 w-6" />
+            </button>
+          )}
+        </div>
+        
+        <nav className="flex-1 py-6">
+          <ul className="space-y-2 px-4">
+            {navItems.map((item) => (
+              <li key={item.path}>
+                <NavLink
+                  to={item.path}
+                  onClick={onCloseMobileMenu}
+                  className={({ isActive }) => cn(
+                    "flex items-center px-4 py-3 rounded-md text-base transition-colors",
+                    isActive ? "bg-sidebar-accent text-sidebar-accent-foreground" : "text-sidebar-foreground hover:bg-sidebar-accent/50"
+                  )}
+                >
+                  <item.icon className="h-5 w-5 mr-3" />
+                  <span>{item.name}</span>
+                </NavLink>
+              </li>
+            ))}
+          </ul>
+        </nav>
+        
+        <div className="p-4 border-t border-sidebar-border mt-auto">
+          <div className="flex items-center">
+            <div className="w-10 h-10 rounded-full bg-invoice-teal text-white flex items-center justify-center mr-3">
+              {user?.email ? user.email.charAt(0).toUpperCase() : 'U'}
+            </div>
+            <div>
+              <p className="text-base font-medium text-sidebar-foreground truncate max-w-[200px]">
+                {user?.email || 'User'}
+              </p>
+              {user?.user_metadata?.full_name && (
+                <p className="text-sm text-sidebar-foreground/70">
+                  {user.user_metadata.full_name}
+                </p>
+              )}
+            </div>
+          </div>
+        </div>
+      </aside>
+    );
+  }
+
+  // Desktop sidebar
   return (
     <aside 
       className={cn(
