@@ -29,6 +29,7 @@ const customerSchema = z.object({
   state: z.string().optional(),
   zip: z.string().optional(),
   phone: z.string().optional(),
+  country: z.string().optional().default(''),
 });
 
 const CreateInvoice = () => {
@@ -48,6 +49,7 @@ const CreateInvoice = () => {
       state: '',
       zip: '',
       phone: '',
+      country: '',
     }
   });
 
@@ -98,6 +100,7 @@ const CreateInvoice = () => {
         state: data.state,
         zip: data.zip,
         phone: data.phone,
+        country: data.country || '',
       });
       
       toast({
@@ -208,6 +211,7 @@ const CreateInvoice = () => {
                 placeholder="ZIP code"
               />
             </div>
+            <input type="hidden" {...form.register('country')} />
             <DialogFooter>
               <Button type="button" variant="outline" onClick={() => setAddCustomerOpen(false)}>
                 Cancel

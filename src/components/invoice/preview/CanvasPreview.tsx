@@ -1,6 +1,7 @@
 
 import React, { useEffect, useRef, useState } from 'react';
 import html2canvas from 'html2canvas';
+import { useIsMobile } from '@/hooks/use-mobile';
 
 interface CanvasPreviewProps {
   contentRef: React.RefObject<HTMLDivElement>;
@@ -9,6 +10,7 @@ interface CanvasPreviewProps {
 const CanvasPreview = ({ contentRef }: CanvasPreviewProps) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [isRendering, setIsRendering] = useState(true);
+  const isMobile = useIsMobile();
 
   useEffect(() => {
     const renderToCanvas = async () => {
@@ -21,7 +23,7 @@ const CanvasPreview = ({ contentRef }: CanvasPreviewProps) => {
         await new Promise(resolve => setTimeout(resolve, 100));
         
         const canvas = await html2canvas(contentRef.current, {
-          scale: 2, // Higher scale for better quality
+          scale: isMobile ? 1.5 : 2, // Lower scale on mobile for better performance
           useCORS: true,
           allowTaint: true,
           backgroundColor: '#FFFFFF',
@@ -61,7 +63,7 @@ const CanvasPreview = ({ contentRef }: CanvasPreviewProps) => {
     };
 
     renderToCanvas();
-  }, [contentRef]);
+  }, [contentRef, isMobile]);
 
   return (
     <div className="w-full">
@@ -74,7 +76,12 @@ const CanvasPreview = ({ contentRef }: CanvasPreviewProps) => {
       <canvas 
         ref={canvasRef}
         className={`w-full h-full ${isRendering ? 'opacity-0' : 'opacity-100'}`}
-        style={{ maxWidth: '100%', transition: 'opacity 0.3s ease' }}
+        style={{ 
+          maxWidth: '100%', 
+          transition: 'opacity 0.3s ease',
+          transform: isMobile ? 'scale(0.98)' : 'none', // Slightly scale down on mobile
+          transformOrigin: 'top center'
+        }}
       />
     </div>
   );

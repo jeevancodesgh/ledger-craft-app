@@ -8,6 +8,7 @@ import MinimalTemplate from './templates/MinimalTemplate';
 import ExecutiveTemplate from './templates/ExecutiveTemplate';
 import CorporateTemplate from './templates/CorporateTemplate';
 import CanvasPreview from './CanvasPreview';
+import { useIsMobile } from '@/hooks/use-mobile';
 
 interface InvoicePreviewProps {
   invoice: Invoice;
@@ -16,6 +17,7 @@ interface InvoicePreviewProps {
 
 const InvoicePreview = ({ invoice, selectedTemplate }: InvoicePreviewProps) => {
   const contentRef = useRef<HTMLDivElement>(null);
+  const isMobile = useIsMobile();
 
   // Create template data from invoice
   const templateData = {
@@ -46,7 +48,7 @@ const InvoicePreview = ({ invoice, selectedTemplate }: InvoicePreviewProps) => {
   };
 
   return (
-    <div className="w-full bg-white shadow-sm rounded-lg">
+    <div className={`w-full bg-white shadow-sm rounded-lg ${isMobile ? 'mx-auto max-w-[95vw]' : ''}`}>
       <div ref={contentRef} className="hidden">
         {renderTemplate()}
       </div>

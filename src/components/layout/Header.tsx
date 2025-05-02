@@ -1,10 +1,11 @@
 
 import React from 'react';
-import { Bell, Menu, Search, LogOut, UserPlus } from 'lucide-react';
+import { Bell, Menu, Search, LogOut, UserPlus, Download } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
+import { useIsMobile } from '@/hooks/use-mobile';
 
 interface HeaderProps {
   toggleSidebar: () => void;
@@ -15,6 +16,11 @@ export function Header({ toggleSidebar, isMobile }: HeaderProps) {
   const { user, signOut } = useAuth();
   const { toast } = useToast();
   const navigate = useNavigate();
+  const location = useLocation();
+  
+  // Check if we're on the invoice preview page
+  const isInvoicePreview = location.pathname.includes('/invoices/new') || 
+                          location.pathname.includes('/invoices/edit');
 
   const handleSignOut = async () => {
     await signOut();
@@ -51,6 +57,15 @@ export function Header({ toggleSidebar, isMobile }: HeaderProps) {
               className="w-full py-2 pl-10 pr-4 text-sm bg-secondary/50 border border-border rounded-md focus:outline-none focus:ring-1 focus:ring-primary"
             />
           </div>
+        </div>
+      )}
+      
+      {/* Mobile page title */}
+      {isMobile && (
+        <div className="flex-1 mx-2 text-center">
+          <h1 className="text-lg font-medium truncate">
+            {isInvoicePreview ? "Invoice" : "LedgerCraft"}
+          </h1>
         </div>
       )}
       
