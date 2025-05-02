@@ -1,4 +1,3 @@
-
 import React, { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useForm } from "react-hook-form";
@@ -52,6 +51,14 @@ import {
   DropdownMenuSeparator,
 } from "@/components/ui/dropdown-menu";
 import { useToast } from "@/hooks/use-toast";
+import InvoicePreview from "./preview/InvoicePreview";
+
+// Import template components
+import ClassicTemplate from "./preview/templates/ClassicTemplate";
+import ModernTemplate from "./preview/templates/ModernTemplate";
+import MinimalTemplate from "./preview/templates/MinimalTemplate";
+import ExecutiveTemplate from "./preview/templates/ExecutiveTemplate";
+import CorporateTemplate from "./preview/templates/CorporateTemplate";
 
 type InvoiceFormMode = "create" | "edit";
 interface InvoiceFormProps {
@@ -225,6 +232,7 @@ const InvoiceForm: React.FC<InvoiceFormProps> = ({
     }
     setItems(updated);
   };
+
   const addItem = () => {
     const newItem = { id: `${items.length + 1}`, description: "", quantity: 1, unit: "each", rate: 0, total: 0 };
     setItems([...items, newItem]);
@@ -233,6 +241,7 @@ const InvoiceForm: React.FC<InvoiceFormProps> = ({
       setOpenLineItemDrawer(true);
     }
   };
+
   const removeItem = (idx: number) => {
     if (items.length > 1) {
       setItems(items.filter((_, i) => i !== idx));
@@ -242,6 +251,7 @@ const InvoiceForm: React.FC<InvoiceFormProps> = ({
       }
     }
   };
+
   const editItem = (idx: number) => {
     setCurrentItemIndex(idx);
     setOpenLineItemDrawer(true);
@@ -252,6 +262,7 @@ const InvoiceForm: React.FC<InvoiceFormProps> = ({
     setAdditionalCharges(isNaN(v) ? 0 : v);
     form.setValue("additionalCharges", isNaN(v) ? 0 : v);
   };
+
   const handleDiscountChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const v = Number(e.target.value);
     setDiscount(isNaN(v) ? 0 : v);
@@ -499,7 +510,6 @@ const InvoiceForm: React.FC<InvoiceFormProps> = ({
                             <Select
                               onValueChange={field.onChange}
                               value={field.value}
-                              className="flex-1"
                             >
                               <FormControl>
                                 <SelectTrigger>
@@ -884,158 +894,3 @@ const InvoiceForm: React.FC<InvoiceFormProps> = ({
                           <div className="flex justify-between border-t pt-1">
                             <span className="font-bold">Total</span>
                             <span className="font-bold">{formatCurrency(total, form.getValues('currency'))}</span>
-                          </div>
-                        </div>
-                      </CollapsibleContent>
-                    </Collapsible>
-                  </div>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <FormField
-                      control={form.control}
-                      name="notes"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Notes</FormLabel>
-                          <FormControl>
-                            <Textarea
-                              placeholder="Additional notes to the customer"
-                              className="resize-none h-32"
-                              {...field}
-                            />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                    <FormField
-                      control={form.control}
-                      name="terms"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Terms & Conditions</FormLabel>
-                          <FormControl>
-                            <Textarea
-                              placeholder="Payment terms and conditions"
-                              className="resize-none h-32"
-                              {...field}
-                            />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                  </div>
-
-                  <div className="flex items-center justify-end space-x-2 pt-4">
-                    <Button
-                      variant="outline"
-                      type="button"
-                      onClick={onCancel}
-                    >
-                      Cancel
-                    </Button>
-                    <Button
-                      type="submit"
-                      className="gap-2"
-                    >
-                      <Save size={16} />
-                      Save Invoice
-                    </Button>
-                  </div>
-                </form>
-              </Form>
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        <TabsContent value="preview" className="px-4 sm:px-0">
-          <div className="bg-white rounded-lg shadow-md relative">
-            <div className={cn("flex justify-between items-center p-4 border-b", isMobile ? "flex-col gap-2" : "")}>
-              <div className="flex flex-col">
-                <h2 className="text-2xl font-bold">Invoice Preview</h2>
-                {selectedCustomer && (
-                  <p className="text-muted-foreground">For: {selectedCustomer.name}</p>
-                )}
-              </div>
-              <div className={cn("flex gap-2", isMobile ? "w-full justify-center" : "")}>
-                <TemplateSelector 
-                  selectedTemplate={selectedTemplate} 
-                  onChange={setSelectedTemplate} 
-                  templates={Object.entries(invoiceTemplates).map(([id, template]) => ({
-                    id: id as InvoiceTemplateId,
-                    name: template.name,
-                  }))}
-                  isMobile={isMobile}
-                />
-              </div>
-            </div>
-            
-            <div ref={previewRef} className="p-6">
-              {invoicePreview ? (
-                <div className="flex justify-center">
-                  <div className={cn(
-                    "bg-white shadow-sm max-w-4xl w-full",
-                    isMobile ? "scale-[0.8] origin-top" : ""
-                  )}>
-                    {/* Render the selected template with the preview data */}
-                    {(() => {
-                      switch (selectedTemplate) {
-                        case 'classic':
-                          return <ClassicTemplate invoice={invoicePreview} />;
-                        case 'modern':
-                          return <ModernTemplate invoice={invoicePreview} />;
-                        case 'minimal':
-                          return <MinimalTemplate invoice={invoicePreview} />;
-                        case 'executive':
-                          return <ExecutiveTemplate invoice={invoicePreview} />;
-                        case 'corporate':
-                          return <CorporateTemplate invoice={invoicePreview} />;
-                        default:
-                          return <ClassicTemplate invoice={invoicePreview} />;
-                      }
-                    })()}
-                  </div>
-                </div>
-              ) : (
-                <div className="text-center py-12">
-                  <p>No preview available. Switch to Edit tab to configure your invoice.</p>
-                </div>
-              )}
-            </div>
-            
-            {/* Fixed download button on mobile */}
-            {isMobile && invoicePreview ? (
-              <div className="fixed bottom-0 left-0 right-0 bg-background p-4 border-t shadow-lg z-10">
-                <Button 
-                  onClick={handleDownloadPdf} 
-                  className="w-full gap-2"
-                >
-                  <Download className="h-4 w-4" />
-                  Download PDF
-                </Button>
-              </div>
-            ) : (
-              <div className="flex justify-end p-4 border-t">
-                <Button 
-                  onClick={handleDownloadPdf} 
-                  className="gap-2"
-                  disabled={!invoicePreview}
-                >
-                  <Download className="h-4 w-4" />
-                  Download PDF
-                </Button>
-              </div>
-            )}
-          </div>
-        </TabsContent>
-      </Tabs>
-      
-      {/* Add padding at the bottom for mobile fixed button */}
-      {isMobile && activeTab === "preview" && invoicePreview && (
-        <div className="h-16"></div>
-      )}
-    </div>
-  );
-};
-
-export default InvoiceForm;

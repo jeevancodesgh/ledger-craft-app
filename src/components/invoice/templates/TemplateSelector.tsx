@@ -8,28 +8,36 @@ interface TemplateSelectorProps {
   templates: InvoiceTemplate[];
   selectedTemplate: InvoiceTemplateId;
   onSelectTemplate: (templateId: InvoiceTemplateId) => void;
+  isMobile?: boolean;
 }
 
 const TemplateSelector = ({
   templates,
   selectedTemplate,
-  onSelectTemplate
+  onSelectTemplate,
+  isMobile
 }: TemplateSelectorProps) => {
   return (
-    <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+    <div className={cn("grid gap-2", 
+      isMobile ? "grid-cols-2" : "grid-cols-3 md:grid-cols-5")}>
       {templates.map((template) => (
         <Card
           key={template.id}
           className={cn(
-            "cursor-pointer transition-all hover:border-primary",
-            selectedTemplate === template.id ? "border-primary" : ""
+            "cursor-pointer transition-all",
+            selectedTemplate === template.id 
+              ? "border-primary bg-primary/5" 
+              : "hover:border-primary/50",
+            isMobile && "p-0"
           )}
           onClick={() => onSelectTemplate(template.id)}
         >
-          <CardContent className="p-4">
-            <div className="space-y-2">
-              <h3 className="font-medium">{template.name}</h3>
-              <p className="text-sm text-muted-foreground">{template.description}</p>
+          <CardContent className={cn("p-3", isMobile && "p-2")}>
+            <div className="text-center">
+              <p className={cn("font-medium", isMobile && "text-sm")}>{template.name}</p>
+              {!isMobile && (
+                <p className="text-xs text-muted-foreground mt-1">{template.description}</p>
+              )}
             </div>
           </CardContent>
         </Card>
@@ -39,4 +47,3 @@ const TemplateSelector = ({
 };
 
 export default TemplateSelector;
-
