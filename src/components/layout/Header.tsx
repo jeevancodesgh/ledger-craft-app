@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { Bell, Menu, Search, LogOut } from 'lucide-react';
+import { Bell, Menu, Search, LogOut, UserPlus } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
@@ -23,6 +23,10 @@ export function Header({ toggleSidebar, isMobile }: HeaderProps) {
       description: 'You have been logged out of your account.'
     });
     navigate('/login');
+  };
+
+  const handleAddCustomer = () => {
+    navigate('/customers/new');
   };
 
   return (

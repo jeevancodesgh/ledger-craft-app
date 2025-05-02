@@ -16,7 +16,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
-import { CalendarIcon, Plus, Trash2, Download, Save, ArrowLeft, Eye, ChevronsUpDown, Edit, Check, Circle, Weight } from 'lucide-react';
+import { CalendarIcon, Plus, Trash2, Download, Save, ArrowLeft, Eye, ChevronsUpDown, Edit, Check, Circle, Weight, UserPlus } from 'lucide-react';
 import { generateInvoicePdf } from "@/utils/pdfUtils";
 import { formatCurrency, formatDate } from "@/utils/invoiceUtils";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
@@ -42,6 +42,15 @@ import {
 } from "@/components/ui/collapsible";
 import TemplateSelector from './templates/TemplateSelector';
 import { invoiceTemplates, InvoiceTemplateId } from './templates/InvoiceTemplates';
+import {
+  DropdownMenu,
+  DropdownMenuTrigger,
+  DropdownMenuContent,
+  DropdownMenuLabel,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+} from "@/components/ui/dropdown-menu";
+import { useToast } from "@/hooks/use-toast";
 
 type InvoiceFormMode = "create" | "edit";
 interface InvoiceFormProps {
@@ -52,6 +61,8 @@ interface InvoiceFormProps {
   isLoadingCustomers: boolean;
   onSubmit: (values: any, lineItems: LineItem[], total: number, subtotal: number, taxAmount: number, additionalCharges: number, discount: number) => Promise<void>;
   onCancel: () => void;
+  onAddCustomer?: () => void;
+  newlyAddedCustomer?: Customer | null;
   defaultValues?: {
     invoiceNumber?: string;
   };
@@ -65,8 +76,8 @@ const invoiceFormSchema = z.object({
   notes: z.string().optional(),
   terms: z.string().optional(),
   currency: z.string().default('USD'),
-  additionalCharges: z.coerce.number().nonnegative("Must be a positive amount").default(0), // new
-  discount: z.coerce.number().nonnegative("Must be a positive amount").default(0), // new
+  additionalCharges: z.coerce.number().nonnegative("Must be a positive amount").default(0),
+  discount: z.coerce.number().nonnegative("Must be a positive amount").default(0),
 });
 
 type InvoiceFormValues = z.infer<typeof invoiceFormSchema>;
@@ -79,10 +90,13 @@ const InvoiceForm: React.FC<InvoiceFormProps> = ({
   isLoadingCustomers,
   onSubmit,
   onCancel,
+  onAddCustomer,
+  newlyAddedCustomer,
   defaultValues
 }) => {
   const navigate = useNavigate();
   const isMobile = useIsMobile();
+  const { toast } = useToast();
 
   const [items, setItems] = useState<LineItem[]>(initialValues?.items && initialValues.items.length > 0
     ? initialValues.items
@@ -107,6 +121,7 @@ const InvoiceForm: React.FC<InvoiceFormProps> = ({
     initialValues?.discount ?? 0
   );
   const [selectedTemplate, setSelectedTemplate] = useState<InvoiceTemplateId>('classic');
+  const [recentCustomers, setRecentCustomers] = useState<Customer[]>([]);
 
   const form = useForm<InvoiceFormValues>({
     resolver: zodResolver(invoiceFormSchema),
@@ -164,6 +179,24 @@ const InvoiceForm: React.FC<InvoiceFormProps> = ({
       setDiscount(initialValues.discount ?? 0);
     }
   }, [initialValues]);
+
+  useEffect(() => {
+    // When a new customer is added, select it in the form
+    if (newlyAddedCustomer) {
+      form.setValue('customerId', newlyAddedCustomer.id);
+    }
+  }, [newlyAddedCustomer, form]);
+
+  // Load recent customers (last 5)
+  useEffect(() => {
+    if (customers && customers.length > 0) {
+      // Sort by most recently updated
+      const sorted = [...customers].sort((a, b) => 
+        new Date(b.updatedAt || '').getTime() - new Date(a.updatedAt || '').getTime()
+      );
+      setRecentCustomers(sorted.slice(0, 5));
+    }
+  }, [customers]);
 
   const handleInvoiceNumberChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setInvoiceNumber(e.target.value);
@@ -258,6 +291,14 @@ const InvoiceForm: React.FC<InvoiceFormProps> = ({
         console.error('Error generating PDF:', error);
       }
     }
+  };
+
+  const handleSelectCustomer = (customerId: string) => {
+    form.setValue('customerId', customerId);
+    toast({
+      title: "Customer selected",
+      description: `Customer has been selected for this invoice.`
+    });
   };
 
   const unitOptions = [
@@ -444,23 +485,65 @@ const InvoiceForm: React.FC<InvoiceFormProps> = ({
                       render={({ field }) => (
                         <FormItem>
                           <FormLabel>Customer</FormLabel>
-                          <Select
-                            onValueChange={field.onChange}
-                            defaultValue={field.value}
-                          >
-                            <FormControl>
-                              <SelectTrigger>
-                                <SelectValue placeholder="Select a customer" />
-                              </SelectTrigger>
-                            </FormControl>
-                            <SelectContent position="popper" className="min-w-[var(--radix-select-trigger-width)]">
-                              {customers.map((customer) => (
-                                <SelectItem key={customer.id} value={customer.id}>
-                                  {customer.name}
-                                </SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
+                          <div className="flex gap-2">
+                            <Select
+                              onValueChange={field.onChange}
+                              value={field.value}
+                              className="flex-1"
+                            >
+                              <FormControl>
+                                <SelectTrigger>
+                                  <SelectValue placeholder="Select a customer" />
+                                </SelectTrigger>
+                              </FormControl>
+                              <SelectContent position="popper" className="min-w-[var(--radix-select-trigger-width)]">
+                                {customers.map((customer) => (
+                                  <SelectItem key={customer.id} value={customer.id}>
+                                    {customer.name}
+                                  </SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                            
+                            <div className="flex items-center">
+                              <DropdownMenu>
+                                <DropdownMenuTrigger asChild>
+                                  <Button 
+                                    variant="outline" 
+                                    size="icon" 
+                                    className="h-10 w-10"
+                                    title="Customer shortcuts"
+                                  >
+                                    <UserPlus className="h-4 w-4" />
+                                  </Button>
+                                </DropdownMenuTrigger>
+                                <DropdownMenuContent align="end" className="w-56">
+                                  <DropdownMenuLabel>Customer Options</DropdownMenuLabel>
+                                  <DropdownMenuSeparator />
+                                  <DropdownMenuItem onClick={onAddCustomer} className="cursor-pointer">
+                                    <UserPlus className="mr-2 h-4 w-4" />
+                                    <span>Add New Customer</span>
+                                  </DropdownMenuItem>
+                                  
+                                  {recentCustomers.length > 0 && (
+                                    <>
+                                      <DropdownMenuSeparator />
+                                      <DropdownMenuLabel>Recent Customers</DropdownMenuLabel>
+                                      {recentCustomers.map(customer => (
+                                        <DropdownMenuItem 
+                                          key={customer.id} 
+                                          onClick={() => handleSelectCustomer(customer.id)}
+                                          className="cursor-pointer"
+                                        >
+                                          {customer.name}
+                                        </DropdownMenuItem>
+                                      ))}
+                                    </>
+                                  )}
+                                </DropdownMenuContent>
+                              </DropdownMenu>
+                            </div>
+                          </div>
                           <FormMessage />
                         </FormItem>
                       )}
