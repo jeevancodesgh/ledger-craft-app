@@ -24,6 +24,7 @@ const InvoicePreview = ({ invoice, selectedTemplate }: InvoicePreviewProps) => {
   const isMobile = useIsMobile();
   const { toast } = useToast();
   const [isFullscreen, setIsFullscreen] = React.useState(false);
+  const [isGeneratingPdf, setIsGeneratingPdf] = React.useState(false);
 
   // Create template data from invoice
   const templateData = {
@@ -37,9 +38,42 @@ const InvoicePreview = ({ invoice, selectedTemplate }: InvoicePreviewProps) => {
   };
 
   const handleDownloadPdf = async () => {
-    if (contentRef.current) {
+    if (contentRef.current && !isGeneratingPdf) {
       try {
-        await generateInvoicePdf(invoice, contentRef.current, selectedTemplate);
+        setIsGeneratingPdf(true);
+        toast({
+          title: "Processing",
+          description: "Generating PDF, please wait...",
+        });
+
+        // Create a special version for PDF export
+        const pdfContainer = document.createElement('div');
+        pdfContainer.style.width = '794px'; // A4 width at 96 DPI
+        pdfContainer.style.padding = '40px';
+        pdfContainer.style.boxSizing = 'border-box';
+        pdfContainer.style.backgroundColor = '#FFFFFF';
+        
+        // Clone the content for PDF generation to avoid layout issues
+        const contentClone = contentRef.current.cloneNode(true) as HTMLElement;
+        
+        // Reset any responsive styles that might affect PDF layout
+        const responsiveElements = contentClone.querySelectorAll('[class*="scale-"], [class*="origin-"]');
+        responsiveElements.forEach(el => {
+          if (el instanceof HTMLElement) {
+            el.style.transform = 'none';
+            el.style.width = '100%';
+          }
+        });
+        
+        pdfContainer.appendChild(contentClone);
+        document.body.appendChild(pdfContainer);
+        
+        // Generate PDF from the specially prepared container
+        await generateInvoicePdf(invoice, pdfContainer, selectedTemplate);
+        
+        // Clean up
+        document.body.removeChild(pdfContainer);
+        
         toast({
           title: "Success",
           description: "Invoice PDF has been downloaded"
@@ -51,6 +85,8 @@ const InvoicePreview = ({ invoice, selectedTemplate }: InvoicePreviewProps) => {
           description: "Could not generate PDF. Please try again.",
           variant: "destructive"
         });
+      } finally {
+        setIsGeneratingPdf(false);
       }
     }
   };
@@ -88,10 +124,10 @@ const InvoicePreview = ({ invoice, selectedTemplate }: InvoicePreviewProps) => {
       <div 
         ref={contentRef} 
         className={cn(
-          "bg-white", 
+          "bg-white print:p-0 print:shadow-none", 
           isMobile && (isFullscreen 
             ? "p-4 min-h-[calc(100vh-64px)]" 
-            : "scale-90 origin-top")
+            : "scale-[0.95] origin-top p-2")
         )}
       >
         {renderTemplate()}
@@ -112,9 +148,10 @@ const InvoicePreview = ({ invoice, selectedTemplate }: InvoicePreviewProps) => {
           <Button 
             onClick={handleDownloadPdf} 
             className="flex-1 gap-2"
+            disabled={isGeneratingPdf}
           >
             <Download className="h-4 w-4" />
-            <span>Download PDF</span>
+            <span>{isGeneratingPdf ? "Generating..." : "Download PDF"}</span>
           </Button>
         </div>
       )}
