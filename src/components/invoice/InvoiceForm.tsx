@@ -1,4 +1,3 @@
-
 import React, { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useForm } from "react-hook-form";
@@ -481,26 +480,6 @@ const InvoiceForm: React.FC<InvoiceFormProps> = ({
           invoice={invoicePreview}
           selectedTemplate={selectedTemplate}
         />
-        
-        {!isMobile && (
-          <div className="flex justify-end space-x-4 mt-6">
-            <Button 
-              variant="outline" 
-              onClick={() => setActiveTab("edit")}
-              className="gap-2"
-            >
-              <Edit className="h-4 w-4" />
-              <span>Edit</span>
-            </Button>
-            <Button 
-              onClick={handleDownloadPdf} 
-              className="gap-2"
-            >
-              <Download className="h-4 w-4" />
-              <span>Download PDF</span>
-            </Button>
-          </div>
-        )}
       </div>
     );
   };
