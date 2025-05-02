@@ -1,5 +1,5 @@
 
-export type InvoiceTemplateId = 'classic' | 'modern' | 'minimal';
+export type InvoiceTemplateId = 'classic' | 'modern' | 'minimal' | 'executive' | 'corporate';
 
 export interface InvoiceTemplate {
   id: InvoiceTemplateId;
@@ -26,6 +26,17 @@ export const invoiceTemplates: InvoiceTemplate[] = [
     name: 'Minimal',
     description: 'Simple and straightforward',
     preview: 'Minimalist layout focusing on essential information'
+  },
+  {
+    id: 'executive',
+    name: 'Executive',
+    description: 'Professional financial document style',
+    preview: 'Sophisticated layout with refined typography and color scheme'
+  },
+  {
+    id: 'corporate',
+    name: 'Corporate',
+    description: 'Modern enterprise invoice format',
+    preview: 'Contemporary design with bold header and structured layout'
   }
 ];
-

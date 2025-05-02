@@ -5,6 +5,8 @@ import { InvoiceTemplateId } from '../templates/InvoiceTemplates';
 import ClassicTemplate from './templates/ClassicTemplate';
 import ModernTemplate from './templates/ModernTemplate';
 import MinimalTemplate from './templates/MinimalTemplate';
+import ExecutiveTemplate from './templates/ExecutiveTemplate';
+import CorporateTemplate from './templates/CorporateTemplate';
 import CanvasPreview from './CanvasPreview';
 
 interface InvoicePreviewProps {
@@ -34,6 +36,10 @@ const InvoicePreview = ({ invoice, selectedTemplate }: InvoicePreviewProps) => {
         return <ModernTemplate {...templateData} />;
       case 'minimal':
         return <MinimalTemplate {...templateData} />;
+      case 'executive':
+        return <ExecutiveTemplate {...templateData} />;
+      case 'corporate':
+        return <CorporateTemplate {...templateData} />;
       default:
         return <ClassicTemplate {...templateData} />;
     }

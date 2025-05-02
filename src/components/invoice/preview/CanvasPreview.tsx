@@ -1,5 +1,5 @@
 
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import html2canvas from 'html2canvas';
 
 interface CanvasPreviewProps {
@@ -8,18 +8,39 @@ interface CanvasPreviewProps {
 
 const CanvasPreview = ({ contentRef }: CanvasPreviewProps) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
+  const [isRendering, setIsRendering] = useState(true);
 
   useEffect(() => {
     const renderToCanvas = async () => {
       if (!contentRef.current || !canvasRef.current) return;
+      
+      setIsRendering(true);
 
       try {
+        // Wait a moment to ensure content is properly rendered in the DOM
+        await new Promise(resolve => setTimeout(resolve, 100));
+        
         const canvas = await html2canvas(contentRef.current, {
-          scale: 2,
+          scale: 2, // Higher scale for better quality
           useCORS: true,
           allowTaint: true,
           backgroundColor: '#FFFFFF',
-          logging: false
+          logging: false,
+          onclone: (clonedDoc) => {
+            // Enhance text rendering for better quality
+            const clonedElement = clonedDoc.body.querySelector('[data-invoice-template]');
+            if (clonedElement) {
+              const textElements = clonedElement.querySelectorAll('p, h1, h2, h3, h4, h5, h6, span, div, td, th');
+              textElements.forEach(el => {
+                if (el instanceof HTMLElement) {
+                  // Ensure text is rendered with optimal settings
+                  el.style.textRendering = 'optimizeLegibility';
+                  el.style.WebkitFontSmoothing = 'antialiased';
+                  el.style.MozOsxFontSmoothing = 'grayscale';
+                }
+              });
+            }
+          }
         });
 
         const ctx = canvasRef.current.getContext('2d');
@@ -33,6 +54,8 @@ const CanvasPreview = ({ contentRef }: CanvasPreviewProps) => {
         ctx.drawImage(canvas, 0, 0);
       } catch (error) {
         console.error('Error rendering to canvas:', error);
+      } finally {
+        setIsRendering(false);
       }
     };
 
@@ -40,11 +63,19 @@ const CanvasPreview = ({ contentRef }: CanvasPreviewProps) => {
   }, [contentRef]);
 
   return (
-    <canvas 
-      ref={canvasRef}
-      className="w-full h-full"
-      style={{ maxWidth: '100%' }}
-    />
+    <div className="w-full">
+      {isRendering && (
+        <div className="flex justify-center items-center py-8">
+          <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-gray-900"></div>
+          <span className="ml-2 text-gray-600">Rendering preview...</span>
+        </div>
+      )}
+      <canvas 
+        ref={canvasRef}
+        className={`w-full h-full ${isRendering ? 'opacity-0' : 'opacity-100'}`}
+        style={{ maxWidth: '100%', transition: 'opacity 0.3s ease' }}
+      />
+    </div>
   );
 };
 
