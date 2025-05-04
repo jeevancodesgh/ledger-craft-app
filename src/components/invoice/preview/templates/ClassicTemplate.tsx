@@ -38,7 +38,7 @@ const ClassicTemplate = ({
                   <img 
                     src={businessLogo} 
                     alt={companyName} 
-                    className="max-h-16 max-w-[200px] object-contain"
+                    className="max-h-12 max-w-[160px] object-contain rounded-full"
                   />
                 </div>
               ) : null}

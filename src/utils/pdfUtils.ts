@@ -111,12 +111,13 @@ export const generatePdfFromElement = async (
             });
           });
           
-          // Enhance logo rendering if present
+          // Enhance logo rendering if present - apply rounded style
           const logoImg = clonedElement.querySelector('img[alt]');
           if (logoImg instanceof HTMLImageElement && businessLogoUrl) {
-            logoImg.style.maxHeight = '60px';
-            logoImg.style.maxWidth = '200px';
+            logoImg.style.maxHeight = '48px'; // Make logo smaller for PDF
+            logoImg.style.maxWidth = '140px'; 
             logoImg.style.objectFit = 'contain';
+            logoImg.style.borderRadius = '9999px'; // Apply rounded style
             logoImg.style.marginBottom = '10px';
             logoImg.crossOrigin = 'Anonymous'; // For CORS images
             logoImg.src = businessLogoUrl;

@@ -36,7 +36,7 @@ const MinimalTemplate = ({
                 <img 
                   src={businessLogo} 
                   alt={companyName} 
-                  className="max-h-16 object-contain"
+                  className="max-h-12 object-contain rounded-full"
                 />
               </div>
             )}
