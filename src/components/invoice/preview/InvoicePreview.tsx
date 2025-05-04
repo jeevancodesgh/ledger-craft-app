@@ -1,5 +1,5 @@
 
-import React, { useRef, useState, useEffect } from 'react';
+import React, { useRef, useState } from 'react';
 import { Invoice } from '@/types';
 import { InvoiceTemplateId } from '../templates/InvoiceTemplates';
 import ClassicTemplate from './templates/ClassicTemplate';
@@ -22,13 +22,11 @@ interface InvoicePreviewProps {
 
 const InvoicePreview = ({ invoice, selectedTemplate }: InvoicePreviewProps) => {
   const contentRef = useRef<HTMLDivElement>(null);
-  const pdfContainerRef = useRef<HTMLDivElement>(null);
   const isMobile = useIsMobile();
   const { toast } = useToast();
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [isGeneratingPdf, setIsGeneratingPdf] = useState(false);
-  const [zoomLevel, setZoomLevel] = useState(isMobile ? 0.65 : 1); // Start with zoomed out view on mobile
-  const [pdfDataUrl, setPdfDataUrl] = useState<string | null>(null);
+  const [zoomLevel, setZoomLevel] = useState(isMobile ? 1 : 1); // Default zoom level
   const { businessProfile } = useAppContext();
 
   // Create template data from invoice
@@ -41,92 +39,6 @@ const InvoicePreview = ({ invoice, selectedTemplate }: InvoicePreviewProps) => {
     taxRate: ((invoice.taxAmount / invoice.subtotal) * 100).toFixed(2),
     tax: invoice.taxAmount,
     businessLogo: businessProfile?.logoUrl || '',
-  };
-
-  // Generate PDF for mobile preview on mount and when dependencies change
-  useEffect(() => {
-    if (isMobile) {
-      generatePdfPreview();
-    } else {
-      // Clear PDF if switching to desktop
-      setPdfDataUrl(null);
-    }
-  }, [isMobile, selectedTemplate, invoice, businessProfile?.logoUrl]);
-
-  const generatePdfPreview = async () => {
-    if (!contentRef.current || isGeneratingPdf) return;
-    
-    try {
-      setIsGeneratingPdf(true);
-      
-      // Create a temporary container for PDF generation
-      const pdfContainer = document.createElement('div');
-      pdfContainer.style.width = '794px'; // A4 width at 96 DPI
-      pdfContainer.style.padding = '40px';
-      pdfContainer.style.boxSizing = 'border-box';
-      pdfContainer.style.backgroundColor = '#FFFFFF';
-      
-      // Clone the content for PDF generation to avoid layout issues
-      const contentClone = contentRef.current.cloneNode(true) as HTMLElement;
-      
-      // Reset any responsive styles that might affect PDF layout
-      const responsiveElements = contentClone.querySelectorAll('[class*="scale-"], [class*="origin-"]');
-      responsiveElements.forEach(el => {
-        if (el instanceof HTMLElement) {
-          el.style.transform = 'none';
-          el.style.width = '100%';
-        }
-      });
-      
-      pdfContainer.appendChild(contentClone);
-      document.body.appendChild(pdfContainer);
-      
-      // Use html2canvas and jsPDF directly (simplified from pdfUtils)
-      const html2canvas = (await import('html2canvas')).default;
-      const { jsPDF } = await import('jspdf');
-      
-      const canvas = await html2canvas(pdfContainer, {
-        scale: 2,
-        useCORS: true,
-        allowTaint: true,
-        backgroundColor: '#FFFFFF',
-        logging: false,
-      });
-      
-      // Remove temporary container
-      document.body.removeChild(pdfContainer);
-      
-      const imgData = canvas.toDataURL('image/png');
-      
-      // Create PDF
-      const pdf = new jsPDF({
-        orientation: 'portrait',
-        unit: 'mm',
-        format: 'a4',
-      });
-      
-      const pageWidth = pdf.internal.pageSize.getWidth();
-      const pageHeight = pdf.internal.pageSize.getHeight();
-      
-      const imgProps = pdf.getImageProperties(imgData);
-      const imgWidth = pageWidth;
-      const imgHeight = (imgProps.height * imgWidth) / imgProps.width;
-      
-      pdf.addImage(imgData, 'PNG', 0, 0, imgWidth, imgHeight);
-      
-      // Get the PDF as data URL
-      setPdfDataUrl(pdf.output('datauristring'));
-      
-    } catch (error) {
-      console.error('Error generating PDF preview:', error);
-      toast({
-        title: "Error",
-        description: "Could not generate PDF preview",
-        variant: "destructive"
-      });
-    } finally {
-      setIsGeneratingPdf(false);
-    }
   };
 
   const handleDownloadPdf = async () => {
@@ -166,11 +78,11 @@ const InvoicePreview = ({ invoice, selectedTemplate }: InvoicePreviewProps) => {
   };
 
   const zoomOut = () => {
-    setZoomLevel(prev => Math.max(prev - 0.1, 0.4));
+    setZoomLevel(prev => Math.max(prev - 0.1, 0.6));
   };
 
   const resetZoom = () => {
-    setZoomLevel(isMobile ? 0.65 : 1);
+    setZoomLevel(1);
   };
 
   const renderTemplate = () => {
@@ -195,56 +107,37 @@ const InvoicePreview = ({ invoice, selectedTemplate }: InvoicePreviewProps) => {
       className={cn(
         "w-full bg-white shadow-sm rounded-lg transition-all duration-300", 
         isMobile && (isFullscreen 
-          ? "fixed inset-0 z-50 pb-16 overflow-y-auto" 
-          : "mx-auto max-w-[95vw] relative pb-16")
+          ? "fixed inset-0 z-50 pb-16 overflow-auto" 
+          : "mx-auto max-w-full relative pb-16")
       )}
     >
-      {/* Hidden div for PDF generation reference */}
-      <div className="hidden">
-        <div ref={contentRef}>
+      <div 
+        ref={contentRef}
+        className={cn(
+          "flex justify-center items-start overflow-auto",
+          isMobile ? "invoice-mobile-view" : ""
+        )}
+        style={{ 
+          height: isFullscreen ? 'calc(100vh - 120px)' : isMobile ? 'calc(100vh - 200px)' : 'auto',
+          paddingBottom: isMobile ? '70px' : '0'
+        }}
+      >
+        <div 
+          className={cn(
+            "bg-white print:p-0 print:shadow-none w-full",
+            isMobile ? "mobile-invoice-scale p-4" : ""
+          )}
+          style={{ 
+            transform: `scale(${zoomLevel})`,
+            transformOrigin: 'top center',
+            transition: 'transform 0.2s ease',
+            maxWidth: isMobile ? '100%' : '794px', // A4 width at 96 DPI
+            margin: '0 auto'
+          }}
+        >
           {renderTemplate()}
         </div>
       </div>
-
-      {isMobile && pdfDataUrl ? (
-        // PDF Preview for mobile
-        <div 
-          className="flex justify-center items-center overflow-hidden"
-          style={{ height: isFullscreen ? 'calc(100vh - 120px)' : '70vh' }}
-        >
-          <iframe 
-            src={pdfDataUrl}
-            className="w-full h-full border-0"
-            style={{ 
-              transform: `scale(${zoomLevel})`,
-              transformOrigin: 'top center',
-              transition: 'transform 0.2s ease',
-            }}
-          />
-        </div>
-      ) : (
-        // HTML Preview for desktop
-        <div 
-          className="flex justify-center items-center overflow-hidden"
-          style={{ minHeight: isMobile ? '50vh' : 'auto' }}
-        >
-          <div 
-            className={cn(
-              "bg-white print:p-0 print:shadow-none",
-              isMobile && "p-2 transform-gpu"
-            )}
-            style={{ 
-              transform: `scale(${zoomLevel})`,
-              transformOrigin: 'top center',
-              transition: 'transform 0.2s ease',
-              maxWidth: '100%',
-              margin: '0 auto'
-            }}
-          >
-            {renderTemplate()}
-          </div>
-        </div>
-      )}
       
       {/* Fixed bottom controls on mobile */}
       {isMobile && (
@@ -255,7 +148,7 @@ const InvoicePreview = ({ invoice, selectedTemplate }: InvoicePreviewProps) => {
               onClick={zoomOut} 
               className="flex-1 gap-2"
               aria-label="Zoom out"
-              disabled={zoomLevel <= 0.4}
+              disabled={zoomLevel <= 0.6}
             >
               <ZoomOut className="h-4 w-4" />
               <span>Zoom Out</span>

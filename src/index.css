@@ -1,3 +1,4 @@
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -94,5 +95,22 @@
 
   body {
     @apply bg-background text-foreground;
+  }
+}
+
+/* Mobile Invoice Styles */
+.invoice-mobile-view {
+  -webkit-overflow-scrolling: touch;
+}
+
+.mobile-invoice-scale {
+  transform-origin: top center;
+  min-width: 100%;
+}
+
+@media print {
+  .mobile-invoice-scale {
+    transform: scale(1) !important;
+    width: 100% !important;
   }
 }
