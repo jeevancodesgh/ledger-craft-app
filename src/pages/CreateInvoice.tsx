@@ -20,6 +20,8 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { useToast } from '@/hooks/use-toast';
 import { Customer } from '@/types';
+import { useIsMobile } from '@/hooks/use-mobile';
+import { UserPlus } from 'lucide-react';
 
 const customerSchema = z.object({
   name: z.string().min(1, 'Name is required'),
@@ -38,6 +40,7 @@ const CreateInvoice = () => {
   const { toast } = useToast();
   const [addCustomerOpen, setAddCustomerOpen] = useState(false);
   const [newlyAddedCustomer, setNewlyAddedCustomer] = useState<Customer | null>(null);
+  const isMobile = useIsMobile();
 
   const form = useForm({
     resolver: zodResolver(customerSchema),
@@ -84,9 +87,18 @@ const CreateInvoice = () => {
         additionalCharges: additionalCharges,
         discount: discount,
       });
+      toast({
+        title: "Invoice Created",
+        description: "Your invoice has been successfully created."
+      });
       navigate('/invoices');
     } catch (error) {
       console.error('Error creating invoice:', error);
+      toast({
+        title: "Error",
+        description: "Failed to create invoice. Please try again.",
+        variant: "destructive"
+      });
     }
   };
 
@@ -138,20 +150,24 @@ const CreateInvoice = () => {
       />
 
       <Dialog open={addCustomerOpen} onOpenChange={setAddCustomerOpen}>
-        <DialogContent className="sm:max-w-[425px]">
+        <DialogContent className={`${isMobile ? 'w-[95%] max-w-full p-4' : 'sm:max-w-[475px]'} bg-white`}>
           <DialogHeader>
-            <DialogTitle>Add New Customer</DialogTitle>
+            <DialogTitle className="flex items-center gap-2">
+              <UserPlus size={20} className="text-primary" />
+              Add New Customer
+            </DialogTitle>
             <DialogDescription>
               Create a new customer to add to your invoice.
             </DialogDescription>
           </DialogHeader>
-          <form onSubmit={form.handleSubmit(handleAddCustomer)} className="space-y-4">
+          <form onSubmit={form.handleSubmit(handleAddCustomer)} className="space-y-4 mt-2">
             <div className="space-y-2">
               <Label htmlFor="name">Name *</Label>
               <Input 
                 id="name" 
                 {...form.register('name')} 
                 placeholder="Customer name"
+                className={`${isMobile ? 'h-12' : 'h-10'} rounded-md`}
               />
               {form.formState.errors.name && (
                 <p className="text-sm text-red-500">{form.formState.errors.name.message}</p>
@@ -164,6 +180,7 @@ const CreateInvoice = () => {
                 type="email"
                 {...form.register('email')} 
                 placeholder="customer@example.com"
+                className={`${isMobile ? 'h-12' : 'h-10'} rounded-md`}
               />
               {form.formState.errors.email && (
                 <p className="text-sm text-red-500">{form.formState.errors.email.message}</p>
@@ -175,6 +192,7 @@ const CreateInvoice = () => {
                 id="phone" 
                 {...form.register('phone')} 
                 placeholder="Phone number"
+                className={`${isMobile ? 'h-12' : 'h-10'} rounded-md`}
               />
             </div>
             <div className="space-y-2">
@@ -183,15 +201,17 @@ const CreateInvoice = () => {
                 id="address" 
                 {...form.register('address')} 
                 placeholder="Street address"
+                className={`${isMobile ? 'h-12' : 'h-10'} rounded-md`}
               />
             </div>
-            <div className="grid grid-cols-2 gap-2">
+            <div className="grid grid-cols-2 gap-3">
               <div className="space-y-2">
                 <Label htmlFor="city">City</Label>
                 <Input 
                   id="city" 
                   {...form.register('city')} 
                   placeholder="City"
+                  className={`${isMobile ? 'h-12' : 'h-10'} rounded-md`}
                 />
               </div>
               <div className="space-y-2">
@@ -200,6 +220,7 @@ const CreateInvoice = () => {
                   id="state" 
                   {...form.register('state')} 
                   placeholder="State"
+                  className={`${isMobile ? 'h-12' : 'h-10'} rounded-md`}
                 />
               </div>
             </div>
@@ -209,14 +230,25 @@ const CreateInvoice = () => {
                 id="zip" 
                 {...form.register('zip')} 
                 placeholder="ZIP code"
+                className={`${isMobile ? 'h-12' : 'h-10'} rounded-md`}
               />
             </div>
             <input type="hidden" {...form.register('country')} />
-            <DialogFooter>
-              <Button type="button" variant="outline" onClick={() => setAddCustomerOpen(false)}>
+            <DialogFooter className={`${isMobile ? 'flex-col gap-3 mt-4' : 'gap-2'}`}>
+              <Button 
+                type="button" 
+                variant="outline" 
+                onClick={() => setAddCustomerOpen(false)}
+                className={`${isMobile ? 'w-full h-12' : ''}`}
+              >
                 Cancel
               </Button>
-              <Button type="submit">Add Customer</Button>
+              <Button 
+                type="submit"
+                className={`${isMobile ? 'w-full h-12' : ''}`}
+              >
+                Add Customer
+              </Button>
             </DialogFooter>
           </form>
         </DialogContent>
