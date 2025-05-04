@@ -1,5 +1,5 @@
 
-import React, { useRef } from 'react';
+import React, { useRef, useState } from 'react';
 import { Invoice } from '@/types';
 import { InvoiceTemplateId } from '../templates/InvoiceTemplates';
 import ClassicTemplate from './templates/ClassicTemplate';
@@ -9,7 +9,7 @@ import ExecutiveTemplate from './templates/ExecutiveTemplate';
 import CorporateTemplate from './templates/CorporateTemplate';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { Button } from '@/components/ui/button';
-import { Download, Maximize2, Minimize2 } from 'lucide-react';
+import { Download, Maximize2, Minimize2, ZoomIn, ZoomOut } from 'lucide-react';
 import { generateInvoicePdf } from '@/utils/pdfUtils';
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
@@ -24,8 +24,9 @@ const InvoicePreview = ({ invoice, selectedTemplate }: InvoicePreviewProps) => {
   const contentRef = useRef<HTMLDivElement>(null);
   const isMobile = useIsMobile();
   const { toast } = useToast();
-  const [isFullscreen, setIsFullscreen] = React.useState(false);
-  const [isGeneratingPdf, setIsGeneratingPdf] = React.useState(false);
+  const [isFullscreen, setIsFullscreen] = useState(false);
+  const [isGeneratingPdf, setIsGeneratingPdf] = useState(false);
+  const [zoomLevel, setZoomLevel] = useState(isMobile ? 0.65 : 1); // Start with zoomed out view on mobile
   const { businessProfile } = useAppContext();
 
   // Create template data from invoice
@@ -98,6 +99,18 @@ const InvoicePreview = ({ invoice, selectedTemplate }: InvoicePreviewProps) => {
     setIsFullscreen(!isFullscreen);
   };
 
+  const zoomIn = () => {
+    setZoomLevel(prev => Math.min(prev + 0.1, 1.5));
+  };
+
+  const zoomOut = () => {
+    setZoomLevel(prev => Math.max(prev - 0.1, 0.4));
+  };
+
+  const resetZoom = () => {
+    setZoomLevel(isMobile ? 0.65 : 1);
+  };
+
   const renderTemplate = () => {
     switch (selectedTemplate) {
       case 'classic':
@@ -127,35 +140,72 @@ const InvoicePreview = ({ invoice, selectedTemplate }: InvoicePreviewProps) => {
       <div 
         ref={contentRef} 
         className={cn(
-          "bg-white print:p-0 print:shadow-none", 
-          isMobile && (isFullscreen 
-            ? "p-4 min-h-[calc(100vh-64px)]" 
-            : "scale-[0.95] origin-top p-2")
+          "bg-white print:p-0 print:shadow-none overflow-x-hidden", 
+          isMobile && "p-2 transform-gpu"
         )}
+        style={{ 
+          transform: `scale(${zoomLevel})`,
+          transformOrigin: 'top center',
+          transition: 'transform 0.2s ease',
+          width: zoomLevel < 1 ? `${100/zoomLevel}%` : '100%',
+          margin: '0 auto'
+        }}
       >
         {renderTemplate()}
       </div>
       
       {/* Fixed bottom controls on mobile */}
       {isMobile && (
-        <div className="fixed bottom-0 left-0 right-0 bg-background p-4 border-t shadow-lg z-50 flex gap-2">
-          <Button 
-            variant="outline"
-            onClick={toggleFullscreen} 
-            className="flex-1 gap-2"
-            aria-label={isFullscreen ? "Exit fullscreen" : "View fullscreen"}
-          >
-            {isFullscreen ? <Minimize2 className="h-4 w-4" /> : <Maximize2 className="h-4 w-4" />}
-            <span>{isFullscreen ? "Exit Fullscreen" : "Fullscreen"}</span>
-          </Button>
-          <Button 
-            onClick={handleDownloadPdf} 
-            className="flex-1 gap-2"
-            disabled={isGeneratingPdf}
-          >
-            <Download className="h-4 w-4" />
-            <span>{isGeneratingPdf ? "Generating..." : "Download PDF"}</span>
-          </Button>
+        <div className="fixed bottom-0 left-0 right-0 bg-background p-4 border-t shadow-lg z-50">
+          <div className="flex gap-2 mb-2">
+            <Button 
+              variant="outline"
+              onClick={zoomOut} 
+              className="flex-1 gap-2"
+              aria-label="Zoom out"
+              disabled={zoomLevel <= 0.4}
+            >
+              <ZoomOut className="h-4 w-4" />
+              <span>Zoom Out</span>
+            </Button>
+            <Button 
+              variant="outline"
+              onClick={resetZoom} 
+              className="flex-1"
+              aria-label="Reset zoom"
+            >
+              {(zoomLevel * 100).toFixed(0)}%
+            </Button>
+            <Button 
+              variant="outline"
+              onClick={zoomIn} 
+              className="flex-1 gap-2"
+              aria-label="Zoom in"
+              disabled={zoomLevel >= 1.5}
+            >
+              <ZoomIn className="h-4 w-4" />
+              <span>Zoom In</span>
+            </Button>
+          </div>
+          <div className="flex gap-2">
+            <Button 
+              variant="outline"
+              onClick={toggleFullscreen} 
+              className="flex-1 gap-2"
+              aria-label={isFullscreen ? "Exit fullscreen" : "View fullscreen"}
+            >
+              {isFullscreen ? <Minimize2 className="h-4 w-4" /> : <Maximize2 className="h-4 w-4" />}
+              <span>{isFullscreen ? "Exit Fullscreen" : "Fullscreen"}</span>
+            </Button>
+            <Button 
+              onClick={handleDownloadPdf} 
+              className="flex-1 gap-2"
+              disabled={isGeneratingPdf}
+            >
+              <Download className="h-4 w-4" />
+              <span>{isGeneratingPdf ? "Generating..." : "Download PDF"}</span>
+            </Button>
+          </div>
         </div>
       )}
     </div>
