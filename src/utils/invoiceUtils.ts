@@ -1,3 +1,4 @@
+
 import { Invoice, LineItem } from '@/types';
 
 /**
@@ -43,12 +44,25 @@ export const formatDate = (date: Date): string => {
 
 /**
  * Formats currency based on locale and currency code
+ * Handles empty or invalid currency codes by defaulting to USD
  */
 export const formatCurrency = (amount: number, currencyCode = 'USD', locale = 'en-US'): string => {
-  return new Intl.NumberFormat(locale, {
-    style: 'currency',
-    currency: currencyCode,
-  }).format(amount);
+  // Default to USD if currency code is empty or invalid
+  const currency = currencyCode && typeof currencyCode === 'string' && currencyCode.trim() ? currencyCode : 'USD';
+  
+  try {
+    return new Intl.NumberFormat(locale, {
+      style: 'currency',
+      currency: currency,
+    }).format(amount);
+  } catch (error) {
+    // Fallback in case of any other error
+    console.warn(`Error formatting currency: ${error}. Using USD as fallback.`);
+    return new Intl.NumberFormat(locale, {
+      style: 'currency',
+      currency: 'USD',
+    }).format(amount);
+  }
 };
 
 /**
