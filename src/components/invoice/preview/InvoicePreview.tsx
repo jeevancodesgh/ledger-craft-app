@@ -138,20 +138,25 @@ const InvoicePreview = ({ invoice, selectedTemplate }: InvoicePreviewProps) => {
       )}
     >
       <div 
-        ref={contentRef} 
-        className={cn(
-          "bg-white print:p-0 print:shadow-none overflow-x-hidden", 
-          isMobile && "p-2 transform-gpu"
-        )}
-        style={{ 
-          transform: `scale(${zoomLevel})`,
-          transformOrigin: 'top center',
-          transition: 'transform 0.2s ease',
-          width: zoomLevel < 1 ? `${100/zoomLevel}%` : '100%',
-          margin: '0 auto'
-        }}
+        className="flex justify-center items-center overflow-hidden"
+        style={{ minHeight: isMobile ? '50vh' : 'auto' }}
       >
-        {renderTemplate()}
+        <div 
+          ref={contentRef} 
+          className={cn(
+            "bg-white print:p-0 print:shadow-none",
+            isMobile && "p-2 transform-gpu"
+          )}
+          style={{ 
+            transform: `scale(${zoomLevel})`,
+            transformOrigin: 'top center',
+            transition: 'transform 0.2s ease',
+            maxWidth: '100%',
+            margin: '0 auto'
+          }}
+        >
+          {renderTemplate()}
+        </div>
       </div>
       
       {/* Fixed bottom controls on mobile */}

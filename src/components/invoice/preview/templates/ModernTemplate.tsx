@@ -29,7 +29,7 @@ const ModernTemplate = ({
   const isMobile = useIsMobile();
   
   return (
-    <Card className="p-8 bg-gradient-to-br from-purple-50 to-white">
+    <Card className="p-8 bg-gradient-to-br from-purple-50 to-white max-w-full overflow-hidden">
       <CardContent>
         <div className="space-y-8">
           {/* Header */}
@@ -47,7 +47,7 @@ const ModernTemplate = ({
                 />
               )}
               <p className="font-bold text-lg">{companyName}</p>
-              <p className="text-gray-600 mt-1">{companyAddress}</p>
+              <p className="text-gray-600 mt-1 break-words">{companyAddress}</p>
             </div>
           </div>
 
@@ -55,11 +55,11 @@ const ModernTemplate = ({
           <div className="bg-white p-6 rounded-lg shadow-sm">
             <h2 className="text-lg font-semibold text-purple-600 mb-2">Bill To:</h2>
             <p className="text-gray-800 font-medium">{clientName}</p>
-            <p className="text-gray-600">{clientAddress}</p>
+            <p className="text-gray-600 break-words">{clientAddress}</p>
           </div>
 
           {/* Invoice Details */}
-          <div className="bg-white rounded-lg shadow-sm overflow-hidden">
+          <div className="bg-white rounded-lg shadow-sm overflow-x-auto">
             <div className="bg-purple-100 p-4">
               <div className={`grid ${isMobile ? 'grid-cols-3' : 'grid-cols-5'} font-semibold text-purple-700`}>
                 <div className={isMobile ? 'col-span-1' : 'col-span-2'}>Item</div>
@@ -71,7 +71,7 @@ const ModernTemplate = ({
             <div className="p-4">
               {invoice.items.map((item, index) => (
                 <div key={index} className={`grid ${isMobile ? 'grid-cols-3' : 'grid-cols-5'} py-3 border-b last:border-0`}>
-                  <div className={isMobile ? 'col-span-1' : 'col-span-2'}>{item.description}</div>
+                  <div className={`${isMobile ? 'col-span-1' : 'col-span-2'} break-words`}>{item.description}</div>
                   <div className="text-right">{item.quantity}</div>
                   {!isMobile && <div className="text-right">{formatCurrency(item.rate, invoice.currency)}</div>}
                   <div className="text-right">{formatCurrency(item.quantity * item.rate, invoice.currency)}</div>
@@ -116,7 +116,7 @@ const ModernTemplate = ({
           {invoice.notes && (
             <div className="bg-white p-6 rounded-lg shadow-sm">
               <h2 className="text-lg font-semibold text-purple-600 mb-2">Notes:</h2>
-              <p className="text-gray-600 whitespace-pre-wrap notes-section">{invoice.notes}</p>
+              <p className="text-gray-600 whitespace-pre-wrap notes-section break-words">{invoice.notes}</p>
             </div>
           )}
           
@@ -124,7 +124,7 @@ const ModernTemplate = ({
           {invoice.terms && (
             <div className="bg-white p-6 rounded-lg shadow-sm">
               <h2 className="text-lg font-semibold text-purple-600 mb-2">Terms:</h2>
-              <p className="text-gray-600 whitespace-pre-wrap notes-section">{invoice.terms}</p>
+              <p className="text-gray-600 whitespace-pre-wrap notes-section break-words">{invoice.terms}</p>
             </div>
           )}
         </div>
