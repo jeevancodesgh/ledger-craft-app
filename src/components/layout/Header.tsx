@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { Bell, Menu, Search, LogOut, UserPlus, Download } from 'lucide-react';
+import { Bell, Menu, Search, LogOut, UserPlus, Download, Plus } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
@@ -69,7 +69,7 @@ export function Header({ toggleSidebar, isMobile }: HeaderProps) {
         </div>
       )}
       
-      <div className="flex-1 flex items-center justify-end space-x-4">
+      <div className="flex items-center justify-end space-x-4">
         <button className="p-2 rounded-md text-muted-foreground hover:bg-secondary transition-colors relative">
           <Bell className="h-5 w-5" />
           <span className="absolute top-1 right-1 w-2 h-2 bg-invoice-coral rounded-full"></span>

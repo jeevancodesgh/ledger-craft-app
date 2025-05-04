@@ -5,12 +5,14 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { formatCurrency } from '@/utils/invoiceUtils';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, TooltipProps } from 'recharts';
 import { PieChart, Pie, Cell, Legend } from 'recharts';
-import { Calendar, DollarSign, Users, TrendingUp, TrendingDown, Clock } from 'lucide-react';
+import { Calendar, DollarSign, Users, TrendingUp, TrendingDown, Clock, Plus } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Link } from 'react-router-dom';
+import { useIsMobile } from '@/hooks/use-mobile';
 
 const Dashboard = () => {
   const { dashboardStats, isLoadingStats, invoices, customers } = useAppContext();
+  const isMobile = useIsMobile();
   
   if (isLoadingStats) {
     return <div className="flex justify-center items-center h-64">Loading dashboard...</div>;
@@ -87,12 +89,24 @@ const Dashboard = () => {
   
   return (
     <div className="space-y-6">
-      <div className="flex justify-between items-center">
-        <h1 className="text-3xl font-bold">Dashboard</h1>
-        <Button className="bg-invoice-teal hover:bg-invoice-teal/90" asChild>
-          <Link to="/invoices/new">Create Invoice</Link>
-        </Button>
-      </div>
+      {isMobile ? (
+        <div className="space-y-4">
+          <h1 className="text-2xl font-bold">Dashboard</h1>
+          <Button className="w-full bg-invoice-teal hover:bg-invoice-teal/90 py-6 text-base flex items-center justify-center gap-2" asChild>
+            <Link to="/invoices/new">
+              <Plus size={20} />
+              Create Invoice
+            </Link>
+          </Button>
+        </div>
+      ) : (
+        <div className="flex justify-between items-center">
+          <h1 className="text-3xl font-bold">Dashboard</h1>
+          <Button className="bg-invoice-teal hover:bg-invoice-teal/90" asChild>
+            <Link to="/invoices/new">Create Invoice</Link>
+          </Button>
+        </div>
+      )}
       
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         <Card>
