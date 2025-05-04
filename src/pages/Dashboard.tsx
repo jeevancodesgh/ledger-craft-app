@@ -168,7 +168,7 @@ const Dashboard = () => {
                   >
                     <CartesianGrid strokeDasharray="3 3" />
                     <XAxis dataKey="name" />
-                    <YAxis tickFormatter={(value) => formatCurrency(value, false)} />
+                    <YAxis tickFormatter={(value) => formatCurrency(value, '' as any)} />
                     <Tooltip content={<CustomTooltip />} />
                     <Bar dataKey="revenue" fill="#8B5CF6" />
                   </BarChart>
