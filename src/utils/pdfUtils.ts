@@ -14,6 +14,7 @@ export const generatePdfFromElement = async (
   businessLogoUrl?: string
 ): Promise<void> => {
   try {
+    console.log('Generating PDF from element:', element);
     // First, ensure all fonts and images are fully loaded before capture
     await document.fonts.ready;
     
@@ -30,48 +31,33 @@ export const generatePdfFromElement = async (
       });
     }
     
-    // Get the element's dimensions for proper scaling
-    const rect = element.getBoundingClientRect();
-    const elementWidth = rect.width;
-    const elementHeight = rect.height;
-    
-    // Create a jsPDF instance with A4 format in portrait orientation
-    const pdf = new jsPDF({
-      orientation: 'portrait',
-      unit: 'mm',
-      format: 'a4',
-      compress: true,
-      putOnlyUsedFonts: true
-    });
-    
-    // Get page dimensions (in mm)
-    const pageWidth = pdf.internal.pageSize.getWidth();
-    const pageHeight = pdf.internal.pageSize.getHeight();
-    
-    // Set consistent margins (in mm)
-    const margin = 10;
-    const contentWidth = pageWidth - (margin * 2);
-    
-    // Prepare element for clean rendering by making a clone with specific styles
+    // Create a clone of the element to ensure we don't modify the original
     const clone = element.cloneNode(true) as HTMLElement;
-    clone.style.width = `${elementWidth}px`;
-    clone.style.height = `${elementHeight}px`;
-    clone.style.overflow = 'hidden';
+    clone.style.background = '#FFFFFF';
+    
+    // Prepare the clone for rendering
+    document.body.appendChild(clone);
     clone.style.position = 'absolute';
     clone.style.left = '-9999px';
-    clone.style.background = '#FFFFFF';
-    document.body.appendChild(clone);
+    clone.style.top = '0';
+    clone.style.width = element.offsetWidth + 'px';
+    clone.style.height = 'auto';
+    clone.style.margin = '0';
+    clone.style.padding = '0';
     
-    // Enhanced rendering settings for better text quality
+    console.log('Clone element created:', clone);
+    
+    // Enhanced rendering settings for better quality
     const canvas = await html2canvas(clone, {
       scale: 2, // Higher scale for better quality
       useCORS: true,
       allowTaint: true,
       backgroundColor: '#FFFFFF',
-      logging: false,
+      logging: true, // Enable logging for debugging
       onclone: (clonedDoc) => {
-        const clonedElement = clonedDoc.body.querySelector(`#${clone.id}`) as HTMLElement;
+        const clonedElement = clonedDoc.body.querySelector('div') as HTMLElement;
         if (clonedElement) {
+          console.log('Processing cloned element in onclone');
           // Ensure text elements are rendered with optimal settings
           const textElements = clonedElement.querySelectorAll('p, h1, h2, h3, h4, h5, h6, span, div');
           textElements.forEach(el => {
@@ -90,13 +76,15 @@ export const generatePdfFromElement = async (
           });
 
           // Ensure proper notes rendering
-          const notesSection = clonedElement.querySelector('.notes-section');
-          if (notesSection instanceof HTMLElement) {
-            notesSection.style.whiteSpace = 'pre-wrap';
-            notesSection.style.wordBreak = 'break-word';
-          }
+          const notesSections = clonedElement.querySelectorAll('.notes-section');
+          notesSections.forEach(section => {
+            if (section instanceof HTMLElement) {
+              section.style.whiteSpace = 'pre-wrap';
+              section.style.wordBreak = 'break-word';
+            }
+          });
 
-          // Fix the table rendering for mobile
+          // Fix the table rendering
           const tables = clonedElement.querySelectorAll('table');
           tables.forEach(table => {
             table.style.width = '100%';
@@ -111,14 +99,13 @@ export const generatePdfFromElement = async (
             });
           });
           
-          // Enhance logo rendering if present - apply rounded style
+          // Enhance logo rendering if present
           const logoImg = clonedElement.querySelector('img[alt]');
           if (logoImg instanceof HTMLImageElement && businessLogoUrl) {
-            logoImg.style.maxHeight = '48px'; // Make logo smaller for PDF
+            logoImg.style.maxHeight = '48px';
             logoImg.style.maxWidth = '140px'; 
             logoImg.style.objectFit = 'contain';
-            logoImg.style.borderRadius = '9999px'; // Apply rounded style
-            logoImg.style.marginBottom = '10px';
+            logoImg.style.borderRadius = '9999px';
             logoImg.crossOrigin = 'Anonymous'; // For CORS images
             logoImg.src = businessLogoUrl;
           }
@@ -126,13 +113,31 @@ export const generatePdfFromElement = async (
       }
     });
     
+    console.log('Canvas created with dimensions:', canvas.width, canvas.height);
+    
     // Remove clone from DOM after canvas capture
     document.body.removeChild(clone);
     
-    // Convert canvas to image data
-    const imgData = canvas.toDataURL('image/png', 1.0);
+    // Create a jsPDF instance with A4 format in portrait orientation
+    const pdf = new jsPDF({
+      orientation: 'portrait',
+      unit: 'mm',
+      format: 'a4',
+      compress: true
+    });
     
-    // Determine scale to fit content within page while maintaining aspect ratio
+    // Get page dimensions (in mm)
+    const pageWidth = pdf.internal.pageSize.getWidth();
+    const pageHeight = pdf.internal.pageSize.getHeight();
+    
+    // Set margins (in mm)
+    const margin = 10;
+    const contentWidth = pageWidth - (margin * 2);
+    
+    // Convert canvas to image data
+    const imgData = canvas.toDataURL('image/png');
+    
+    // Calculate scale to fit content within page while maintaining aspect ratio
     const scale = Math.min(
       contentWidth / canvas.width,
       (pageHeight - margin * 2) / canvas.height
@@ -142,49 +147,27 @@ export const generatePdfFromElement = async (
     const scaledWidth = canvas.width * scale;
     const scaledHeight = canvas.height * scale;
     
-    // Calculate x position to center content horizontally
+    // Calculate position to center content horizontally
     const xPosition = (pageWidth - scaledWidth) / 2;
     
-    // Handle multi-page content if needed
-    if (scaledHeight > (pageHeight - margin * 2)) {
-      // Calculate how many pages we need
-      const pagesNeeded = Math.ceil(scaledHeight / (pageHeight - margin * 2));
-      const pageContentHeight = canvas.height / pagesNeeded;
-      
-      for (let i = 0; i < pagesNeeded; i++) {
-        if (i > 0) {
-          pdf.addPage();
-        }
-        
-        // Calculate which portion of the image to add to this page
-        const sourceY = i * pageContentHeight;
-        const sourceHeight = Math.min(pageContentHeight, canvas.height - sourceY);
-        
-        pdf.addImage(
-          imgData,
-          'PNG',
-          xPosition,
-          margin,
-          scaledWidth,
-          sourceHeight * scale,
-          '',
-          'FAST',
-          0
-        );
-      }
-    } else {
-      // Content fits on a single page
-      pdf.addImage(
-        imgData,
-        'PNG',
-        xPosition,
-        margin,
-        scaledWidth,
-        scaledHeight,
-        '',
-        'FAST'
-      );
-    }
+    console.log('Adding image to PDF with dimensions:', {
+      scaledWidth,
+      scaledHeight,
+      xPosition,
+      margin
+    });
+    
+    // Add image to PDF
+    pdf.addImage(
+      imgData,
+      'PNG',
+      xPosition,
+      margin,
+      scaledWidth,
+      scaledHeight,
+      '',
+      'FAST'
+    );
     
     // Enable PDF metadata
     pdf.setProperties({
@@ -196,7 +179,9 @@ export const generatePdfFromElement = async (
     });
     
     // Output the PDF
+    console.log('Saving PDF:', fileName);
     pdf.save(fileName);
+    
   } catch (error) {
     console.error('Error generating PDF:', error);
     throw new Error(`Failed to generate PDF: ${error instanceof Error ? error.message : String(error)}`);
@@ -213,17 +198,18 @@ export const generateInvoicePdf = async (
   businessLogoUrl?: string
 ): Promise<void> => {
   try {
-    // Sanitize invoice number for valid CSS selector
+    console.log('Starting invoice PDF generation for invoice:', invoice.invoiceNumber);
+    
+    // Set up element ID for processing
     const sanitizedId = `invoice-pdf-${invoice.invoiceNumber.replace(/[^a-zA-Z0-9-]/g, '-')}`;
-    if (!element.id) {
-      element.id = sanitizedId;
-    }
+    element.id = sanitizedId;
     
     // Setup file name with invoice number
     const fileName = `Invoice-${invoice.invoiceNumber}.pdf`;
     
-    // Generate the PDF with template and logo
+    // Generate the PDF
     await generatePdfFromElement(element, fileName, template, businessLogoUrl);
+    
   } catch (error) {
     console.error('Error generating invoice PDF:', error);
     throw new Error(`Failed to generate invoice PDF: ${error instanceof Error ? error.message : String(error)}`);

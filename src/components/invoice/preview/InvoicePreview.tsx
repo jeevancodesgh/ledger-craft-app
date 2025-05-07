@@ -50,7 +50,21 @@ const InvoicePreview = ({ invoice, selectedTemplate }: InvoicePreviewProps) => {
           description: "Generating PDF, please wait...",
         });
 
-        await generateInvoicePdf(invoice, contentRef.current, selectedTemplate, businessProfile?.logoUrl);
+        console.log("Starting PDF generation with template:", selectedTemplate);
+        console.log("Content element:", contentRef.current);
+        
+        // Ensure the invoice content is visible and properly rendered before PDF generation
+        const invoiceContent = contentRef.current.querySelector('.invoice-content');
+        const targetElement = invoiceContent || contentRef.current.firstElementChild || contentRef.current;
+        
+        console.log("Target element for PDF generation:", targetElement);
+        
+        await generateInvoicePdf(
+          invoice, 
+          targetElement as HTMLElement, 
+          selectedTemplate, 
+          businessProfile?.logoUrl
+        );
         
         toast({
           title: "Success",
@@ -124,7 +138,7 @@ const InvoicePreview = ({ invoice, selectedTemplate }: InvoicePreviewProps) => {
       >
         <div 
           className={cn(
-            "bg-white print:p-0 print:shadow-none w-full",
+            "invoice-content bg-white print:p-0 print:shadow-none w-full",
             isMobile ? "mobile-invoice-scale border rounded-lg shadow-sm" : ""
           )}
           style={{ 

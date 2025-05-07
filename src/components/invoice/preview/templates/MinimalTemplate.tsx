@@ -40,6 +40,7 @@ const MinimalTemplate = ({
                   src={businessLogo} 
                   alt={companyName} 
                   className="max-h-10 sm:max-h-12 object-contain rounded-full"
+                  crossOrigin="anonymous"
                 />
               </div>
             )}
@@ -75,8 +76,8 @@ const MinimalTemplate = ({
                   <tr key={index} className="border-b last:border-b-0">
                     <td className="py-2 sm:py-3">
                       {item.description}
-                      {/* Only render details section if it exists as a property in the item */}
-                      {(item as any).details && (
+                      {/* Cast item to any and check for details */}
+                      {((item as any).details) && (
                         <div className="text-xs text-gray-500 break-words">
                           {(item as any).details}
                         </div>
@@ -111,7 +112,7 @@ const MinimalTemplate = ({
 
           {/* Notes */}
           {invoice.notes && (
-            <div className="mt-8 sm:mt-12 pt-4 sm:pt-6 border-t text-xs sm:text-sm">
+            <div className="mt-8 sm:mt-12 pt-4 sm:pt-6 border-t text-xs sm:text-sm notes-section">
               <h2 className="font-medium mb-1 sm:mb-2">Notes</h2>
               <p className="text-gray-600 whitespace-pre-wrap">{invoice.notes}</p>
             </div>
