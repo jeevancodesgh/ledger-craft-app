@@ -29,9 +29,9 @@ const MinimalTemplate = ({
   const isMobile = useIsMobile();
   
   return (
-    <Card className="p-4 sm:p-8 bg-white minimal-invoice-template">
+    <Card className="p-4 sm:p-8 bg-white minimal-invoice-template print-template">
       <CardContent className="p-0">
-        <div className="max-w-3xl mx-auto space-y-4 sm:space-y-6">
+        <div className="w-full mx-auto space-y-4 sm:space-y-6">
           {/* Header with Logo */}
           <div className="text-center mb-4 sm:mb-8">
             {businessLogo && (
@@ -50,25 +50,25 @@ const MinimalTemplate = ({
 
           {/* Company and Client Info */}
           <div className="flex justify-between text-sm invoice-parties">
-            <div>
+            <div className="w-1/2 pr-4">
               <p className="font-medium mb-1">{companyName}</p>
-              <p className="text-gray-600 text-xs sm:text-sm">{companyAddress}</p>
+              <p className="text-gray-600 text-xs sm:text-sm whitespace-pre-wrap">{companyAddress}</p>
             </div>
-            <div className="text-right">
+            <div className="w-1/2 text-right">
               <p className="font-medium mb-1">{clientName}</p>
-              <p className="text-gray-600 text-xs sm:text-sm">{clientAddress}</p>
+              <p className="text-gray-600 text-xs sm:text-sm whitespace-pre-wrap">{clientAddress}</p>
             </div>
           </div>
 
           {/* Invoice Details */}
           <div className="mt-8 sm:mt-12 invoice-items-table">
-            <table className="w-full text-xs sm:text-sm">
+            <table className="w-full text-xs sm:text-sm border-collapse">
               <thead>
                 <tr className="border-b">
-                  <th className="py-2 text-left font-normal">Description</th>
-                  <th className="py-2 text-right font-normal">Qty</th>
-                  <th className="py-2 text-right font-normal">Rate</th>
-                  <th className="py-2 text-right font-normal">Amount</th>
+                  <th className="py-2 text-left font-medium">Description</th>
+                  <th className="py-2 text-right font-medium">Qty</th>
+                  <th className="py-2 text-right font-medium">Rate</th>
+                  <th className="py-2 text-right font-medium">Amount</th>
                 </tr>
               </thead>
               <tbody>

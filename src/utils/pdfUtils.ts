@@ -42,12 +42,33 @@ export const generatePdfFromElement = async (
     clone.style.top = '0';
     
     // Set explicit width to match A4 proportions for better scaling
+    // A4 is 210mm x 297mm at 72 DPI ≈ 595 x 842 points in PDF
     const a4Width = 794; // A4 width in pixels at 96 DPI
     clone.style.width = `${a4Width}px`;
     clone.style.margin = '0';
-    clone.style.padding = '0';
+    clone.style.padding = '30px'; // Add padding for better content positioning
     
     console.log('Clone element created with width:', a4Width);
+    
+    // Apply specific styling for minimal template
+    if (template === 'minimal') {
+      const minimalCard = clone.querySelector('.minimal-invoice-template');
+      if (minimalCard) {
+        (minimalCard as HTMLElement).style.width = '100%';
+        (minimalCard as HTMLElement).style.maxWidth = '100%';
+        (minimalCard as HTMLElement).style.padding = '20px';
+        (minimalCard as HTMLElement).style.margin = '0';
+        (minimalCard as HTMLElement).style.boxSizing = 'border-box';
+        (minimalCard as HTMLElement).style.border = 'none';
+        
+        // Ensure minimal template tables are full width
+        const tables = minimalCard.querySelectorAll('table');
+        tables.forEach(table => {
+          table.style.width = '100%';
+          table.style.tableLayout = 'fixed';
+        });
+      }
+    }
     
     // Enhanced rendering settings for better quality
     const canvas = await html2canvas(clone, {
@@ -69,25 +90,28 @@ export const generatePdfFromElement = async (
           const textElements = clonedElement.querySelectorAll('p, h1, h2, h3, h4, h5, h6, span, div, td, th');
           textElements.forEach(el => {
             if (el instanceof HTMLElement) {
+              // Ensure text color is set explicitly for PDF
+              if (!el.style.color) {
+                el.style.color = '#000000';
+              }
+              
               // Set appropriate font sizes for PDF output
               if (el.classList.contains('text-xl') || el.classList.contains('text-2xl')) {
-                el.style.fontSize = '16px';
+                el.style.fontSize = '18px';
               } else if (el.classList.contains('text-lg')) {
-                el.style.fontSize = '14px';
+                el.style.fontSize = '16px';
               } else if (el.classList.contains('text-sm')) {
-                el.style.fontSize = '10px';
+                el.style.fontSize = '12px';
               } else if (el.classList.contains('text-xs')) {
-                el.style.fontSize = '8px';
+                el.style.fontSize = '10px';
               } else {
                 // Default body text
-                el.style.fontSize = '10px';
+                el.style.fontSize = '12px';
               }
               
               // Apply coloring based on classes
-              if (el.classList.contains('text-muted-foreground')) {
+              if (el.classList.contains('text-muted-foreground') || el.classList.contains('text-gray-500') || el.classList.contains('text-gray-600')) {
                 el.style.color = '#4B5563';
-              } else {
-                el.style.color = '#000000';
               }
               
               // Improve font consistency
@@ -101,7 +125,7 @@ export const generatePdfFromElement = async (
             if (section instanceof HTMLElement) {
               section.style.whiteSpace = 'pre-wrap';
               section.style.wordBreak = 'break-word';
-              section.style.fontSize = '9px';
+              section.style.fontSize = '11px';
             }
           });
 
@@ -110,14 +134,18 @@ export const generatePdfFromElement = async (
           tables.forEach(table => {
             table.style.width = '100%';
             table.style.borderCollapse = 'collapse';
-            table.style.fontSize = '10px';
+            table.style.fontSize = '12px';
             
             const cells = table.querySelectorAll('th, td');
             cells.forEach(cell => {
               if (cell instanceof HTMLElement) {
-                cell.style.padding = '3px';
+                cell.style.padding = '8px';
                 cell.style.textAlign = cell.classList.contains('text-right') ? 'right' : 'left';
-                cell.style.fontSize = '9px';
+                cell.style.fontSize = '11px';
+                // Ensure cell borders are visible in PDF
+                if (cell.parentElement && cell.parentElement.classList.contains('border-b')) {
+                  cell.style.borderBottom = '1px solid #e2e8f0';
+                }
               }
             });
           });
@@ -125,11 +153,39 @@ export const generatePdfFromElement = async (
           // Enhance logo rendering if present
           const logoImg = clonedElement.querySelector('img[alt]');
           if (logoImg instanceof HTMLImageElement && businessLogoUrl) {
-            logoImg.style.maxHeight = '40px';
-            logoImg.style.maxWidth = '120px'; 
+            logoImg.style.maxHeight = '50px';
+            logoImg.style.maxWidth = '150px'; 
             logoImg.style.objectFit = 'contain';
             logoImg.crossOrigin = 'Anonymous';
             logoImg.src = businessLogoUrl;
+          }
+
+          // Specific styling for minimal template
+          if (template === 'minimal') {
+            const minimalCard = clonedElement.querySelector('.minimal-invoice-template');
+            if (minimalCard instanceof HTMLElement) {
+              minimalCard.style.boxShadow = 'none';
+              minimalCard.style.borderRadius = '0';
+              minimalCard.style.width = '100%';
+              minimalCard.style.maxWidth = 'none';
+              
+              // Make title and invoice number larger and more prominent
+              const h1 = minimalCard.querySelector('h1');
+              if (h1) {
+                h1.style.fontSize = '24px';
+                h1.style.fontWeight = '400';
+                h1.style.letterSpacing = '1px';
+              }
+              
+              // Ensure address sections display correctly
+              const addressSections = minimalCard.querySelectorAll('.invoice-parties > div');
+              addressSections.forEach(section => {
+                if (section instanceof HTMLElement) {
+                  section.style.fontSize = '12px';
+                  section.style.lineHeight = '1.5';
+                }
+              });
+            }
           }
         }
       }
@@ -153,7 +209,7 @@ export const generatePdfFromElement = async (
     const pageHeight = pdf.internal.pageSize.getHeight();
     
     // Set margins (in mm)
-    const margin = 5;
+    const margin = 10;
     const contentWidth = pageWidth - (margin * 2);
     
     // Convert canvas to image data
@@ -194,7 +250,6 @@ export const generatePdfFromElement = async (
         console.log(`Rendering page ${pageNum + 1}/${totalPages}, sourceY: ${sourceY}, sourceHeight: ${sourceHeight}`);
         
         // Add a slice of the image to this page
-        // Use the standard addImage method with basic parameters instead of object notation
         pdf.addImage(
           imgData,               // image data
           'PNG',                 // format
@@ -204,7 +259,7 @@ export const generatePdfFromElement = async (
           sourceHeight * scale, // height
           undefined,            // alias
           'FAST',               // compression
-          0,                    // rotation
+          0                     // rotation
         );
       }
     } else {
@@ -214,12 +269,12 @@ export const generatePdfFromElement = async (
       // Calculate position to center content vertically
       const yPosition = margin + (pageHeight - margin * 2 - scaledHeight) / 2;
       
-      // Add image to PDF - using standard parameter approach instead of object
+      // Add image to PDF
       pdf.addImage(
         imgData,       // image data
         'PNG',         // format
         margin,        // x position
-        yPosition,     // y position
+        margin,        // y position
         scaledWidth,   // width
         scaledHeight,  // height
         undefined,     // alias
