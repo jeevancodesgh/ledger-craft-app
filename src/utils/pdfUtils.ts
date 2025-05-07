@@ -194,21 +194,18 @@ export const generatePdfFromElement = async (
         console.log(`Rendering page ${pageNum + 1}/${totalPages}, sourceY: ${sourceY}, sourceHeight: ${sourceHeight}`);
         
         // Add a slice of the image to this page
-        // Update: Use property names that match jsPDF's ImageOptions interface
-        pdf.addImage({
-          imageData: imgData,
-          format: 'PNG',
-          x: margin,
-          y: margin,
-          width: contentWidth,
-          height: sourceHeight * scale,
-          compression: 'FAST',
-          rotation: 0,
-          sx: 0,      // Changed from srcX to sx
-          sy: sourceY, // Changed from srcY to sy
-          sw: canvas.width, // Changed from srcWidth to sw
-          sh: sourceHeight // Changed from srcHeight to sh
-        });
+        // Use the standard addImage method with basic parameters instead of object notation
+        pdf.addImage(
+          imgData,               // image data
+          'PNG',                 // format
+          margin,               // x position
+          margin,               // y position
+          contentWidth,         // width
+          sourceHeight * scale, // height
+          undefined,            // alias
+          'FAST',               // compression
+          0,                    // rotation
+        );
       }
     } else {
       // Content fits on one page
@@ -217,16 +214,17 @@ export const generatePdfFromElement = async (
       // Calculate position to center content vertically
       const yPosition = margin + (pageHeight - margin * 2 - scaledHeight) / 2;
       
-      // Add image to PDF - using correct format for addImage
-      pdf.addImage({
-        imageData: imgData,
-        format: 'PNG',
-        x: margin,
-        y: yPosition,
-        width: scaledWidth,
-        height: scaledHeight,
-        compression: 'FAST'
-      });
+      // Add image to PDF - using standard parameter approach instead of object
+      pdf.addImage(
+        imgData,       // image data
+        'PNG',         // format
+        margin,        // x position
+        yPosition,     // y position
+        scaledWidth,   // width
+        scaledHeight,  // height
+        undefined,     // alias
+        'FAST'         // compression
+      );
     }
     
     // Enable PDF metadata
