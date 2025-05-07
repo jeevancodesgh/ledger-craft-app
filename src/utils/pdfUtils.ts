@@ -194,7 +194,7 @@ export const generatePdfFromElement = async (
         console.log(`Rendering page ${pageNum + 1}/${totalPages}, sourceY: ${sourceY}, sourceHeight: ${sourceHeight}`);
         
         // Add a slice of the image to this page
-        // Fix: Use the correct parameter count for addImage method
+        // Update: Use property names that match jsPDF's ImageOptions interface
         pdf.addImage({
           imageData: imgData,
           format: 'PNG',
@@ -204,10 +204,10 @@ export const generatePdfFromElement = async (
           height: sourceHeight * scale,
           compression: 'FAST',
           rotation: 0,
-          srcX: 0,
-          srcY: sourceY,
-          srcWidth: canvas.width,
-          srcHeight: sourceHeight
+          sx: 0,      // Changed from srcX to sx
+          sy: sourceY, // Changed from srcY to sy
+          sw: canvas.width, // Changed from srcWidth to sw
+          sh: sourceHeight // Changed from srcHeight to sh
         });
       }
     } else {
