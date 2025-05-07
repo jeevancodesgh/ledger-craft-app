@@ -9,7 +9,7 @@ import ExecutiveTemplate from './templates/ExecutiveTemplate';
 import CorporateTemplate from './templates/CorporateTemplate';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { Button } from '@/components/ui/button';
-import { Download, Maximize2, Minimize2, ZoomIn, ZoomOut } from 'lucide-react';
+import { Download, Maximize2, Minimize2, ZoomIn, ZoomOut, Printer } from 'lucide-react';
 import { generateInvoicePdf } from '@/utils/pdfUtils';
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
@@ -77,6 +77,20 @@ const InvoicePreview = ({ invoice, selectedTemplate }: InvoicePreviewProps) => {
         setIsGeneratingPdf(false);
       }
     }
+  };
+
+  // Function to handle direct printing
+  const handlePrint = () => {
+    // Add a temporary print-only class to body during printing
+    document.body.classList.add('printing-invoice');
+    
+    // Use the browser's print functionality
+    window.print();
+    
+    // Remove the class after printing dialog is closed
+    setTimeout(() => {
+      document.body.classList.remove('printing-invoice');
+    }, 500);
   };
 
   const toggleFullscreen = () => {
@@ -199,6 +213,16 @@ const InvoicePreview = ({ invoice, selectedTemplate }: InvoicePreviewProps) => {
               <span className="text-xs">{isFullscreen ? "Exit Fullscreen" : "Fullscreen"}</span>
             </Button>
             <Button 
+              variant="outline"
+              size="sm"
+              onClick={handlePrint}
+              className="flex-1 h-9"
+              aria-label="Print invoice"
+            >
+              <Printer className="h-4 w-4 mr-1" />
+              <span className="text-xs">Print</span>
+            </Button>
+            <Button 
               size="sm"
               onClick={handleDownloadPdf} 
               className="flex-1 h-9"
@@ -208,6 +232,31 @@ const InvoicePreview = ({ invoice, selectedTemplate }: InvoicePreviewProps) => {
               <span className="text-xs">{isGeneratingPdf ? "Generating..." : "Download PDF"}</span>
             </Button>
           </div>
+        </div>
+      )}
+
+      {/* Desktop controls */}
+      {!isMobile && (
+        <div className="flex justify-center gap-3 mt-4 mb-2">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={handlePrint}
+            className="flex items-center"
+            aria-label="Print invoice"
+          >
+            <Printer className="h-4 w-4 mr-2" />
+            <span>Print</span>
+          </Button>
+          <Button
+            size="sm"
+            onClick={handleDownloadPdf}
+            className="flex items-center"
+            disabled={isGeneratingPdf}
+          >
+            <Download className="h-4 w-4 mr-2" />
+            <span>{isGeneratingPdf ? "Generating..." : "Download PDF"}</span>
+          </Button>
         </div>
       )}
     </div>

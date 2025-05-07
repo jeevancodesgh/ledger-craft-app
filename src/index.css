@@ -131,7 +131,24 @@
   }
 }
 
+/* Print specific styles */
 @media print {
+  body * {
+    visibility: hidden;
+  }
+  
+  body.printing-invoice .pdf-template-container,
+  body.printing-invoice .pdf-template-container * {
+    visibility: visible;
+  }
+  
+  body.printing-invoice .pdf-template-container {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 100%;
+  }
+  
   .mobile-invoice-scale {
     transform: scale(1) !important;
     width: 100% !important;
@@ -141,5 +158,32 @@
     padding: 0;
     margin: 0;
     font-size: 12pt;
+    color: black !important;
+  }
+  
+  /* Ensure background colors print */
+  .print-template .bg-\[\#55588b\] {
+    background-color: #55588b !important;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+  
+  /* Ensure proper text colors in print */
+  .print-template .text-white,
+  .print-template .bg-\[\#55588b\] * {
+    color: white !important;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+  
+  /* Ensure table styling in print */
+  .print-template table {
+    width: 100% !important;
+    border-collapse: collapse !important;
+  }
+  
+  .print-template table th,
+  .print-template table td {
+    padding: 8px !important;
   }
 }
