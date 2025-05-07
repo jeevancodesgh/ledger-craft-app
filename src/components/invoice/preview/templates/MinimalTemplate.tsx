@@ -3,6 +3,7 @@ import React from 'react';
 import { Invoice } from '@/types';
 import { Card, CardContent } from "@/components/ui/card";
 import { formatCurrency } from '@/utils/invoiceUtils';
+import { useIsMobile } from '@/hooks/use-mobile';
 
 interface MinimalTemplateProps {
   invoice: Invoice;
@@ -25,44 +26,46 @@ const MinimalTemplate = ({
   tax,
   businessLogo
 }: MinimalTemplateProps) => {
+  const isMobile = useIsMobile();
+  
   return (
-    <Card className="p-8 bg-white">
-      <CardContent>
-        <div className="max-w-3xl mx-auto space-y-6">
+    <Card className="p-4 sm:p-8 bg-white">
+      <CardContent className="p-0">
+        <div className="max-w-3xl mx-auto space-y-4 sm:space-y-6">
           {/* Header with Logo */}
-          <div className="text-center mb-8">
+          <div className="text-center mb-4 sm:mb-8">
             {businessLogo && (
-              <div className="flex justify-center mb-4">
+              <div className="flex justify-center mb-3 sm:mb-4">
                 <img 
                   src={businessLogo} 
                   alt={companyName} 
-                  className="max-h-12 object-contain rounded-full"
+                  className="max-h-10 sm:max-h-12 object-contain rounded-full"
                 />
               </div>
             )}
-            <h1 className="text-2xl font-light tracking-wide">INVOICE</h1>
-            <p className="text-gray-500 mt-2">#{invoice.invoiceNumber}</p>
+            <h1 className="text-xl sm:text-2xl font-light tracking-wide">INVOICE</h1>
+            <p className="text-gray-500 mt-1 sm:mt-2 text-sm sm:text-base">#{invoice.invoiceNumber}</p>
           </div>
 
           {/* Company and Client Info */}
           <div className="flex justify-between text-sm">
             <div>
               <p className="font-medium mb-1">{companyName}</p>
-              <p className="text-gray-600">{companyAddress}</p>
+              <p className="text-gray-600 text-xs sm:text-sm">{companyAddress}</p>
             </div>
             <div className="text-right">
               <p className="font-medium mb-1">{clientName}</p>
-              <p className="text-gray-600">{clientAddress}</p>
+              <p className="text-gray-600 text-xs sm:text-sm">{clientAddress}</p>
             </div>
           </div>
 
           {/* Invoice Details */}
-          <div className="mt-12">
-            <table className="w-full text-sm">
+          <div className="mt-8 sm:mt-12">
+            <table className="w-full text-xs sm:text-sm">
               <thead>
                 <tr className="border-b">
                   <th className="py-2 text-left font-normal">Description</th>
-                  <th className="py-2 text-right font-normal">Quantity</th>
+                  <th className="py-2 text-right font-normal">Qty</th>
                   <th className="py-2 text-right font-normal">Rate</th>
                   <th className="py-2 text-right font-normal">Amount</th>
                 </tr>
@@ -70,10 +73,18 @@ const MinimalTemplate = ({
               <tbody>
                 {invoice.items.map((item, index) => (
                   <tr key={index} className="border-b last:border-b-0">
-                    <td className="py-3">{item.description}</td>
-                    <td className="py-3 text-right">{item.quantity}</td>
-                    <td className="py-3 text-right">{formatCurrency(item.rate)}</td>
-                    <td className="py-3 text-right">{formatCurrency(item.quantity * item.rate)}</td>
+                    <td className="py-2 sm:py-3">
+                      {item.description}
+                      {/* Only render details section if it exists as a property in the item */}
+                      {(item as any).details && (
+                        <div className="text-xs text-gray-500 break-words">
+                          {(item as any).details}
+                        </div>
+                      )}
+                    </td>
+                    <td className="py-2 sm:py-3 text-right">{item.quantity}</td>
+                    <td className="py-2 sm:py-3 text-right">{formatCurrency(item.rate, invoice.currency)}</td>
+                    <td className="py-2 sm:py-3 text-right">{formatCurrency(item.quantity * item.rate, invoice.currency)}</td>
                   </tr>
                 ))}
               </tbody>
@@ -81,27 +92,27 @@ const MinimalTemplate = ({
           </div>
 
           {/* Totals */}
-          <div className="mt-8">
-            <div className="flex flex-col items-end space-y-2">
-              <div className="flex justify-between w-48">
-                <span className="text-gray-600">Subtotal</span>
-                <span>{formatCurrency(invoice.subtotal)}</span>
+          <div className="mt-6 sm:mt-8">
+            <div className="flex flex-col items-end space-y-1 sm:space-y-2">
+              <div className="flex justify-between w-36 sm:w-48">
+                <span className="text-gray-600 text-xs sm:text-sm">Subtotal</span>
+                <span className="text-xs sm:text-sm">{formatCurrency(invoice.subtotal, invoice.currency)}</span>
               </div>
-              <div className="flex justify-between w-48">
-                <span className="text-gray-600">Tax ({taxRate}%)</span>
-                <span>{formatCurrency(tax)}</span>
+              <div className="flex justify-between w-36 sm:w-48">
+                <span className="text-gray-600 text-xs sm:text-sm">Tax ({taxRate}%)</span>
+                <span className="text-xs sm:text-sm">{formatCurrency(tax, invoice.currency)}</span>
               </div>
-              <div className="flex justify-between w-48 font-medium border-t pt-2 mt-2">
-                <span>Total</span>
-                <span>{formatCurrency(invoice.total)}</span>
+              <div className="flex justify-between w-36 sm:w-48 font-medium border-t pt-1 sm:pt-2 mt-1 sm:mt-2">
+                <span className="text-sm sm:text-base">Total</span>
+                <span className="text-sm sm:text-base">{formatCurrency(invoice.total, invoice.currency)}</span>
               </div>
             </div>
           </div>
 
           {/* Notes */}
           {invoice.notes && (
-            <div className="mt-12 pt-6 border-t text-sm">
-              <h2 className="font-medium mb-2">Notes</h2>
+            <div className="mt-8 sm:mt-12 pt-4 sm:pt-6 border-t text-xs sm:text-sm">
+              <h2 className="font-medium mb-1 sm:mb-2">Notes</h2>
               <p className="text-gray-600 whitespace-pre-wrap">{invoice.notes}</p>
             </div>
           )}
