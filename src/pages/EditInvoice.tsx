@@ -3,14 +3,14 @@ import React, { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { useAppContext } from "@/context/AppContext";
 import InvoiceForm from "@/components/invoice/InvoiceForm";
-import { Invoice } from "@/types";
+import { Invoice, Item } from "@/types";
 import { Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 const EditInvoicePage = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const { getInvoice, updateInvoice, customers, isLoadingCustomers, businessProfile } = useAppContext();
+  const { getInvoice, updateInvoice, customers, isLoadingCustomers, businessProfile, items, isLoadingItems } = useAppContext();
   const [invoice, setInvoice] = useState<Invoice | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -65,7 +65,7 @@ const EditInvoicePage = () => {
     }
   };
 
-  if (loading) {
+  if (loading || isLoadingItems) {
     return (
       <div className="flex justify-center items-center h-64">
         <Loader2 className="mr-2 h-6 w-6 animate-spin" /> Loading invoice...
@@ -95,6 +95,7 @@ const EditInvoicePage = () => {
       isLoadingCustomers={isLoadingCustomers}
       onSubmit={handleSave}
       onCancel={() => navigate("/invoices")}
+      availableItems={items}
     />
   );
 };

@@ -1,3 +1,4 @@
+
 import React, { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useForm } from "react-hook-form";
@@ -21,7 +22,7 @@ import { generateInvoicePdf } from "@/utils/pdfUtils";
 import { formatCurrency, formatDate } from "@/utils/invoiceUtils";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Calendar } from "@/components/ui/calendar";
-import { LineItem, Invoice, Customer, BusinessProfile } from "@/types";
+import { LineItem, Invoice, Customer, BusinessProfile, Item } from "@/types";
 import { format } from "date-fns";
 import { cn } from "@/lib/utils";
 import { useIsMobile } from "@/hooks/use-mobile";
@@ -52,6 +53,9 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { useToast } from "@/hooks/use-toast";
 import InvoicePreview from "./preview/InvoicePreview";
+import ItemSelector from "./ItemSelector";
+import ItemDrawer from "../item/ItemDrawer";
+import { ItemFormValues } from "../item/ItemForm";
 
 // Import template components
 import ClassicTemplate from "./preview/templates/ClassicTemplate";
@@ -74,6 +78,7 @@ interface InvoiceFormProps {
   defaultValues?: {
     invoiceNumber?: string;
   };
+  availableItems?: Item[];
 }
 
 const invoiceFormSchema = z.object({
@@ -100,7 +105,8 @@ const InvoiceForm: React.FC<InvoiceFormProps> = ({
   onCancel,
   onAddCustomer,
   newlyAddedCustomer,
-  defaultValues
+  defaultValues,
+  availableItems = []
 }) => {
   const navigate = useNavigate();
   const isMobile = useIsMobile();
@@ -130,6 +136,9 @@ const InvoiceForm: React.FC<InvoiceFormProps> = ({
   );
   const [selectedTemplate, setSelectedTemplate] = useState<InvoiceTemplateId>('classic');
   const [recentCustomers, setRecentCustomers] = useState<Customer[]>([]);
+  
+  // Item management state
+  const [isItemDrawerOpen, setIsItemDrawerOpen] = useState(false);
 
   const form = useForm<InvoiceFormValues>({
     resolver: zodResolver(invoiceFormSchema),
@@ -328,6 +337,42 @@ const InvoiceForm: React.FC<InvoiceFormProps> = ({
     { value: "g", label: "Gram", icon: Weight }
   ];
 
+  // Handle selection of an item from the item selector
+  const handleItemSelect = (selectedItem: Item, index: number) => {
+    const updatedLineItem = { ...items[index] };
+    
+    updatedLineItem.description = selectedItem.name;
+    if (selectedItem.enableSaleInfo && selectedItem.salePrice) {
+      updatedLineItem.rate = selectedItem.salePrice;
+    }
+    updatedLineItem.unit = selectedItem.unit || 'each';
+    updatedLineItem.tax = selectedItem.taxRate || 0;
+    
+    // Calculate total based on quantity and rate
+    updatedLineItem.total = updatedLineItem.quantity * updatedLineItem.rate;
+    
+    const updatedItems = [...items];
+    updatedItems[index] = updatedLineItem;
+    setItems(updatedItems);
+  };
+
+  // Handle creation of a new item
+  const handleCreateNewItem = () => {
+    setIsItemDrawerOpen(true);
+  };
+
+  // Handle saving a new item
+  const handleSaveNewItem = async (values: ItemFormValues) => {
+    // This would typically call an API or service to save the item
+    toast({
+      title: "Not Implemented",
+      description: "Creating items from invoice form is not implemented yet.",
+      variant: "default"
+    });
+    
+    setIsItemDrawerOpen(false);
+  };
+
   const renderLineItemDrawer = () => {
     if (currentItemIndex === null || currentItemIndex >= items.length) return null;
     const currentItem = items[currentItemIndex];
@@ -340,14 +385,25 @@ const InvoiceForm: React.FC<InvoiceFormProps> = ({
           </DrawerDescription>
         </DrawerHeader>
         <div className="p-4 space-y-4">
-          <div className="space-y-2">
-            <label className="text-sm font-medium">Description</label>
-            <Input
-              value={currentItem.description}
-              onChange={e => updateItem(currentItemIndex, 'description', e.target.value)}
-              placeholder="Item description"
-              className="w-full"
-            />
+          <div className="flex flex-col space-y-2">
+            <div className="mb-3">
+              <ItemSelector
+                items={availableItems || []}
+                onItemSelect={(item) => handleItemSelect(item, currentItemIndex)}
+                onCreateNewItem={handleCreateNewItem}
+                buttonClassName="w-full justify-start"
+              />
+            </div>
+
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Description</label>
+              <Input
+                value={currentItem.description}
+                onChange={e => updateItem(currentItemIndex, 'description', e.target.value)}
+                placeholder="Item description"
+                className="w-full"
+              />
+            </div>
           </div>
           <div className="grid grid-cols-2 gap-2">
             <div className="space-y-2">
@@ -832,12 +888,24 @@ const InvoiceForm: React.FC<InvoiceFormProps> = ({
                                 {items.map((item, index) => (
                                   <tr key={item.id} className="border-b last:border-b-0">
                                     <td className="py-2 pr-2">
-                                      <Input
-                                        value={item.description}
-                                        onChange={e => updateItem(index, "description", e.target.value)}
-                                        placeholder="Item description"
-                                        className="w-full"
-                                      />
+                                      <div className="flex flex-col space-y-1">
+                                        <Input
+                                          value={item.description}
+                                          onChange={e => updateItem(index, "description", e.target.value)}
+                                          placeholder="Item description"
+                                          className="w-full"
+                                        />
+                                        {availableItems && availableItems.length > 0 && (
+                                          <div>
+                                            <ItemSelector
+                                              items={availableItems}
+                                              onItemSelect={(selectedItem) => handleItemSelect(selectedItem, index)}
+                                              onCreateNewItem={handleCreateNewItem}
+                                              buttonClassName="text-xs h-7 px-2"
+                                            />
+                                          </div>
+                                        )}
+                                      </div>
                                     </td>
                                     <td className="py-2 px-2">
                                       <Input
@@ -965,6 +1033,17 @@ const InvoiceForm: React.FC<InvoiceFormProps> = ({
           {renderPreviewTab()}
         </TabsContent>
       </Tabs>
+
+      {/* Item Management Modal */}
+      <ItemDrawer 
+        open={isItemDrawerOpen}
+        onOpenChange={setIsItemDrawerOpen}
+        onSave={handleSaveNewItem}
+        categories={[]} // Pass your categories here
+        isLoading={false}
+        title="Create New Item"
+        description="Add a new product or service to your inventory"
+      />
     </div>
   );
 };

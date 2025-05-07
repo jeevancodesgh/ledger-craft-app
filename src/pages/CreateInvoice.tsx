@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAppContext } from '@/context/AppContext';
@@ -34,7 +35,15 @@ const customerSchema = z.object({
 });
 
 const CreateInvoice = () => {
-  const { customers, isLoadingCustomers, createInvoice, businessProfile, createCustomer } = useAppContext();
+  const { 
+    customers, 
+    isLoadingCustomers, 
+    createInvoice, 
+    businessProfile, 
+    createCustomer, 
+    items, 
+    isLoadingItems 
+  } = useAppContext();
   const navigate = useNavigate();
   const { toast } = useToast();
   const [addCustomerOpen, setAddCustomerOpen] = useState(false);
@@ -146,6 +155,7 @@ const CreateInvoice = () => {
         defaultValues={{
           invoiceNumber: defaultInvoiceNumber,
         }}
+        availableItems={items}
       />
 
       <Dialog open={addCustomerOpen} onOpenChange={setAddCustomerOpen}>

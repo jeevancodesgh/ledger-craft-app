@@ -1,7 +1,7 @@
 import { supabase } from '@/integrations/supabase/client';
 import { 
-  Customer, Invoice, BusinessProfile, LineItem,
-  SupabaseCustomer, SupabaseInvoice, SupabaseLineItem, SupabaseBusinessProfile
+  Customer, Invoice, BusinessProfile, LineItem, ItemCategory, Item,
+  SupabaseCustomer, SupabaseInvoice, SupabaseLineItem, SupabaseBusinessProfile, SupabaseItemCategory, SupabaseItem
 } from '@/types';
 
 const mapSupabaseCustomerToCustomer = (customer: SupabaseCustomer): Customer => ({
@@ -151,6 +151,61 @@ const mapBusinessProfileToSupabaseBusinessProfile = async (
     user_id: profile.userId || userId,
     invoice_number_format: profile.invoiceNumberFormat || null,
     invoice_number_sequence: profile.invoiceNumberSequence ?? null
+  };
+};
+
+const mapSupabaseItemCategoryToItemCategory = (category: SupabaseItemCategory): ItemCategory => ({
+  id: category.id,
+  name: category.name,
+  userId: category.user_id,
+  createdAt: category.created_at,
+  updatedAt: category.updated_at
+});
+
+const mapItemCategoryToSupabaseItemCategory = async (category: Omit<ItemCategory, 'id' | 'createdAt' | 'updatedAt'>): Promise<Omit<SupabaseItemCategory, 'id' | 'created_at' | 'updated_at'>> => {
+  const { data: { user } } = await supabase.auth.getUser();
+  const userId = user?.id || '';
+
+  return {
+    name: category.name,
+    user_id: category.userId || userId
+  };
+};
+
+const mapSupabaseItemToItem = (item: SupabaseItem, category?: ItemCategory): Item => ({
+  id: item.id,
+  name: item.name,
+  description: item.description,
+  type: item.type,
+  categoryId: item.category_id,
+  category: category,
+  salePrice: item.sale_price,
+  purchasePrice: item.purchase_price,
+  taxRate: item.tax_rate,
+  enableSaleInfo: item.enable_sale_info,
+  enablePurchaseInfo: item.enable_purchase_info,
+  unit: item.unit || 'each',
+  userId: item.user_id,
+  createdAt: item.created_at,
+  updatedAt: item.updated_at
+});
+
+const mapItemToSupabaseItem = async (item: Omit<Item, 'id' | 'createdAt' | 'updatedAt' | 'category'>): Promise<Omit<SupabaseItem, 'id' | 'created_at' | 'updated_at'>> => {
+  const { data: { user } } = await supabase.auth.getUser();
+  const userId = user?.id || '';
+
+  return {
+    name: item.name,
+    description: item.description || null,
+    type: item.type,
+    category_id: item.categoryId || null,
+    sale_price: item.salePrice || null,
+    purchase_price: item.purchasePrice || null,
+    tax_rate: item.taxRate || null,
+    enable_sale_info: item.enableSaleInfo,
+    enable_purchase_info: item.enablePurchaseInfo,
+    unit: item.unit || 'each',
+    user_id: item.userId || userId
   };
 };
 
@@ -559,6 +614,213 @@ export const invoiceService = {
       console.error('Error deleting line item:', error);
       throw error;
     }
+  }
+};
+
+export const itemCategoryService = {
+  async getItemCategories(): Promise<ItemCategory[]> {
+    const { data, error } = await supabase
+      .from('item_categories')
+      .select('*')
+      .order('name');
+
+    if (error) {
+      console.error('Error fetching item categories:', error);
+      throw error;
+    }
+    
+    return (data as SupabaseItemCategory[]).map(mapSupabaseItemCategoryToItemCategory) || [];
+  },
+
+  async createItemCategory(category: Omit<ItemCategory, 'id' | 'createdAt' | 'updatedAt'>): Promise<ItemCategory> {
+    const supabaseCategory = await mapItemCategoryToSupabaseItemCategory(category);
+    
+    const { data, error } = await supabase
+      .from('item_categories')
+      .insert([supabaseCategory])
+      .select()
+      .single();
+
+    if (error) {
+      console.error('Error creating item category:', error);
+      throw error;
+    }
+    
+    return mapSupabaseItemCategoryToItemCategory(data as SupabaseItemCategory);
+  },
+
+  async updateItemCategory(id: string, category: Partial<Omit<ItemCategory, 'id' | 'createdAt' | 'updatedAt'>>): Promise<ItemCategory> {
+    const { data: existingData } = await supabase
+      .from('item_categories')
+      .select()
+      .eq('id', id)
+      .single();
+      
+    if (!existingData) {
+      throw new Error(`Category with id ${id} not found`);
+    }
+    
+    const { data, error } = await supabase
+      .from('item_categories')
+      .update({ name: category.name })
+      .eq('id', id)
+      .select()
+      .single();
+
+    if (error) {
+      console.error('Error updating item category:', error);
+      throw error;
+    }
+    
+    return mapSupabaseItemCategoryToItemCategory(data as SupabaseItemCategory);
+  },
+
+  async deleteItemCategory(id: string): Promise<void> {
+    const { error } = await supabase
+      .from('item_categories')
+      .delete()
+      .eq('id', id);
+
+    if (error) {
+      console.error('Error deleting item category:', error);
+      throw error;
+    }
+  }
+};
+
+export const itemService = {
+  async getItems(): Promise<Item[]> {
+    const { data: itemsData, error: itemsError } = await supabase
+      .from('items')
+      .select(`*, item_categories(*)`)
+      .order('name');
+
+    if (itemsError) {
+      console.error('Error fetching items:', itemsError);
+      throw itemsError;
+    }
+    
+    return itemsData.map(item => {
+      let category = undefined;
+      if (item.item_categories) {
+        category = mapSupabaseItemCategoryToItemCategory(item.item_categories);
+      }
+      
+      return mapSupabaseItemToItem(item, category);
+    }) || [];
+  },
+
+  async getItem(id: string): Promise<Item | null> {
+    const { data, error } = await supabase
+      .from('items')
+      .select(`*, item_categories(*)`)
+      .eq('id', id)
+      .single();
+
+    if (error) {
+      if (error.code === 'PGRST116') {
+        return null;
+      }
+      console.error('Error fetching item:', error);
+      throw error;
+    }
+
+    let category = undefined;
+    if (data.item_categories) {
+      category = mapSupabaseItemCategoryToItemCategory(data.item_categories);
+    }
+    
+    return data ? mapSupabaseItemToItem(data, category) : null;
+  },
+
+  async createItem(item: Omit<Item, 'id' | 'createdAt' | 'updatedAt' | 'category'>): Promise<Item> {
+    const supabaseItem = await mapItemToSupabaseItem(item);
+    
+    const { data, error } = await supabase
+      .from('items')
+      .insert([supabaseItem])
+      .select(`*, item_categories(*)`)
+      .single();
+
+    if (error) {
+      console.error('Error creating item:', error);
+      throw error;
+    }
+
+    let category = undefined;
+    if (data.item_categories) {
+      category = mapSupabaseItemCategoryToItemCategory(data.item_categories);
+    }
+    
+    return mapSupabaseItemToItem(data, category);
+  },
+
+  async updateItem(id: string, item: Partial<Omit<Item, 'id' | 'createdAt' | 'updatedAt' | 'category'>>): Promise<Item> {
+    const updateData: any = {};
+    
+    if (item.name !== undefined) updateData.name = item.name;
+    if (item.description !== undefined) updateData.description = item.description;
+    if (item.type !== undefined) updateData.type = item.type;
+    if (item.categoryId !== undefined) updateData.category_id = item.categoryId;
+    if (item.salePrice !== undefined) updateData.sale_price = item.salePrice;
+    if (item.purchasePrice !== undefined) updateData.purchase_price = item.purchasePrice;
+    if (item.taxRate !== undefined) updateData.tax_rate = item.taxRate;
+    if (item.enableSaleInfo !== undefined) updateData.enable_sale_info = item.enableSaleInfo;
+    if (item.enablePurchaseInfo !== undefined) updateData.enable_purchase_info = item.enablePurchaseInfo;
+    if (item.unit !== undefined) updateData.unit = item.unit;
+    
+    const { data, error } = await supabase
+      .from('items')
+      .update(updateData)
+      .eq('id', id)
+      .select(`*, item_categories(*)`)
+      .single();
+
+    if (error) {
+      console.error('Error updating item:', error);
+      throw error;
+    }
+
+    let category = undefined;
+    if (data.item_categories) {
+      category = mapSupabaseItemCategoryToItemCategory(data.item_categories);
+    }
+    
+    return mapSupabaseItemToItem(data, category);
+  },
+
+  async deleteItem(id: string): Promise<void> {
+    const { error } = await supabase
+      .from('items')
+      .delete()
+      .eq('id', id);
+
+    if (error) {
+      console.error('Error deleting item:', error);
+      throw error;
+    }
+  },
+  
+  async getItemsByType(type: 'product' | 'service'): Promise<Item[]> {
+    const { data, error } = await supabase
+      .from('items')
+      .select(`*, item_categories(*)`)
+      .eq('type', type)
+      .order('name');
+
+    if (error) {
+      console.error(`Error fetching items by type ${type}:`, error);
+      throw error;
+    }
+    
+    return data.map(item => {
+      let category = undefined;
+      if (item.item_categories) {
+        category = mapSupabaseItemCategoryToItemCategory(item.item_categories);
+      }
+      
+      return mapSupabaseItemToItem(item, category);
+    }) || [];
   }
 };
 

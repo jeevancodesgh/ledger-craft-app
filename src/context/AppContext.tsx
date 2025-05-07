@@ -1,398 +1,485 @@
-import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-import { Customer, Invoice, BusinessProfile } from '@/types';
-import { customerService, invoiceService, businessProfileService, dashboardService } from '@/services/supabaseService';
-import { useToast } from '@/hooks/use-toast';
 
-interface DashboardStats {
-  totalEarnings: number;
-  paidInvoices: number;
-  unpaidInvoices: number;
-  overdueInvoices: number;
-  customerCount: number;
-  revenueByMonth: { month: number; revenue: number }[];
-}
+import React, { createContext, useContext, useState, useEffect } from "react";
+import { customerService, invoiceService, businessProfileService, itemService, itemCategoryService } from "@/services/supabaseService";
+import { Customer, Invoice, BusinessProfile, Item, ItemCategory } from "@/types";
+import { useToast } from "@/hooks/use-toast";
 
 interface AppContextType {
-  // Data
   customers: Customer[];
-  invoices: Invoice[];
-  businessProfile: BusinessProfile | null;
-  dashboardStats: DashboardStats | null;
-  
-  // Loading states
   isLoadingCustomers: boolean;
-  isLoadingInvoices: boolean;
-  isLoadingProfile: boolean;
-  isLoadingStats: boolean;
-  
-  // Customer methods
-  getCustomer: (id: string) => Promise<Customer | undefined>;
-  createCustomer: (customer: Omit<Customer, 'id'>) => Promise<Customer>;
-  updateCustomer: (customer: Customer) => Promise<Customer>;
+  getCustomer: (id: string) => Promise<Customer | null>;
+  createCustomer: (customer: Omit<Customer, "id" | "createdAt" | "updatedAt">) => Promise<Customer>;
+  updateCustomer: (id: string, customer: Partial<Omit<Customer, "id" | "createdAt" | "updatedAt">>) => Promise<Customer>;
   deleteCustomer: (id: string) => Promise<void>;
-  
-  // Invoice methods
-  getInvoice: (id: string) => Promise<Invoice | undefined>;
-  getInvoicesForCustomer: (customerId: string) => Promise<Invoice[]>;
-  createInvoice: (invoice: Omit<Invoice, 'id' | 'createdAt' | 'updatedAt'>) => Promise<Invoice>;
+  invoices: Invoice[];
+  isLoadingInvoices: boolean;
+  getInvoice: (id: string) => Promise<Invoice | null>;
+  createInvoice: (invoice: Omit<Invoice, "id" | "createdAt" | "updatedAt">) => Promise<Invoice>;
   updateInvoice: (invoice: Invoice) => Promise<Invoice>;
   deleteInvoice: (id: string) => Promise<void>;
-  updateInvoiceStatus: (id: string, status: Invoice['status']) => Promise<Invoice | undefined>;
-  
-  // Business profile methods
-  updateBusinessProfile: (profile: BusinessProfile) => Promise<BusinessProfile>;
-  
-  // Refresh methods
-  refreshCustomers: () => Promise<void>;
-  refreshInvoices: () => Promise<void>;
-  refreshBusinessProfile: () => Promise<void>;
-  refreshDashboardStats: () => Promise<void>;
+  businessProfile: BusinessProfile | null;
+  isLoadingBusinessProfile: boolean;
+  saveBusinessProfile: (profile: Omit<BusinessProfile, "id" | "createdAt" | "updatedAt">) => Promise<BusinessProfile>;
+  items: Item[];
+  isLoadingItems: boolean;
+  getItem: (id: string) => Promise<Item | null>;
+  createItem: (item: Omit<Item, "id" | "createdAt" | "updatedAt" | "category">) => Promise<Item>;
+  updateItem: (id: string, item: Partial<Omit<Item, "id" | "createdAt" | "updatedAt" | "category">>) => Promise<Item>;
+  deleteItem: (id: string) => Promise<void>;
+  itemCategories: ItemCategory[];
+  isLoadingItemCategories: boolean;
+  createItemCategory: (category: Omit<ItemCategory, "id" | "createdAt" | "updatedAt">) => Promise<ItemCategory>;
+  updateItemCategory: (id: string, category: Partial<Omit<ItemCategory, "id" | "createdAt" | "updatedAt">>) => Promise<ItemCategory>;
+  deleteItemCategory: (id: string) => Promise<void>;
 }
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
 
-export function AppProvider({ children }: { children: ReactNode }) {
-  const { toast } = useToast();
-  
-  // State
+export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [customers, setCustomers] = useState<Customer[]>([]);
-  const [invoices, setInvoices] = useState<Invoice[]>([]);
-  const [businessProfile, setBusinessProfile] = useState<BusinessProfile | null>(null);
-  const [dashboardStats, setDashboardStats] = useState<DashboardStats | null>(null);
-  
-  // Loading states
   const [isLoadingCustomers, setIsLoadingCustomers] = useState(true);
+  const [invoices, setInvoices] = useState<Invoice[]>([]);
   const [isLoadingInvoices, setIsLoadingInvoices] = useState(true);
-  const [isLoadingProfile, setIsLoadingProfile] = useState(true);
-  const [isLoadingStats, setIsLoadingStats] = useState(true);
-  
-  // Load initial data
+  const [businessProfile, setBusinessProfile] = useState<BusinessProfile | null>(null);
+  const [isLoadingBusinessProfile, setIsLoadingBusinessProfile] = useState(true);
+  const [items, setItems] = useState<Item[]>([]);
+  const [isLoadingItems, setIsLoadingItems] = useState(true);
+  const [itemCategories, setItemCategories] = useState<ItemCategory[]>([]);
+  const [isLoadingItemCategories, setIsLoadingItemCategories] = useState(true);
+  const { toast } = useToast();
+
   useEffect(() => {
-    refreshCustomers();
-    refreshInvoices();
-    refreshBusinessProfile();
-    refreshDashboardStats();
+    fetchCustomers();
+    fetchInvoices();
+    fetchBusinessProfile();
+    fetchItems();
+    fetchItemCategories();
   }, []);
-  
-  // Customers methods
-  const refreshCustomers = async () => {
-    setIsLoadingCustomers(true);
+
+  const fetchCustomers = async () => {
     try {
+      setIsLoadingCustomers(true);
       const data = await customerService.getCustomers();
       setCustomers(data);
     } catch (error) {
-      console.error('Error loading customers:', error);
+      console.error("Error loading customers:", error);
       toast({
-        title: 'Error',
-        description: 'Failed to load customers',
-        variant: 'destructive',
+        title: "Error",
+        description: "Failed to load customers. Please try again.",
+        variant: "destructive",
       });
     } finally {
       setIsLoadingCustomers(false);
     }
   };
-  
+
   const getCustomer = async (id: string) => {
     try {
-      const customer = await customerService.getCustomer(id);
-      return customer || undefined;
+      return await customerService.getCustomer(id);
     } catch (error) {
-      console.error('Error getting customer:', error);
+      console.error("Error loading customer:", error);
       toast({
-        title: 'Error',
-        description: 'Failed to get customer details',
-        variant: 'destructive',
+        title: "Error",
+        description: "Failed to load customer details. Please try again.",
+        variant: "destructive",
       });
-      return undefined;
+      return null;
     }
   };
-  
-  const createCustomer = async (customer: Omit<Customer, 'id'>) => {
+
+  const createCustomer = async (customer: Omit<Customer, "id" | "createdAt" | "updatedAt">) => {
     try {
       const newCustomer = await customerService.createCustomer(customer);
-      await refreshCustomers();
+      setCustomers([...customers, newCustomer]);
       toast({
-        title: 'Success',
-        description: 'Customer created successfully',
+        title: "Success",
+        description: "Customer created successfully.",
       });
       return newCustomer;
     } catch (error) {
-      console.error('Error creating customer:', error);
+      console.error("Error creating customer:", error);
       toast({
-        title: 'Error',
-        description: 'Failed to create customer',
-        variant: 'destructive',
+        title: "Error",
+        description: "Failed to create customer. Please try again.",
+        variant: "destructive",
       });
       throw error;
     }
   };
-  
-  const updateCustomer = async (customer: Customer) => {
+
+  const updateCustomer = async (id: string, customer: Partial<Omit<Customer, "id" | "createdAt" | "updatedAt">>) => {
     try {
-      const updatedCustomer = await customerService.updateCustomer(customer.id, customer);
-      await refreshCustomers();
+      const updatedCustomer = await customerService.updateCustomer(id, customer);
+      setCustomers(customers.map(c => c.id === id ? updatedCustomer : c));
       toast({
-        title: 'Success',
-        description: 'Customer updated successfully',
+        title: "Success",
+        description: "Customer updated successfully.",
       });
       return updatedCustomer;
     } catch (error) {
-      console.error('Error updating customer:', error);
+      console.error("Error updating customer:", error);
       toast({
-        title: 'Error',
-        description: 'Failed to update customer',
-        variant: 'destructive',
+        title: "Error",
+        description: "Failed to update customer. Please try again.",
+        variant: "destructive",
       });
       throw error;
     }
   };
-  
+
   const deleteCustomer = async (id: string) => {
     try {
       await customerService.deleteCustomer(id);
-      await refreshCustomers();
+      setCustomers(customers.filter(c => c.id !== id));
       toast({
-        title: 'Success',
-        description: 'Customer deleted successfully',
+        title: "Success",
+        description: "Customer deleted successfully.",
       });
     } catch (error) {
-      console.error('Error deleting customer:', error);
+      console.error("Error deleting customer:", error);
       toast({
-        title: 'Error',
-        description: 'Failed to delete customer',
-        variant: 'destructive',
+        title: "Error",
+        description: "Failed to delete customer. Please try again.",
+        variant: "destructive",
       });
       throw error;
     }
   };
-  
-  // Invoice methods
-  const refreshInvoices = async () => {
-    setIsLoadingInvoices(true);
+
+  const fetchInvoices = async () => {
     try {
+      setIsLoadingInvoices(true);
       const data = await invoiceService.getInvoices();
       setInvoices(data);
     } catch (error) {
-      console.error('Error loading invoices:', error);
+      console.error("Error loading invoices:", error);
       toast({
-        title: 'Error',
-        description: 'Failed to load invoices',
-        variant: 'destructive',
+        title: "Error",
+        description: "Failed to load invoices. Please try again.",
+        variant: "destructive",
       });
     } finally {
       setIsLoadingInvoices(false);
     }
   };
-  
+
   const getInvoice = async (id: string) => {
     try {
-      const invoice = await invoiceService.getInvoice(id);
-      return invoice || undefined;
+      return await invoiceService.getInvoice(id);
     } catch (error) {
-      console.error('Error getting invoice:', error);
+      console.error("Error loading invoice:", error);
       toast({
-        title: 'Error',
-        description: 'Failed to get invoice details',
-        variant: 'destructive',
+        title: "Error",
+        description: "Failed to load invoice details. Please try again.",
+        variant: "destructive",
       });
-      return undefined;
+      return null;
     }
   };
-  
-  const getInvoicesForCustomer = async (customerId: string) => {
+
+  const createInvoice = async (invoice: Omit<Invoice, "id" | "createdAt" | "updatedAt">) => {
     try {
-      return await invoiceService.getInvoicesForCustomer(customerId);
-    } catch (error) {
-      console.error('Error getting customer invoices:', error);
+      const newInvoice = await invoiceService.createInvoice(invoice, invoice.items);
+      setInvoices([...invoices, newInvoice]);
       toast({
-        title: 'Error',
-        description: 'Failed to get customer invoices',
-        variant: 'destructive',
-      });
-      return [];
-    }
-  };
-  
-  const createInvoice = async (invoice: Omit<Invoice, 'id' | 'createdAt' | 'updatedAt'>) => {
-    try {
-      const { items, ...invoiceData } = invoice as any;
-      const newInvoice = await invoiceService.createInvoice(invoiceData, items);
-      await refreshInvoices();
-      toast({
-        title: 'Success',
-        description: 'Invoice created successfully',
+        title: "Success",
+        description: "Invoice created successfully.",
       });
       return newInvoice;
     } catch (error) {
-      console.error('Error creating invoice:', error);
+      console.error("Error creating invoice:", error);
       toast({
-        title: 'Error',
-        description: 'Failed to create invoice',
-        variant: 'destructive',
+        title: "Error",
+        description: "Failed to create invoice. Please try again.",
+        variant: "destructive",
       });
       throw error;
     }
   };
-  
+
   const updateInvoice = async (invoice: Invoice) => {
     try {
-      const updatedInvoice = await invoiceService.updateInvoice(invoice.id, invoice);
-      await refreshInvoices();
+      const { id, items, ...rest } = invoice;
+      const updatedInvoice = await invoiceService.updateInvoice(id, { ...rest, items });
+      setInvoices(invoices.map(i => i.id === id ? updatedInvoice : i));
       toast({
-        title: 'Success',
-        description: 'Invoice updated successfully',
+        title: "Success",
+        description: "Invoice updated successfully.",
       });
       return updatedInvoice;
     } catch (error) {
-      console.error('Error updating invoice:', error);
+      console.error("Error updating invoice:", error);
       toast({
-        title: 'Error',
-        description: 'Failed to update invoice',
-        variant: 'destructive',
+        title: "Error",
+        description: "Failed to update invoice. Please try again.",
+        variant: "destructive",
       });
       throw error;
     }
   };
-  
+
   const deleteInvoice = async (id: string) => {
     try {
       await invoiceService.deleteInvoice(id);
-      await refreshInvoices();
+      setInvoices(invoices.filter(i => i.id !== id));
       toast({
-        title: 'Success',
-        description: 'Invoice deleted successfully',
+        title: "Success",
+        description: "Invoice deleted successfully.",
       });
     } catch (error) {
-      console.error('Error deleting invoice:', error);
+      console.error("Error deleting invoice:", error);
       toast({
-        title: 'Error',
-        description: 'Failed to delete invoice',
-        variant: 'destructive',
+        title: "Error",
+        description: "Failed to delete invoice. Please try again.",
+        variant: "destructive",
       });
       throw error;
     }
   };
-  
-  const updateInvoiceStatus = async (id: string, status: Invoice['status']) => {
+
+  const fetchBusinessProfile = async () => {
     try {
-      const updatedInvoice = await invoiceService.updateInvoiceStatus(id, status);
-      await refreshInvoices();
-      toast({
-        title: 'Success',
-        description: 'Invoice status updated successfully',
-      });
-      return updatedInvoice;
-    } catch (error) {
-      console.error('Error updating invoice status:', error);
-      toast({
-        title: 'Error',
-        description: 'Failed to update invoice status',
-        variant: 'destructive',
-      });
-      return undefined;
-    }
-  };
-  
-  // Business profile methods
-  const refreshBusinessProfile = async () => {
-    setIsLoadingProfile(true);
-    try {
+      setIsLoadingBusinessProfile(true);
       const data = await businessProfileService.getBusinessProfile();
       setBusinessProfile(data);
     } catch (error) {
-      console.error('Error loading business profile:', error);
+      console.error("Error loading business profile:", error);
       toast({
-        title: 'Error',
-        description: 'Failed to load business profile',
-        variant: 'destructive',
+        title: "Error",
+        description: "Failed to load business profile. Please try again.",
+        variant: "destructive",
       });
     } finally {
-      setIsLoadingProfile(false);
+      setIsLoadingBusinessProfile(false);
     }
   };
-  
-  const updateBusinessProfile = async (profile: BusinessProfile) => {
+
+  const saveBusinessProfile = async (profile: Omit<BusinessProfile, "id" | "createdAt" | "updatedAt">) => {
     try {
       const updatedProfile = await businessProfileService.createOrUpdateBusinessProfile(profile);
       setBusinessProfile(updatedProfile);
       toast({
-        title: 'Success',
-        description: 'Business profile updated successfully',
+        title: "Success",
+        description: "Business profile saved successfully.",
       });
       return updatedProfile;
     } catch (error) {
-      console.error('Error updating business profile:', error);
+      console.error("Error saving business profile:", error);
       toast({
-        title: 'Error',
-        description: 'Failed to update business profile',
-        variant: 'destructive',
+        title: "Error",
+        description: "Failed to save business profile. Please try again.",
+        variant: "destructive",
       });
       throw error;
     }
   };
-  
-  // Dashboard stats
-  const refreshDashboardStats = async () => {
-    setIsLoadingStats(true);
+
+  // New functions for items
+  const fetchItems = async () => {
     try {
-      const stats = await dashboardService.getDashboardStats();
-      setDashboardStats(stats);
+      setIsLoadingItems(true);
+      const data = await itemService.getItems();
+      setItems(data);
     } catch (error) {
-      console.error('Error loading dashboard stats:', error);
+      console.error("Error loading items:", error);
       toast({
-        title: 'Error',
-        description: 'Failed to load dashboard statistics',
-        variant: 'destructive',
+        title: "Error",
+        description: "Failed to load items. Please try again.",
+        variant: "destructive",
       });
     } finally {
-      setIsLoadingStats(false);
+      setIsLoadingItems(false);
     }
   };
-  
-  const value = {
-    // Data
-    customers,
-    invoices,
-    businessProfile,
-    dashboardStats,
-    
-    // Loading states
-    isLoadingCustomers,
-    isLoadingInvoices,
-    isLoadingProfile,
-    isLoadingStats,
-    
-    // Customer methods
-    getCustomer,
-    createCustomer,
-    updateCustomer,
-    deleteCustomer,
-    
-    // Invoice methods
-    getInvoice,
-    getInvoicesForCustomer,
-    createInvoice,
-    updateInvoice,
-    deleteInvoice,
-    updateInvoiceStatus,
-    
-    // Business profile methods
-    updateBusinessProfile,
-    
-    // Refresh methods
-    refreshCustomers,
-    refreshInvoices,
-    refreshBusinessProfile,
-    refreshDashboardStats,
-  };
-  
-  return <AppContext.Provider value={value}>{children}</AppContext.Provider>;
-}
 
-export function useAppContext() {
+  const getItem = async (id: string) => {
+    try {
+      return await itemService.getItem(id);
+    } catch (error) {
+      console.error("Error loading item:", error);
+      toast({
+        title: "Error",
+        description: "Failed to load item details. Please try again.",
+        variant: "destructive",
+      });
+      return null;
+    }
+  };
+
+  const createItem = async (item: Omit<Item, "id" | "createdAt" | "updatedAt" | "category">) => {
+    try {
+      const newItem = await itemService.createItem(item);
+      setItems([...items, newItem]);
+      toast({
+        title: "Success",
+        description: "Item created successfully.",
+      });
+      return newItem;
+    } catch (error) {
+      console.error("Error creating item:", error);
+      toast({
+        title: "Error",
+        description: "Failed to create item. Please try again.",
+        variant: "destructive",
+      });
+      throw error;
+    }
+  };
+
+  const updateItem = async (id: string, item: Partial<Omit<Item, "id" | "createdAt" | "updatedAt" | "category">>) => {
+    try {
+      const updatedItem = await itemService.updateItem(id, item);
+      setItems(items.map(i => i.id === id ? updatedItem : i));
+      toast({
+        title: "Success",
+        description: "Item updated successfully.",
+      });
+      return updatedItem;
+    } catch (error) {
+      console.error("Error updating item:", error);
+      toast({
+        title: "Error",
+        description: "Failed to update item. Please try again.",
+        variant: "destructive",
+      });
+      throw error;
+    }
+  };
+
+  const deleteItem = async (id: string) => {
+    try {
+      await itemService.deleteItem(id);
+      setItems(items.filter(i => i.id !== id));
+      toast({
+        title: "Success",
+        description: "Item deleted successfully.",
+      });
+    } catch (error) {
+      console.error("Error deleting item:", error);
+      toast({
+        title: "Error",
+        description: "Failed to delete item. Please try again.",
+        variant: "destructive",
+      });
+      throw error;
+    }
+  };
+
+  // New functions for item categories
+  const fetchItemCategories = async () => {
+    try {
+      setIsLoadingItemCategories(true);
+      const data = await itemCategoryService.getItemCategories();
+      setItemCategories(data);
+    } catch (error) {
+      console.error("Error loading item categories:", error);
+      toast({
+        title: "Error",
+        description: "Failed to load item categories. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoadingItemCategories(false);
+    }
+  };
+
+  const createItemCategory = async (category: Omit<ItemCategory, "id" | "createdAt" | "updatedAt">) => {
+    try {
+      const newCategory = await itemCategoryService.createItemCategory(category);
+      setItemCategories([...itemCategories, newCategory]);
+      toast({
+        title: "Success",
+        description: "Category created successfully.",
+      });
+      return newCategory;
+    } catch (error) {
+      console.error("Error creating category:", error);
+      toast({
+        title: "Error",
+        description: "Failed to create category. Please try again.",
+        variant: "destructive",
+      });
+      throw error;
+    }
+  };
+
+  const updateItemCategory = async (id: string, category: Partial<Omit<ItemCategory, "id" | "createdAt" | "updatedAt">>) => {
+    try {
+      const updatedCategory = await itemCategoryService.updateItemCategory(id, category);
+      setItemCategories(itemCategories.map(c => c.id === id ? updatedCategory : c));
+      toast({
+        title: "Success",
+        description: "Category updated successfully.",
+      });
+      return updatedCategory;
+    } catch (error) {
+      console.error("Error updating category:", error);
+      toast({
+        title: "Error",
+        description: "Failed to update category. Please try again.",
+        variant: "destructive",
+      });
+      throw error;
+    }
+  };
+
+  const deleteItemCategory = async (id: string) => {
+    try {
+      await itemCategoryService.deleteItemCategory(id);
+      setItemCategories(itemCategories.filter(c => c.id !== id));
+      toast({
+        title: "Success",
+        description: "Category deleted successfully.",
+      });
+    } catch (error) {
+      console.error("Error deleting category:", error);
+      toast({
+        title: "Error",
+        description: "Failed to delete category. Please try again.",
+        variant: "destructive",
+      });
+      throw error;
+    }
+  };
+
+  return (
+    <AppContext.Provider value={{
+      customers,
+      isLoadingCustomers,
+      getCustomer,
+      createCustomer,
+      updateCustomer,
+      deleteCustomer,
+      invoices,
+      isLoadingInvoices,
+      getInvoice,
+      createInvoice,
+      updateInvoice,
+      deleteInvoice,
+      businessProfile,
+      isLoadingBusinessProfile,
+      saveBusinessProfile,
+      items,
+      isLoadingItems,
+      getItem,
+      createItem,
+      updateItem,
+      deleteItem,
+      itemCategories,
+      isLoadingItemCategories,
+      createItemCategory,
+      updateItemCategory,
+      deleteItemCategory
+    }}>
+      {children}
+    </AppContext.Provider>
+  );
+};
+
+export const useAppContext = () => {
   const context = useContext(AppContext);
   if (context === undefined) {
-    throw new Error('useAppContext must be used within an AppProvider');
+    throw new Error("useAppContext must be used within an AppProvider");
   }
   return context;
-}
+};

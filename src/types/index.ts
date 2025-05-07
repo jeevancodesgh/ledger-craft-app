@@ -1,4 +1,3 @@
-
 export interface Customer {
   id: string;
   name: string;
@@ -154,4 +153,55 @@ export interface SupabaseBusinessProfile {
   updated_at: string;
   invoice_number_format: string | null;
   invoice_number_sequence: number | null;
+}
+
+export interface ItemCategory {
+  id: string;
+  name: string;
+  userId?: string;
+  createdAt?: string;
+  updatedAt?: string;
+}
+
+export interface Item {
+  id: string;
+  name: string;
+  description?: string | null;
+  type: 'product' | 'service';
+  categoryId?: string | null;
+  category?: ItemCategory;
+  salePrice?: number | null;
+  purchasePrice?: number | null;
+  taxRate?: number | null;
+  enableSaleInfo: boolean;
+  enablePurchaseInfo: boolean;
+  unit: string;
+  userId?: string;
+  createdAt?: string;
+  updatedAt?: string;
+}
+
+export interface SupabaseItemCategory {
+  id: string;
+  name: string;
+  user_id: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface SupabaseItem {
+  id: string;
+  name: string;
+  description: string | null;
+  type: 'product' | 'service';
+  category_id: string | null;
+  sale_price: number | null;
+  purchase_price: number | null;
+  tax_rate: number | null;
+  enable_sale_info: boolean;
+  enable_purchase_info: boolean;
+  unit: string;
+  user_id: string;
+  created_at: string;
+  updated_at: string;
 }

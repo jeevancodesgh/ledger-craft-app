@@ -197,6 +197,89 @@ export type Database = {
           },
         ]
       }
+      item_categories: {
+        Row: {
+          created_at: string
+          id: string
+          name: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          name: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          name?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      items: {
+        Row: {
+          category_id: string | null
+          created_at: string
+          description: string | null
+          enable_purchase_info: boolean
+          enable_sale_info: boolean
+          id: string
+          name: string
+          purchase_price: number | null
+          sale_price: number | null
+          tax_rate: number | null
+          type: string
+          unit: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          category_id?: string | null
+          created_at?: string
+          description?: string | null
+          enable_purchase_info?: boolean
+          enable_sale_info?: boolean
+          id?: string
+          name: string
+          purchase_price?: number | null
+          sale_price?: number | null
+          tax_rate?: number | null
+          type: string
+          unit?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          category_id?: string | null
+          created_at?: string
+          description?: string | null
+          enable_purchase_info?: boolean
+          enable_sale_info?: boolean
+          id?: string
+          name?: string
+          purchase_price?: number | null
+          sale_price?: number | null
+          tax_rate?: number | null
+          type?: string
+          unit?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "items_category_id_fkey"
+            columns: ["category_id"]
+            isOneToOne: false
+            referencedRelation: "item_categories"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       line_items: {
         Row: {
           created_at: string
@@ -207,6 +290,7 @@ export type Database = {
           rate: number
           tax: number | null
           total: number
+          unit: string | null
           updated_at: string
         }
         Insert: {
@@ -218,6 +302,7 @@ export type Database = {
           rate: number
           tax?: number | null
           total: number
+          unit?: string | null
           updated_at?: string
         }
         Update: {
@@ -229,6 +314,7 @@ export type Database = {
           rate?: number
           tax?: number | null
           total?: number
+          unit?: string | null
           updated_at?: string
         }
         Relationships: [
