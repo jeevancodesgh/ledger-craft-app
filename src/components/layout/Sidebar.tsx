@@ -25,6 +25,7 @@ export function Sidebar({ collapsed, isMobile, onCloseMobileMenu }: SidebarProps
     { name: 'Invoices', path: '/invoices', icon: FileText },
     { name: 'Customers', path: '/customers', icon: Users },
     { name: 'Settings', path: '/settings', icon: Settings },
+    { name: 'Items', path: '/items', icon: FileText },
   ];
 
   // Mobile sidebar is a full-screen menu

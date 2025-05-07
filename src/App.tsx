@@ -18,6 +18,7 @@ import NotFound from "./pages/NotFound";
 import Login from "./pages/Login";
 import Signup from "./pages/Signup";
 import ProtectedRoute from "./components/auth/ProtectedRoute";
+import Items from "./pages/Items";
 
 const queryClient = new QueryClient();
 
@@ -56,6 +57,11 @@ const App = () => (
                 <Route path="/customers" element={
                   <ProtectedRoute>
                     <AppLayout><Customers /></AppLayout>
+                  </ProtectedRoute>
+                } />
+                <Route path="/items" element={
+                  <ProtectedRoute>
+                    <AppLayout><Items /></AppLayout>
                   </ProtectedRoute>
                 } />
                 <Route path="/settings" element={
