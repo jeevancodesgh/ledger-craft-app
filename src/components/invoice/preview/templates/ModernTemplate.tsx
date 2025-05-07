@@ -44,21 +44,22 @@ const ModernTemplate = ({
       </div>
       
       {/* Company Header - Purple Background */}
-      <div className="bg-[#55588b] text-white p-3 sm:p-4 rounded-lg mb-4 flex flex-wrap">
+      <div className="bg-[#55588b] text-white p-3 sm:p-4 rounded-lg mb-4 flex flex-wrap" style={{ backgroundColor: '#55588b' }}>
         <div className="w-1/2">
           {businessLogo && (
             <img 
               src={businessLogo} 
               alt={companyName}
               className="h-16 w-16 object-cover rounded-full mb-2"
+              style={{ maxHeight: '64px', maxWidth: '64px' }}
             />
           )}
         </div>
         <div className="w-1/2 text-right">
-          <p className="font-semibold text-sm sm:text-base">{companyName}</p>
-          <p className="text-xs sm:text-sm">{companyAddressParts.join(', ')}</p>
+          <p className="font-semibold text-sm sm:text-base" style={{ color: 'white' }}>{companyName}</p>
+          <p className="text-xs sm:text-sm" style={{ color: 'white' }}>{companyAddressParts.join(', ')}</p>
           {invoice.customer?.email && (
-            <p className="text-xs mt-1">{invoice.customer.email}</p>
+            <p className="text-xs mt-1" style={{ color: 'white' }}>{invoice.customer.email}</p>
           )}
         </div>
       </div>
@@ -107,30 +108,30 @@ const ModernTemplate = ({
       
       {/* Items Table */}
       <div className="w-full overflow-hidden rounded-lg mb-4">
-        <table className="w-full text-xs sm:text-sm">
+        <table className="w-full text-xs sm:text-sm" style={{ width: '100%', borderCollapse: 'collapse' }}>
           <thead>
-            <tr className="bg-[#55588b] text-white">
-              <th className="py-2 px-2 text-left">Items</th>
-              <th className="py-2 px-1 text-right">Quantity</th>
-              <th className="py-2 px-1 text-right">Price</th>
-              <th className="py-2 px-2 text-right">Amount</th>
+            <tr className="bg-[#55588b] text-white" style={{ backgroundColor: '#55588b' }}>
+              <th className="py-2 px-2 text-left" style={{ padding: '8px', textAlign: 'left', color: 'white' }}>Items</th>
+              <th className="py-2 px-1 text-right" style={{ padding: '8px', textAlign: 'right', color: 'white' }}>Quantity</th>
+              <th className="py-2 px-1 text-right" style={{ padding: '8px', textAlign: 'right', color: 'white' }}>Price</th>
+              <th className="py-2 px-2 text-right" style={{ padding: '8px', textAlign: 'right', color: 'white' }}>Amount</th>
             </tr>
           </thead>
           <tbody>
             {invoice.items.map((item, index) => (
-              <tr key={index} className="border-b">
-                <td className="py-2 px-2 text-left">
+              <tr key={index} className="border-b" style={{ borderBottom: '1px solid #e2e8f0' }}>
+                <td className="py-2 px-2 text-left" style={{ padding: '8px', textAlign: 'left' }}>
                   {item.description}
                   {/* Only render details section if it exists as a property in the item */}
                   {(item as any).details && (
-                    <div className="text-xs text-gray-500 break-words">
+                    <div className="text-xs text-gray-500 break-words" style={{ fontSize: '10px', color: '#6b7280' }}>
                       {(item as any).details}
                     </div>
                   )}
                 </td>
-                <td className="py-2 px-1 text-right">{item.quantity}</td>
-                <td className="py-2 px-1 text-right">{formatCurrency(item.rate, invoice.currency)}</td>
-                <td className="py-2 px-2 text-right">{formatCurrency(item.quantity * item.rate, invoice.currency)}</td>
+                <td className="py-2 px-1 text-right" style={{ padding: '8px', textAlign: 'right' }}>{item.quantity}</td>
+                <td className="py-2 px-1 text-right" style={{ padding: '8px', textAlign: 'right' }}>{formatCurrency(item.rate, invoice.currency)}</td>
+                <td className="py-2 px-2 text-right" style={{ padding: '8px', textAlign: 'right' }}>{formatCurrency(item.quantity * item.rate, invoice.currency)}</td>
               </tr>
             ))}
           </tbody>
@@ -175,7 +176,7 @@ const ModernTemplate = ({
       
       {/* Notes */}
       {invoice.notes && (
-        <div className="mt-4">
+        <div className="mt-4 notes-section">
           <h4 className="font-semibold text-sm mb-1">Notes:</h4>
           <p className="text-xs sm:text-sm whitespace-pre-wrap break-words">{invoice.notes}</p>
         </div>
@@ -183,7 +184,7 @@ const ModernTemplate = ({
       
       {/* Terms */}
       {invoice.terms && (
-        <div className="mt-4">
+        <div className="mt-4 notes-section">
           <h4 className="font-semibold text-sm mb-1">Terms:</h4>
           <p className="text-xs sm:text-sm whitespace-pre-wrap break-words">{invoice.terms}</p>
         </div>
