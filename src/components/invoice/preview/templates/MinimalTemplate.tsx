@@ -29,7 +29,7 @@ const MinimalTemplate = ({
   const isMobile = useIsMobile();
   
   return (
-    <Card className="p-4 sm:p-8 bg-white">
+    <Card className="p-4 sm:p-8 bg-white minimal-invoice-template">
       <CardContent className="p-0">
         <div className="max-w-3xl mx-auto space-y-4 sm:space-y-6">
           {/* Header with Logo */}
@@ -39,7 +39,7 @@ const MinimalTemplate = ({
                 <img 
                   src={businessLogo} 
                   alt={companyName} 
-                  className="max-h-10 sm:max-h-12 object-contain rounded-full"
+                  className="max-h-10 sm:max-h-12 object-contain rounded-full invoice-logo"
                   crossOrigin="anonymous"
                 />
               </div>
@@ -49,7 +49,7 @@ const MinimalTemplate = ({
           </div>
 
           {/* Company and Client Info */}
-          <div className="flex justify-between text-sm">
+          <div className="flex justify-between text-sm invoice-parties">
             <div>
               <p className="font-medium mb-1">{companyName}</p>
               <p className="text-gray-600 text-xs sm:text-sm">{companyAddress}</p>
@@ -61,7 +61,7 @@ const MinimalTemplate = ({
           </div>
 
           {/* Invoice Details */}
-          <div className="mt-8 sm:mt-12">
+          <div className="mt-8 sm:mt-12 invoice-items-table">
             <table className="w-full text-xs sm:text-sm">
               <thead>
                 <tr className="border-b">
@@ -93,7 +93,7 @@ const MinimalTemplate = ({
           </div>
 
           {/* Totals */}
-          <div className="mt-6 sm:mt-8">
+          <div className="mt-6 sm:mt-8 invoice-totals">
             <div className="flex flex-col items-end space-y-1 sm:space-y-2">
               <div className="flex justify-between w-36 sm:w-48">
                 <span className="text-gray-600 text-xs sm:text-sm">Subtotal</span>

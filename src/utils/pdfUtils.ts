@@ -35,17 +35,19 @@ export const generatePdfFromElement = async (
     const clone = element.cloneNode(true) as HTMLElement;
     clone.style.background = '#FFFFFF';
     
-    // Prepare the clone for rendering
+    // Prepare the clone for rendering with specific PDF optimization
     document.body.appendChild(clone);
     clone.style.position = 'absolute';
     clone.style.left = '-9999px';
     clone.style.top = '0';
-    clone.style.width = element.offsetWidth + 'px';
-    clone.style.height = 'auto';
+    
+    // Set explicit width to match A4 proportions for better scaling
+    const a4Width = 794; // A4 width in pixels at 96 DPI
+    clone.style.width = `${a4Width}px`;
     clone.style.margin = '0';
     clone.style.padding = '0';
     
-    console.log('Clone element created:', clone);
+    console.log('Clone element created with width:', a4Width);
     
     // Enhanced rendering settings for better quality
     const canvas = await html2canvas(clone, {
@@ -54,24 +56,42 @@ export const generatePdfFromElement = async (
       allowTaint: true,
       backgroundColor: '#FFFFFF',
       logging: true, // Enable logging for debugging
+      width: a4Width, // Match the clone width
+      height: clone.scrollHeight, // Use actual content height
       onclone: (clonedDoc) => {
         const clonedElement = clonedDoc.body.querySelector('div') as HTMLElement;
         if (clonedElement) {
           console.log('Processing cloned element in onclone');
-          // Ensure text elements are rendered with optimal settings
-          const textElements = clonedElement.querySelectorAll('p, h1, h2, h3, h4, h5, h6, span, div');
+          // Apply PDF-specific styles
+          clonedElement.style.padding = '10mm';
+          
+          // Optimize text elements for PDF
+          const textElements = clonedElement.querySelectorAll('p, h1, h2, h3, h4, h5, h6, span, div, td, th');
           textElements.forEach(el => {
             if (el instanceof HTMLElement) {
-              el.style.color = '#000000';
-              el.style.fontFamily = 'Helvetica, Arial, sans-serif';
-              
-              // Enhance text rendering for PDF
-              if (el.classList.contains('font-bold')) {
-                el.style.fontWeight = '700';
+              // Set appropriate font sizes for PDF output
+              if (el.classList.contains('text-xl') || el.classList.contains('text-2xl')) {
+                el.style.fontSize = '16px';
+              } else if (el.classList.contains('text-lg')) {
+                el.style.fontSize = '14px';
+              } else if (el.classList.contains('text-sm')) {
+                el.style.fontSize = '10px';
+              } else if (el.classList.contains('text-xs')) {
+                el.style.fontSize = '8px';
+              } else {
+                // Default body text
+                el.style.fontSize = '10px';
               }
+              
+              // Apply coloring based on classes
               if (el.classList.contains('text-muted-foreground')) {
                 el.style.color = '#4B5563';
+              } else {
+                el.style.color = '#000000';
               }
+              
+              // Improve font consistency
+              el.style.fontFamily = 'Helvetica, Arial, sans-serif';
             }
           });
 
@@ -81,6 +101,7 @@ export const generatePdfFromElement = async (
             if (section instanceof HTMLElement) {
               section.style.whiteSpace = 'pre-wrap';
               section.style.wordBreak = 'break-word';
+              section.style.fontSize = '9px';
             }
           });
 
@@ -89,12 +110,14 @@ export const generatePdfFromElement = async (
           tables.forEach(table => {
             table.style.width = '100%';
             table.style.borderCollapse = 'collapse';
+            table.style.fontSize = '10px';
             
             const cells = table.querySelectorAll('th, td');
             cells.forEach(cell => {
               if (cell instanceof HTMLElement) {
-                cell.style.padding = '4px';
+                cell.style.padding = '3px';
                 cell.style.textAlign = cell.classList.contains('text-right') ? 'right' : 'left';
+                cell.style.fontSize = '9px';
               }
             });
           });
@@ -102,11 +125,10 @@ export const generatePdfFromElement = async (
           // Enhance logo rendering if present
           const logoImg = clonedElement.querySelector('img[alt]');
           if (logoImg instanceof HTMLImageElement && businessLogoUrl) {
-            logoImg.style.maxHeight = '48px';
-            logoImg.style.maxWidth = '140px'; 
+            logoImg.style.maxHeight = '40px';
+            logoImg.style.maxWidth = '120px'; 
             logoImg.style.objectFit = 'contain';
-            logoImg.style.borderRadius = '9999px';
-            logoImg.crossOrigin = 'Anonymous'; // For CORS images
+            logoImg.crossOrigin = 'Anonymous';
             logoImg.src = businessLogoUrl;
           }
         }
@@ -131,43 +153,81 @@ export const generatePdfFromElement = async (
     const pageHeight = pdf.internal.pageSize.getHeight();
     
     // Set margins (in mm)
-    const margin = 10;
+    const margin = 5;
     const contentWidth = pageWidth - (margin * 2);
     
     // Convert canvas to image data
     const imgData = canvas.toDataURL('image/png');
     
-    // Calculate scale to fit content within page while maintaining aspect ratio
-    const scale = Math.min(
-      contentWidth / canvas.width,
-      (pageHeight - margin * 2) / canvas.height
-    );
+    // Calculate the content aspect ratio
+    const contentAspectRatio = canvas.height / canvas.width;
     
-    // Calculate dimensions after scaling
-    const scaledWidth = canvas.width * scale;
-    const scaledHeight = canvas.height * scale;
+    // Calculate the maximum height to fit the content on one page
+    // while maintaining the aspect ratio
+    const scaledWidth = contentWidth;
+    let scaledHeight = contentWidth * contentAspectRatio;
     
-    // Calculate position to center content horizontally
-    const xPosition = (pageWidth - scaledWidth) / 2;
-    
-    console.log('Adding image to PDF with dimensions:', {
-      scaledWidth,
-      scaledHeight,
-      xPosition,
-      margin
-    });
-    
-    // Add image to PDF
-    pdf.addImage(
-      imgData,
-      'PNG',
-      xPosition,
-      margin,
-      scaledWidth,
-      scaledHeight,
-      '',
-      'FAST'
-    );
+    // Check if content exceeds page height and needs multi-page handling
+    if (scaledHeight > (pageHeight - margin * 2)) {
+      console.log('Content exceeds page height, using multi-page approach');
+      
+      // Calculate the scale to fit the content width within the page
+      const scale = contentWidth / canvas.width;
+      
+      // Calculate how many pixels of canvas height fit on one page
+      const pageContentHeightInPixels = Math.floor((pageHeight - margin * 2) / scale);
+      
+      // Calculate number of pages needed
+      const totalPages = Math.ceil(canvas.height / pageContentHeightInPixels);
+      console.log(`Will render ${totalPages} pages`);
+      
+      // Render each page
+      for (let pageNum = 0; pageNum < totalPages; pageNum++) {
+        // Add a new page for all pages after the first one
+        if (pageNum > 0) {
+          pdf.addPage();
+        }
+        
+        const sourceY = pageNum * pageContentHeightInPixels;
+        const sourceHeight = Math.min(pageContentHeightInPixels, canvas.height - sourceY);
+        
+        console.log(`Rendering page ${pageNum + 1}/${totalPages}, sourceY: ${sourceY}, sourceHeight: ${sourceHeight}`);
+        
+        // Add a slice of the image to this page
+        pdf.addImage(
+          imgData,
+          'PNG',
+          margin, // X position
+          margin, // Y position
+          contentWidth, // Width
+          sourceHeight * scale, // Height (scaled)
+          '', // Alias
+          'FAST', // Compression
+          0, // Rotation
+          sourceY, // Source X (usually 0 for vertical slicing)
+          canvas.width, // Source Width (full width)
+          sourceHeight // Source Height (the slice height)
+        );
+      }
+    } else {
+      // Content fits on one page
+      console.log('Content fits on one page');
+      
+      // Calculate position to center content vertically
+      const yPosition = margin + (pageHeight - margin * 2 - scaledHeight) / 2;
+      
+      // Add image to PDF
+      pdf.addImage(
+        imgData,
+        'PNG',
+        margin,
+        yPosition,
+        scaledWidth,
+        scaledHeight,
+        '',
+        'FAST'
+      );
+    }
     
     // Enable PDF metadata
     pdf.setProperties({

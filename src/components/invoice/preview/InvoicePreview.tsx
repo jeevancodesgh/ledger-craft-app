@@ -22,6 +22,7 @@ interface InvoicePreviewProps {
 
 const InvoicePreview = ({ invoice, selectedTemplate }: InvoicePreviewProps) => {
   const contentRef = useRef<HTMLDivElement>(null);
+  const templateRef = useRef<HTMLDivElement>(null);
   const isMobile = useIsMobile();
   const { toast } = useToast();
   const [isFullscreen, setIsFullscreen] = useState(false);
@@ -42,7 +43,7 @@ const InvoicePreview = ({ invoice, selectedTemplate }: InvoicePreviewProps) => {
   };
 
   const handleDownloadPdf = async () => {
-    if (contentRef.current && !isGeneratingPdf) {
+    if (contentRef.current && templateRef.current && !isGeneratingPdf) {
       try {
         setIsGeneratingPdf(true);
         toast({
@@ -51,17 +52,12 @@ const InvoicePreview = ({ invoice, selectedTemplate }: InvoicePreviewProps) => {
         });
 
         console.log("Starting PDF generation with template:", selectedTemplate);
-        console.log("Content element:", contentRef.current);
         
-        // Ensure the invoice content is visible and properly rendered before PDF generation
-        const invoiceContent = contentRef.current.querySelector('.invoice-content');
-        const targetElement = invoiceContent || contentRef.current.firstElementChild || contentRef.current;
-        
-        console.log("Target element for PDF generation:", targetElement);
-        
+        // Use the specific template ref for PDF generation
+        // This ensures we're capturing just the template content, not the UI controls
         await generateInvoicePdf(
           invoice, 
-          targetElement as HTMLElement, 
+          templateRef.current, 
           selectedTemplate, 
           businessProfile?.logoUrl
         );
@@ -139,7 +135,7 @@ const InvoicePreview = ({ invoice, selectedTemplate }: InvoicePreviewProps) => {
         <div 
           className={cn(
             "invoice-content bg-white print:p-0 print:shadow-none w-full",
-            isMobile ? "mobile-invoice-scale border rounded-lg shadow-sm" : ""
+            isMobile ? "mobile-invoice-scale border rounded-lg shadow-sm" : "border rounded-lg shadow-sm"
           )}
           style={{ 
             transform: `scale(${zoomLevel})`,
@@ -149,7 +145,9 @@ const InvoicePreview = ({ invoice, selectedTemplate }: InvoicePreviewProps) => {
             margin: '0 auto'
           }}
         >
-          {renderTemplate()}
+          <div ref={templateRef} className="pdf-template-container">
+            {renderTemplate()}
+          </div>
         </div>
       </div>
       
