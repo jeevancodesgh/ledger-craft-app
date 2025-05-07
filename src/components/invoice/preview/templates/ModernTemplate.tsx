@@ -39,12 +39,15 @@ const ModernTemplate = ({
   return (
     <div className="w-full print-template">
       {/* Header with Invoice Title */}
-      <div className="p-3 sm:p-4">
+      <div className="p-3 sm:p-4 print:p-0">
         <h3 className="text-xl sm:text-2xl font-bold text-gray-800">Invoice</h3>
       </div>
       
       {/* Company Header - Purple Background */}
-      <div className="bg-[#55588b] text-white p-3 sm:p-4 rounded-lg mb-4 flex flex-wrap" style={{ backgroundColor: '#55588b' }}>
+      <div 
+        className="bg-[#55588b] text-white p-3 sm:p-4 rounded-lg mb-4 flex flex-wrap" 
+        style={{ backgroundColor: '#55588b', color: 'white' }}
+      >
         <div className="w-1/2">
           {businessLogo && (
             <img 
@@ -184,7 +187,7 @@ const ModernTemplate = ({
       
       {/* Terms */}
       {invoice.terms && (
-        <div className="mt-4 notes-section">
+        <div className="mt-4 terms-section">
           <h4 className="font-semibold text-sm mb-1">Terms:</h4>
           <p className="text-xs sm:text-sm whitespace-pre-wrap break-words">{invoice.terms}</p>
         </div>

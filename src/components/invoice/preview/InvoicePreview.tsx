@@ -27,6 +27,7 @@ const InvoicePreview = ({ invoice, selectedTemplate }: InvoicePreviewProps) => {
   const { toast } = useToast();
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [isGeneratingPdf, setIsGeneratingPdf] = useState(false);
+  const [isPrinting, setIsPrinting] = useState(false);
   const [zoomLevel, setZoomLevel] = useState(isMobile ? 0.9 : 1); // Slightly smaller default for mobile
   const { businessProfile } = useAppContext();
 
@@ -81,16 +82,34 @@ const InvoicePreview = ({ invoice, selectedTemplate }: InvoicePreviewProps) => {
 
   // Function to handle direct printing
   const handlePrint = () => {
-    // Add a temporary print-only class to body during printing
-    document.body.classList.add('printing-invoice');
-    
-    // Use the browser's print functionality
-    window.print();
-    
-    // Remove the class after printing dialog is closed
-    setTimeout(() => {
+    try {
+      setIsPrinting(true);
+      
+      // Add a temporary print-only class to body during printing
+      document.body.classList.add('printing-invoice');
+      
+      // Small delay to ensure the print-specific styles are applied
+      setTimeout(() => {
+        // Use the browser's print functionality
+        window.print();
+        
+        // Remove the class after printing dialog is closed
+        setTimeout(() => {
+          document.body.classList.remove('printing-invoice');
+          setIsPrinting(false);
+        }, 500);
+      }, 100);
+    } catch (error) {
+      console.error('Print error:', error);
       document.body.classList.remove('printing-invoice');
-    }, 500);
+      setIsPrinting(false);
+      
+      toast({
+        title: "Error",
+        description: "Could not print invoice. Please try again.",
+        variant: "destructive"
+      });
+    }
   };
 
   const toggleFullscreen = () => {
@@ -175,7 +194,7 @@ const InvoicePreview = ({ invoice, selectedTemplate }: InvoicePreviewProps) => {
               onClick={zoomOut} 
               className="flex-1 h-9"
               aria-label="Zoom out"
-              disabled={zoomLevel <= 0.6}
+              disabled={zoomLevel <= 0.6 || isPrinting}
             >
               <ZoomOut className="h-4 w-4 mr-1" />
               <span className="text-xs">Zoom Out</span>
@@ -186,6 +205,7 @@ const InvoicePreview = ({ invoice, selectedTemplate }: InvoicePreviewProps) => {
               onClick={resetZoom} 
               className="flex-1 h-9"
               aria-label="Reset zoom"
+              disabled={isPrinting}
             >
               <span className="text-xs">{(zoomLevel * 100).toFixed(0)}%</span>
             </Button>
@@ -195,7 +215,7 @@ const InvoicePreview = ({ invoice, selectedTemplate }: InvoicePreviewProps) => {
               onClick={zoomIn} 
               className="flex-1 h-9"
               aria-label="Zoom in"
-              disabled={zoomLevel >= 1.5}
+              disabled={zoomLevel >= 1.5 || isPrinting}
             >
               <ZoomIn className="h-4 w-4 mr-1" />
               <span className="text-xs">Zoom In</span>
@@ -208,6 +228,7 @@ const InvoicePreview = ({ invoice, selectedTemplate }: InvoicePreviewProps) => {
               onClick={toggleFullscreen} 
               className="flex-1 h-9"
               aria-label={isFullscreen ? "Exit fullscreen" : "View fullscreen"}
+              disabled={isPrinting}
             >
               {isFullscreen ? <Minimize2 className="h-4 w-4 mr-1" /> : <Maximize2 className="h-4 w-4 mr-1" />}
               <span className="text-xs">{isFullscreen ? "Exit Fullscreen" : "Fullscreen"}</span>
@@ -218,15 +239,16 @@ const InvoicePreview = ({ invoice, selectedTemplate }: InvoicePreviewProps) => {
               onClick={handlePrint}
               className="flex-1 h-9"
               aria-label="Print invoice"
+              disabled={isPrinting}
             >
               <Printer className="h-4 w-4 mr-1" />
-              <span className="text-xs">Print</span>
+              <span className="text-xs">{isPrinting ? "Printing..." : "Print"}</span>
             </Button>
             <Button 
               size="sm"
               onClick={handleDownloadPdf} 
               className="flex-1 h-9"
-              disabled={isGeneratingPdf}
+              disabled={isGeneratingPdf || isPrinting}
             >
               <Download className="h-4 w-4 mr-1" />
               <span className="text-xs">{isGeneratingPdf ? "Generating..." : "Download PDF"}</span>
@@ -244,15 +266,16 @@ const InvoicePreview = ({ invoice, selectedTemplate }: InvoicePreviewProps) => {
             onClick={handlePrint}
             className="flex items-center"
             aria-label="Print invoice"
+            disabled={isPrinting}
           >
             <Printer className="h-4 w-4 mr-2" />
-            <span>Print</span>
+            <span>{isPrinting ? "Printing..." : "Print"}</span>
           </Button>
           <Button
             size="sm"
             onClick={handleDownloadPdf}
             className="flex items-center"
-            disabled={isGeneratingPdf}
+            disabled={isGeneratingPdf || isPrinting}
           >
             <Download className="h-4 w-4 mr-2" />
             <span>{isGeneratingPdf ? "Generating..." : "Download PDF"}</span>

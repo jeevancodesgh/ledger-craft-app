@@ -25,10 +25,17 @@ const EditInvoicePage = () => {
           setError("Invoice not found");
         } else {
           setInvoice(invoiceFound);
+          // Set title for print support - will appear in the print dialog/print output
+          document.title = `Invoice ${invoiceFound.invoiceNumber}`;
         }
       })
       .catch(() => setError("Error loading invoice"))
       .finally(() => setLoading(false));
+      
+    // Cleanup on unmount
+    return () => {
+      document.title = "Invoice App"; // Reset title
+    };
   }, [id, getInvoice]);
 
   const handleSave = async (
