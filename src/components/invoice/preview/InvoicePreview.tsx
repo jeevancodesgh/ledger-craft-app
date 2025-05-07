@@ -26,14 +26,14 @@ const InvoicePreview = ({ invoice, selectedTemplate }: InvoicePreviewProps) => {
   const { toast } = useToast();
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [isGeneratingPdf, setIsGeneratingPdf] = useState(false);
-  const [zoomLevel, setZoomLevel] = useState(isMobile ? 1 : 1); // Default zoom level
+  const [zoomLevel, setZoomLevel] = useState(isMobile ? 0.9 : 1); // Slightly smaller default for mobile
   const { businessProfile } = useAppContext();
 
   // Create template data from invoice
   const templateData = {
     invoice,
-    companyName: invoice.customer?.name || 'Company Name',
-    companyAddress: `${invoice.customer?.address || ''} ${invoice.customer?.city || ''} ${invoice.customer?.state || ''} ${invoice.customer?.zip || ''}`.trim(),
+    companyName: businessProfile?.name || invoice.customer?.name || 'Company Name',
+    companyAddress: businessProfile?.address || `${invoice.customer?.address || ''} ${invoice.customer?.city || ''} ${invoice.customer?.state || ''} ${invoice.customer?.zip || ''}`.trim(),
     clientName: invoice.customer?.name || 'Client Name',
     clientAddress: `${invoice.customer?.address || ''} ${invoice.customer?.city || ''} ${invoice.customer?.state || ''} ${invoice.customer?.zip || ''}`.trim(),
     taxRate: ((invoice.taxAmount / invoice.subtotal) * 100).toFixed(2),
@@ -82,7 +82,7 @@ const InvoicePreview = ({ invoice, selectedTemplate }: InvoicePreviewProps) => {
   };
 
   const resetZoom = () => {
-    setZoomLevel(1);
+    setZoomLevel(isMobile ? 0.9 : 1);
   };
 
   const renderTemplate = () => {
@@ -107,25 +107,25 @@ const InvoicePreview = ({ invoice, selectedTemplate }: InvoicePreviewProps) => {
       className={cn(
         "w-full bg-white shadow-sm rounded-lg transition-all duration-300", 
         isMobile && (isFullscreen 
-          ? "fixed inset-0 z-50 pb-16 overflow-auto" 
-          : "mx-auto max-w-full relative pb-16")
+          ? "fixed inset-0 z-50 pb-24 overflow-auto" 
+          : "mx-auto max-w-full relative pb-20")
       )}
     >
       <div 
         ref={contentRef}
         className={cn(
-          "flex justify-center items-start overflow-auto",
-          isMobile ? "invoice-mobile-view" : ""
+          "flex justify-center overflow-auto p-2",
+          isMobile ? "invoice-mobile-view" : "p-6"
         )}
         style={{ 
-          height: isFullscreen ? 'calc(100vh - 120px)' : isMobile ? 'calc(100vh - 200px)' : 'auto',
+          height: isFullscreen ? 'calc(100vh - 120px)' : isMobile ? 'auto' : 'auto',
           paddingBottom: isMobile ? '70px' : '0'
         }}
       >
         <div 
           className={cn(
             "bg-white print:p-0 print:shadow-none w-full",
-            isMobile ? "mobile-invoice-scale p-4" : ""
+            isMobile ? "mobile-invoice-scale border rounded-lg shadow-sm" : ""
           )}
           style={{ 
             transform: `scale(${zoomLevel})`,
@@ -141,54 +141,59 @@ const InvoicePreview = ({ invoice, selectedTemplate }: InvoicePreviewProps) => {
       
       {/* Fixed bottom controls on mobile */}
       {isMobile && (
-        <div className="fixed bottom-0 left-0 right-0 bg-background p-4 border-t shadow-lg z-50">
+        <div className="fixed bottom-0 left-0 right-0 bg-background p-3 border-t shadow-lg z-50">
           <div className="flex gap-2 mb-2">
             <Button 
-              variant="outline"
+              variant="outline" 
+              size="sm"
               onClick={zoomOut} 
-              className="flex-1 gap-2"
+              className="flex-1 h-9"
               aria-label="Zoom out"
               disabled={zoomLevel <= 0.6}
             >
-              <ZoomOut className="h-4 w-4" />
-              <span>Zoom Out</span>
+              <ZoomOut className="h-4 w-4 mr-1" />
+              <span className="text-xs">Zoom Out</span>
             </Button>
             <Button 
-              variant="outline"
+              variant="outline" 
+              size="sm"
               onClick={resetZoom} 
-              className="flex-1"
+              className="flex-1 h-9"
               aria-label="Reset zoom"
             >
-              {(zoomLevel * 100).toFixed(0)}%
+              <span className="text-xs">{(zoomLevel * 100).toFixed(0)}%</span>
             </Button>
             <Button 
-              variant="outline"
+              variant="outline" 
+              size="sm"
               onClick={zoomIn} 
-              className="flex-1 gap-2"
+              className="flex-1 h-9"
               aria-label="Zoom in"
               disabled={zoomLevel >= 1.5}
             >
-              <ZoomIn className="h-4 w-4" />
-              <span>Zoom In</span>
+              <ZoomIn className="h-4 w-4 mr-1" />
+              <span className="text-xs">Zoom In</span>
             </Button>
           </div>
           <div className="flex gap-2">
             <Button 
-              variant="outline"
+              variant="outline" 
+              size="sm"
               onClick={toggleFullscreen} 
-              className="flex-1 gap-2"
+              className="flex-1 h-9"
               aria-label={isFullscreen ? "Exit fullscreen" : "View fullscreen"}
             >
-              {isFullscreen ? <Minimize2 className="h-4 w-4" /> : <Maximize2 className="h-4 w-4" />}
-              <span>{isFullscreen ? "Exit Fullscreen" : "Fullscreen"}</span>
+              {isFullscreen ? <Minimize2 className="h-4 w-4 mr-1" /> : <Maximize2 className="h-4 w-4 mr-1" />}
+              <span className="text-xs">{isFullscreen ? "Exit Fullscreen" : "Fullscreen"}</span>
             </Button>
             <Button 
+              size="sm"
               onClick={handleDownloadPdf} 
-              className="flex-1 gap-2"
+              className="flex-1 h-9"
               disabled={isGeneratingPdf}
             >
-              <Download className="h-4 w-4" />
-              <span>{isGeneratingPdf ? "Generating..." : "Download PDF"}</span>
+              <Download className="h-4 w-4 mr-1" />
+              <span className="text-xs">{isGeneratingPdf ? "Generating..." : "Download PDF"}</span>
             </Button>
           </div>
         </div>

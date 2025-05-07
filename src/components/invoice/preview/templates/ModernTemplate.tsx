@@ -28,108 +28,166 @@ const ModernTemplate = ({
 }: ModernTemplateProps) => {
   const isMobile = useIsMobile();
   
+  // Parse the client address into components
+  const addressParts = clientAddress.split(',').map(part => part.trim());
+  const country = addressParts.length > 0 ? addressParts[addressParts.length - 1] : '';
+  
+  // Parse the company address
+  const companyAddressParts = companyAddress.split(',').map(part => part.trim());
+  const companyCountry = companyAddressParts.length > 0 ? companyAddressParts[companyAddressParts.length - 1] : '';
+  
   return (
-    <Card className={`bg-gradient-to-br from-purple-50 to-white max-w-full overflow-hidden ${isMobile ? 'p-4' : 'p-8'}`}>
-      <CardContent className={isMobile ? 'p-2 pt-0' : 'p-6 pt-0'}>
-        <div className="space-y-4 sm:space-y-8">
-          {/* Header */}
-          <div className="flex flex-col sm:flex-row justify-between items-start gap-4">
-            <div>
-              <h1 className={`${isMobile ? 'text-xl' : 'text-3xl'} font-bold text-purple-600`}>INVOICE</h1>
-              <p className="text-gray-500 mt-1 text-sm sm:text-base">#{invoice.invoiceNumber}</p>
+    <div className="w-full print-template">
+      {/* Header with Invoice Title */}
+      <div className="p-3 sm:p-4">
+        <h3 className="text-xl sm:text-2xl font-bold text-gray-800">Invoice</h3>
+      </div>
+      
+      {/* Company Header - Purple Background */}
+      <div className="bg-[#55588b] text-white p-3 sm:p-4 rounded-lg mb-4 flex flex-wrap">
+        <div className="w-1/2">
+          {businessLogo && (
+            <img 
+              src={businessLogo} 
+              alt={companyName}
+              className="h-16 w-16 object-cover rounded-full mb-2"
+            />
+          )}
+        </div>
+        <div className="w-1/2 text-right">
+          <p className="font-semibold text-sm sm:text-base">{companyName}</p>
+          <p className="text-xs sm:text-sm">{companyAddressParts.join(', ')}</p>
+          {invoice.customer?.email && (
+            <p className="text-xs mt-1">{invoice.customer.email}</p>
+          )}
+        </div>
+      </div>
+      
+      {/* Client and Invoice Info */}
+      <div className="flex flex-wrap mb-4">
+        {/* Bill To Section */}
+        <div className="w-1/2 pr-2">
+          <p className="font-semibold text-sm sm:text-base mb-1">Bill To</p>
+          <p className="text-sm font-medium">{clientName}</p>
+          <p className="text-xs sm:text-sm">{addressParts.join(', ')}</p>
+          {invoice.customer?.phone && (
+            <p className="text-xs sm:text-sm">{invoice.customer.phone}</p>
+          )}
+          {invoice.customer?.email && (
+            <p className="text-xs sm:text-sm">{invoice.customer.email}</p>
+          )}
+        </div>
+        
+        {/* Invoice Details */}
+        <div className="w-1/2">
+          <div className="text-xs sm:text-sm">
+            <div className="flex justify-between mb-1">
+              <span className="font-semibold">Invoice Number:</span>
+              <span>{invoice.invoiceNumber}</span>
             </div>
-            <div className={`text-right bg-purple-100 ${isMobile ? 'p-2' : 'p-4'} rounded-lg w-full sm:w-auto`}>
-              {businessLogo && (
-                <img 
-                  src={businessLogo} 
-                  alt="Company Logo" 
-                  className={`${isMobile ? 'h-8' : 'h-12'} object-contain mb-2 mx-auto sm:mx-0 sm:ml-auto`}
-                />
-              )}
-              <p className={`font-bold ${isMobile ? 'text-base' : 'text-lg'}`}>{companyName}</p>
-              <p className="text-gray-600 mt-1 break-words text-sm sm:text-base">{companyAddress}</p>
+            <div className="flex justify-between mb-1">
+              <span className="font-semibold">Invoice Date:</span>
+              <span>{new Date(invoice.date).toLocaleDateString('en-US', { 
+                day: '2-digit', 
+                month: 'short', 
+                year: 'numeric'
+              })}</span>
             </div>
-          </div>
-
-          {/* Client Info */}
-          <div className={`bg-white ${isMobile ? 'p-3' : 'p-6'} rounded-lg shadow-sm`}>
-            <h2 className={`${isMobile ? 'text-base' : 'text-lg'} font-semibold text-purple-600 mb-2`}>Bill To:</h2>
-            <p className="text-gray-800 font-medium text-sm sm:text-base">{clientName}</p>
-            <p className="text-gray-600 break-words text-sm sm:text-base">{clientAddress}</p>
-          </div>
-
-          {/* Invoice Details */}
-          <div className="bg-white rounded-lg shadow-sm overflow-x-auto">
-            <div className="bg-purple-100 p-2 sm:p-4">
-              <div className="grid grid-cols-3 sm:grid-cols-5 font-semibold text-purple-700 text-xs sm:text-base">
-                <div className="col-span-1 sm:col-span-2">Item</div>
-                <div className="text-right">Qty</div>
-                {!isMobile && <div className="text-right">Rate</div>}
-                <div className="text-right">Amount</div>
-              </div>
-            </div>
-            <div className="p-2 sm:p-4">
-              {invoice.items.map((item, index) => (
-                <div key={index} className="grid grid-cols-3 sm:grid-cols-5 py-2 sm:py-3 border-b last:border-0 text-xs sm:text-base">
-                  <div className="col-span-1 sm:col-span-2 break-words pr-1">{item.description}</div>
-                  <div className="text-right">{item.quantity}</div>
-                  {!isMobile && <div className="text-right">{formatCurrency(item.rate, invoice.currency)}</div>}
-                  <div className="text-right">{formatCurrency(item.quantity * item.rate, invoice.currency)}</div>
-                </div>
-              ))}
-            </div>
-          </div>
-
-          {/* Totals */}
-          <div className="flex justify-end">
-            <div className={`${isMobile ? 'w-full' : 'w-1/3'} bg-white p-2 sm:p-4 rounded-lg shadow-sm`}>
-              <div className="space-y-1 sm:space-y-2 text-xs sm:text-base">
-                <div className="flex justify-between py-1 sm:py-2">
-                  <span className="text-gray-600">Subtotal:</span>
-                  <span>{formatCurrency(invoice.subtotal, invoice.currency)}</span>
-                </div>
-                <div className="flex justify-between py-1 sm:py-2">
-                  <span className="text-gray-600">Tax ({taxRate}%):</span>
-                  <span>{formatCurrency(tax, invoice.currency)}</span>
-                </div>
-                {invoice.additionalCharges > 0 && (
-                  <div className="flex justify-between py-1 sm:py-2">
-                    <span className="text-gray-600">Additional Charges:</span>
-                    <span>{formatCurrency(invoice.additionalCharges, invoice.currency)}</span>
-                  </div>
-                )}
-                {invoice.discount > 0 && (
-                  <div className="flex justify-between py-1 sm:py-2">
-                    <span className="text-gray-600">Discount:</span>
-                    <span>-{formatCurrency(invoice.discount, invoice.currency)}</span>
-                  </div>
-                )}
-                <div className="flex justify-between py-1 sm:py-2 font-bold text-purple-600">
-                  <span>Total:</span>
-                  <span>{formatCurrency(invoice.total, invoice.currency)}</span>
-                </div>
-              </div>
+            <div className="flex justify-between mb-1">
+              <span className="font-semibold">Due Date:</span>
+              <span>{new Date(invoice.dueDate).toLocaleDateString('en-US', { 
+                day: '2-digit', 
+                month: 'short', 
+                year: 'numeric'
+              })}</span>
             </div>
           </div>
-
-          {/* Notes */}
-          {invoice.notes && (
-            <div className={`bg-white ${isMobile ? 'p-3' : 'p-6'} rounded-lg shadow-sm`}>
-              <h2 className={`${isMobile ? 'text-base' : 'text-lg'} font-semibold text-purple-600 mb-2`}>Notes:</h2>
-              <p className="text-gray-600 whitespace-pre-wrap notes-section break-words text-xs sm:text-base">{invoice.notes}</p>
+        </div>
+      </div>
+      
+      {/* Items Table */}
+      <div className="w-full overflow-hidden rounded-lg mb-4">
+        <table className="w-full text-xs sm:text-sm">
+          <thead>
+            <tr className="bg-[#55588b] text-white">
+              <th className="py-2 px-2 text-left">Items</th>
+              <th className="py-2 px-1 text-right">Quantity</th>
+              <th className="py-2 px-1 text-right">Price</th>
+              <th className="py-2 px-2 text-right">Amount</th>
+            </tr>
+          </thead>
+          <tbody>
+            {invoice.items.map((item, index) => (
+              <tr key={index} className="border-b">
+                <td className="py-2 px-2 text-left">
+                  {item.description}
+                  {item.details && (
+                    <div className="text-xs text-gray-500 break-words">
+                      {item.details}
+                    </div>
+                  )}
+                </td>
+                <td className="py-2 px-1 text-right">{item.quantity}</td>
+                <td className="py-2 px-1 text-right">{formatCurrency(item.rate, invoice.currency)}</td>
+                <td className="py-2 px-2 text-right">{formatCurrency(item.quantity * item.rate, invoice.currency)}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+      
+      {/* Totals */}
+      <div className="flex justify-end mt-4">
+        <div className="w-full sm:w-1/2 text-xs sm:text-sm">
+          <div className="flex justify-between py-1">
+            <span className="font-semibold">Subtotal:</span>
+            <span>{formatCurrency(invoice.subtotal, invoice.currency)}</span>
+          </div>
+          
+          {tax > 0 && (
+            <div className="flex justify-between py-1">
+              <span className="font-semibold">Tax ({taxRate}%):</span>
+              <span>{formatCurrency(tax, invoice.currency)}</span>
             </div>
           )}
           
-          {/* Terms */}
-          {invoice.terms && (
-            <div className={`bg-white ${isMobile ? 'p-3' : 'p-6'} rounded-lg shadow-sm`}>
-              <h2 className={`${isMobile ? 'text-base' : 'text-lg'} font-semibold text-purple-600 mb-2`}>Terms:</h2>
-              <p className="text-gray-600 whitespace-pre-wrap notes-section break-words text-xs sm:text-base">{invoice.terms}</p>
+          {invoice.additionalCharges > 0 && (
+            <div className="flex justify-between py-1">
+              <span className="font-semibold">Additional Charges:</span>
+              <span>{formatCurrency(invoice.additionalCharges, invoice.currency)}</span>
             </div>
           )}
+          
+          {invoice.discount > 0 && (
+            <div className="flex justify-between py-1">
+              <span className="font-semibold">Discount:</span>
+              <span>-{formatCurrency(invoice.discount, invoice.currency)}</span>
+            </div>
+          )}
+          
+          <div className="flex justify-between py-1 font-bold">
+            <span>Total:</span>
+            <span>{formatCurrency(invoice.total, invoice.currency)}</span>
+          </div>
         </div>
-      </CardContent>
-    </Card>
+      </div>
+      
+      {/* Notes */}
+      {invoice.notes && (
+        <div className="mt-4">
+          <h4 className="font-semibold text-sm mb-1">Notes:</h4>
+          <p className="text-xs sm:text-sm whitespace-pre-wrap break-words">{invoice.notes}</p>
+        </div>
+      )}
+      
+      {/* Terms */}
+      {invoice.terms && (
+        <div className="mt-4">
+          <h4 className="font-semibold text-sm mb-1">Terms:</h4>
+          <p className="text-xs sm:text-sm whitespace-pre-wrap break-words">{invoice.terms}</p>
+        </div>
+      )}
+    </div>
   );
 };
 

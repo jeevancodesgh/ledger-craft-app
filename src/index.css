@@ -108,9 +108,38 @@
   min-width: 100%;
 }
 
+.print-template {
+  font-size: 14px;
+}
+
+@media (max-width: 640px) {
+  .print-template {
+    font-size: 12px;
+  }
+}
+
+/* Custom styles for the invoice table on mobile */
+@media (max-width: 480px) {
+  .print-template table th,
+  .print-template table td {
+    padding: 4px 6px;
+    font-size: 11px;
+  }
+  
+  .print-template h3 {
+    font-size: 18px;
+  }
+}
+
 @media print {
   .mobile-invoice-scale {
     transform: scale(1) !important;
     width: 100% !important;
+  }
+  
+  .print-template {
+    padding: 0;
+    margin: 0;
+    font-size: 12pt;
   }
 }
