@@ -194,20 +194,21 @@ export const generatePdfFromElement = async (
         console.log(`Rendering page ${pageNum + 1}/${totalPages}, sourceY: ${sourceY}, sourceHeight: ${sourceHeight}`);
         
         // Add a slice of the image to this page
-        pdf.addImage(
-          imgData,
-          'PNG',
-          margin, // X position
-          margin, // Y position
-          contentWidth, // Width
-          sourceHeight * scale, // Height (scaled)
-          '', // Alias
-          'FAST', // Compression
-          0, // Rotation
-          sourceY, // Source X (usually 0 for vertical slicing)
-          canvas.width, // Source Width (full width)
-          sourceHeight // Source Height (the slice height)
-        );
+        // Fix: Use the correct parameter count for addImage method
+        pdf.addImage({
+          imageData: imgData,
+          format: 'PNG',
+          x: margin,
+          y: margin,
+          width: contentWidth,
+          height: sourceHeight * scale,
+          compression: 'FAST',
+          rotation: 0,
+          srcX: 0,
+          srcY: sourceY,
+          srcWidth: canvas.width,
+          srcHeight: sourceHeight
+        });
       }
     } else {
       // Content fits on one page
@@ -216,17 +217,16 @@ export const generatePdfFromElement = async (
       // Calculate position to center content vertically
       const yPosition = margin + (pageHeight - margin * 2 - scaledHeight) / 2;
       
-      // Add image to PDF
-      pdf.addImage(
-        imgData,
-        'PNG',
-        margin,
-        yPosition,
-        scaledWidth,
-        scaledHeight,
-        '',
-        'FAST'
-      );
+      // Add image to PDF - using correct format for addImage
+      pdf.addImage({
+        imageData: imgData,
+        format: 'PNG',
+        x: margin,
+        y: yPosition,
+        width: scaledWidth,
+        height: scaledHeight,
+        compression: 'FAST'
+      });
     }
     
     // Enable PDF metadata
