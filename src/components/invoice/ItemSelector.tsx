@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { 
   Command, 
@@ -20,13 +19,15 @@ interface ItemSelectorProps {
   onItemSelect: (item: Item) => void;
   onCreateNewItem?: () => void;
   buttonClassName?: string;
+  iconOnly?: boolean;
 }
 
 const ItemSelector: React.FC<ItemSelectorProps> = ({ 
   items, 
   onItemSelect,
   onCreateNewItem,
-  buttonClassName = ""
+  buttonClassName = "",
+  iconOnly = false
 }) => {
   const [searchTerm, setSearchTerm] = useState('');
   const [open, setOpen] = useState(false);
@@ -81,7 +82,11 @@ const ItemSelector: React.FC<ItemSelectorProps> = ({
           size={isMobile ? "sm" : "default"}
           className={buttonClassName}
         >
-          Select Item
+          {iconOnly ? (
+            <Package2 className="h-4 w-4" />
+          ) : (
+            "Select Item"
+          )}
         </Button>
       </DialogTrigger>
       <DialogContent className={`p-0 ${isMobile ? 'w-[95%]' : 'sm:max-w-[550px]'}`}>

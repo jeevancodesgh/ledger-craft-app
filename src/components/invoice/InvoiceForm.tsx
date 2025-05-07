@@ -1,4 +1,3 @@
-
 import React, { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useForm } from "react-hook-form";
@@ -889,22 +888,25 @@ const InvoiceForm: React.FC<InvoiceFormProps> = ({
                                   <tr key={item.id} className="border-b last:border-b-0">
                                     <td className="py-2 pr-2">
                                       <div className="flex flex-col space-y-1">
-                                        <Input
-                                          value={item.description}
-                                          onChange={e => updateItem(index, "description", e.target.value)}
-                                          placeholder="Item description"
-                                          className="w-full"
-                                        />
-                                        {availableItems && availableItems.length > 0 && (
-                                          <div>
-                                            <ItemSelector
-                                              items={availableItems}
-                                              onItemSelect={(selectedItem) => handleItemSelect(selectedItem, index)}
-                                              onCreateNewItem={handleCreateNewItem}
-                                              buttonClassName="text-xs h-7 px-2"
-                                            />
-                                          </div>
-                                        )}
+                                        <div className="relative">
+                                          <Input
+                                            value={item.description}
+                                            onChange={e => updateItem(index, "description", e.target.value)}
+                                            placeholder="Item description"
+                                            className="w-full pr-8"
+                                          />
+                                          {availableItems && availableItems.length > 0 && (
+                                            <div className="absolute right-2 top-1/2 -translate-y-1/2">
+                                              <ItemSelector
+                                                items={availableItems}
+                                                onItemSelect={(selectedItem) => handleItemSelect(selectedItem, index)}
+                                                onCreateNewItem={handleCreateNewItem}
+                                                buttonClassName="h-6 w-6 p-0"
+                                                iconOnly
+                                              />
+                                            </div>
+                                          )}
+                                        </div>
                                       </div>
                                     </td>
                                     <td className="py-2 px-2">
