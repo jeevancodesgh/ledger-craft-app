@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { useAppContext } from '@/context/AppContext';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
@@ -11,7 +10,16 @@ import { Link } from 'react-router-dom';
 import { useIsMobile } from '@/hooks/use-mobile';
 
 const Dashboard = () => {
-  const { dashboardStats, isLoadingStats, invoices, customers } = useAppContext();
+  const { invoices, isLoadingInvoices, customers, isLoadingCustomers } = useAppContext();
+  
+  // Calculate simple stats from invoices and customers
+  const isLoadingStats = isLoadingInvoices || isLoadingCustomers;
+  const dashboardStats = {
+    totalInvoices: invoices.length,
+    totalCustomers: customers.length,
+    // Add any other stats you need calculated from the available data
+  };
+  
   const isMobile = useIsMobile();
   
   if (isLoadingStats) {

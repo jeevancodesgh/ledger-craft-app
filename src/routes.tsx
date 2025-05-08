@@ -1,64 +1,48 @@
 
-import { lazy } from 'react';
-import { createBrowserRouter } from 'react-router-dom';
-import Layout from './components/Layout';
-import NotFound from './pages/NotFound';
-import LoadingScreen from './components/LoadingScreen';
+import React, { lazy, Suspense } from "react";
+import { Navigate, Route, Routes } from "react-router-dom";
+import { AppLayout } from "@/components/layout/AppLayout";
+import { Spinner } from "@/components/ui/spinner";
 
-const Dashboard = lazy(() => import('./pages/Dashboard'));
-const Customers = lazy(() => import('./pages/Customers'));
-const CustomerDetail = lazy(() => import('./pages/CustomerDetail'));
-const Invoices = lazy(() => import('./pages/Invoices'));
-const CreateInvoice = lazy(() => import('./pages/CreateInvoice'));
-const EditInvoice = lazy(() => import('./pages/EditInvoice'));
-const InvoiceDetail = lazy(() => import('./pages/InvoiceDetail'));
-const Settings = lazy(() => import('./pages/Settings'));
-const Items = lazy(() => import('./pages/Items'));
+const Dashboard = lazy(() => import("@/pages/Dashboard"));
+const Invoices = lazy(() => import("@/pages/Invoices"));
+const CreateInvoice = lazy(() => import("@/pages/CreateInvoice"));
+const EditInvoice = lazy(() => import("@/pages/EditInvoice"));
+const Customers = lazy(() => import("@/pages/Customers"));
+const Items = lazy(() => import("@/pages/Items"));
+const Settings = lazy(() => import("@/pages/Settings"));
+const NotFound = lazy(() => import("@/pages/NotFound"));
+const Login = lazy(() => import("@/pages/Login"));
+const Signup = lazy(() => import("@/pages/Signup"));
 
-const router = createBrowserRouter([
-  {
-    path: '/',
-    element: <Layout />,
-    errorElement: <NotFound />,
-    children: [
-      {
-        index: true,
-        element: <Dashboard />,
-      },
-      {
-        path: 'customers',
-        element: <Customers />,
-      },
-      {
-        path: 'customers/:id',
-        element: <CustomerDetail />,
-      },
-      {
-        path: 'invoices',
-        element: <Invoices />,
-      },
-      {
-        path: 'invoices/create',
-        element: <CreateInvoice />,
-      },
-      {
-        path: 'invoices/:id',
-        element: <InvoiceDetail />,
-      },
-      {
-        path: 'invoices/:id/edit',
-        element: <EditInvoice />,
-      },
-      {
-        path: 'settings',
-        element: <Settings />,
-      },
-      {
-        path: 'items',
-        element: <Items />,
-      },
-    ],
-  },
-]);
+// Loading component
+const LoadingScreen = () => (
+  <div className="flex h-screen w-screen items-center justify-center">
+    <Spinner size="lg" />
+  </div>
+);
 
-export default router;
+const AppRoutes = () => {
+  return (
+    <Suspense fallback={<LoadingScreen />}>
+      <Routes>
+        <Route path="/login" element={<Login />} />
+        <Route path="/signup" element={<Signup />} />
+        
+        <Route path="/" element={<AppLayout />}>
+          <Route index element={<Dashboard />} />
+          <Route path="invoices" element={<Invoices />} />
+          <Route path="invoices/new" element={<CreateInvoice />} />
+          <Route path="invoices/:id/edit" element={<EditInvoice />} />
+          <Route path="customers" element={<Customers />} />
+          <Route path="items" element={<Items />} />
+          <Route path="settings" element={<Settings />} />
+        </Route>
+        
+        <Route path="*" element={<NotFound />} />
+      </Routes>
+    </Suspense>
+  );
+};
+
+export default AppRoutes;

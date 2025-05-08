@@ -39,7 +39,7 @@ const profileFormSchema = z.object({
 type ProfileFormValues = z.infer<typeof profileFormSchema>;
 
 const Settings = () => {
-  const { businessProfile, isLoadingProfile, updateBusinessProfile, refreshBusinessProfile } = useAppContext();
+  const { businessProfile, isLoadingBusinessProfile, updateBusinessProfile, refreshBusinessProfile } = useAppContext();
   const [isSaving, setIsSaving] = useState(false);
   const { toast } = useToast();
   const [activeTab, setActiveTab] = useState("profile");
@@ -68,11 +68,13 @@ const Settings = () => {
   });
 
   useEffect(() => {
-    refreshBusinessProfile();
-  }, []);
+    if (refreshBusinessProfile) {
+      refreshBusinessProfile();
+    }
+  }, [refreshBusinessProfile]);
 
   React.useEffect(() => {
-    if (businessProfile && !isLoadingProfile) {
+    if (businessProfile && !isLoadingBusinessProfile) {
       form.reset({
         name: businessProfile.name || '',
         email: businessProfile.email || '',
@@ -93,7 +95,7 @@ const Settings = () => {
       });
       setPreviewLogoUrl(businessProfile.logoUrl || undefined);
     }
-  }, [businessProfile, isLoadingProfile, form]);
+  }, [businessProfile, isLoadingBusinessProfile, form]);
 
   const onSubmit = async (data: ProfileFormValues) => {
     setIsSaving(true);
@@ -170,7 +172,7 @@ const Settings = () => {
     }
   };
 
-  if (isLoadingProfile) {
+  if (isLoadingBusinessProfile) {
     return <div className="flex justify-center items-center h-64">Loading settings...</div>;
   }
 

@@ -172,23 +172,27 @@ const mapItemCategoryToSupabaseItemCategory = async (category: Omit<ItemCategory
   };
 };
 
-const mapSupabaseItemToItem = (item: SupabaseItem, category?: ItemCategory): Item => ({
-  id: item.id,
-  name: item.name,
-  description: item.description,
-  type: item.type,
-  categoryId: item.category_id,
-  category: category,
-  salePrice: item.sale_price,
-  purchasePrice: item.purchase_price,
-  taxRate: item.tax_rate,
-  enableSaleInfo: item.enable_sale_info,
-  enablePurchaseInfo: item.enable_purchase_info,
-  unit: item.unit || 'each',
-  userId: item.user_id,
-  createdAt: item.created_at,
-  updatedAt: item.updated_at
-});
+const mapSupabaseItemToItem = (supabaseItem: any): Item => {
+  return {
+    id: supabaseItem.id,
+    name: supabaseItem.name,
+    description: supabaseItem.description,
+    type: supabaseItem.type as 'product' | 'service',  // Ensure it's cast to the right type
+    categoryId: supabaseItem.category_id,
+    salePrice: supabaseItem.sale_price,
+    purchasePrice: supabaseItem.purchase_price,
+    taxRate: supabaseItem.tax_rate,
+    enableSaleInfo: supabaseItem.enable_sale_info,
+    enablePurchaseInfo: supabaseItem.enable_purchase_info,
+    unit: supabaseItem.unit || 'each',
+    category: supabaseItem.item_categories ? {
+      id: supabaseItem.item_categories.id,
+      name: supabaseItem.item_categories.name,
+    } : undefined,
+    createdAt: supabaseItem.created_at,
+    updatedAt: supabaseItem.updated_at
+  };
+};
 
 const mapItemToSupabaseItem = async (item: Omit<Item, 'id' | 'createdAt' | 'updatedAt' | 'category'>): Promise<Omit<SupabaseItem, 'id' | 'created_at' | 'updated_at'>> => {
   const { data: { user } } = await supabase.auth.getUser();

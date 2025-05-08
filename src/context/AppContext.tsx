@@ -1,4 +1,3 @@
-
 import React, { createContext, useContext, useState, useEffect } from "react";
 import { customerService, invoiceService, businessProfileService, itemService, itemCategoryService } from "@/services/supabaseService";
 import { Customer, Invoice, BusinessProfile, Item, ItemCategory } from "@/types";
@@ -17,9 +16,12 @@ interface AppContextType {
   createInvoice: (invoice: Omit<Invoice, "id" | "createdAt" | "updatedAt">) => Promise<Invoice>;
   updateInvoice: (invoice: Invoice) => Promise<Invoice>;
   deleteInvoice: (id: string) => Promise<void>;
+  refreshInvoices: () => Promise<void>;
   businessProfile: BusinessProfile | null;
   isLoadingBusinessProfile: boolean;
   saveBusinessProfile: (profile: Omit<BusinessProfile, "id" | "createdAt" | "updatedAt">) => Promise<BusinessProfile>;
+  updateBusinessProfile: (profile: BusinessProfile) => Promise<BusinessProfile>;
+  refreshBusinessProfile: () => Promise<void>;
   items: Item[];
   isLoadingItems: boolean;
   getItem: (id: string) => Promise<Item | null>;
@@ -237,6 +239,10 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     }
   };
 
+  const refreshInvoices = async () => {
+    await fetchInvoices();
+  };
+
   const fetchBusinessProfile = async () => {
     try {
       setIsLoadingBusinessProfile(true);
@@ -254,6 +260,10 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     }
   };
 
+  const refreshBusinessProfile = async () => {
+    await fetchBusinessProfile();
+  };
+
   const saveBusinessProfile = async (profile: Omit<BusinessProfile, "id" | "createdAt" | "updatedAt">) => {
     try {
       const updatedProfile = await businessProfileService.createOrUpdateBusinessProfile(profile);
@@ -268,6 +278,27 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       toast({
         title: "Error",
         description: "Failed to save business profile. Please try again.",
+        variant: "destructive",
+      });
+      throw error;
+    }
+  };
+
+  const updateBusinessProfile = async (profile: BusinessProfile) => {
+    try {
+      const { id, ...rest } = profile;
+      const updatedProfile = await businessProfileService.createOrUpdateBusinessProfile(rest);
+      setBusinessProfile(updatedProfile);
+      toast({
+        title: "Success",
+        description: "Business profile updated successfully.",
+      });
+      return updatedProfile;
+    } catch (error) {
+      console.error("Error updating business profile:", error);
+      toast({
+        title: "Error",
+        description: "Failed to update business profile. Please try again.",
         variant: "destructive",
       });
       throw error;
@@ -456,9 +487,12 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       createInvoice,
       updateInvoice,
       deleteInvoice,
+      refreshInvoices,
       businessProfile,
       isLoadingBusinessProfile,
       saveBusinessProfile,
+      updateBusinessProfile,
+      refreshBusinessProfile,
       items,
       isLoadingItems,
       getItem,

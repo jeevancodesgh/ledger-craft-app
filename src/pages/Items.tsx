@@ -1,235 +1,234 @@
 
 import React, { useState, useEffect } from 'react';
 import { useAppContext } from '@/context/AppContext';
-import { Item, ItemCategory } from '@/types';
 import { Button } from '@/components/ui/button';
+import { Plus } from 'lucide-react';
+import { ItemsTable } from '@/components/item/ItemsTable';
+import { ItemDrawer } from '@/components/item/ItemDrawer';
+import { Item, ItemCategory } from '@/types';
+import { Skeleton } from '@/components/ui/skeleton';
 import { Input } from '@/components/ui/input';
-import { Filter, Loader2, Plus, Search } from 'lucide-react';
-import ItemsTable from '@/components/item/ItemsTable';
-import ItemDrawer from '@/components/item/ItemDrawer';
-import { ItemFormValues } from '@/components/item/ItemForm';
-import { useToast } from '@/hooks/use-toast';
+import { Label } from '@/components/ui/label';
 import {
-  DropdownMenu,
-  DropdownMenuTrigger,
-  DropdownMenuContent,
-  DropdownMenuCheckboxItem,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator
-} from '@/components/ui/dropdown-menu';
-import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { useIsMobile } from '@/hooks/use-mobile';
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import { useToast } from '@/hooks/use-toast';
 
-const ItemsPage: React.FC = () => {
-  const {
-    items,
-    isLoadingItems,
-    createItem,
-    updateItem,
+enum FilterType {
+  ALL = 'all',
+  PRODUCT = 'product',
+  SERVICE = 'service',
+}
+
+const Items = () => {
+  const { 
+    items, 
+    isLoadingItems, 
+    createItem, 
+    updateItem, 
     deleteItem,
     itemCategories,
-    isLoadingItemCategories,
-    createItemCategory,
+    createItemCategory
   } = useAppContext();
-
   const { toast } = useToast();
-  const isMobile = useIsMobile();
-
-  const [filteredItems, setFilteredItems] = useState<Item[]>([]);
-  const [searchTerm, setSearchTerm] = useState('');
-  const [selectedItem, setSelectedItem] = useState<Item | undefined>(undefined);
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
-  const [itemTypeFilter, setItemTypeFilter] = useState<'all' | 'product' | 'service'>('all');
-  const [categoryFilter, setCategoryFilter] = useState<string | null>(null);
+  const [selectedItem, setSelectedItem] = useState<Item | null>(null);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [filterType, setFilterType] = useState<FilterType>(FilterType.ALL);
+  const [categoryFilter, setCategoryFilter] = useState<string>('all');
 
-  useEffect(() => {
-    let result = [...items];
+  const filteredItems = items
+    .filter(item => 
+      item.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      (item.description?.toLowerCase().includes(searchQuery.toLowerCase()))
+    )
+    .filter(item => {
+      if (filterType === FilterType.ALL) return true;
+      return item.type === filterType.toLowerCase();
+    })
+    .filter(item => {
+      if (categoryFilter === 'all') return true;
+      return item.categoryId === categoryFilter;
+    });
 
-    // Apply search
-    if (searchTerm) {
-      const term = searchTerm.toLowerCase();
-      result = result.filter(
-        (item) =>
-          item.name.toLowerCase().includes(term) ||
-          (item.description && item.description.toLowerCase().includes(term)) ||
-          (item.category?.name && item.category.name.toLowerCase().includes(term))
-      );
-    }
+  const handleOpenDrawer = () => {
+    setSelectedItem(null);
+    setIsDrawerOpen(true);
+  };
 
-    // Apply type filter
-    if (itemTypeFilter !== 'all') {
-      result = result.filter((item) => item.type === itemTypeFilter);
-    }
-
-    // Apply category filter
-    if (categoryFilter) {
-      result = result.filter((item) => item.categoryId === categoryFilter);
-    }
-
-    setFilteredItems(result);
-  }, [items, searchTerm, itemTypeFilter, categoryFilter]);
-
-  const handleEdit = (item: Item) => {
+  const handleEditItem = (item: Item) => {
     setSelectedItem(item);
     setIsDrawerOpen(true);
   };
 
-  const handleCreate = () => {
-    setSelectedItem(undefined);
-    setIsDrawerOpen(true);
+  const handleCloseDrawer = () => {
+    setIsDrawerOpen(false);
+    setSelectedItem(null);
   };
 
-  const handleDelete = async (id: string) => {
+  const handleCreateItem = async (itemData: Omit<Item, "id" | "createdAt" | "updatedAt" | "category">) => {
+    try {
+      await createItem(itemData);
+      setIsDrawerOpen(false);
+      toast({
+        title: "Success",
+        description: "Item created successfully",
+      });
+    } catch (error) {
+      console.error("Failed to create item:", error);
+      toast({
+        title: "Error",
+        description: "Failed to create item",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleUpdateItem = async (item: Item) => {
+    try {
+      const { id, ...itemData } = item;
+      await updateItem(id, itemData);
+      setIsDrawerOpen(false);
+      toast({
+        title: "Success",
+        description: "Item updated successfully",
+      });
+    } catch (error) {
+      console.error("Failed to update item:", error);
+      toast({
+        title: "Error",
+        description: "Failed to update item",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleDeleteItem = async (id: string) => {
     try {
       await deleteItem(id);
+      toast({
+        title: "Success",
+        description: "Item deleted successfully",
+      });
     } catch (error) {
-      console.error('Error deleting item:', error);
+      console.error("Failed to delete item:", error);
+      toast({
+        title: "Error",
+        description: "Failed to delete item",
+        variant: "destructive",
+      });
     }
   };
 
-  const handleSave = async (values: ItemFormValues) => {
-    try {
-      if (selectedItem) {
-        await updateItem(selectedItem.id, values);
-      } else {
-        await createItem(values);
-      }
-      setIsDrawerOpen(false);
-    } catch (error) {
-      console.error('Error saving item:', error);
+  const handleSubmitItem = (item: Item) => {
+    if (item.id) {
+      handleUpdateItem(item);
+    } else {
+      // Remove id for creation since it will be generated on the server
+      const { id, createdAt, updatedAt, ...itemData } = item;
+      handleCreateItem(itemData);
     }
   };
 
-  const handleCreateCategory = async (data: { name: string }) => {
-    return await createItemCategory(data);
+  const handleCreateCategory = async (name: string) => {
+    return await createItemCategory({ name });
   };
 
-  const clearFilters = () => {
-    setSearchTerm('');
-    setItemTypeFilter('all');
-    setCategoryFilter(null);
-  };
-
-  if (isLoadingItems || isLoadingItemCategories) {
+  if (isLoadingItems) {
     return (
-      <div className="flex justify-center items-center h-64">
-        <Loader2 className="h-10 w-10 animate-spin text-primary" />
+      <div className="container mx-auto py-6 space-y-6">
+        <div className="flex justify-between items-center">
+          <h1 className="text-3xl font-bold">Items</h1>
+        </div>
+        <div className="space-y-4">
+          {[1, 2, 3].map(i => (
+            <Skeleton key={i} className="w-full h-16" />
+          ))}
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="container mx-auto py-6 px-4 sm:px-6 lg:px-8">
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4">
-        <div>
-          <h1 className="text-2xl font-semibold">Items</h1>
-          <p className="text-muted-foreground mt-1">Manage your products and services</p>
-        </div>
-        <Button onClick={handleCreate} className="whitespace-nowrap">
-          <Plus className="mr-2 h-4 w-4" />
+    <div className="container mx-auto py-6 space-y-6">
+      <div className="flex justify-between items-center">
+        <h1 className="text-3xl font-bold">Items</h1>
+        <Button 
+          onClick={handleOpenDrawer}
+          className="bg-invoice-teal hover:bg-invoice-teal/90"
+        >
+          <Plus className="w-4 h-4 mr-2" />
           Add Item
         </Button>
       </div>
-
-      <div className="flex flex-col sm:flex-row gap-3 justify-between mb-6">
-        <div className="relative flex-1">
-          <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+      
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 items-end">
+        <div className="space-y-2">
+          <Label htmlFor="search">Search</Label>
           <Input
-            placeholder="Search items..."
-            className="pl-8 w-full"
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
+            id="search"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            placeholder="Search by name or description"
           />
         </div>
-        <div className="flex gap-2">
-          <div className="flex-shrink-0">
-            <Tabs
-              value={itemTypeFilter}
-              onValueChange={(value) => setItemTypeFilter(value as 'all' | 'product' | 'service')}
-              className="w-fit"
-            >
-              <TabsList>
-                <TabsTrigger value="all">All</TabsTrigger>
-                <TabsTrigger value="product">Products</TabsTrigger>
-                <TabsTrigger value="service">Services</TabsTrigger>
-              </TabsList>
-            </Tabs>
-          </div>
-
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="outline" size="icon">
-                <Filter className="h-4 w-4" />
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-56">
-              <DropdownMenuLabel>Filter by Category</DropdownMenuLabel>
-              <DropdownMenuSeparator />
-              <DropdownMenuItem
-                className={categoryFilter === null ? "bg-accent text-accent-foreground" : ""}
-                onClick={() => setCategoryFilter(null)}
-              >
-                All Categories
-              </DropdownMenuItem>
+        <div className="space-y-2">
+          <Label htmlFor="filterType">Type</Label>
+          <Select 
+            value={filterType} 
+            onValueChange={(value) => setFilterType(value as FilterType)}
+          >
+            <SelectTrigger id="filterType">
+              <SelectValue placeholder="Select type" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value={FilterType.ALL}>All Items</SelectItem>
+              <SelectItem value={FilterType.PRODUCT}>Products</SelectItem>
+              <SelectItem value={FilterType.SERVICE}>Services</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+        <div className="space-y-2">
+          <Label htmlFor="categoryFilter">Category</Label>
+          <Select 
+            value={categoryFilter} 
+            onValueChange={(value) => setCategoryFilter(value)}
+          >
+            <SelectTrigger id="categoryFilter">
+              <SelectValue placeholder="Select category" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Categories</SelectItem>
               {itemCategories.map((category) => (
-                <DropdownMenuItem
-                  key={category.id}
-                  className={categoryFilter === category.id ? "bg-accent text-accent-foreground" : ""}
-                  onClick={() => setCategoryFilter(category.id)}
-                >
+                <SelectItem key={category.id} value={category.id}>
                   {category.name}
-                </DropdownMenuItem>
+                </SelectItem>
               ))}
-              <DropdownMenuSeparator />
-              <DropdownMenuItem onClick={clearFilters}>
-                Clear Filters
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
+            </SelectContent>
+          </Select>
         </div>
       </div>
-
-      {filteredItems.length === 0 ? (
-        <div className="text-center py-12">
-          <h3 className="text-lg font-medium">No items found</h3>
-          <p className="text-muted-foreground mt-2">
-            {items.length === 0
-              ? "You haven't created any items yet. Create one to get started."
-              : "No items match your search criteria. Try adjusting your filters."}
-          </p>
-          {items.length === 0 && (
-            <Button onClick={handleCreate} className="mt-4">
-              <Plus className="mr-2 h-4 w-4" />
-              Create Your First Item
-            </Button>
-          )}
-          {items.length > 0 && (
-            <Button variant="outline" onClick={clearFilters} className="mt-4">
-              Clear Filters
-            </Button>
-          )}
-        </div>
-      ) : (
-        <ItemsTable
-          items={filteredItems}
-          onEdit={handleEdit}
-          onDelete={handleDelete}
-        />
-      )}
+      
+      <ItemsTable
+        items={filteredItems}
+        onEditItem={handleEditItem}
+        onDeleteItem={handleDeleteItem}
+        categories={itemCategories}
+      />
 
       <ItemDrawer
-        item={selectedItem}
         open={isDrawerOpen}
-        onOpenChange={setIsDrawerOpen}
-        onSave={handleSave}
-        categories={itemCategories}
-        isLoading={isLoadingItemCategories}
+        onClose={handleCloseDrawer}
+        item={selectedItem}
+        onSubmit={handleSubmitItem}
         onCreateCategory={handleCreateCategory}
-        title={selectedItem ? `Edit ${selectedItem.name}` : 'Create New Item'}
       />
     </div>
   );
 };
 
-export default ItemsPage;
+export default Items;
