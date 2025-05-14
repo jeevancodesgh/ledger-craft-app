@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Invoice } from '@/types';
 import { formatCurrency } from '@/utils/invoiceUtils';
@@ -27,6 +26,23 @@ const ClassicTemplate = ({
   businessLogo
 }: ClassicTemplateProps) => {
   const isMobile = useIsMobile();
+  
+  // Add meta tag to disable auto-linking on mobile
+  React.useEffect(() => {
+    if (isMobile) {
+      let meta = document.querySelector('meta[name="format-detection"]');
+      if (!meta) {
+        meta = document.createElement('meta');
+        meta.setAttribute('name', 'format-detection');
+        document.head.appendChild(meta);
+      }
+      meta.setAttribute('content', 'telephone=no, email=no');
+      return () => {
+        // Optionally clean up if needed
+        // meta.remove();
+      };
+    }
+  }, [isMobile]);
   
   // Parse the client address into components
   const addressParts = clientAddress.split(',').map(part => part.trim());
@@ -60,7 +76,11 @@ const ClassicTemplate = ({
             <p className="text-sm sm:text-base font-semibold">{companyName}</p>
             <p className="text-xs sm:text-sm text-gray-600">{companyAddressParts.join(', ')}</p>
             {invoice.customer?.email && (
-              <p className="text-xs sm:text-sm text-gray-600">{invoice.customer.email}</p>
+              isMobile ? (
+                <span className="text-xs sm:text-sm text-gray-600 no-autolink">{invoice.customer.email}</span>
+              ) : (
+                <p className="text-xs sm:text-sm text-gray-600">{invoice.customer.email}</p>
+              )
             )}
           </div>
         </div>
@@ -73,10 +93,18 @@ const ClassicTemplate = ({
           <p className="text-sm font-medium">{clientName}</p>
           <p className="text-xs sm:text-sm">{addressParts.join(', ')}</p>
           {invoice.customer?.phone && (
-            <p className="text-xs sm:text-sm">{invoice.customer.phone}</p>
+            isMobile ? (
+              <span className="text-xs sm:text-sm no-autolink">{invoice.customer.phone}</span>
+            ) : (
+              <p className="text-xs sm:text-sm">{invoice.customer.phone}</p>
+            )
           )}
           {invoice.customer?.email && (
-            <p className="text-xs sm:text-sm">{invoice.customer.email}</p>
+            isMobile ? (
+              <span className="text-xs sm:text-sm no-autolink">{invoice.customer.email}</span>
+            ) : (
+              <p className="text-xs sm:text-sm">{invoice.customer.email}</p>
+            )
           )}
         </div>
         

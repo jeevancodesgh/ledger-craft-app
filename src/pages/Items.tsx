@@ -1,10 +1,9 @@
-
 import React, { useState, useEffect } from 'react';
 import { useAppContext } from '@/context/AppContext';
 import { Button } from '@/components/ui/button';
 import { Plus } from 'lucide-react';
-import { ItemsTable } from '@/components/item/ItemsTable';
-import { ItemDrawer } from '@/components/item/ItemDrawer';
+import ItemsTable from '@/components/item/ItemsTable';
+import ItemDrawer from '@/components/item/ItemDrawer';
 import { Item, ItemCategory } from '@/types';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Input } from '@/components/ui/input';
@@ -124,13 +123,13 @@ const Items = () => {
     }
   };
 
-  const handleSubmitItem = (item: Item) => {
+  const handleSubmitItem = async (item: Item): Promise<void> => {
     if (item.id) {
-      handleUpdateItem(item);
+      await handleUpdateItem(item);
     } else {
       // Remove id for creation since it will be generated on the server
       const { id, createdAt, updatedAt, ...itemData } = item;
-      handleCreateItem(itemData);
+      await handleCreateItem(itemData);
     }
   };
 
@@ -215,16 +214,17 @@ const Items = () => {
       
       <ItemsTable
         items={filteredItems}
-        onEditItem={handleEditItem}
-        onDeleteItem={handleDeleteItem}
-        categories={itemCategories}
+        onEdit={handleEditItem}
+        onDelete={handleDeleteItem}
       />
 
       <ItemDrawer
         open={isDrawerOpen}
-        onClose={handleCloseDrawer}
+        onOpenChange={setIsDrawerOpen}
         item={selectedItem}
-        onSubmit={handleSubmitItem}
+        onSave={handleSubmitItem}
+        categories={itemCategories}
+        isLoading={isLoadingItems}
         onCreateCategory={handleCreateCategory}
       />
     </div>

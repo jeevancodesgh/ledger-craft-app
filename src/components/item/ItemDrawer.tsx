@@ -1,4 +1,3 @@
-
 import React, { useEffect } from 'react';
 import {
   Drawer,
@@ -15,14 +14,14 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { Item, ItemCategory } from '@/types';
-import ItemForm, { ItemFormValues } from './ItemForm';
+import { ItemForm } from './ItemForm';
 import { useIsMobile } from '@/hooks/use-mobile';
 
 interface ItemDrawerProps {
   item?: Item;
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  onSave: (values: ItemFormValues) => Promise<void>;
+  onSave: (values: Item) => Promise<void>;
   categories: ItemCategory[];
   isLoading: boolean;
   onCreateCategory?: (name: string) => Promise<ItemCategory>;
@@ -58,12 +57,9 @@ const ItemDrawer: React.FC<ItemDrawerProps> = ({
           </DrawerHeader>
           <div className="p-4 pb-0">
             <ItemForm
-              item={item}
+              initialData={item}
               onSubmit={onSave}
               onCancel={handleClose}
-              categories={categories}
-              isLoading={isLoading}
-              onCreateCategory={onCreateCategory}
             />
           </div>
         </div>
