@@ -71,7 +71,7 @@ const Settings = () => {
     if (refreshBusinessProfile) {
       refreshBusinessProfile();
     }
-  }, [refreshBusinessProfile]);
+  }, []);
 
   React.useEffect(() => {
     if (businessProfile && !isLoadingBusinessProfile) {
