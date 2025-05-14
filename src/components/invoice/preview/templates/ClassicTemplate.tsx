@@ -99,6 +99,8 @@ const ClassicTemplate = ({
               <p className="text-xs sm:text-sm">{invoice.customer.phone}</p>
             )
           )}
+          {/* Add line break after phone for mobile if email exists */}
+          {isMobile && invoice.customer?.phone && invoice.customer?.email && <br />}
           {invoice.customer?.email && (
             isMobile ? (
               <span className="text-xs sm:text-sm no-autolink">{invoice.customer.email}</span>
