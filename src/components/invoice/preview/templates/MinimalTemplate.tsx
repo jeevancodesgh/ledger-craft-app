@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Invoice } from '@/types';
 import { Card, CardContent } from "@/components/ui/card";
@@ -27,6 +26,18 @@ const MinimalTemplate = ({
   businessLogo
 }: MinimalTemplateProps) => {
   const isMobile = useIsMobile();
+  
+  React.useEffect(() => {
+    if (isMobile) {
+      let meta = document.querySelector('meta[name="format-detection"]');
+      if (!meta) {
+        meta = document.createElement('meta');
+        meta.setAttribute('name', 'format-detection');
+        document.head.appendChild(meta);
+      }
+      meta.setAttribute('content', 'telephone=no, email=no');
+    }
+  }, [isMobile]);
   
   return (
     <Card className="p-4 sm:p-8 bg-white minimal-invoice-template print-template">
@@ -57,6 +68,20 @@ const MinimalTemplate = ({
             <div className="w-1/2 text-right">
               <p className="font-medium mb-1">{clientName}</p>
               <p className="text-gray-600 text-xs sm:text-sm whitespace-pre-wrap">{clientAddress}</p>
+              {invoice.customer?.phone && (
+                isMobile ? (
+                  <span className="text-xs sm:text-sm no-autolink">{invoice.customer.phone}</span>
+                ) : (
+                  <p className="text-xs sm:text-sm">{invoice.customer.phone}</p>
+                )
+              )}
+              {invoice.customer?.email && (
+                isMobile ? (
+                  <span className="text-xs sm:text-sm no-autolink">{invoice.customer.email}</span>
+                ) : (
+                  <p className="text-xs sm:text-sm">{invoice.customer.email}</p>
+                )
+              )}
             </div>
           </div>
 

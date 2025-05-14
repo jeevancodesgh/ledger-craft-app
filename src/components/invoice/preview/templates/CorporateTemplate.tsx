@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { formatCurrency } from '@/utils/invoiceUtils';
 import { Invoice, LineItem } from '@/types';
@@ -28,6 +27,18 @@ const CorporateTemplate = ({
 }: CorporateTemplateProps) => {
   const isMobile = useIsMobile();
   
+  React.useEffect(() => {
+    if (isMobile) {
+      let meta = document.querySelector('meta[name="format-detection"]');
+      if (!meta) {
+        meta = document.createElement('meta');
+        meta.setAttribute('name', 'format-detection');
+        document.head.appendChild(meta);
+      }
+      meta.setAttribute('content', 'telephone=no, email=no');
+    }
+  }, [isMobile]);
+
   // Get status color
   const getStatusColor = () => {
     switch (invoice.status) {
@@ -60,6 +71,13 @@ const CorporateTemplate = ({
             <span className={`inline-block px-2 sm:px-3 py-1 rounded-full text-xs sm:text-sm font-semibold capitalize ${getStatusColor()}`}>
               {invoice.status}
             </span>
+            {invoice.customer?.email && (
+              isMobile ? (
+                <span className="text-xs sm:text-sm no-autolink text-white">{invoice.customer.email}</span>
+              ) : (
+                <p className="text-xs sm:text-sm text-white">{invoice.customer.email}</p>
+              )
+            )}
           </div>
         </div>
       </div>
@@ -76,6 +94,20 @@ const CorporateTemplate = ({
             <h3 className="text-xs font-bold uppercase tracking-wider text-gray-500 mb-1 sm:mb-2">To</h3>
             <h4 className="text-lg sm:text-xl font-bold mb-1">{clientName}</h4>
             <p className="text-gray-600 text-xs sm:text-sm whitespace-pre-line">{clientAddress}</p>
+            {invoice.customer?.phone && (
+              isMobile ? (
+                <span className="text-xs sm:text-sm no-autolink">{invoice.customer.phone}</span>
+              ) : (
+                <p className="text-xs sm:text-sm">{invoice.customer.phone}</p>
+              )
+            )}
+            {invoice.customer?.email && (
+              isMobile ? (
+                <span className="text-xs sm:text-sm no-autolink">{invoice.customer.email}</span>
+              ) : (
+                <p className="text-xs sm:text-sm">{invoice.customer.email}</p>
+              )
+            )}
           </div>
         </div>
         <div className="bg-gray-50 p-3 sm:p-6 rounded-lg">

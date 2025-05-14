@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Invoice } from '@/types';
 import { Card, CardContent } from "@/components/ui/card";
@@ -27,6 +26,18 @@ const ModernTemplate = ({
   businessLogo
 }: ModernTemplateProps) => {
   const isMobile = useIsMobile();
+  
+  React.useEffect(() => {
+    if (isMobile) {
+      let meta = document.querySelector('meta[name="format-detection"]');
+      if (!meta) {
+        meta = document.createElement('meta');
+        meta.setAttribute('name', 'format-detection');
+        document.head.appendChild(meta);
+      }
+      meta.setAttribute('content', 'telephone=no, email=no');
+    }
+  }, [isMobile]);
   
   // Parse the client address into components
   const addressParts = clientAddress.split(',').map(part => part.trim());
@@ -62,7 +73,11 @@ const ModernTemplate = ({
           <p className="font-semibold text-sm sm:text-base" style={{ color: 'white' }}>{companyName}</p>
           <p className="text-xs sm:text-sm" style={{ color: 'white' }}>{companyAddressParts.join(', ')}</p>
           {invoice.customer?.email && (
-            <p className="text-xs mt-1" style={{ color: 'white' }}>{invoice.customer.email}</p>
+            isMobile ? (
+              <span className="text-xs mt-1 no-autolink" style={{ color: 'white' }}>{invoice.customer.email}</span>
+            ) : (
+              <p className="text-xs mt-1" style={{ color: 'white' }}>{invoice.customer.email}</p>
+            )
           )}
         </div>
       </div>
@@ -75,10 +90,18 @@ const ModernTemplate = ({
           <p className="text-sm font-medium">{clientName}</p>
           <p className="text-xs sm:text-sm">{addressParts.join(', ')}</p>
           {invoice.customer?.phone && (
-            <p className="text-xs sm:text-sm">{invoice.customer.phone}</p>
+            isMobile ? (
+              <span className="text-xs sm:text-sm no-autolink">{invoice.customer.phone}</span>
+            ) : (
+              <p className="text-xs sm:text-sm">{invoice.customer.phone}</p>
+            )
           )}
           {invoice.customer?.email && (
-            <p className="text-xs sm:text-sm">{invoice.customer.email}</p>
+            isMobile ? (
+              <span className="text-xs sm:text-sm no-autolink">{invoice.customer.email}</span>
+            ) : (
+              <p className="text-xs sm:text-sm">{invoice.customer.email}</p>
+            )
           )}
         </div>
         

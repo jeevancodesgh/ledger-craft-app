@@ -1,4 +1,3 @@
-
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -270,4 +269,11 @@
     max-width: 100% !important;
     max-height: 100px !important;
   }
+}
+
+.no-autolink {
+  text-decoration: none !important;
+  color: inherit !important;
+  pointer-events: none;
+  cursor: default;
 }
