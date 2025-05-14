@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
@@ -23,9 +22,12 @@ interface ItemFormProps {
   initialData?: Item | null;
   onSubmit: (data: Item) => void;
   onCancel: () => void;
+  isLoading?: boolean;
+  categories?: ItemCategory[];
+  onCreateCategory?: (name: string) => Promise<ItemCategory>;
 }
 
-export function ItemForm({ initialData, onSubmit, onCancel }: ItemFormProps) {
+export function ItemForm({ initialData, onSubmit, onCancel, isLoading = false, categories, onCreateCategory }: ItemFormProps) {
   const { itemCategories, createItemCategory } = useAppContext();
   const { toast } = useToast();
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -43,6 +45,9 @@ export function ItemForm({ initialData, onSubmit, onCancel }: ItemFormProps) {
     enablePurchaseInfo: initialData?.enablePurchaseInfo ?? false,
     unit: initialData?.unit || 'each',
   });
+
+  const effectiveCategories = categories || itemCategories;
+  const effectiveCreateCategory = onCreateCategory || createItemCategory;
 
   const handleChange = (field: keyof Item, value: any) => {
     setFormData({
@@ -84,10 +89,9 @@ export function ItemForm({ initialData, onSubmit, onCancel }: ItemFormProps) {
 
   const handleCreateCategory = async () => {
     if (!newCategoryName.trim()) return;
-    
     try {
       setIsAddingCategory(true);
-      const newCategory = await createItemCategory({ name: newCategoryName });
+      const newCategory = await effectiveCreateCategory({ name: newCategoryName } as Omit<ItemCategory, 'id' | 'createdAt' | 'updatedAt'>);
       setFormData({
         ...formData,
         categoryId: newCategory.id
@@ -150,7 +154,7 @@ export function ItemForm({ initialData, onSubmit, onCancel }: ItemFormProps) {
   };
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-6">
+    <form onSubmit={handleSubmit} className="space-y-6" id="item-form">
       <div className="space-y-4">
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
           <div className="space-y-2">
@@ -204,7 +208,7 @@ export function ItemForm({ initialData, onSubmit, onCancel }: ItemFormProps) {
                 <SelectValue placeholder="Select a category" />
               </SelectTrigger>
               <SelectContent>
-                {itemCategories.map((category) => (
+                {effectiveCategories.map((category) => (
                   <SelectItem key={category.id} value={category.id}>
                     {category.name}
                   </SelectItem>
@@ -214,7 +218,7 @@ export function ItemForm({ initialData, onSubmit, onCancel }: ItemFormProps) {
             
             <Popover>
               <PopoverTrigger asChild>
-                <Button type="button" size="icon">
+                <Button type="button" size="icon" disabled={isAddingCategory || isLoading}>
                   <Plus className="h-4 w-4" />
                 </Button>
               </PopoverTrigger>
@@ -227,11 +231,12 @@ export function ItemForm({ initialData, onSubmit, onCancel }: ItemFormProps) {
                       value={newCategoryName}
                       onChange={(e) => setNewCategoryName(e.target.value)}
                       placeholder="Category name"
+                      disabled={isAddingCategory || isLoading}
                     />
                     <Button 
                       type="button" 
                       onClick={handleCreateCategory}
-                      disabled={isAddingCategory || !newCategoryName.trim()}
+                      disabled={isAddingCategory || !newCategoryName.trim() || isLoading}
                     >
                       Add
                     </Button>
@@ -315,20 +320,6 @@ export function ItemForm({ initialData, onSubmit, onCancel }: ItemFormProps) {
             </div>
           )}
         </div>
-      </div>
-      
-      <div className="flex items-center justify-end space-x-2">
-        <Button
-          type="button"
-          variant="outline"
-          onClick={onCancel}
-          disabled={isSubmitting}
-        >
-          Cancel
-        </Button>
-        <Button type="submit" disabled={isSubmitting}>
-          {isSubmitting ? "Saving..." : initialData ? "Update" : "Create"}
-        </Button>
       </div>
     </form>
   );
