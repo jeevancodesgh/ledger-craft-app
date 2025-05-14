@@ -111,6 +111,58 @@ const Dashboard = () => {
     return null;
   };
   
+  // --- New Analytics Widgets ---
+  // 1. Status breakdown
+  const statusBreakdown = [
+    { label: 'Draft', value: invoices.filter(i => i.status === 'draft').length, color: 'bg-gray-200 text-gray-800' },
+    { label: 'Sent', value: invoices.filter(i => i.status === 'sent').length, color: 'bg-blue-100 text-blue-800' },
+    { label: 'Paid', value: invoices.filter(i => i.status === 'paid').length, color: 'bg-green-100 text-green-800' },
+    { label: 'Overdue', value: invoices.filter(i => i.status === 'overdue').length, color: 'bg-red-100 text-red-800' },
+  ];
+
+  // 2. Average days to payment (for paid invoices)
+  // If no paid invoices or missing dates, show N/A
+  const paidWithDates = invoices.filter(i => i.status === 'paid' && i.date && i.updatedAt);
+  const avgDaysToPayment = paidWithDates.length > 0
+    ? Math.round(
+        paidWithDates.reduce((sum, i) => {
+          const paidDate = new Date(i.updatedAt).getTime();
+          const issueDate = new Date(i.date).getTime();
+          if (isNaN(paidDate) || isNaN(issueDate)) return sum;
+          return sum + ((paidDate - issueDate) / (1000 * 60 * 60 * 24));
+        }, 0) / paidWithDates.length
+      )
+    : null;
+
+  // 3. Top 5 customers by total paid amount
+  const customerPaidMap = {};
+  invoices.forEach(i => {
+    if (i.status === 'paid') {
+      const key = i.customer?.name || i.customerId;
+      customerPaidMap[key] = (customerPaidMap[key] || 0) + i.total;
+    }
+  });
+  const topCustomers = Object.entries(customerPaidMap)
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, 5);
+
+  // 4. Most overdue invoices (top 5 by overdue days)
+  const now = new Date();
+  const mostOverdueInvoices = invoices
+    .filter(i => i.status === 'overdue' && i.dueDate)
+    .map(i => {
+      const dueTime = Number(new Date(i.dueDate).getTime());
+      const nowTime = Number(now.getTime());
+      let overdueDays: number = 0;
+      if (Number.isFinite(dueTime) && Number.isFinite(nowTime)) {
+        const diff = (nowTime - dueTime) / (1000 * 60 * 60 * 24);
+        overdueDays = Number.isFinite(diff) ? Math.trunc(Math.max(0, diff)) : 0;
+      }
+      return { ...i, overdueDays };
+    })
+    .sort((a, b) => b.overdueDays - a.overdueDays)
+    .slice(0, 5);
+
   return (
     <div className="space-y-6">
       {isMobile ? (
@@ -326,6 +378,76 @@ const Dashboard = () => {
               <div className="py-4 text-center text-muted-foreground">
                 No pending invoices
               </div>
+            )}
+          </CardContent>
+        </Card>
+      </div>
+      
+      {/* --- New Analytics Row --- */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+        {/* Status Breakdown */}
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm font-medium text-muted-foreground">Invoice Status Breakdown</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="flex flex-wrap gap-2">
+              {statusBreakdown.map(s => (
+                <span key={s.label} className={`px-3 py-1 rounded-full text-xs font-semibold ${s.color}`}>
+                  {s.label}: {s.value}
+                </span>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+        {/* Average Days to Payment */}
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm font-medium text-muted-foreground">Avg. Days to Payment</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">
+              {avgDaysToPayment !== null ? `${avgDaysToPayment} days` : <span className="text-muted-foreground">N/A</span>}
+            </div>
+          </CardContent>
+        </Card>
+        {/* Top Customers by Paid Amount */}
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm font-medium text-muted-foreground">Top Customers (Paid)</CardTitle>
+          </CardHeader>
+          <CardContent>
+            {topCustomers.length > 0 ? (
+              <ul className="space-y-1">
+                {topCustomers.map(([name, amt]) => (
+                  <li key={name} className="flex justify-between">
+                    <span className="truncate max-w-[120px]" title={name}>{name}</span>
+                    <span className="font-mono">{formatCurrency(typeof amt === 'number' ? amt : 0)}</span>
+                  </li>
+                ))}
+              </ul>
+            ) : (
+              <span className="text-muted-foreground">No paid invoices</span>
+            )}
+          </CardContent>
+        </Card>
+        {/* Most Overdue Invoices */}
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm font-medium text-muted-foreground">Most Overdue Invoices</CardTitle>
+          </CardHeader>
+          <CardContent>
+            {mostOverdueInvoices.length > 0 ? (
+              <ul className="space-y-1">
+                {mostOverdueInvoices.map(i => (
+                  <li key={i.id} className="flex justify-between">
+                    <span className="truncate max-w-[100px]" title={i.invoiceNumber}>{i.invoiceNumber}</span>
+                    <span className="text-red-700 font-semibold">{i.overdueDays} days</span>
+                  </li>
+                ))}
+              </ul>
+            ) : (
+              <span className="text-muted-foreground">No overdue invoices</span>
             )}
           </CardContent>
         </Card>
