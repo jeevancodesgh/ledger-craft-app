@@ -44,7 +44,7 @@ const Invoices = () => {
 
   return (
     <div className="space-y-6">
-      <div className="flex justify-between items-center">
+      <div className="flex justify-between items-center mt-5">
         <h1 className="text-3xl font-bold">Invoices</h1>
         <Button className="flex items-center gap-2 bg-invoice-teal hover:bg-invoice-teal/90" asChild>
           <Link to="/invoices/new">
