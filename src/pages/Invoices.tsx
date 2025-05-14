@@ -3,16 +3,30 @@ import { useAppContext } from '@/context/AppContext';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { formatCurrency, getStatusColor } from '@/utils/invoiceUtils';
 import { Button } from '@/components/ui/button';
-import { Plus, ChevronRight, Calendar, DollarSign, Edit, Trash2, Copy } from 'lucide-react';
+import { Plus, ChevronRight, Calendar, DollarSign, Edit, Trash2, Copy, Loader2 } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '@/components/ui/table';
 import { Dialog, DialogContent, DialogHeader, DialogFooter, DialogTitle, DialogDescription, DialogClose, DialogTrigger } from '@/components/ui/dialog';
 import { useState } from 'react';
 import { useToast } from '@/hooks/use-toast';
+import {
+  Select,
+  SelectTrigger,
+  SelectContent,
+  SelectItem,
+  SelectValue
+} from '@/components/ui/select';
+
+const STATUS_OPTIONS = [
+  { value: 'draft', label: 'Draft' },
+  { value: 'sent', label: 'Sent' },
+  { value: 'paid', label: 'Paid' },
+  { value: 'overdue', label: 'Overdue' },
+];
 
 const Invoices = () => {
-  const { invoices, isLoadingInvoices, deleteInvoice, refreshInvoices, createInvoice, businessProfile, getNextInvoiceNumber } = useAppContext();
+  const { invoices, isLoadingInvoices, deleteInvoice, refreshInvoices, createInvoice, businessProfile, getNextInvoiceNumber, updateInvoiceStatus } = useAppContext();
   const { toast } = useToast();
   const navigate = useNavigate();
   const isMobile = useIsMobile();
@@ -20,6 +34,7 @@ const Invoices = () => {
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [invoiceToDelete, setInvoiceToDelete] = useState<string | null>(null);
   const [deleting, setDeleting] = useState(false);
+  const [statusLoading, setStatusLoading] = useState<{ [id: string]: boolean }>({});
 
   const handleDeleteClick = (id: string) => {
     setInvoiceToDelete(id);
@@ -59,6 +74,20 @@ const Invoices = () => {
       navigate(`/invoices/${created.id}/edit`);
     } catch (e) {
       toast({ title: 'Clone failed', description: 'Could not clone invoice.', variant: 'destructive' });
+    }
+  };
+
+  const handleStatusChange = async (id: string, newStatus: string) => {
+    setStatusLoading((prev) => ({ ...prev, [id]: true }));
+    const prevInvoice = invoices.find(i => i.id === id);
+    try {
+      await updateInvoiceStatus(id, newStatus as any);
+      toast({ title: 'Status updated', description: `Invoice status changed to ${newStatus}.` });
+      await refreshInvoices();
+    } catch (e) {
+      toast({ title: 'Update failed', description: 'Could not update invoice status.', variant: 'destructive' });
+    } finally {
+      setStatusLoading((prev) => ({ ...prev, [id]: false }));
     }
   };
 
@@ -114,9 +143,23 @@ const Invoices = () => {
                 <CardHeader className="pb-2">
                   <div className="flex justify-between items-start">
                     <CardTitle className="text-lg">{invoice.invoiceNumber}</CardTitle>
-                    <span className={`px-2 py-1 text-xs rounded-full ${getStatusColor(invoice.status)}`}>
-                      {invoice.status.charAt(0).toUpperCase() + invoice.status.slice(1)}
-                    </span>
+                    <div className="flex items-center gap-2">
+                      <Select
+                        value={invoice.status}
+                        onValueChange={val => handleStatusChange(invoice.id, val)}
+                        disabled={statusLoading[invoice.id]}
+                      >
+                        <SelectTrigger className={`px-2 py-1 text-xs rounded-full border min-w-[100px] ${getStatusColor(invoice.status)}`}> 
+                          <SelectValue />
+                          {statusLoading[invoice.id] && <Loader2 className="animate-spin w-4 h-4 text-muted-foreground ml-2" />}
+                        </SelectTrigger>
+                        <SelectContent>
+                          {STATUS_OPTIONS.map(opt => (
+                            <SelectItem key={opt.value} value={opt.value}>{opt.label}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
                   </div>
                   <p className="text-sm text-muted-foreground">{invoice.customerId}</p>
                 </CardHeader>
@@ -204,9 +247,23 @@ const Invoices = () => {
                       <TableCell>{invoice.dueDate}</TableCell>
                       <TableCell>{formatCurrency(invoice.total)}</TableCell>
                       <TableCell>
-                        <span className={`px-2 py-1 text-xs rounded-full ${getStatusColor(invoice.status)}`}>
-                          {invoice.status.charAt(0).toUpperCase() + invoice.status.slice(1)}
-                        </span>
+                        <div className="flex items-center gap-2">
+                          <Select
+                            value={invoice.status}
+                            onValueChange={val => handleStatusChange(invoice.id, val)}
+                            disabled={statusLoading[invoice.id]}
+                          >
+                            <SelectTrigger className={`px-2 py-1 text-xs rounded-full border min-w-[100px] ${getStatusColor(invoice.status)}`}>
+                              <SelectValue />
+                              {statusLoading[invoice.id] && <Loader2 className="animate-spin w-4 h-4 text-muted-foreground ml-2" />}
+                            </SelectTrigger>
+                            <SelectContent>
+                              {STATUS_OPTIONS.map(opt => (
+                                <SelectItem key={opt.value} value={opt.value}>{opt.label}</SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        </div>
                       </TableCell>
                       <TableCell className="text-right space-x-1">
                         <Button
