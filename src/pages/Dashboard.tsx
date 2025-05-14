@@ -12,33 +12,50 @@ import { useIsMobile } from '@/hooks/use-mobile';
 const Dashboard = () => {
   const { invoices, isLoadingInvoices, customers, isLoadingCustomers } = useAppContext();
   
-  // Calculate simple stats from invoices and customers
   const isLoadingStats = isLoadingInvoices || isLoadingCustomers;
-  const dashboardStats = {
-    totalInvoices: invoices.length,
-    totalCustomers: customers.length,
-    // Add any other stats you need calculated from the available data
-  };
-  
   const isMobile = useIsMobile();
   
+  // Calculate stats from invoices
+  const totalInvoices = invoices.length;
+  const totalCustomers = customers.length;
+  const customerCount = customers.length;
+  const totalEarnings = invoices.reduce((sum, invoice) => sum + invoice.total, 0);
+
+  // Calculate revenue by month for current year
+  const currentYear = new Date().getFullYear();
+  const revenueByMonth = Array.from({ length: 12 }, (_, i) => ({ month: i + 1, revenue: 0 }));
+  invoices.forEach(invoice => {
+    const date = new Date(invoice.date);
+    if (date.getFullYear() === currentYear && invoice.status === 'paid') {
+      revenueByMonth[date.getMonth()].revenue += invoice.total;
+    }
+  });
+
+  // Calculate invoice status counts
+  let paidInvoices = 0, unpaidInvoices = 0, overdueInvoices = 0;
+  invoices.forEach(invoice => {
+    if (invoice.status === 'paid') paidInvoices++;
+    else if (invoice.status === 'sent') unpaidInvoices++;
+    else if (invoice.status === 'overdue') overdueInvoices++;
+  });
+
   if (isLoadingStats) {
     return <div className="flex justify-center items-center h-64">Loading dashboard...</div>;
   }
 
   // Calculate month names for chart
   const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-  const revenueData = (dashboardStats?.revenueByMonth || []).map(item => ({
+  const revenueData = revenueByMonth.map(item => ({
     name: monthNames[item.month - 1],
     revenue: item.revenue
   }));
 
   // Calculate invoice status distribution for pie chart
-  const totalInvoices = dashboardStats?.paidInvoices + dashboardStats?.unpaidInvoices + dashboardStats?.overdueInvoices;
+  const totalStatusInvoices = paidInvoices + unpaidInvoices + overdueInvoices;
   const invoiceStatusData = [
-    { name: 'Paid', value: dashboardStats?.paidInvoices || 0, color: '#10B981' },
-    { name: 'Unpaid', value: dashboardStats?.unpaidInvoices || 0, color: '#F59E0B' },
-    { name: 'Overdue', value: dashboardStats?.overdueInvoices || 0, color: '#EF4444' },
+    { name: 'Paid', value: paidInvoices, color: '#10B981' },
+    { name: 'Unpaid', value: unpaidInvoices, color: '#F59E0B' },
+    { name: 'Overdue', value: overdueInvoices, color: '#EF4444' },
   ];
 
   // Get recent invoices
@@ -57,7 +74,6 @@ const Dashboard = () => {
     : 0;
 
   // Calculate YTD (Year to Date) revenue
-  const currentYear = new Date().getFullYear();
   const ytdRevenue = invoices
     ? invoices
         .filter(invoice => 
@@ -124,7 +140,7 @@ const Dashboard = () => {
           <CardContent>
             <div className="flex items-center justify-between">
               <div className="text-2xl font-bold">
-                {formatCurrency(dashboardStats?.totalEarnings || 0)}
+                {formatCurrency(totalEarnings)}
               </div>
               <DollarSign className="h-4 w-4 text-muted-foreground" />
             </div>
@@ -166,7 +182,7 @@ const Dashboard = () => {
           <CardContent>
             <div className="flex items-center justify-between">
               <div className="text-2xl font-bold">
-                {dashboardStats?.customerCount || customers?.length || 0}
+                {customerCount}
               </div>
               <Users className="h-4 w-4 text-muted-foreground" />
             </div>
@@ -211,7 +227,7 @@ const Dashboard = () => {
           </CardHeader>
           <CardContent>
             <div className="h-[240px]">
-              {totalInvoices ? (
+              {totalStatusInvoices ? (
                 <ResponsiveContainer width="100%" height="100%">
                   <PieChart>
                     <Pie
