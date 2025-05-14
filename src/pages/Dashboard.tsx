@@ -12,33 +12,50 @@ import { useIsMobile } from '@/hooks/use-mobile';
 const Dashboard = () => {
   const { invoices, isLoadingInvoices, customers, isLoadingCustomers } = useAppContext();
   
-  // Calculate simple stats from invoices and customers
   const isLoadingStats = isLoadingInvoices || isLoadingCustomers;
-  const dashboardStats = {
-    totalInvoices: invoices.length,
-    totalCustomers: customers.length,
-    // Add any other stats you need calculated from the available data
-  };
-  
   const isMobile = useIsMobile();
   
+  // Calculate stats from invoices
+  const totalInvoices = invoices.length;
+  const totalCustomers = customers.length;
+  const customerCount = customers.length;
+  const totalEarnings = invoices.reduce((sum, invoice) => sum + invoice.total, 0);
+
+  // Calculate revenue by month for current year
+  const currentYear = new Date().getFullYear();
+  const revenueByMonth = Array.from({ length: 12 }, (_, i) => ({ month: i + 1, revenue: 0 }));
+  invoices.forEach(invoice => {
+    const date = new Date(invoice.date);
+    if (date.getFullYear() === currentYear && invoice.status === 'paid') {
+      revenueByMonth[date.getMonth()].revenue += invoice.total;
+    }
+  });
+
+  // Calculate invoice status counts
+  let paidInvoices = 0, unpaidInvoices = 0, overdueInvoices = 0;
+  invoices.forEach(invoice => {
+    if (invoice.status === 'paid') paidInvoices++;
+    else if (invoice.status === 'sent') unpaidInvoices++;
+    else if (invoice.status === 'overdue') overdueInvoices++;
+  });
+
   if (isLoadingStats) {
     return <div className="flex justify-center items-center h-64">Loading dashboard...</div>;
   }
 
   // Calculate month names for chart
   const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-  const revenueData = (dashboardStats?.revenueByMonth || []).map(item => ({
+  const revenueData = revenueByMonth.map(item => ({
     name: monthNames[item.month - 1],
     revenue: item.revenue
   }));
 
   // Calculate invoice status distribution for pie chart
-  const totalInvoices = dashboardStats?.paidInvoices + dashboardStats?.unpaidInvoices + dashboardStats?.overdueInvoices;
+  const totalStatusInvoices = paidInvoices + unpaidInvoices + overdueInvoices;
   const invoiceStatusData = [
-    { name: 'Paid', value: dashboardStats?.paidInvoices || 0, color: '#10B981' },
-    { name: 'Unpaid', value: dashboardStats?.unpaidInvoices || 0, color: '#F59E0B' },
-    { name: 'Overdue', value: dashboardStats?.overdueInvoices || 0, color: '#EF4444' },
+    { name: 'Paid', value: paidInvoices, color: '#10B981' },
+    { name: 'Unpaid', value: unpaidInvoices, color: '#F59E0B' },
+    { name: 'Overdue', value: overdueInvoices, color: '#EF4444' },
   ];
 
   // Get recent invoices
@@ -57,7 +74,6 @@ const Dashboard = () => {
     : 0;
 
   // Calculate YTD (Year to Date) revenue
-  const currentYear = new Date().getFullYear();
   const ytdRevenue = invoices
     ? invoices
         .filter(invoice => 
@@ -95,6 +111,58 @@ const Dashboard = () => {
     return null;
   };
   
+  // --- New Analytics Widgets ---
+  // 1. Status breakdown
+  const statusBreakdown = [
+    { label: 'Draft', value: invoices.filter(i => i.status === 'draft').length, color: 'bg-gray-200 text-gray-800' },
+    { label: 'Sent', value: invoices.filter(i => i.status === 'sent').length, color: 'bg-blue-100 text-blue-800' },
+    { label: 'Paid', value: invoices.filter(i => i.status === 'paid').length, color: 'bg-green-100 text-green-800' },
+    { label: 'Overdue', value: invoices.filter(i => i.status === 'overdue').length, color: 'bg-red-100 text-red-800' },
+  ];
+
+  // 2. Average days to payment (for paid invoices)
+  // If no paid invoices or missing dates, show N/A
+  const paidWithDates = invoices.filter(i => i.status === 'paid' && i.date && i.updatedAt);
+  const avgDaysToPayment = paidWithDates.length > 0
+    ? Math.round(
+        paidWithDates.reduce((sum, i) => {
+          const paidDate = new Date(i.updatedAt).getTime();
+          const issueDate = new Date(i.date).getTime();
+          if (isNaN(paidDate) || isNaN(issueDate)) return sum;
+          return sum + ((paidDate - issueDate) / (1000 * 60 * 60 * 24));
+        }, 0) / paidWithDates.length
+      )
+    : null;
+
+  // 3. Top 5 customers by total paid amount
+  const customerPaidMap = {};
+  invoices.forEach(i => {
+    if (i.status === 'paid') {
+      const key = i.customer?.name || i.customerId;
+      customerPaidMap[key] = (customerPaidMap[key] || 0) + i.total;
+    }
+  });
+  const topCustomers = Object.entries(customerPaidMap)
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, 5);
+
+  // 4. Most overdue invoices (top 5 by overdue days)
+  const now = new Date();
+  const mostOverdueInvoices = invoices
+    .filter(i => i.status === 'overdue' && i.dueDate)
+    .map(i => {
+      const dueTime = Number(new Date(i.dueDate).getTime());
+      const nowTime = Number(now.getTime());
+      let overdueDays: number = 0;
+      if (Number.isFinite(dueTime) && Number.isFinite(nowTime)) {
+        const diff = (nowTime - dueTime) / (1000 * 60 * 60 * 24);
+        overdueDays = Number.isFinite(diff) ? Math.trunc(Math.max(0, diff)) : 0;
+      }
+      return { ...i, overdueDays };
+    })
+    .sort((a, b) => b.overdueDays - a.overdueDays)
+    .slice(0, 5);
+
   return (
     <div className="space-y-6">
       {isMobile ? (
@@ -124,7 +192,7 @@ const Dashboard = () => {
           <CardContent>
             <div className="flex items-center justify-between">
               <div className="text-2xl font-bold">
-                {formatCurrency(dashboardStats?.totalEarnings || 0)}
+                {formatCurrency(totalEarnings)}
               </div>
               <DollarSign className="h-4 w-4 text-muted-foreground" />
             </div>
@@ -166,7 +234,7 @@ const Dashboard = () => {
           <CardContent>
             <div className="flex items-center justify-between">
               <div className="text-2xl font-bold">
-                {dashboardStats?.customerCount || customers?.length || 0}
+                {customerCount}
               </div>
               <Users className="h-4 w-4 text-muted-foreground" />
             </div>
@@ -211,7 +279,7 @@ const Dashboard = () => {
           </CardHeader>
           <CardContent>
             <div className="h-[240px]">
-              {totalInvoices ? (
+              {totalStatusInvoices ? (
                 <ResponsiveContainer width="100%" height="100%">
                   <PieChart>
                     <Pie
@@ -310,6 +378,76 @@ const Dashboard = () => {
               <div className="py-4 text-center text-muted-foreground">
                 No pending invoices
               </div>
+            )}
+          </CardContent>
+        </Card>
+      </div>
+      
+      {/* --- New Analytics Row --- */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+        {/* Status Breakdown */}
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm font-medium text-muted-foreground">Invoice Status Breakdown</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="flex flex-wrap gap-2">
+              {statusBreakdown.map(s => (
+                <span key={s.label} className={`px-3 py-1 rounded-full text-xs font-semibold ${s.color}`}>
+                  {s.label}: {s.value}
+                </span>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+        {/* Average Days to Payment */}
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm font-medium text-muted-foreground">Avg. Days to Payment</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">
+              {avgDaysToPayment !== null ? `${avgDaysToPayment} days` : <span className="text-muted-foreground">N/A</span>}
+            </div>
+          </CardContent>
+        </Card>
+        {/* Top Customers by Paid Amount */}
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm font-medium text-muted-foreground">Top Customers (Paid)</CardTitle>
+          </CardHeader>
+          <CardContent>
+            {topCustomers.length > 0 ? (
+              <ul className="space-y-1">
+                {topCustomers.map(([name, amt]) => (
+                  <li key={name} className="flex justify-between">
+                    <span className="truncate max-w-[120px]" title={name}>{name}</span>
+                    <span className="font-mono">{formatCurrency(typeof amt === 'number' ? amt : 0)}</span>
+                  </li>
+                ))}
+              </ul>
+            ) : (
+              <span className="text-muted-foreground">No paid invoices</span>
+            )}
+          </CardContent>
+        </Card>
+        {/* Most Overdue Invoices */}
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm font-medium text-muted-foreground">Most Overdue Invoices</CardTitle>
+          </CardHeader>
+          <CardContent>
+            {mostOverdueInvoices.length > 0 ? (
+              <ul className="space-y-1">
+                {mostOverdueInvoices.map(i => (
+                  <li key={i.id} className="flex justify-between">
+                    <span className="truncate max-w-[100px]" title={i.invoiceNumber}>{i.invoiceNumber}</span>
+                    <span className="text-red-700 font-semibold">{i.overdueDays} days</span>
+                  </li>
+                ))}
+              </ul>
+            ) : (
+              <span className="text-muted-foreground">No overdue invoices</span>
             )}
           </CardContent>
         </Card>

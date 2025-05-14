@@ -1,4 +1,3 @@
-
 import React, { lazy, Suspense } from "react";
 import { Navigate, Route, Routes } from "react-router-dom";
 import { AppLayout } from "@/components/layout/AppLayout";
@@ -14,6 +13,7 @@ const Settings = lazy(() => import("@/pages/Settings"));
 const NotFound = lazy(() => import("@/pages/NotFound"));
 const Login = lazy(() => import("@/pages/Login"));
 const Signup = lazy(() => import("@/pages/Signup"));
+const InvoiceViewPage = lazy(() => import("@/pages/InvoiceViewPage"));
 
 // Loading component
 const LoadingScreen = () => (
@@ -34,6 +34,7 @@ const AppRoutes = () => {
           <Route path="invoices" element={<Invoices />} />
           <Route path="invoices/new" element={<CreateInvoice />} />
           <Route path="invoices/:id/edit" element={<EditInvoice />} />
+          <Route path="invoices/:id" element={<InvoiceViewPage />} />
           <Route path="customers" element={<Customers />} />
           <Route path="items" element={<Items />} />
           <Route path="settings" element={<Settings />} />

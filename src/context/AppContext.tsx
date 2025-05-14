@@ -33,6 +33,8 @@ interface AppContextType {
   createItemCategory: (category: Omit<ItemCategory, "id" | "createdAt" | "updatedAt">) => Promise<ItemCategory>;
   updateItemCategory: (id: string, category: Partial<Omit<ItemCategory, "id" | "createdAt" | "updatedAt">>) => Promise<ItemCategory>;
   deleteItemCategory: (id: string) => Promise<void>;
+  getNextInvoiceNumber: () => Promise<string>;
+  updateInvoiceStatus: (id: string, status: Invoice['status']) => Promise<Invoice>;
 }
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
@@ -473,6 +475,30 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     }
   };
 
+  const getNextInvoiceNumber = async () => {
+    return await invoiceService.getNextInvoiceNumber();
+  };
+
+  const updateInvoiceStatus = async (id: string, status: Invoice['status']) => {
+    try {
+      const updatedInvoice = await invoiceService.updateInvoiceStatus(id, status);
+      setInvoices(invoices.map(i => i.id === id ? updatedInvoice : i));
+      toast({
+        title: 'Success',
+        description: 'Invoice status updated successfully.',
+      });
+      return updatedInvoice;
+    } catch (error) {
+      console.error('Error updating invoice status:', error);
+      toast({
+        title: 'Error',
+        description: 'Failed to update invoice status. Please try again.',
+        variant: 'destructive',
+      });
+      throw error;
+    }
+  };
+
   return (
     <AppContext.Provider value={{
       customers,
@@ -503,7 +529,9 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       isLoadingItemCategories,
       createItemCategory,
       updateItemCategory,
-      deleteItemCategory
+      deleteItemCategory,
+      getNextInvoiceNumber,
+      updateInvoiceStatus
     }}>
       {children}
     </AppContext.Provider>
