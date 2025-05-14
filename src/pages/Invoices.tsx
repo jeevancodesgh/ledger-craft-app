@@ -3,15 +3,18 @@ import { useAppContext } from '@/context/AppContext';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { formatCurrency, getStatusColor } from '@/utils/invoiceUtils';
 import { Button } from '@/components/ui/button';
-import { Plus, ChevronRight, Calendar, DollarSign, Edit, Trash2 } from 'lucide-react';
-import { Link } from 'react-router-dom';
+import { Plus, ChevronRight, Calendar, DollarSign, Edit, Trash2, Copy } from 'lucide-react';
+import { Link, useNavigate } from 'react-router-dom';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '@/components/ui/table';
 import { Dialog, DialogContent, DialogHeader, DialogFooter, DialogTitle, DialogDescription, DialogClose, DialogTrigger } from '@/components/ui/dialog';
 import { useState } from 'react';
+import { useToast } from '@/hooks/use-toast';
 
 const Invoices = () => {
-  const { invoices, isLoadingInvoices, deleteInvoice, refreshInvoices } = useAppContext();
+  const { invoices, isLoadingInvoices, deleteInvoice, refreshInvoices, createInvoice, businessProfile, getNextInvoiceNumber } = useAppContext();
+  const { toast } = useToast();
+  const navigate = useNavigate();
   const isMobile = useIsMobile();
 
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
@@ -35,6 +38,27 @@ const Invoices = () => {
       // error toast will come from context
     } finally {
       setDeleting(false);
+    }
+  };
+
+  const handleClone = async (invoice) => {
+    try {
+      const { id, invoiceNumber, createdAt, updatedAt, status, ...rest } = invoice;
+      const newInvoiceNumber = await getNextInvoiceNumber();
+      const clonedInvoice = {
+        ...rest,
+        invoiceNumber: newInvoiceNumber,
+        status: 'draft',
+        date: new Date().toISOString().split('T')[0],
+        dueDate: new Date().toISOString().split('T')[0],
+        items: invoice.items.map(item => ({ ...item, id: undefined })),
+      };
+      const created = await createInvoice(clonedInvoice);
+      toast({ title: 'Invoice cloned', description: 'A new invoice has been created.' });
+      await refreshInvoices();
+      navigate(`/invoices/${created.id}/edit`);
+    } catch (e) {
+      toast({ title: 'Clone failed', description: 'Could not clone invoice.', variant: 'destructive' });
     }
   };
 
@@ -135,6 +159,15 @@ const Invoices = () => {
                   >
                     <Trash2 size={16} />
                   </Button>
+                  <Button
+                    variant="outline"
+                    size="icon"
+                    className="h-8 w-8"
+                    aria-label="Clone invoice"
+                    onClick={() => handleClone(invoice)}
+                  >
+                    <Copy size={16} />
+                  </Button>
                 </CardFooter>
               </Card>
             ))
@@ -198,6 +231,15 @@ const Invoices = () => {
                         </Button>
                         <Button variant="ghost" className="h-8 px-2" asChild>
                           <Link to={`/invoices/${invoice.id}`}>View</Link>
+                        </Button>
+                        <Button
+                          variant="outline"
+                          size="icon"
+                          className="h-8 w-8"
+                          aria-label="Clone invoice"
+                          onClick={() => handleClone(invoice)}
+                        >
+                          <Copy size={16} />
                         </Button>
                       </TableCell>
                     </TableRow>

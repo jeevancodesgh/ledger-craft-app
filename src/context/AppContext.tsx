@@ -33,6 +33,7 @@ interface AppContextType {
   createItemCategory: (category: Omit<ItemCategory, "id" | "createdAt" | "updatedAt">) => Promise<ItemCategory>;
   updateItemCategory: (id: string, category: Partial<Omit<ItemCategory, "id" | "createdAt" | "updatedAt">>) => Promise<ItemCategory>;
   deleteItemCategory: (id: string) => Promise<void>;
+  getNextInvoiceNumber: () => Promise<string>;
 }
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
@@ -473,6 +474,10 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     }
   };
 
+  const getNextInvoiceNumber = async () => {
+    return await invoiceService.getNextInvoiceNumber();
+  };
+
   return (
     <AppContext.Provider value={{
       customers,
@@ -503,7 +508,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       isLoadingItemCategories,
       createItemCategory,
       updateItemCategory,
-      deleteItemCategory
+      deleteItemCategory,
+      getNextInvoiceNumber
     }}>
       {children}
     </AppContext.Provider>

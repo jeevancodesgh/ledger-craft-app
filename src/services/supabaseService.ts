@@ -618,6 +618,60 @@ export const invoiceService = {
       console.error('Error deleting line item:', error);
       throw error;
     }
+  },
+
+  async getNextInvoiceNumber(): Promise<string> {
+    // Get business profile
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user?.id) throw new Error('No authenticated user');
+    const { data: profile, error: profileError } = await supabase
+      .from('business_profiles')
+      .select('*')
+      .eq('user_id', user.id)
+      .limit(1)
+      .maybeSingle();
+    if (profileError) throw profileError;
+    if (!profile) throw new Error('Business profile not found');
+    const format = profile.invoice_number_format || 'INV-{YYYY}-{MM}-{SEQ}';
+
+    // Fetch the latest invoice for this user
+    const { data: lastInvoice, error: invoiceError } = await supabase
+      .from('invoices')
+      .select('invoice_number, created_at')
+      .eq('user_id', user.id)
+      .order('created_at', { ascending: false })
+      .limit(1)
+      .maybeSingle();
+    if (invoiceError) throw invoiceError;
+
+    // Extract last sequence
+    let lastSeq = 0;
+    if (lastInvoice && lastInvoice.invoice_number) {
+      // Try to extract the last sequence from the invoice number
+      const match = lastInvoice.invoice_number.match(/(\d{3,})$/);
+      if (match) {
+        lastSeq = parseInt(match[1], 10);
+      }
+    }
+    const nextSeq = lastSeq + 1;
+
+    // Format the new invoice number
+    const currentDate = new Date();
+    const year = currentDate.getFullYear();
+    const month = String(currentDate.getMonth() + 1).padStart(2, '0');
+    const seq = String(nextSeq).padStart(4, '0');
+    let invoiceNumber = format
+      .replace('{YYYY}', year.toString())
+      .replace('{MM}', month)
+      .replace('{SEQ}', seq);
+
+    // Optionally update the business profile's sequence (if you want to keep it in sync)
+    await supabase
+      .from('business_profiles')
+      .update({ invoice_number_sequence: nextSeq })
+      .eq('user_id', user.id);
+
+    return invoiceNumber;
   }
 };
 
