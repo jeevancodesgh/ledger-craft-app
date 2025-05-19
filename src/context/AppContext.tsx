@@ -17,6 +17,7 @@ interface AppContextType {
   updateInvoice: (invoice: Invoice) => Promise<Invoice>;
   deleteInvoice: (id: string) => Promise<void>;
   refreshInvoices: () => Promise<void>;
+  refreshCustomers: () => Promise<void>;
   businessProfile: BusinessProfile | null;
   isLoadingBusinessProfile: boolean;
   saveBusinessProfile: (profile: Omit<BusinessProfile, "id" | "createdAt" | "updatedAt">) => Promise<BusinessProfile>;
@@ -499,6 +500,10 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     }
   };
 
+  const refreshCustomers = async () => {
+    await fetchCustomers();
+  };
+
   return (
     <AppContext.Provider value={{
       customers,
@@ -514,6 +519,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       updateInvoice,
       deleteInvoice,
       refreshInvoices,
+      refreshCustomers,
       businessProfile,
       isLoadingBusinessProfile,
       saveBusinessProfile,
