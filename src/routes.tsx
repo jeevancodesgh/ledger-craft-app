@@ -17,6 +17,7 @@ const Signup = lazy(() => import("@/pages/Signup"));
 const InvoiceViewPage = lazy(() => import("@/pages/InvoiceViewPage"));
 const PublicInvoice = lazy(() => import("@/pages/PublicInvoice"));
 const AccountsPage = lazy(() => import("@/pages/Accounts"));
+const Categories = lazy(() => import("@/pages/Categories"));
 // Loading component
 const LoadingScreen = () => (
   <div className="flex h-screen w-screen items-center justify-center">
@@ -41,6 +42,7 @@ const AppRoutes = () => {
           <Route path="items" element={<Items />} />
           <Route path="settings" element={<Settings />} />
           <Route path="accounts" element={<AccountsPage />} />
+          <Route path="categories" element={<Categories />} />
         </Route>
         
         <Route path="*" element={<NotFound />} />

@@ -21,6 +21,7 @@ import Items from "./pages/Items";
 import InvoiceViewPage from "./pages/InvoiceViewPage";
 import Accounts from "./pages/Accounts";
 import PublicInvoice from "./pages/PublicInvoice";
+import Categories from "./pages/Categories";
 
 const queryClient = new QueryClient();
 
@@ -70,6 +71,11 @@ const App = () => (
                 <Route path="/items" element={
                   <ProtectedRoute>
                     <AppLayout><Items /></AppLayout>
+                  </ProtectedRoute>
+                } />
+                <Route path="/categories" element={
+                  <ProtectedRoute>
+                    <AppLayout><Categories /></AppLayout>
                   </ProtectedRoute>
                 } />
                 <Route path="/accounts" element={

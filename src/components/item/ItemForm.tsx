@@ -93,7 +93,7 @@ export function ItemForm({ initialData, onSubmit, onCancel, isLoading = false, c
     if (!newCategoryName.trim()) return;
     try {
       setIsAddingCategory(true);
-      const newCategory = await effectiveCreateCategory({ name: newCategoryName } as Omit<ItemCategory, 'id' | 'createdAt' | 'updatedAt'>);
+      const newCategory = await effectiveCreateCategory(newCategoryName);
       setFormData({
         ...formData,
         categoryId: newCategory.id

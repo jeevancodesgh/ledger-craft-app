@@ -160,6 +160,7 @@ export interface SupabaseBusinessProfile {
 export interface ItemCategory {
   id: string;
   name: string;
+  color?: string; // Hex color code for category color
   userId?: string;
   createdAt?: string;
   updatedAt?: string;
