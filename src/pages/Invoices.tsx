@@ -161,7 +161,7 @@ const Invoices = () => {
                       </Select>
                     </div>
                   </div>
-                  <p className="text-sm text-muted-foreground">{invoice.customerId}</p>
+                  <p className="text-sm text-muted-foreground">{invoice.customer?.name || invoice.customerId}</p>
                 </CardHeader>
                 <CardContent className="pt-2 pb-2">
                   <div className="space-y-1">
@@ -255,7 +255,7 @@ const Invoices = () => {
                   invoices.map((invoice) => (
                     <TableRow key={invoice.id}>
                       <TableCell className="font-medium">{invoice.invoiceNumber}</TableCell>
-                      <TableCell>{invoice.customerId}</TableCell>
+                      <TableCell>{invoice.customer?.name || invoice.customerId}</TableCell>
                       <TableCell>{invoice.date}</TableCell>
                       <TableCell>{invoice.dueDate}</TableCell>
                       <TableCell>{formatCurrency(invoice.total)}</TableCell>
