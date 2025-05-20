@@ -26,6 +26,7 @@ export function Sidebar({ collapsed, isMobile, onCloseMobileMenu }: SidebarProps
     { name: 'Settings', path: '/settings', icon: Settings },
     { name: 'Items', path: '/items', icon: FileText },
     { name: 'Accounts', path: '/accounts', icon: FileText },
+    { name: 'Categories', path: '/categories', icon: FileText },
   ];
 
   // Mobile sidebar is a full-screen menu

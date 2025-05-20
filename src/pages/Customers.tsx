@@ -117,6 +117,7 @@ const Customers = () => {
   
   const handleCreateCustomer = async (values: z.infer<typeof customerFormSchema>) => {
     try {
+      console.log("Attempting to create customer with values:", values);
       const newCustomer = {
         name: values.name,
         email: values.email,
@@ -129,7 +130,9 @@ const Customers = () => {
         isVip: values.is_vip
       };
       
+      console.log("Transformed customer data:", newCustomer);
       await customerService.createCustomer(newCustomer);
+      console.log("Customer created successfully");
       
       toast({
         title: 'Success',

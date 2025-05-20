@@ -148,6 +148,13 @@ const CreateInvoice = () => {
     }
   };
 
+  const handleKeyPress = (e: React.KeyboardEvent, nextFieldId: string) => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      document.getElementById(nextFieldId)?.focus();
+    }
+  };
+
   return (
     <>
       <InvoiceForm
@@ -179,14 +186,16 @@ const CreateInvoice = () => {
                   Create a new customer to add to your invoice.
                 </DrawerDescription>
               </DrawerHeader>
-              <form onSubmit={form.handleSubmit(handleAddCustomer)} className="flex-1 overflow-y-auto px-4 space-y-4 mt-2">
+              <form id="add-customer-form" onSubmit={(e) => { console.log("Form submission event triggered."); form.handleSubmit(handleAddCustomer)(e); }} className="flex-1 overflow-y-auto px-4 space-y-4 mt-2">
                 <div className="space-y-2">
                   <Label htmlFor="name">Name *</Label>
                   <Input 
                     id="name" 
                     {...form.register('name')} 
                     placeholder="Customer name"
-                    className="h-12 rounded-md"
+                    className="h-12 rounded-md focus:ring-2 focus:ring-primary"
+                    autoComplete="name"
+                    onKeyPress={(e) => handleKeyPress(e, 'email')}
                   />
                   {form.formState.errors.name && (
                     <p className="text-sm text-red-500">{form.formState.errors.name.message}</p>
@@ -199,7 +208,9 @@ const CreateInvoice = () => {
                     type="email"
                     {...form.register('email')} 
                     placeholder="customer@example.com"
-                    className="h-12 rounded-md"
+                    className="h-12 rounded-md focus:ring-2 focus:ring-primary"
+                    autoComplete="email"
+                    onKeyPress={(e) => handleKeyPress(e, 'phone')}
                   />
                   {form.formState.errors.email && (
                     <p className="text-sm text-red-500">{form.formState.errors.email.message}</p>
@@ -209,9 +220,14 @@ const CreateInvoice = () => {
                   <Label htmlFor="phone">Phone</Label>
                   <Input 
                     id="phone" 
+                    type="tel"
+                    inputMode="tel"
                     {...form.register('phone')} 
                     placeholder="Phone number"
-                    className="h-12 rounded-md"
+                    className="h-12 rounded-md focus:ring-2 focus:ring-primary"
+                    autoComplete="tel"
+                    maxLength={15}
+                    onKeyPress={(e) => handleKeyPress(e, 'address')}
                   />
                 </div>
                 <div className="space-y-2">
@@ -220,7 +236,9 @@ const CreateInvoice = () => {
                     id="address" 
                     {...form.register('address')} 
                     placeholder="Street address"
-                    className="h-12 rounded-md"
+                    className="h-12 rounded-md focus:ring-2 focus:ring-primary"
+                    autoComplete="street-address"
+                    onKeyPress={(e) => handleKeyPress(e, 'city')}
                   />
                 </div>
                 <div className="grid grid-cols-2 gap-3">
@@ -230,7 +248,9 @@ const CreateInvoice = () => {
                       id="city" 
                       {...form.register('city')} 
                       placeholder="City"
-                      className="h-12 rounded-md"
+                      className="h-12 rounded-md focus:ring-2 focus:ring-primary"
+                      autoComplete="address-level2"
+                      onKeyPress={(e) => handleKeyPress(e, 'state')}
                     />
                   </div>
                   <div className="space-y-2">
@@ -239,7 +259,9 @@ const CreateInvoice = () => {
                       id="state" 
                       {...form.register('state')} 
                       placeholder="State"
-                      className="h-12 rounded-md"
+                      className="h-12 rounded-md focus:ring-2 focus:ring-primary"
+                      autoComplete="address-level1"
+                      onKeyPress={(e) => handleKeyPress(e, 'zip')}
                     />
                   </div>
                 </div>
@@ -247,9 +269,14 @@ const CreateInvoice = () => {
                   <Label htmlFor="zip">ZIP Code</Label>
                   <Input 
                     id="zip" 
+                    type="number"
+                    inputMode="numeric"
                     {...form.register('zip')} 
                     placeholder="ZIP code"
-                    className="h-12 rounded-md"
+                    className="h-12 rounded-md focus:ring-2 focus:ring-primary"
+                    autoComplete="postal-code"
+                    maxLength={5}
+                    onKeyPress={(e) => handleKeyPress(e, 'submit-button')}
                   />
                 </div>
                 <input type="hidden" {...form.register('country')} />
@@ -264,11 +291,20 @@ const CreateInvoice = () => {
                   Cancel
                 </Button>
                 <Button 
+                  id="submit-button"
                   type="submit"
                   form="add-customer-form"
-                  className="flex-1 h-12"
+                  className="flex-1 h-12 bg-primary hover:bg-primary/90"
+                  disabled={form.formState.isSubmitting}
                 >
-                  Add Customer
+                  {form.formState.isSubmitting ? (
+                    <div className="flex items-center gap-2">
+                      <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                      <span>Adding...</span>
+                    </div>
+                  ) : (
+                    'Add Customer'
+                  )}
                 </Button>
               </DrawerFooter>
             </div>
@@ -286,14 +322,16 @@ const CreateInvoice = () => {
                 Create a new customer to add to your invoice.
               </DialogDescription>
             </DialogHeader>
-            <form onSubmit={form.handleSubmit(handleAddCustomer)} className="space-y-4 mt-2">
+            <form id="add-customer-form-dialog" onSubmit={(e) => { console.log("Form submission event triggered."); form.handleSubmit(handleAddCustomer)(e); }} className="space-y-4 mt-2">
               <div className="space-y-2">
                 <Label htmlFor="name">Name *</Label>
                 <Input 
                   id="name" 
                   {...form.register('name')} 
                   placeholder="Customer name"
-                  className="h-10 rounded-md"
+                  className="h-10 rounded-md focus:ring-2 focus:ring-primary"
+                  autoComplete="name"
+                  onKeyPress={(e) => handleKeyPress(e, 'email')}
                 />
                 {form.formState.errors.name && (
                   <p className="text-sm text-red-500">{form.formState.errors.name.message}</p>
@@ -306,7 +344,9 @@ const CreateInvoice = () => {
                   type="email"
                   {...form.register('email')} 
                   placeholder="customer@example.com"
-                  className="h-10 rounded-md"
+                  className="h-10 rounded-md focus:ring-2 focus:ring-primary"
+                  autoComplete="email"
+                  onKeyPress={(e) => handleKeyPress(e, 'phone')}
                 />
                 {form.formState.errors.email && (
                   <p className="text-sm text-red-500">{form.formState.errors.email.message}</p>
@@ -316,9 +356,14 @@ const CreateInvoice = () => {
                 <Label htmlFor="phone">Phone</Label>
                 <Input 
                   id="phone" 
+                  type="tel"
+                  inputMode="tel"
                   {...form.register('phone')} 
                   placeholder="Phone number"
-                  className="h-10 rounded-md"
+                  className="h-10 rounded-md focus:ring-2 focus:ring-primary"
+                  autoComplete="tel"
+                  maxLength={15}
+                  onKeyPress={(e) => handleKeyPress(e, 'address')}
                 />
               </div>
               <div className="space-y-2">
@@ -327,7 +372,9 @@ const CreateInvoice = () => {
                   id="address" 
                   {...form.register('address')} 
                   placeholder="Street address"
-                  className="h-10 rounded-md"
+                  className="h-10 rounded-md focus:ring-2 focus:ring-primary"
+                  autoComplete="street-address"
+                  onKeyPress={(e) => handleKeyPress(e, 'city')}
                 />
               </div>
               <div className="grid grid-cols-2 gap-3">
@@ -337,7 +384,9 @@ const CreateInvoice = () => {
                     id="city" 
                     {...form.register('city')} 
                     placeholder="City"
-                    className="h-10 rounded-md"
+                    className="h-10 rounded-md focus:ring-2 focus:ring-primary"
+                    autoComplete="address-level2"
+                    onKeyPress={(e) => handleKeyPress(e, 'state')}
                   />
                 </div>
                 <div className="space-y-2">
@@ -346,7 +395,9 @@ const CreateInvoice = () => {
                     id="state" 
                     {...form.register('state')} 
                     placeholder="State"
-                    className="h-10 rounded-md"
+                    className="h-10 rounded-md focus:ring-2 focus:ring-primary"
+                    autoComplete="address-level1"
+                    onKeyPress={(e) => handleKeyPress(e, 'zip')}
                   />
                 </div>
               </div>
@@ -354,9 +405,14 @@ const CreateInvoice = () => {
                 <Label htmlFor="zip">ZIP Code</Label>
                 <Input 
                   id="zip" 
+                  type="number"
+                  inputMode="numeric"
                   {...form.register('zip')} 
                   placeholder="ZIP code"
-                  className="h-10 rounded-md"
+                  className="h-10 rounded-md focus:ring-2 focus:ring-primary"
+                  autoComplete="postal-code"
+                  maxLength={5}
+                  onKeyPress={(e) => handleKeyPress(e, 'submit-button')}
                 />
               </div>
               <input type="hidden" {...form.register('country')} />
@@ -369,9 +425,20 @@ const CreateInvoice = () => {
                   Cancel
                 </Button>
                 <Button 
+                  id="submit-button"
                   type="submit"
+                  form="add-customer-form-dialog"
+                  className="flex-1 h-12 bg-primary hover:bg-primary/90"
+                  disabled={form.formState.isSubmitting}
                 >
-                  Add Customer
+                  {form.formState.isSubmitting ? (
+                    <div className="flex items-center gap-2">
+                      <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                      <span>Adding...</span>
+                    </div>
+                  ) : (
+                    'Add Customer'
+                  )}
                 </Button>
               </DialogFooter>
             </form>

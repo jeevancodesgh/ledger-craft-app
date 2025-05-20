@@ -34,6 +34,7 @@ interface AppContextType {
   createItemCategory: (category: Omit<ItemCategory, "id" | "createdAt" | "updatedAt">) => Promise<ItemCategory>;
   updateItemCategory: (id: string, category: Partial<Omit<ItemCategory, "id" | "createdAt" | "updatedAt">>) => Promise<ItemCategory>;
   deleteItemCategory: (id: string) => Promise<void>;
+  fetchItemCategories: () => Promise<void>;
   getNextInvoiceNumber: () => Promise<string>;
   updateInvoiceStatus: (id: string, status: Invoice['status']) => Promise<Invoice>;
   accounts: Account[];
@@ -611,6 +612,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       createItemCategory,
       updateItemCategory,
       deleteItemCategory,
+      fetchItemCategories,
       getNextInvoiceNumber,
       updateInvoiceStatus,
       accounts,
