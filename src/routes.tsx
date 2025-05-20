@@ -2,6 +2,7 @@ import React, { lazy, Suspense } from "react";
 import { Navigate, Route, Routes } from "react-router-dom";
 import { AppLayout } from "@/components/layout/AppLayout";
 import { Spinner } from "@/components/ui/spinner";
+//import AccountsPage from './pages/Accounts';
 
 const Dashboard = lazy(() => import("@/pages/Dashboard"));
 const Invoices = lazy(() => import("@/pages/Invoices"));
@@ -15,7 +16,7 @@ const Login = lazy(() => import("@/pages/Login"));
 const Signup = lazy(() => import("@/pages/Signup"));
 const InvoiceViewPage = lazy(() => import("@/pages/InvoiceViewPage"));
 const PublicInvoice = lazy(() => import("@/pages/PublicInvoice"));
-
+const AccountsPage = lazy(() => import("@/pages/Accounts"));
 // Loading component
 const LoadingScreen = () => (
   <div className="flex h-screen w-screen items-center justify-center">
@@ -39,6 +40,7 @@ const AppRoutes = () => {
           <Route path="customers" element={<Customers />} />
           <Route path="items" element={<Items />} />
           <Route path="settings" element={<Settings />} />
+          <Route path="accounts" element={<AccountsPage />} />
         </Route>
         
         <Route path="*" element={<NotFound />} />

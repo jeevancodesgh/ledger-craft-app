@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { NavLink } from 'react-router-dom';
 import { cn } from '@/lib/utils';
@@ -26,6 +25,7 @@ export function Sidebar({ collapsed, isMobile, onCloseMobileMenu }: SidebarProps
     { name: 'Customers', path: '/customers', icon: Users },
     { name: 'Settings', path: '/settings', icon: Settings },
     { name: 'Items', path: '/items', icon: FileText },
+    { name: 'Accounts', path: '/accounts', icon: FileText },
   ];
 
   // Mobile sidebar is a full-screen menu

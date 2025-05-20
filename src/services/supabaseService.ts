@@ -1,7 +1,8 @@
 import { supabase } from '@/integrations/supabase/client';
 import { 
   Customer, Invoice, BusinessProfile, LineItem, ItemCategory, Item,
-  SupabaseCustomer, SupabaseInvoice, SupabaseLineItem, SupabaseBusinessProfile, SupabaseItemCategory, SupabaseItem
+  SupabaseCustomer, SupabaseInvoice, SupabaseLineItem, SupabaseBusinessProfile, SupabaseItemCategory, SupabaseItem,
+  Account, SupabaseAccount, AccountType
 } from '@/types';
 
 const mapSupabaseCustomerToCustomer = (customer: SupabaseCustomer): Customer => ({
@@ -210,6 +211,33 @@ const mapItemToSupabaseItem = async (item: Omit<Item, 'id' | 'createdAt' | 'upda
     enable_purchase_info: item.enablePurchaseInfo,
     unit: item.unit || 'each',
     user_id: item.userId || userId
+  };
+};
+
+const mapSupabaseAccountToAccount = (account: SupabaseAccount): Account => ({
+  id: account.id,
+  name: account.name,
+  type: account.type,
+  currency: account.currency,
+  openingBalance: account.opening_balance,
+  currentBalance: account.current_balance,
+  userId: account.user_id,
+  createdAt: account.created_at,
+  updatedAt: account.updated_at,
+});
+
+const mapAccountToSupabaseAccount = async (
+  account: Omit<Account, 'id' | 'createdAt' | 'updatedAt'>
+): Promise<Omit<SupabaseAccount, 'id' | 'created_at' | 'updated_at'>> => {
+  const { data: { user } } = await supabase.auth.getUser();
+  const userId = user?.id || '';
+  return {
+    name: account.name,
+    type: account.type,
+    currency: account.currency,
+    opening_balance: account.openingBalance,
+    current_balance: account.currentBalance,
+    user_id: account.userId || userId,
   };
 };
 
@@ -1016,4 +1044,82 @@ export const dashboardService = {
       revenueByMonth: monthlyRevenue
     };
   }
+};
+
+export const accountService = {
+  async getAccounts(): Promise<Account[]> {
+    const { data, error } = await supabase
+      .from('accounts')
+      .select('*')
+      .order('name');
+    if (error) {
+      console.error('Error fetching accounts:', error);
+      throw error;
+    }
+    return (data as SupabaseAccount[]).map(mapSupabaseAccountToAccount) || [];
+  },
+
+  async getAccount(id: string): Promise<Account | null> {
+    const { data, error } = await supabase
+      .from('accounts')
+      .select('*')
+      .eq('id', id)
+      .single();
+    if (error) {
+      console.error('Error fetching account:', error);
+      throw error;
+    }
+    return data ? mapSupabaseAccountToAccount(data as SupabaseAccount) : null;
+  },
+
+  async createAccount(account: Omit<Account, 'id' | 'createdAt' | 'updatedAt'>): Promise<Account> {
+    const supabaseAccount = await mapAccountToSupabaseAccount(account);
+    const { data, error } = await supabase
+      .from('accounts')
+      .insert([supabaseAccount])
+      .select()
+      .single();
+    if (error) {
+      console.error('Error creating account:', error);
+      throw error;
+    }
+    return mapSupabaseAccountToAccount(data as SupabaseAccount);
+  },
+
+  async updateAccount(id: string, account: Partial<Omit<Account, 'id' | 'createdAt' | 'updatedAt'>>): Promise<Account> {
+    const existingAccount = await this.getAccount(id);
+    if (!existingAccount) {
+      throw new Error(`Account with id ${id} not found`);
+    }
+    const mergedAccount = {
+      ...existingAccount,
+      ...account,
+      id: undefined,
+      createdAt: undefined,
+      updatedAt: undefined,
+    };
+    const supabaseAccount = await mapAccountToSupabaseAccount(mergedAccount as Omit<Account, 'id' | 'createdAt' | 'updatedAt'>);
+    const { data, error } = await supabase
+      .from('accounts')
+      .update(supabaseAccount)
+      .eq('id', id)
+      .select()
+      .single();
+    if (error) {
+      console.error('Error updating account:', error);
+      throw error;
+    }
+    return mapSupabaseAccountToAccount(data as SupabaseAccount);
+  },
+
+  async deleteAccount(id: string): Promise<void> {
+    const { error } = await supabase
+      .from('accounts')
+      .delete()
+      .eq('id', id);
+    if (error) {
+      console.error('Error deleting account:', error);
+      throw error;
+    }
+  },
 };

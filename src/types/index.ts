@@ -207,3 +207,30 @@ export interface SupabaseItem {
   created_at: string;
   updated_at: string;
 }
+
+// Account types
+export type AccountType = 'bank' | 'cash' | 'credit_card' | 'loan' | 'custom';
+
+export interface Account {
+  id: string;
+  name: string;
+  type: AccountType;
+  currency: string;
+  openingBalance: number;
+  currentBalance: number;
+  userId?: string;
+  createdAt?: string;
+  updatedAt?: string;
+}
+
+export interface SupabaseAccount {
+  id: string;
+  name: string;
+  type: AccountType;
+  currency: string;
+  opening_balance: number;
+  current_balance: number;
+  user_id: string;
+  created_at: string;
+  updated_at: string;
+}
