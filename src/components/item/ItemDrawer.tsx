@@ -65,11 +65,11 @@ const ItemDrawer: React.FC<ItemDrawerProps> = ({
               onCreateCategory={onCreateCategory}
             />
           </div>
-          <DrawerFooter className="sticky bottom-0 bg-background z-10 border-t">
-            <Button variant="outline" type="button" onClick={handleClose} disabled={isLoading}>
+          <DrawerFooter className="sticky bottom-0 bg-background z-10 border-t flex flex-row gap-2 p-4">
+            <Button variant="outline" type="button" onClick={handleClose} disabled={isLoading} className="flex-1 h-12">
               Cancel
             </Button>
-            <Button type="submit" form="item-form" disabled={isLoading}>
+            <Button type="submit" form="item-form" disabled={isLoading} className="flex-1 h-12">
               {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
               Save
             </Button>
