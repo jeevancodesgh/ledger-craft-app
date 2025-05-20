@@ -669,6 +669,37 @@ const InvoiceForm: React.FC<InvoiceFormProps> = ({
                         </FormItem>
                       )}
                     />
+                    {/* Customer Info Card */}
+                    {selectedCustomer && (
+                      <Card className="col-span-1 md:col-span-2 bg-muted/50 border border-muted-foreground/10 mt-2">
+                        <CardContent className="py-3 flex flex-col gap-1">
+                          <div className="font-semibold text-base flex items-center gap-2">
+                            <UserPlus className="w-4 h-4 text-primary" />
+                            {selectedCustomer.name}
+                          </div>
+                          <div className="text-sm text-muted-foreground flex items-center gap-2">
+                            <span className="font-medium">Email:</span> {selectedCustomer.email}
+                          </div>
+                          {selectedCustomer.phone && (
+                            <div className="text-sm text-muted-foreground flex items-center gap-2">
+                              <span className="font-medium">Phone:</span> {selectedCustomer.phone}
+                            </div>
+                          )}
+                          {(selectedCustomer.address || selectedCustomer.city || selectedCustomer.state || selectedCustomer.zip || selectedCustomer.country) && (
+                            <div className="text-sm text-muted-foreground flex items-center gap-2">
+                              <span className="font-medium">Address:</span>
+                              <span>
+                                {selectedCustomer.address ? selectedCustomer.address + ', ' : ''}
+                                {selectedCustomer.city ? selectedCustomer.city + ', ' : ''}
+                                {selectedCustomer.state ? selectedCustomer.state + ', ' : ''}
+                                {selectedCustomer.zip ? selectedCustomer.zip + ', ' : ''}
+                                {selectedCustomer.country}
+                              </span>
+                            </div>
+                          )}
+                        </CardContent>
+                      </Card>
+                    )}
                     <FormField
                       control={form.control}
                       name="currency"
