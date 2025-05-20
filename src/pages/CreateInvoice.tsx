@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAppContext } from '@/context/AppContext';
@@ -22,6 +21,14 @@ import { useToast } from '@/hooks/use-toast';
 import { Customer } from '@/types';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { UserPlus } from 'lucide-react';
+import { 
+  Drawer,
+  DrawerContent,
+  DrawerHeader,
+  DrawerTitle,
+  DrawerDescription,
+  DrawerFooter
+} from "@/components/ui/drawer";
 
 const customerSchema = z.object({
   name: z.string().min(1, 'Name is required'),
@@ -158,110 +165,219 @@ const CreateInvoice = () => {
         availableItems={items}
       />
 
-      <Dialog open={addCustomerOpen} onOpenChange={setAddCustomerOpen}>
-        <DialogContent className={`${isMobile ? 'w-[95%] max-w-full p-4' : 'sm:max-w-[475px]'} bg-white`}>
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              <UserPlus size={20} className="text-primary" />
-              Add New Customer
-            </DialogTitle>
-            <DialogDescription>
-              Create a new customer to add to your invoice.
-            </DialogDescription>
-          </DialogHeader>
-          <form onSubmit={form.handleSubmit(handleAddCustomer)} className="space-y-4 mt-2">
-            <div className="space-y-2">
-              <Label htmlFor="name">Name *</Label>
-              <Input 
-                id="name" 
-                {...form.register('name')} 
-                placeholder="Customer name"
-                className={`${isMobile ? 'h-12' : 'h-10'} rounded-md`}
-              />
-              {form.formState.errors.name && (
-                <p className="text-sm text-red-500">{form.formState.errors.name.message}</p>
-              )}
+      {/* Add New Customer: Drawer for mobile, Dialog for desktop */}
+      {isMobile ? (
+        <Drawer open={addCustomerOpen} onOpenChange={setAddCustomerOpen}>
+          <DrawerContent className="max-h-[92vh] sm:max-h-[85vh] h-full flex flex-col">
+            <div className="mx-auto w-full max-w-2xl flex flex-col flex-1 h-full">
+              <DrawerHeader>
+                <DrawerTitle className="flex items-center gap-2">
+                  <UserPlus size={20} className="text-primary" />
+                  Add New Customer
+                </DrawerTitle>
+                <DrawerDescription>
+                  Create a new customer to add to your invoice.
+                </DrawerDescription>
+              </DrawerHeader>
+              <form onSubmit={form.handleSubmit(handleAddCustomer)} className="flex-1 overflow-y-auto px-4 space-y-4 mt-2">
+                <div className="space-y-2">
+                  <Label htmlFor="name">Name *</Label>
+                  <Input 
+                    id="name" 
+                    {...form.register('name')} 
+                    placeholder="Customer name"
+                    className="h-12 rounded-md"
+                  />
+                  {form.formState.errors.name && (
+                    <p className="text-sm text-red-500">{form.formState.errors.name.message}</p>
+                  )}
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="email">Email *</Label>
+                  <Input 
+                    id="email" 
+                    type="email"
+                    {...form.register('email')} 
+                    placeholder="customer@example.com"
+                    className="h-12 rounded-md"
+                  />
+                  {form.formState.errors.email && (
+                    <p className="text-sm text-red-500">{form.formState.errors.email.message}</p>
+                  )}
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="phone">Phone</Label>
+                  <Input 
+                    id="phone" 
+                    {...form.register('phone')} 
+                    placeholder="Phone number"
+                    className="h-12 rounded-md"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="address">Address</Label>
+                  <Input 
+                    id="address" 
+                    {...form.register('address')} 
+                    placeholder="Street address"
+                    className="h-12 rounded-md"
+                  />
+                </div>
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="space-y-2">
+                    <Label htmlFor="city">City</Label>
+                    <Input 
+                      id="city" 
+                      {...form.register('city')} 
+                      placeholder="City"
+                      className="h-12 rounded-md"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="state">State</Label>
+                    <Input 
+                      id="state" 
+                      {...form.register('state')} 
+                      placeholder="State"
+                      className="h-12 rounded-md"
+                    />
+                  </div>
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="zip">ZIP Code</Label>
+                  <Input 
+                    id="zip" 
+                    {...form.register('zip')} 
+                    placeholder="ZIP code"
+                    className="h-12 rounded-md"
+                  />
+                </div>
+                <input type="hidden" {...form.register('country')} />
+              </form>
+              <DrawerFooter className="sticky bottom-0 bg-background z-10 border-t flex flex-row gap-2 p-4">
+                <Button 
+                  type="button" 
+                  variant="outline" 
+                  onClick={() => setAddCustomerOpen(false)}
+                  className="flex-1 h-12"
+                >
+                  Cancel
+                </Button>
+                <Button 
+                  type="submit"
+                  form="add-customer-form"
+                  className="flex-1 h-12"
+                >
+                  Add Customer
+                </Button>
+              </DrawerFooter>
             </div>
-            <div className="space-y-2">
-              <Label htmlFor="email">Email *</Label>
-              <Input 
-                id="email" 
-                type="email"
-                {...form.register('email')} 
-                placeholder="customer@example.com"
-                className={`${isMobile ? 'h-12' : 'h-10'} rounded-md`}
-              />
-              {form.formState.errors.email && (
-                <p className="text-sm text-red-500">{form.formState.errors.email.message}</p>
-              )}
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="phone">Phone</Label>
-              <Input 
-                id="phone" 
-                {...form.register('phone')} 
-                placeholder="Phone number"
-                className={`${isMobile ? 'h-12' : 'h-10'} rounded-md`}
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="address">Address</Label>
-              <Input 
-                id="address" 
-                {...form.register('address')} 
-                placeholder="Street address"
-                className={`${isMobile ? 'h-12' : 'h-10'} rounded-md`}
-              />
-            </div>
-            <div className="grid grid-cols-2 gap-3">
+          </DrawerContent>
+        </Drawer>
+      ) : (
+        <Dialog open={addCustomerOpen} onOpenChange={setAddCustomerOpen}>
+          <DialogContent className="sm:max-w-[475px] bg-white">
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2">
+                <UserPlus size={20} className="text-primary" />
+                Add New Customer
+              </DialogTitle>
+              <DialogDescription>
+                Create a new customer to add to your invoice.
+              </DialogDescription>
+            </DialogHeader>
+            <form onSubmit={form.handleSubmit(handleAddCustomer)} className="space-y-4 mt-2">
               <div className="space-y-2">
-                <Label htmlFor="city">City</Label>
+                <Label htmlFor="name">Name *</Label>
                 <Input 
-                  id="city" 
-                  {...form.register('city')} 
-                  placeholder="City"
-                  className={`${isMobile ? 'h-12' : 'h-10'} rounded-md`}
+                  id="name" 
+                  {...form.register('name')} 
+                  placeholder="Customer name"
+                  className="h-10 rounded-md"
+                />
+                {form.formState.errors.name && (
+                  <p className="text-sm text-red-500">{form.formState.errors.name.message}</p>
+                )}
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="email">Email *</Label>
+                <Input 
+                  id="email" 
+                  type="email"
+                  {...form.register('email')} 
+                  placeholder="customer@example.com"
+                  className="h-10 rounded-md"
+                />
+                {form.formState.errors.email && (
+                  <p className="text-sm text-red-500">{form.formState.errors.email.message}</p>
+                )}
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="phone">Phone</Label>
+                <Input 
+                  id="phone" 
+                  {...form.register('phone')} 
+                  placeholder="Phone number"
+                  className="h-10 rounded-md"
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="state">State</Label>
+                <Label htmlFor="address">Address</Label>
                 <Input 
-                  id="state" 
-                  {...form.register('state')} 
-                  placeholder="State"
-                  className={`${isMobile ? 'h-12' : 'h-10'} rounded-md`}
+                  id="address" 
+                  {...form.register('address')} 
+                  placeholder="Street address"
+                  className="h-10 rounded-md"
                 />
               </div>
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="zip">ZIP Code</Label>
-              <Input 
-                id="zip" 
-                {...form.register('zip')} 
-                placeholder="ZIP code"
-                className={`${isMobile ? 'h-12' : 'h-10'} rounded-md`}
-              />
-            </div>
-            <input type="hidden" {...form.register('country')} />
-            <DialogFooter className={`${isMobile ? 'flex-col gap-3 mt-4' : 'gap-2'}`}>
-              <Button 
-                type="button" 
-                variant="outline" 
-                onClick={() => setAddCustomerOpen(false)}
-                className={`${isMobile ? 'w-full h-12' : ''}`}
-              >
-                Cancel
-              </Button>
-              <Button 
-                type="submit"
-                className={`${isMobile ? 'w-full h-12' : ''}`}
-              >
-                Add Customer
-              </Button>
-            </DialogFooter>
-          </form>
-        </DialogContent>
-      </Dialog>
+              <div className="grid grid-cols-2 gap-3">
+                <div className="space-y-2">
+                  <Label htmlFor="city">City</Label>
+                  <Input 
+                    id="city" 
+                    {...form.register('city')} 
+                    placeholder="City"
+                    className="h-10 rounded-md"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="state">State</Label>
+                  <Input 
+                    id="state" 
+                    {...form.register('state')} 
+                    placeholder="State"
+                    className="h-10 rounded-md"
+                  />
+                </div>
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="zip">ZIP Code</Label>
+                <Input 
+                  id="zip" 
+                  {...form.register('zip')} 
+                  placeholder="ZIP code"
+                  className="h-10 rounded-md"
+                />
+              </div>
+              <input type="hidden" {...form.register('country')} />
+              <DialogFooter className="gap-2 mt-4 justify-end flex-row">
+                <Button 
+                  type="button" 
+                  variant="outline" 
+                  onClick={() => setAddCustomerOpen(false)}
+                >
+                  Cancel
+                </Button>
+                <Button 
+                  type="submit"
+                >
+                  Add Customer
+                </Button>
+              </DialogFooter>
+            </form>
+          </DialogContent>
+        </Dialog>
+      )}
     </>
   );
 };

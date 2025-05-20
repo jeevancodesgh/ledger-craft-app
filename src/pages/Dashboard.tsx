@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { useAppContext } from '@/context/AppContext';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { formatCurrency } from '@/utils/invoiceUtils';
@@ -10,7 +10,12 @@ import { Link } from 'react-router-dom';
 import { useIsMobile } from '@/hooks/use-mobile';
 
 const Dashboard = () => {
-  const { invoices, isLoadingInvoices, customers, isLoadingCustomers } = useAppContext();
+  const { invoices, isLoadingInvoices, customers, isLoadingCustomers, refreshInvoices, refreshCustomers } = useAppContext();
+  
+  useEffect(() => {
+    refreshInvoices();
+    refreshCustomers();
+  }, []);
   
   const isLoadingStats = isLoadingInvoices || isLoadingCustomers;
   const isMobile = useIsMobile();
@@ -135,11 +140,11 @@ const Dashboard = () => {
     : null;
 
   // 3. Top 5 customers by total paid amount
-  const customerPaidMap = {};
+  const customerPaidMap: Record<string, number> = {};
   invoices.forEach(i => {
     if (i.status === 'paid') {
       const key = i.customer?.name || i.customerId;
-      customerPaidMap[key] = (customerPaidMap[key] || 0) + i.total;
+      customerPaidMap[key] = (customerPaidMap[key] || 0) + Number(i.total);
     }
   });
   const topCustomers = Object.entries(customerPaidMap)

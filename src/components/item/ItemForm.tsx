@@ -27,6 +27,8 @@ interface ItemFormProps {
   onCreateCategory?: (name: string) => Promise<ItemCategory>;
 }
 
+export type ItemFormValues = Item;
+
 export function ItemForm({ initialData, onSubmit, onCancel, isLoading = false, categories, onCreateCategory }: ItemFormProps) {
   const { itemCategories, createItemCategory } = useAppContext();
   const { toast } = useToast();

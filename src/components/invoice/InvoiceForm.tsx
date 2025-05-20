@@ -540,7 +540,7 @@ const InvoiceForm: React.FC<InvoiceFormProps> = ({
   };
 
   return (
-    <div className="space-y-4 pb-20 px-0 -mx-4 sm:mx-0 sm:px-0">
+    <div className="space-y-4 pb-28 px-0 -mx-4 sm:mx-0 sm:px-0">
       <div className="flex justify-between items-center px-4 sm:px-0">
         <div className="flex items-center gap-2">
           <Button
@@ -558,7 +558,7 @@ const InvoiceForm: React.FC<InvoiceFormProps> = ({
       </div>
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-        <TabsList className="grid w-full grid-cols-2 mb-4 mx-4 sm:mx-0">
+        <TabsList className="grid w-full grid-cols-2 mb-4 mx-4 sm:mx-0 sticky top-0 z-40 bg-background border-b sm:static sm:border-0 sm:bg-transparent">
           <TabsTrigger value="edit" className="flex items-center gap-2">
             <Edit size={16} />
             <span>Edit</span>
@@ -819,7 +819,7 @@ const InvoiceForm: React.FC<InvoiceFormProps> = ({
                       )}
                     />
                   </div>
-                  <div className="space-y-4">
+                  <div className="space-y-4 pb-4">
                     <Collapsible
                       open={isLineItemsOpen}
                       onOpenChange={setIsLineItemsOpen}
@@ -1016,7 +1016,7 @@ const InvoiceForm: React.FC<InvoiceFormProps> = ({
                     </Collapsible>
                   </div>
 
-                  <div className="pt-4 flex gap-2 justify-end">
+                  {/* <div className="pt-4 flex gap-2 justify-end">
                     <Button type="button" variant="outline" onClick={onCancel}>
                       Cancel
                     </Button>
@@ -1024,8 +1024,18 @@ const InvoiceForm: React.FC<InvoiceFormProps> = ({
                       <Save size={16} />
                       <span>{mode === "create" ? "Create Invoice" : "Save Changes"}</span>
                     </Button>
-                  </div>
+                  </div> */}
                 </form>
+                {/* Sticky action buttons for mobile */}
+                <div className="fixed bottom-0 left-0 w-full z-50 bg-background border-t p-4 flex gap-2 sm:static sm:p-0 sm:border-0 sm:bg-transparent">
+                  <Button type="button" variant="outline" onClick={onCancel} className="flex-1">
+                    Cancel
+                  </Button>
+                  <Button type="submit" className="gap-2 flex-1">
+                    <Save size={16} />
+                    <span>{mode === "create" ? "Create Invoice" : "Save Changes"}</span>
+                  </Button>
+                </div>
               </Form>
             </CardContent>
           </Card>
