@@ -1,4 +1,3 @@
-
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -21,6 +20,7 @@ import ProtectedRoute from "./components/auth/ProtectedRoute";
 import Items from "./pages/Items";
 import InvoiceViewPage from "./pages/InvoiceViewPage";
 import Accounts from "./pages/Accounts";
+import PublicInvoice from "./pages/PublicInvoice";
 
 const queryClient = new QueryClient();
 
@@ -61,6 +61,7 @@ const App = () => (
                     <AppLayout><InvoiceViewPage /></AppLayout>
                   </ProtectedRoute>
                 } />
+                <Route path="/public/invoice/:id" element={<PublicInvoice />} />
                 <Route path="/customers" element={
                   <ProtectedRoute>
                     <AppLayout><Customers /></AppLayout>
