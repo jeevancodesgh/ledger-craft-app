@@ -3,7 +3,7 @@ import { useAppContext } from '@/context/AppContext';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { formatCurrency, getStatusColor } from '@/utils/invoiceUtils';
 import { Button } from '@/components/ui/button';
-import { Plus, ChevronRight, Calendar, DollarSign, Edit, Trash2, Copy, Loader2 } from 'lucide-react';
+import { Plus, ChevronRight, Calendar, DollarSign, Edit, Trash2, Copy, Loader2, Share2 } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '@/components/ui/table';
@@ -142,7 +142,12 @@ const Invoices = () => {
               <Card key={invoice.id} className="overflow-hidden">
                 <CardHeader className="pb-2">
                   <div className="flex justify-between items-start">
-                    <CardTitle className="text-lg">{invoice.invoiceNumber}</CardTitle>
+                    <CardTitle
+                      className="text-lg cursor-pointer hover:underline"
+                      onClick={() => navigate(`/invoices/${invoice.id}/edit`)}
+                    >
+                      {invoice.invoiceNumber}
+                    </CardTitle>
                     <div className="flex items-center gap-2">
                       <Select
                         value={invoice.status}
@@ -161,15 +166,26 @@ const Invoices = () => {
                       </Select>
                     </div>
                   </div>
-                  <p className="text-sm text-muted-foreground">{invoice.customerId}</p>
+                  <p
+                    className="text-sm text-muted-foreground cursor-pointer hover:underline"
+                    onClick={() => navigate(`/invoices/${invoice.id}/edit`)}
+                  >
+                    {invoice.customer?.name || invoice.customerId}
+                  </p>
                 </CardHeader>
                 <CardContent className="pt-2 pb-2">
                   <div className="space-y-1">
-                    <div className="flex items-center text-sm">
+                    <div
+                      className="flex items-center text-sm cursor-pointer hover:underline"
+                      onClick={() => navigate(`/invoices/${invoice.id}/edit`)}
+                    >
                       <Calendar className="w-4 h-4 mr-2" />
                       <span className="font-medium mr-1">Due:</span> {invoice.dueDate}
                     </div>
-                    <div className="flex items-center text-sm">
+                    <div
+                      className="flex items-center text-sm cursor-pointer hover:underline"
+                      onClick={() => navigate(`/invoices/${invoice.id}/edit`)}
+                    >
                       <DollarSign className="w-4 h-4 mr-2" />
                       <span className="font-medium mr-1">Amount:</span> {formatCurrency(invoice.total)}
                     </div>
@@ -211,6 +227,19 @@ const Invoices = () => {
                   >
                     <Copy size={16} />
                   </Button>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-8 w-8"
+                    aria-label="Share invoice"
+                    onClick={() => {
+                      const url = `${window.location.origin}/public/invoice/${invoice.id}`;
+                      navigator.clipboard.writeText(url);
+                      toast({ title: 'Share link copied', description: 'Public invoice link copied to clipboard.' });
+                    }}
+                  >
+                    <Share2 size={16} />
+                  </Button>
                 </CardFooter>
               </Card>
             ))
@@ -242,7 +271,7 @@ const Invoices = () => {
                   invoices.map((invoice) => (
                     <TableRow key={invoice.id}>
                       <TableCell className="font-medium">{invoice.invoiceNumber}</TableCell>
-                      <TableCell>{invoice.customerId}</TableCell>
+                      <TableCell>{invoice.customer?.name || invoice.customerId}</TableCell>
                       <TableCell>{invoice.date}</TableCell>
                       <TableCell>{invoice.dueDate}</TableCell>
                       <TableCell>{formatCurrency(invoice.total)}</TableCell>
@@ -297,6 +326,19 @@ const Invoices = () => {
                           onClick={() => handleClone(invoice)}
                         >
                           <Copy size={16} />
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-8 w-8"
+                          aria-label="Share invoice"
+                          onClick={() => {
+                            const url = `${window.location.origin}/public/invoice/${invoice.id}`;
+                            navigator.clipboard.writeText(url);
+                            toast({ title: 'Share link copied', description: 'Public invoice link copied to clipboard.' });
+                          }}
+                        >
+                          <Share2 size={16} />
                         </Button>
                       </TableCell>
                     </TableRow>

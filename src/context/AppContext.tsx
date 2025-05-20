@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useState, useEffect } from "react";
-import { customerService, invoiceService, businessProfileService, itemService, itemCategoryService } from "@/services/supabaseService";
-import { Customer, Invoice, BusinessProfile, Item, ItemCategory } from "@/types";
+import { customerService, invoiceService, businessProfileService, itemService, itemCategoryService, accountService } from "@/services/supabaseService";
+import { Customer, Invoice, BusinessProfile, Item, ItemCategory, Account } from "@/types";
 import { useToast } from "@/hooks/use-toast";
 
 interface AppContextType {
@@ -36,6 +36,13 @@ interface AppContextType {
   deleteItemCategory: (id: string) => Promise<void>;
   getNextInvoiceNumber: () => Promise<string>;
   updateInvoiceStatus: (id: string, status: Invoice['status']) => Promise<Invoice>;
+  accounts: Account[];
+  isLoadingAccounts: boolean;
+  getAccount: (id: string) => Promise<Account | null>;
+  createAccount: (account: Omit<Account, "id" | "createdAt" | "updatedAt">) => Promise<Account>;
+  updateAccount: (id: string, account: Partial<Omit<Account, "id" | "createdAt" | "updatedAt">>) => Promise<Account>;
+  deleteAccount: (id: string) => Promise<void>;
+  refreshAccounts: () => Promise<void>;
 }
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
@@ -51,6 +58,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const [isLoadingItems, setIsLoadingItems] = useState(true);
   const [itemCategories, setItemCategories] = useState<ItemCategory[]>([]);
   const [isLoadingItemCategories, setIsLoadingItemCategories] = useState(true);
+  const [accounts, setAccounts] = useState<Account[]>([]);
+  const [isLoadingAccounts, setIsLoadingAccounts] = useState(true);
   const { toast } = useToast();
 
   useEffect(() => {
@@ -59,6 +68,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     fetchBusinessProfile();
     fetchItems();
     fetchItemCategories();
+    fetchAccounts();
   }, []);
 
   const fetchCustomers = async () => {
@@ -504,6 +514,71 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     await fetchCustomers();
   };
 
+  const fetchAccounts = async () => {
+    try {
+      setIsLoadingAccounts(true);
+      const data = await accountService.getAccounts();
+      setAccounts(data);
+    } catch (error) {
+      console.error("Error loading accounts:", error);
+      toast({
+        title: "Error",
+        description: "Failed to load accounts. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoadingAccounts(false);
+    }
+  };
+
+  const getAccount = async (id: string) => {
+    try {
+      return await accountService.getAccount(id);
+    } catch (error) {
+      toast({ title: "Error", description: "Failed to load account.", variant: "destructive" });
+      return null;
+    }
+  };
+
+  const createAccount = async (account: Omit<Account, "id" | "createdAt" | "updatedAt">) => {
+    try {
+      const newAccount = await accountService.createAccount(account);
+      setAccounts([...accounts, newAccount]);
+      toast({ title: "Success", description: "Account created." });
+      return newAccount;
+    } catch (error) {
+      toast({ title: "Error", description: "Failed to create account.", variant: "destructive" });
+      throw error;
+    }
+  };
+
+  const updateAccount = async (id: string, account: Partial<Omit<Account, "id" | "createdAt" | "updatedAt">>) => {
+    try {
+      const updated = await accountService.updateAccount(id, account);
+      setAccounts(accounts.map(a => a.id === id ? updated : a));
+      toast({ title: "Success", description: "Account updated." });
+      return updated;
+    } catch (error) {
+      toast({ title: "Error", description: "Failed to update account.", variant: "destructive" });
+      throw error;
+    }
+  };
+
+  const deleteAccount = async (id: string) => {
+    try {
+      await accountService.deleteAccount(id);
+      setAccounts(accounts.filter(a => a.id !== id));
+      toast({ title: "Success", description: "Account deleted." });
+    } catch (error) {
+      toast({ title: "Error", description: "Failed to delete account.", variant: "destructive" });
+      throw error;
+    }
+  };
+
+  const refreshAccounts = async () => {
+    await fetchAccounts();
+  };
+
   return (
     <AppContext.Provider value={{
       customers,
@@ -537,7 +612,14 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       updateItemCategory,
       deleteItemCategory,
       getNextInvoiceNumber,
-      updateInvoiceStatus
+      updateInvoiceStatus,
+      accounts,
+      isLoadingAccounts,
+      getAccount,
+      createAccount,
+      updateAccount,
+      deleteAccount,
+      refreshAccounts
     }}>
       {children}
     </AppContext.Provider>

@@ -55,6 +55,7 @@ import InvoicePreview from "./preview/InvoicePreview";
 import ItemSelector from "./ItemSelector";
 import ItemDrawer from "../item/ItemDrawer";
 import { ItemFormValues } from "../item/ItemForm";
+import { Switch } from "@/components/ui/switch";
 
 // Import template components
 import ClassicTemplate from "./preview/templates/ClassicTemplate";
@@ -138,6 +139,10 @@ const InvoiceForm: React.FC<InvoiceFormProps> = ({
   
   // Item management state
   const [isItemDrawerOpen, setIsItemDrawerOpen] = useState(false);
+  const [isTaxEnabled, setIsTaxEnabled] = useState(false);
+  const [taxRate, setTaxRate] = useState(0);
+  const [isAdditionalChargesEnabled, setIsAdditionalChargesEnabled] = useState(false);
+  const [isDiscountEnabled, setIsDiscountEnabled] = useState(false);
 
   const form = useForm<InvoiceFormValues>({
     resolver: zodResolver(invoiceFormSchema),
@@ -220,15 +225,23 @@ const InvoiceForm: React.FC<InvoiceFormProps> = ({
   };
 
   useEffect(() => {
+    if (!isTaxEnabled) setTaxRate(0);
+    if (!isAdditionalChargesEnabled) setAdditionalCharges(0);
+    if (!isDiscountEnabled) setDiscount(0);
+  }, [isTaxEnabled, isAdditionalChargesEnabled, isDiscountEnabled]);
+
+  useEffect(() => {
     const newSubtotal = items.reduce((sum, item) => sum + (Number(item.total) || 0), 0);
     setSubtotal(newSubtotal);
-    const newTaxAmount = items.reduce((sum, item) => {
-      const taxRate = item.tax || 0;
-      return sum + (Number(item.rate) * Number(item.quantity) * taxRate) / 100;
-    }, 0);
+    let newTaxAmount = 0;
+    if (isTaxEnabled && taxRate > 0) {
+      newTaxAmount = (newSubtotal * taxRate) / 100;
+    }
     setTaxAmount(newTaxAmount);
-    setTotal(newSubtotal + newTaxAmount + Number(additionalCharges) - Number(discount));
-  }, [items, additionalCharges, discount]);
+    const addCharges = isAdditionalChargesEnabled ? Number(additionalCharges) : 0;
+    const disc = isDiscountEnabled ? Number(discount) : 0;
+    setTotal(newSubtotal + newTaxAmount + addCharges - disc);
+  }, [items, additionalCharges, discount, isTaxEnabled, taxRate, isAdditionalChargesEnabled, isDiscountEnabled]);
 
   const updateItem = (idx: number, field: keyof LineItem, value: any) => {
     const updated = [...items];
@@ -669,6 +682,37 @@ const InvoiceForm: React.FC<InvoiceFormProps> = ({
                         </FormItem>
                       )}
                     />
+                    {/* Customer Info Card */}
+                    {selectedCustomer && (
+                      <Card className="col-span-1 md:col-span-2 bg-muted/50 border border-muted-foreground/10 mt-2">
+                        <CardContent className="py-3 flex flex-col gap-1">
+                          <div className="font-semibold text-base flex items-center gap-2">
+                            <UserPlus className="w-4 h-4 text-primary" />
+                            {selectedCustomer.name}
+                          </div>
+                          <div className="text-sm text-muted-foreground flex items-center gap-2">
+                            <span className="font-medium">Email:</span> {selectedCustomer.email}
+                          </div>
+                          {selectedCustomer.phone && (
+                            <div className="text-sm text-muted-foreground flex items-center gap-2">
+                              <span className="font-medium">Phone:</span> {selectedCustomer.phone}
+                            </div>
+                          )}
+                          {(selectedCustomer.address || selectedCustomer.city || selectedCustomer.state || selectedCustomer.zip || selectedCustomer.country) && (
+                            <div className="text-sm text-muted-foreground flex items-center gap-2">
+                              <span className="font-medium">Address:</span>
+                              <span>
+                                {selectedCustomer.address ? selectedCustomer.address + ', ' : ''}
+                                {selectedCustomer.city ? selectedCustomer.city + ', ' : ''}
+                                {selectedCustomer.state ? selectedCustomer.state + ', ' : ''}
+                                {selectedCustomer.zip ? selectedCustomer.zip + ', ' : ''}
+                                {selectedCustomer.country}
+                              </span>
+                            </div>
+                          )}
+                        </CardContent>
+                      </Card>
+                    )}
                     <FormField
                       control={form.control}
                       name="currency"
@@ -776,48 +820,64 @@ const InvoiceForm: React.FC<InvoiceFormProps> = ({
                     />
                   </div>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <FormField
-                      control={form.control}
-                      name="additionalCharges"
-                      render={() => (
-                        <FormItem>
-                          <FormLabel>Additional Charges</FormLabel>
-                          <FormControl>
-                            <Input
-                              type="number"
-                              min={0}
-                              step="0.01"
-                              value={additionalCharges}
-                              onChange={handleAdditionalChargesChange}
-                              placeholder="e.g. shipping, handling"
-                              className="w-full"
-                            />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
+                    <div className="flex items-center gap-2 mt-2">
+                      <Switch
+                        checked={isAdditionalChargesEnabled}
+                        onCheckedChange={setIsAdditionalChargesEnabled}
+                        id="additional-charges-toggle"
+                      />
+                      <label htmlFor="additional-charges-toggle" className="text-sm font-medium">Enable Additional Charges</label>
+                      {isAdditionalChargesEnabled && (
+                        <Input
+                          type="number"
+                          min={0}
+                          step="0.01"
+                          value={additionalCharges}
+                          onChange={handleAdditionalChargesChange}
+                          placeholder="e.g. shipping, handling"
+                          className="w-32 ml-2"
+                        />
                       )}
-                    />
-                    <FormField
-                      control={form.control}
-                      name="discount"
-                      render={() => (
-                        <FormItem>
-                          <FormLabel>Discount</FormLabel>
-                          <FormControl>
-                            <Input
-                              type="number"
-                              min={0}
-                              step="0.01"
-                              value={discount}
-                              onChange={handleDiscountChange}
-                              placeholder="Any deduction"
-                              className="w-full"
-                            />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
+                    </div>
+                    <div className="flex items-center gap-2 mt-2">
+                      <Switch
+                        checked={isDiscountEnabled}
+                        onCheckedChange={setIsDiscountEnabled}
+                        id="discount-toggle"
+                      />
+                      <label htmlFor="discount-toggle" className="text-sm font-medium">Enable Discount</label>
+                      {isDiscountEnabled && (
+                        <Input
+                          type="number"
+                          min={0}
+                          step="0.01"
+                          value={discount}
+                          onChange={handleDiscountChange}
+                          placeholder="Any deduction"
+                          className="w-32 ml-2"
+                        />
                       )}
-                    />
+                    </div>
+                    <div className="flex items-center gap-2 mt-2">
+                      <Switch
+                        checked={isTaxEnabled}
+                        onCheckedChange={setIsTaxEnabled}
+                        id="tax-toggle"
+                      />
+                      <label htmlFor="tax-toggle" className="text-sm font-medium">Enable Tax</label>
+                      {isTaxEnabled && (
+                        <Input
+                          type="number"
+                          min={0}
+                          max={100}
+                          step={0.01}
+                          value={taxRate}
+                          onChange={e => setTaxRate(Number(e.target.value))}
+                          placeholder="Tax %"
+                          className="w-24 ml-2"
+                        />
+                      )}
+                    </div>
                   </div>
                   <div className="space-y-4 pb-4">
                     <Collapsible
@@ -995,18 +1055,24 @@ const InvoiceForm: React.FC<InvoiceFormProps> = ({
                             <span className="font-medium">Subtotal</span>
                             <span>{formatCurrency(subtotal, form.getValues('currency'))}</span>
                           </div>
-                          <div className="flex justify-between">
-                            <span className="font-medium">Tax</span>
-                            <span>{formatCurrency(taxAmount, form.getValues('currency'))}</span>
-                          </div>
-                          <div className="flex justify-between">
-                            <span className="font-medium">Additional Charges</span>
-                            <span>{formatCurrency(Number(additionalCharges), form.getValues('currency'))}</span>
-                          </div>
-                          <div className="flex justify-between">
-                            <span className="font-medium">Discount</span>
-                            <span>-{formatCurrency(Number(discount), form.getValues('currency'))}</span>
-                          </div>
+                          {isTaxEnabled && (
+                            <div className="flex justify-between">
+                              <span className="font-medium">Tax ({taxRate}%)</span>
+                              <span>{formatCurrency(taxAmount, form.getValues('currency'))}</span>
+                            </div>
+                          )}
+                          {isAdditionalChargesEnabled && (
+                            <div className="flex justify-between">
+                              <span className="font-medium">Additional Charges</span>
+                              <span>{formatCurrency(Number(additionalCharges), form.getValues('currency'))}</span>
+                            </div>
+                          )}
+                          {isDiscountEnabled && (
+                            <div className="flex justify-between">
+                              <span className="font-medium">Discount</span>
+                              <span>-{formatCurrency(Number(discount), form.getValues('currency'))}</span>
+                            </div>
+                          )}
                           <div className="flex justify-between border-t pt-1">
                             <span className="font-bold">Total</span>
                             <span className="font-bold">{formatCurrency(total, form.getValues('currency'))}</span>

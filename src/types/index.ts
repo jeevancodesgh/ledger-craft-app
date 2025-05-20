@@ -74,6 +74,7 @@ export interface Invoice {
   userId?: string; // Added for Supabase compatibility
   createdAt?: string;
   updatedAt?: string;
+  public_viewed_at?: string | null;
 }
 
 // Helper interfaces for Supabase compatibility
@@ -112,6 +113,7 @@ export interface SupabaseInvoice {
   user_id: string;
   created_at: string;
   updated_at: string;
+  public_viewed_at: string | null;
   customers?: {
     name: string;
     email: string;
@@ -201,6 +203,33 @@ export interface SupabaseItem {
   enable_sale_info: boolean;
   enable_purchase_info: boolean;
   unit: string;
+  user_id: string;
+  created_at: string;
+  updated_at: string;
+}
+
+// Account types
+export type AccountType = 'bank' | 'cash' | 'credit_card' | 'loan' | 'custom';
+
+export interface Account {
+  id: string;
+  name: string;
+  type: AccountType;
+  currency: string;
+  openingBalance: number;
+  currentBalance: number;
+  userId?: string;
+  createdAt?: string;
+  updatedAt?: string;
+}
+
+export interface SupabaseAccount {
+  id: string;
+  name: string;
+  type: AccountType;
+  currency: string;
+  opening_balance: number;
+  current_balance: number;
   user_id: string;
   created_at: string;
   updated_at: string;
