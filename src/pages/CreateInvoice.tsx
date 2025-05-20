@@ -179,7 +179,7 @@ const CreateInvoice = () => {
                   Create a new customer to add to your invoice.
                 </DrawerDescription>
               </DrawerHeader>
-              <form onSubmit={form.handleSubmit(handleAddCustomer)} className="flex-1 overflow-y-auto px-4 space-y-4 mt-2">
+              <form id="add-customer-form" onSubmit={(e) => { console.log("Form submission event triggered."); form.handleSubmit(handleAddCustomer)(e); }} className="flex-1 overflow-y-auto px-4 space-y-4 mt-2">
                 <div className="space-y-2">
                   <Label htmlFor="name">Name *</Label>
                   <Input 
@@ -286,7 +286,7 @@ const CreateInvoice = () => {
                 Create a new customer to add to your invoice.
               </DialogDescription>
             </DialogHeader>
-            <form onSubmit={form.handleSubmit(handleAddCustomer)} className="space-y-4 mt-2">
+            <form id="add-customer-form-dialog" onSubmit={(e) => { console.log("Form submission event triggered."); form.handleSubmit(handleAddCustomer)(e); }} className="space-y-4 mt-2">
               <div className="space-y-2">
                 <Label htmlFor="name">Name *</Label>
                 <Input 
@@ -370,6 +370,8 @@ const CreateInvoice = () => {
                 </Button>
                 <Button 
                   type="submit"
+                  form="add-customer-form-dialog"
+                  className="flex-1 h-12"
                 >
                   Add Customer
                 </Button>
