@@ -20,6 +20,7 @@ import Signup from "./pages/Signup";
 import ProtectedRoute from "./components/auth/ProtectedRoute";
 import Items from "./pages/Items";
 import InvoiceViewPage from "./pages/InvoiceViewPage";
+import Accounts from "./pages/Accounts";
 
 const queryClient = new QueryClient();
 
@@ -68,6 +69,11 @@ const App = () => (
                 <Route path="/items" element={
                   <ProtectedRoute>
                     <AppLayout><Items /></AppLayout>
+                  </ProtectedRoute>
+                } />
+                <Route path="/accounts" element={
+                  <ProtectedRoute>
+                    <AppLayout><Accounts /></AppLayout>
                   </ProtectedRoute>
                 } />
                 <Route path="/settings" element={
