@@ -41,7 +41,7 @@ export function AppLayout({
         </Drawer>
         
         <main className="flex-1 overflow-auto p-4 bg-secondary/20">
-          <div className="container mx-auto">
+          <div className="container mx-auto px-0">
             {children}
           </div>
         </main>
