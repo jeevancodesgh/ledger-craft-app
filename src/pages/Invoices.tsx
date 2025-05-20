@@ -3,7 +3,7 @@ import { useAppContext } from '@/context/AppContext';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { formatCurrency, getStatusColor } from '@/utils/invoiceUtils';
 import { Button } from '@/components/ui/button';
-import { Plus, ChevronRight, Calendar, DollarSign, Edit, Trash2, Copy, Loader2 } from 'lucide-react';
+import { Plus, ChevronRight, Calendar, DollarSign, Edit, Trash2, Copy, Loader2, Share2 } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '@/components/ui/table';
@@ -211,6 +211,19 @@ const Invoices = () => {
                   >
                     <Copy size={16} />
                   </Button>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-8 w-8"
+                    aria-label="Share invoice"
+                    onClick={() => {
+                      const url = `${window.location.origin}/public/invoice/${invoice.id}`;
+                      navigator.clipboard.writeText(url);
+                      toast({ title: 'Share link copied', description: 'Public invoice link copied to clipboard.' });
+                    }}
+                  >
+                    <Share2 size={16} />
+                  </Button>
                 </CardFooter>
               </Card>
             ))
@@ -297,6 +310,19 @@ const Invoices = () => {
                           onClick={() => handleClone(invoice)}
                         >
                           <Copy size={16} />
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-8 w-8"
+                          aria-label="Share invoice"
+                          onClick={() => {
+                            const url = `${window.location.origin}/public/invoice/${invoice.id}`;
+                            navigator.clipboard.writeText(url);
+                            toast({ title: 'Share link copied', description: 'Public invoice link copied to clipboard.' });
+                          }}
+                        >
+                          <Share2 size={16} />
                         </Button>
                       </TableCell>
                     </TableRow>

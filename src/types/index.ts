@@ -74,6 +74,7 @@ export interface Invoice {
   userId?: string; // Added for Supabase compatibility
   createdAt?: string;
   updatedAt?: string;
+  public_viewed_at?: string | null;
 }
 
 // Helper interfaces for Supabase compatibility
@@ -112,6 +113,7 @@ export interface SupabaseInvoice {
   user_id: string;
   created_at: string;
   updated_at: string;
+  public_viewed_at: string | null;
   customers?: {
     name: string;
     email: string;

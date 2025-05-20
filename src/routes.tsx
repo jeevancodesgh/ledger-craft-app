@@ -14,6 +14,7 @@ const NotFound = lazy(() => import("@/pages/NotFound"));
 const Login = lazy(() => import("@/pages/Login"));
 const Signup = lazy(() => import("@/pages/Signup"));
 const InvoiceViewPage = lazy(() => import("@/pages/InvoiceViewPage"));
+const PublicInvoice = lazy(() => import("@/pages/PublicInvoice"));
 
 // Loading component
 const LoadingScreen = () => (
@@ -41,6 +42,7 @@ const AppRoutes = () => {
         </Route>
         
         <Route path="*" element={<NotFound />} />
+        <Route path="public/invoice/:invoiceId" element={<PublicInvoice />} />
       </Routes>
     </Suspense>
   );
