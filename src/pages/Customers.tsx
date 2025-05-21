@@ -32,13 +32,13 @@ import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '@
 
 const customerFormSchema = z.object({
   name: z.string().min(2, { message: 'Name must be at least 2 characters' }),
-  email: z.string().email({ message: 'Please enter a valid email' }).optional(),
+  email: z.string().email().optional(),
   phone: z.string().optional(),
   address: z.string().optional(),
   city: z.string().optional(),
   state: z.string().optional(),
   zip: z.string().optional(),
-  country: z.string().default('USA'),
+  country: z.string().default('New Zealand'),
   is_vip: z.boolean().default(false)
 });
 
@@ -120,7 +120,7 @@ const Customers = () => {
       console.log("Attempting to create customer with values:", values);
       const newCustomer = {
         name: values.name,
-        email: values.email,
+        email: values.email || null,
         phone: values.phone || null,
         address: values.address || null,
         city: values.city || null,
@@ -157,7 +157,7 @@ const Customers = () => {
     try {
       const updatedCustomer = {
         name: values.name,
-        email: values.email,
+        email: values.email || null,
         phone: values.phone || null,
         address: values.address || null,
         city: values.city || null,
