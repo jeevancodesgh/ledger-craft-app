@@ -32,7 +32,7 @@ import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '@
 
 const customerFormSchema = z.object({
   name: z.string().min(2, { message: 'Name must be at least 2 characters' }),
-  email: z.string().email({ message: 'Please enter a valid email' }),
+  email: z.string().email({ message: 'Please enter a valid email' }).optional(),
   phone: z.string().optional(),
   address: z.string().optional(),
   city: z.string().optional(),
