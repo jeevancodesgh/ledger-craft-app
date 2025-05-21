@@ -63,6 +63,7 @@ import ModernTemplate from "./preview/templates/ModernTemplate";
 import MinimalTemplate from "./preview/templates/MinimalTemplate";
 import ExecutiveTemplate from "./preview/templates/ExecutiveTemplate";
 import CorporateTemplate from "./preview/templates/CorporateTemplate";
+import { itemService } from "@/services/supabaseService";
 
 type InvoiceFormMode = "create" | "edit";
 interface InvoiceFormProps {
@@ -143,6 +144,7 @@ const InvoiceForm: React.FC<InvoiceFormProps> = ({
   const [taxRate, setTaxRate] = useState(0);
   const [isAdditionalChargesEnabled, setIsAdditionalChargesEnabled] = useState(false);
   const [isDiscountEnabled, setIsDiscountEnabled] = useState(false);
+  const [refetchItemsTrigger, setRefetchItemsTrigger] = useState(0);
 
   const form = useForm<InvoiceFormValues>({
     resolver: zodResolver(invoiceFormSchema),
@@ -166,6 +168,10 @@ const InvoiceForm: React.FC<InvoiceFormProps> = ({
       discount: initialValues?.discount ?? 0,
     }
   });
+
+  const triggerItemsRefetch = () => {
+    setRefetchItemsTrigger(prev => prev + 1);
+  };
 
   useEffect(() => {
     form.setValue("invoiceNumber", invoiceNumber);
@@ -375,14 +381,25 @@ const InvoiceForm: React.FC<InvoiceFormProps> = ({
 
   // Handle saving a new item
   const handleSaveNewItem = async (values: ItemFormValues) => {
-    // This would typically call an API or service to save the item
-    toast({
-      title: "Not Implemented",
-      description: "Creating items from invoice form is not implemented yet.",
-      variant: "default"
-    });
-    
-    setIsItemDrawerOpen(false);
+    try {
+      // Assuming values from ItemFormValues are compatible with Item type needed for createItem
+      const newItem = await itemService.createItem(values);
+      toast({
+        title: "Item created successfully",
+        description: `${newItem.name} has been added to your items.`,
+      });
+      // TODO: Refresh items list in AppContext if it's not automatically updated
+      // For now, relying on AppContext to refetch items after creation
+      setIsItemDrawerOpen(false);
+      triggerItemsRefetch();
+    } catch (error) {
+      console.error('Error creating item:', error);
+      toast({
+        title: "Error",
+        description: "Failed to create item. Please try again.",
+        variant: "destructive",
+      });
+    }
   };
 
   const renderLineItemDrawer = () => {
@@ -400,10 +417,10 @@ const InvoiceForm: React.FC<InvoiceFormProps> = ({
           <div className="flex flex-col space-y-2">
             <div className="mb-3">
               <ItemSelector
-                items={availableItems || []}
                 onItemSelect={(item) => handleItemSelect(item, currentItemIndex)}
                 onCreateNewItem={handleCreateNewItem}
                 buttonClassName="w-full justify-start"
+                refetch={triggerItemsRefetch}
               />
             </div>
 
@@ -493,6 +510,7 @@ const InvoiceForm: React.FC<InvoiceFormProps> = ({
   };
 
   const localOnSubmit = async (values: InvoiceFormValues) => {
+    console.log("localOnSubmit called in InvoiceForm");
     await onSubmit(
       values,
       items,
@@ -948,24 +966,22 @@ const InvoiceForm: React.FC<InvoiceFormProps> = ({
                                   <tr key={item.id} className="border-b last:border-b-0">
                                     <td className="py-2 pr-2">
                                       <div className="flex flex-col space-y-1">
-                                        <div className="relative">
+                                        <div className="flex items-center relative w-full">
                                           <Input
                                             value={item.description}
                                             onChange={e => updateItem(index, "description", e.target.value)}
                                             placeholder="Item description"
-                                            className="w-full pr-8"
+                                            className="w-full"
                                           />
-                                          {availableItems && availableItems.length > 0 && (
-                                            <div className="absolute right-2 top-1/2 -translate-y-1/2">
-                                              <ItemSelector
-                                                items={availableItems}
-                                                onItemSelect={(selectedItem) => handleItemSelect(selectedItem, index)}
-                                                onCreateNewItem={handleCreateNewItem}
-                                                buttonClassName="h-6 w-6 p-0"
-                                                iconOnly
-                                              />
-                                            </div>
-                                          )}
+                                          <div className="absolute right-2 top-1/2 -translate-y-1/2">
+                                            <ItemSelector
+                                              onItemSelect={(selectedItem) => handleItemSelect(selectedItem, index)}
+                                              onCreateNewItem={handleCreateNewItem}
+                                              buttonClassName="h-6 w-6 p-0"
+                                              iconOnly
+                                              refetch={triggerItemsRefetch}
+                                            />
+                                          </div>
                                         </div>
                                       </div>
                                     </td>
@@ -1091,9 +1107,7 @@ const InvoiceForm: React.FC<InvoiceFormProps> = ({
                       <span>{mode === "create" ? "Create Invoice" : "Save Changes"}</span>
                     </Button>
                   </div> */}
-                </form>
-                {/* Sticky action buttons for mobile */}
-                <div className="fixed bottom-0 left-0 w-full z-50 bg-background border-t p-4 flex gap-2 sm:static sm:p-0 sm:border-0 sm:bg-transparent">
+                   <div className="fixed bottom-0 left-0 w-full z-50 bg-background border-t p-4 flex gap-2 sm:static sm:p-0 sm:border-0 sm:bg-transparent">
                   <Button type="button" variant="outline" onClick={onCancel} className="flex-1">
                     Cancel
                   </Button>
@@ -1102,6 +1116,9 @@ const InvoiceForm: React.FC<InvoiceFormProps> = ({
                     <span>{mode === "create" ? "Create Invoice" : "Save Changes"}</span>
                   </Button>
                 </div>
+                </form>
+                {/* Sticky action buttons for mobile */}
+               
               </Form>
             </CardContent>
           </Card>
