@@ -729,7 +729,7 @@ const InvoiceForm: React.FC<InvoiceFormProps> = ({
                               </SelectTrigger>
                             </FormControl>
                             <SelectContent position="popper" className="min-w-[var(--radix-select-trigger-width)]">
-                              <SelectItem value="USD">USD ($)</SelectItem>
+                              <SelectItem value="NZD">NZD ($)</SelectItem>
                               <SelectItem value="EUR">EUR (€)</SelectItem>
                               <SelectItem value="GBP">GBP (£)</SelectItem>
                               <SelectItem value="CAD">CAD (C$)</SelectItem>
