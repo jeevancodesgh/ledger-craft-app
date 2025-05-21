@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAppContext } from '@/context/AppContext';
 import InvoiceForm from "@/components/invoice/InvoiceForm";
@@ -32,7 +32,7 @@ import {
 
 const customerSchema = z.object({
   name: z.string().min(1, 'Name is required'),
-  email: z.string().email('Valid email is required'),
+  email: z.string().email().or(z.literal('')).optional(),
   address: z.string().optional(),
   city: z.string().optional(),
   state: z.string().optional(),
@@ -49,7 +49,7 @@ const CreateInvoice = () => {
     businessProfile, 
     createCustomer, 
     items, 
-    isLoadingItems 
+    isLoadingItems
   } = useAppContext();
   const navigate = useNavigate();
   const { toast } = useToast();
@@ -86,6 +86,22 @@ const CreateInvoice = () => {
     discount: number
   ) => {
     try {
+      console.log("Attempting to create invoice with data:", {
+        invoiceNumber: values.invoiceNumber || defaultInvoiceNumber,
+        customerId: values.customerId,
+        date: values.date.toISOString().split('T')[0],
+        dueDate: values.dueDate.toISOString().split('T')[0],
+        items: items,
+        subtotal: subtotal,
+        taxAmount: taxAmount,
+        total: total,
+        status: 'draft',
+        currency: values.currency,
+        notes: values.notes,
+        terms: values.terms,
+        additionalCharges: additionalCharges,
+        discount: discount,
+      });
       await createInvoice({
         invoiceNumber: values.invoiceNumber || defaultInvoiceNumber,
         customerId: values.customerId,
@@ -108,6 +124,7 @@ const CreateInvoice = () => {
       });
       navigate('/invoices');
     } catch (error) {
+      console.error('Error caught during invoice creation submission:', error);
       console.error('Error creating invoice:', error);
       toast({
         title: "Error",
@@ -169,7 +186,6 @@ const CreateInvoice = () => {
         defaultValues={{
           invoiceNumber: defaultInvoiceNumber,
         }}
-        availableItems={items}
       />
 
       {/* Add New Customer: Drawer for mobile, Dialog for desktop */}
@@ -202,7 +218,7 @@ const CreateInvoice = () => {
                   )}
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="email">Email *</Label>
+                  <Label htmlFor="email">Email </Label>
                   <Input 
                     id="email" 
                     type="email"

@@ -13,42 +13,57 @@ import { Button } from '@/components/ui/button';
 import { PlusCircle, SearchIcon, Package2, Sparkles } from 'lucide-react';
 import { Item } from '@/types';
 import { useIsMobile } from '@/hooks/use-mobile';
+import { useAppContext } from '@/context/AppContext';
+import { itemService } from '@/services/supabaseService';
+import { DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 
 interface ItemSelectorProps {
-  items: Item[];
   onItemSelect: (item: Item) => void;
   onCreateNewItem?: () => void;
   buttonClassName?: string;
   iconOnly?: boolean;
+  refetch: () => void;
 }
 
 const ItemSelector: React.FC<ItemSelectorProps> = ({ 
-  items, 
   onItemSelect,
   onCreateNewItem,
   buttonClassName = "",
-  iconOnly = false
+  iconOnly = false,
+  refetch
 }) => {
   const [searchTerm, setSearchTerm] = useState('');
   const [open, setOpen] = useState(false);
-  const [filteredItems, setFilteredItems] = useState<Item[]>([]);
   const isMobile = useIsMobile();
+  const { itemCategories } = useAppContext();
+  const [items, setItems] = useState<Item[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    if (searchTerm === '') {
-      setFilteredItems(items);
-      return;
-    }
-    
-    const term = searchTerm.toLowerCase();
-    const filtered = items.filter(item => 
-      item.name.toLowerCase().includes(term) ||
-      (item.description && item.description.toLowerCase().includes(term)) ||
-      (item.category?.name && item.category.name.toLowerCase().includes(term))
-    );
-    
-    setFilteredItems(filtered);
-  }, [searchTerm, items]);
+    const fetchItems = async () => {
+      setIsLoading(true);
+      setError(null);
+      try {
+        const fetchedItems = await itemService.getItems();
+        setItems(fetchedItems);
+      } catch (err) {
+        console.error("Error fetching items:", err);
+        setError("Failed to load items.");
+        setItems([]); // Clear items on error
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchItems();
+  }, [refetch]); // Refetch when the refetch function changes
+
+  const filteredItems = items.filter(item => 
+    item.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    (item.description && item.description.toLowerCase().includes(searchTerm.toLowerCase())) ||
+    (item.category?.name && item.category.name.toLowerCase().includes(searchTerm.toLowerCase()))
+  );
 
   const handleItemSelect = (item: Item) => {
     onItemSelect(item);
@@ -81,6 +96,7 @@ const ItemSelector: React.FC<ItemSelectorProps> = ({
           variant="outline" 
           size={isMobile ? "sm" : "default"}
           className={buttonClassName}
+          disabled={isLoading} // Disable button while loading
         >
           {iconOnly ? (
             <Package2 className="h-4 w-4" />
@@ -90,6 +106,12 @@ const ItemSelector: React.FC<ItemSelectorProps> = ({
         </Button>
       </DialogTrigger>
       <DialogContent className={`p-0 ${isMobile ? 'w-[95%]' : 'sm:max-w-[550px]'}`}>
+        <DialogHeader className="p-4">
+          <DialogTitle>Select an Item</DialogTitle>
+          <DialogDescription>
+            Search for an existing item or create a new one.
+          </DialogDescription>
+        </DialogHeader>
         <Command className="rounded-lg border shadow-md">
           <div className="flex items-center border-b px-3">
             <SearchIcon className="mr-2 h-4 w-4 shrink-0 opacity-50" />

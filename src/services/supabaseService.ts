@@ -2,7 +2,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { 
   Customer, Invoice, BusinessProfile, LineItem, ItemCategory, Item,
   SupabaseCustomer, SupabaseInvoice, SupabaseLineItem, SupabaseBusinessProfile, SupabaseItemCategory, SupabaseItem,
-  Account, SupabaseAccount, AccountType
+  Account, SupabaseAccount, AccountType, InvoiceStatus
 } from '@/types';
 
 const mapSupabaseCustomerToCustomer = (customer: SupabaseCustomer): Customer => ({
@@ -49,11 +49,11 @@ const mapSupabaseInvoiceToInvoice = (invoice: SupabaseInvoice | any, items: Supa
     id: invoice.customer_id,
     name: invoice.customers.name,
     email: invoice.customers.email,
-    address: '',
-    city: '',
-    state: '',
-    zip: '',
-    country: 'USA'
+    address: invoice.customers.address,
+    city: invoice.customers.city,
+    state: invoice.customers.state,
+    zip: invoice.customers.zip,
+    country: invoice.customers.country
   } : undefined,
   date: invoice.date,
   dueDate: invoice.due_date,
@@ -65,23 +65,26 @@ const mapSupabaseInvoiceToInvoice = (invoice: SupabaseInvoice | any, items: Supa
     unit: item.unit || 'each',
     rate: item.rate,
     tax: item.tax,
-    total: item.total
+    total: item.total,
+    createdAt: item.created_at,
+    updatedAt: item.updated_at
   })),
   subtotal: invoice.subtotal,
   taxAmount: invoice.tax_amount,
   discount: invoice.discount,
   additionalCharges: invoice.additional_charges,
   total: invoice.total,
-  status: invoice.status,
+  status: invoice.status as InvoiceStatus,
   notes: invoice.notes || undefined,
   terms: invoice.terms || undefined,
   currency: invoice.currency,
   userId: invoice.user_id,
   createdAt: invoice.created_at,
-  updatedAt: invoice.updated_at
+  updatedAt: invoice.updated_at,
+  public_viewed_at: invoice.public_viewed_at || undefined
 });
 
-const mapInvoiceToSupabaseInvoice = async (invoice: Omit<Invoice, 'id' | 'createdAt' | 'updatedAt'>): Promise<Omit<SupabaseInvoice, 'id' | 'created_at' | 'updated_at'>> => {
+const mapInvoiceToSupabaseInvoice = async (invoice: Omit<Invoice, 'id' | 'createdAt' | 'updatedAt'>): Promise<Omit<SupabaseInvoice, 'id' | 'created_at' | 'updated_at', 'public_viewed_at'>> => {
   const { data: { user } } = await supabase.auth.getUser();
   const userId = user?.id || '';
 
@@ -99,7 +102,8 @@ const mapInvoiceToSupabaseInvoice = async (invoice: Omit<Invoice, 'id' | 'create
     notes: invoice.notes || null,
     terms: invoice.terms || null,
     currency: invoice.currency,
-    user_id: invoice.userId || userId
+    user_id: invoice.userId || userId,
+    public_viewed_at: invoice.public_viewed_at || null
   };
 };
 
@@ -173,12 +177,12 @@ const mapItemCategoryToSupabaseItemCategory = async (category: Omit<ItemCategory
   };
 };
 
-const mapSupabaseItemToItem = (supabaseItem: any): Item => {
+const mapSupabaseItemToItem = (supabaseItem: SupabaseItem & { item_categories?: SupabaseItemCategory }): Item => {
   return {
     id: supabaseItem.id,
     name: supabaseItem.name,
     description: supabaseItem.description,
-    type: supabaseItem.type as 'product' | 'service',  // Ensure it's cast to the right type
+    type: supabaseItem.type as 'product' | 'service',
     categoryId: supabaseItem.category_id,
     salePrice: supabaseItem.sale_price,
     purchasePrice: supabaseItem.purchase_price,
@@ -243,9 +247,15 @@ const mapAccountToSupabaseAccount = async (
 
 export const customerService = {
   async getCustomers(): Promise<Customer[]> {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user?.id) {
+      console.error('No authenticated user found');
+      return [];
+    }
     const { data, error } = await supabase
       .from('customers')
       .select('*')
+      .eq('user_id', user.id)
       .order('name');
 
     if (error) {
@@ -257,10 +267,16 @@ export const customerService = {
   },
 
   async getCustomer(id: string): Promise<Customer | null> {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user?.id) {
+      console.error('No authenticated user found');
+      return null;
+    }
     const { data, error } = await supabase
       .from('customers')
       .select('*')
       .eq('id', id)
+      .eq('user_id', user.id)
       .single();
 
     if (error) {
@@ -334,12 +350,18 @@ export const customerService = {
 
 export const invoiceService = {
   async getInvoices(): Promise<Invoice[]> {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user?.id) {
+      console.error('No authenticated user found');
+      return [];
+    }
     const { data: invoicesData, error: invoicesError } = await supabase
       .from('invoices')
       .select(`
         *,
         customers (name, email)
       `)
+      .eq('user_id', user.id)
       .order('date', { ascending: false });
 
     if (invoicesError) {
@@ -360,6 +382,11 @@ export const invoiceService = {
   },
 
   async getInvoice(id: string): Promise<Invoice | null> {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user?.id) {
+      console.error('No authenticated user found');
+      return null;
+    }
     const { data: invoiceData, error: invoiceError } = await supabase
       .from('invoices')
       .select(`
@@ -367,6 +394,7 @@ export const invoiceService = {
         customers (*)
       `)
       .eq('id', id)
+      .eq('user_id', user.id)
       .single();
 
     if (invoiceError) {
@@ -392,10 +420,16 @@ export const invoiceService = {
   },
 
   async getInvoicesForCustomer(customerId: string): Promise<Invoice[]> {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user?.id) {
+      console.error('No authenticated user found');
+      return [];
+    }
     const { data: invoicesData, error: invoicesError } = await supabase
       .from('invoices')
       .select('*')
       .eq('customer_id', customerId)
+      .eq('user_id', user.id)
       .order('date', { ascending: false });
 
     if (invoicesError) {
@@ -476,6 +510,7 @@ export const invoiceService = {
     if (updatableInvoice.notes !== undefined) updatedInvoiceFields.notes = updatableInvoice.notes;
     if (updatableInvoice.terms !== undefined) updatedInvoiceFields.terms = updatableInvoice.terms;
     if (updatableInvoice.currency) updatedInvoiceFields.currency = updatableInvoice.currency;
+    if (updatableInvoice.public_viewed_at !== undefined) updatedInvoiceFields.public_viewed_at = updatableInvoice.public_viewed_at;
     
     const { data, error } = await supabase
       .from('invoices')
@@ -526,10 +561,16 @@ export const invoiceService = {
   },
   
   async updateInvoiceStatus(id: string, status: Invoice['status']): Promise<Invoice> {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user?.id) {
+      console.error('No authenticated user found');
+      throw new Error('No authenticated user');
+    }
     const { data, error } = await supabase
       .from('invoices')
       .update({ status })
       .eq('id', id)
+      .eq('user_id', user.id)
       .select()
       .single();
 
@@ -542,6 +583,11 @@ export const invoiceService = {
   },
 
   async getLineItems(invoiceId: string): Promise<LineItem[]> {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user?.id) {
+      console.error('No authenticated user found');
+      return [];
+    }
     const { data, error } = await supabase
       .from('line_items')
       .select('*')
@@ -568,6 +614,11 @@ export const invoiceService = {
   },
   
   async addLineItem(invoiceId: string, lineItem: Omit<LineItem, 'id' | 'invoiceId' | 'createdAt' | 'updatedAt'>): Promise<LineItem> {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user?.id) {
+      console.error('No authenticated user found');
+      throw new Error('No authenticated user');
+    }
     const { data, error } = await supabase
       .from('line_items')
       .insert([{ 
@@ -602,6 +653,11 @@ export const invoiceService = {
   },
   
   async updateLineItem(id: string, lineItem: Partial<Omit<LineItem, 'id' | 'invoiceId' | 'createdAt' | 'updatedAt'>>): Promise<LineItem> {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user?.id) {
+      console.error('No authenticated user found');
+      throw new Error('No authenticated user');
+    }
     const updateData: any = {};
     if (lineItem.description !== undefined) updateData.description = lineItem.description;
     if (lineItem.quantity !== undefined) updateData.quantity = lineItem.quantity;
@@ -637,10 +693,16 @@ export const invoiceService = {
   },
   
   async deleteLineItem(id: string): Promise<void> {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user?.id) {
+      console.error('No authenticated user found');
+      throw new Error('No authenticated user');
+    }
     const { error } = await supabase
       .from('line_items')
       .delete()
-      .eq('id', id);
+      .eq('id', id)
+      .eq('user_id', user.id);
 
     if (error) {
       console.error('Error deleting line item:', error);
@@ -679,7 +741,12 @@ export const invoiceService = {
       const match = lastInvoice.invoice_number.match(/(\d{3,})$/);
       if (match) {
         lastSeq = parseInt(match[1], 10);
+      } else {
+        // If no sequence found in format, use the stored sequence
+        lastSeq = profile.invoice_number_sequence || 0;
       }
+    } else {
+         lastSeq = profile.invoice_number_sequence || 0;
     }
     const nextSeq = lastSeq + 1;
 
@@ -705,9 +772,15 @@ export const invoiceService = {
 
 export const itemCategoryService = {
   async getItemCategories(): Promise<ItemCategory[]> {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user?.id) {
+      console.error('No authenticated user found');
+      return [];
+    }
     const { data, error } = await supabase
       .from('item_categories')
       .select('*')
+      .eq('user_id', user.id)
       .order('name');
 
     if (error) {
@@ -736,20 +809,27 @@ export const itemCategoryService = {
   },
 
   async updateItemCategory(id: string, category: Partial<Omit<ItemCategory, 'id' | 'createdAt' | 'updatedAt'>>): Promise<ItemCategory> {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user?.id) {
+      console.error('No authenticated user found');
+      throw new Error('No authenticated user');
+    }
     const { data: existingData } = await supabase
       .from('item_categories')
       .select()
       .eq('id', id)
+      .eq('user_id', user.id)
       .single();
       
     if (!existingData) {
-      throw new Error(`Category with id ${id} not found`);
+      throw new Error(`Category with id ${id} not found for this user`);
     }
     
     const { data, error } = await supabase
       .from('item_categories')
       .update({ name: category.name })
       .eq('id', id)
+      .eq('user_id', user.id)
       .select()
       .single();
 
@@ -762,10 +842,16 @@ export const itemCategoryService = {
   },
 
   async deleteItemCategory(id: string): Promise<void> {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user?.id) {
+      console.error('No authenticated user found');
+      throw new Error('No authenticated user');
+    }
     const { error } = await supabase
       .from('item_categories')
       .delete()
-      .eq('id', id);
+      .eq('id', id)
+      .eq('user_id', user.id);
 
     if (error) {
       console.error('Error deleting item category:', error);
@@ -776,9 +862,15 @@ export const itemCategoryService = {
 
 export const itemService = {
   async getItems(): Promise<Item[]> {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user?.id) {
+      console.error('No authenticated user found');
+      return [];
+    }
     const { data: itemsData, error: itemsError } = await supabase
       .from('items')
       .select(`*, item_categories(*)`)
+      .eq('user_id', user.id)
       .order('name');
 
     if (itemsError) {
@@ -797,10 +889,16 @@ export const itemService = {
   },
 
   async getItem(id: string): Promise<Item | null> {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user?.id) {
+      console.error('No authenticated user found');
+      return null;
+    }
     const { data, error } = await supabase
       .from('items')
       .select(`*, item_categories(*)`)
       .eq('id', id)
+      .eq('user_id', user.id)
       .single();
 
     if (error) {
@@ -842,6 +940,11 @@ export const itemService = {
   },
 
   async updateItem(id: string, item: Partial<Omit<Item, 'id' | 'createdAt' | 'updatedAt' | 'category'>>): Promise<Item> {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user?.id) {
+      console.error('No authenticated user found');
+      throw new Error('No authenticated user');
+    }
     const updateData: any = {};
     
     if (item.name !== undefined) updateData.name = item.name;
@@ -859,6 +962,7 @@ export const itemService = {
       .from('items')
       .update(updateData)
       .eq('id', id)
+      .eq('user_id', user.id)
       .select(`*, item_categories(*)`)
       .single();
 
@@ -876,10 +980,16 @@ export const itemService = {
   },
 
   async deleteItem(id: string): Promise<void> {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user?.id) {
+      console.error('No authenticated user found');
+      throw new Error('No authenticated user');
+    }
     const { error } = await supabase
       .from('items')
       .delete()
-      .eq('id', id);
+      .eq('id', id)
+      .eq('user_id', user.id);
 
     if (error) {
       console.error('Error deleting item:', error);
@@ -888,10 +998,16 @@ export const itemService = {
   },
   
   async getItemsByType(type: 'product' | 'service'): Promise<Item[]> {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user?.id) {
+      console.error('No authenticated user found');
+      return [];
+    }
     const { data, error } = await supabase
       .from('items')
       .select(`*, item_categories(*)`)
       .eq('type', type)
+      .eq('user_id', user.id)
       .order('name');
 
     if (error) {
@@ -1048,9 +1164,15 @@ export const dashboardService = {
 
 export const accountService = {
   async getAccounts(): Promise<Account[]> {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user?.id) {
+      console.error('No authenticated user found');
+      return [];
+    }
     const { data, error } = await supabase
       .from('accounts')
       .select('*')
+      .eq('user_id', user.id)
       .order('name');
     if (error) {
       console.error('Error fetching accounts:', error);
@@ -1060,10 +1182,16 @@ export const accountService = {
   },
 
   async getAccount(id: string): Promise<Account | null> {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user?.id) {
+      console.error('No authenticated user found');
+      return null;
+    }
     const { data, error } = await supabase
       .from('accounts')
       .select('*')
       .eq('id', id)
+      .eq('user_id', user.id)
       .single();
     if (error) {
       console.error('Error fetching account:', error);
@@ -1087,9 +1215,14 @@ export const accountService = {
   },
 
   async updateAccount(id: string, account: Partial<Omit<Account, 'id' | 'createdAt' | 'updatedAt'>>): Promise<Account> {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user?.id) {
+      console.error('No authenticated user found');
+      throw new Error('No authenticated user');
+    }
     const existingAccount = await this.getAccount(id);
     if (!existingAccount) {
-      throw new Error(`Account with id ${id} not found`);
+      throw new Error(`Account with id ${id} not found for this user`);
     }
     const mergedAccount = {
       ...existingAccount,
@@ -1103,6 +1236,7 @@ export const accountService = {
       .from('accounts')
       .update(supabaseAccount)
       .eq('id', id)
+      .eq('user_id', user.id)
       .select()
       .single();
     if (error) {
@@ -1113,10 +1247,16 @@ export const accountService = {
   },
 
   async deleteAccount(id: string): Promise<void> {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user?.id) {
+      console.error('No authenticated user found');
+      throw new Error('No authenticated user');
+    }
     const { error } = await supabase
       .from('accounts')
       .delete()
-      .eq('id', id);
+      .eq('id', id)
+      .eq('user_id', user.id);
     if (error) {
       console.error('Error deleting account:', error);
       throw error;
