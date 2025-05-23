@@ -181,7 +181,7 @@ const Dashboard = () => {
           </Button>
         </div>
       ) : (
-        <div className="flex justify-between items-center">
+        <div className="flex justify-between items-center mt-4">
           <h1 className="text-3xl font-bold">Dashboard</h1>
           <Button className="bg-invoice-teal hover:bg-invoice-teal/90" asChild>
             <Link to="/invoices/new">Create Invoice</Link>

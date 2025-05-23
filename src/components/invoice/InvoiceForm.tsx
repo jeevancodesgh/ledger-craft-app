@@ -163,7 +163,7 @@ const InvoiceForm: React.FC<InvoiceFormProps> = ({
         : new Date(new Date().setDate(new Date().getDate() + 30)),
       notes: initialValues?.notes || businessProfile?.defaultNotes || "",
       terms: initialValues?.terms || businessProfile?.defaultTerms || "",
-      currency: initialValues?.currency || "USD",
+      currency: initialValues?.currency || "NZD",
       additionalCharges: initialValues?.additionalCharges ?? 0,
       discount: initialValues?.discount ?? 0,
     }
