@@ -192,138 +192,136 @@ const CreateInvoice = () => {
       {isMobile ? (
         <Drawer open={addCustomerOpen} onOpenChange={setAddCustomerOpen}>
           <DrawerContent className="max-h-[92vh] sm:max-h-[85vh] h-full flex flex-col">
-            <div className="mx-auto w-full max-w-2xl flex flex-col flex-1 h-full">
-              <DrawerHeader>
-                <DrawerTitle className="flex items-center gap-2">
-                  <UserPlus size={20} className="text-primary" />
-                  Add New Customer
-                </DrawerTitle>
-                <DrawerDescription>
-                  Create a new customer to add to your invoice.
-                </DrawerDescription>
-              </DrawerHeader>
-              <form id="add-customer-form" onSubmit={(e) => { console.log("Form submission event triggered."); form.handleSubmit(handleAddCustomer)(e); }} className="flex-1 overflow-y-auto px-4 space-y-4 mt-2">
+            <DrawerHeader>
+              <DrawerTitle className="flex items-center gap-2">
+                <UserPlus size={20} className="text-primary" />
+                Add New Customer
+              </DrawerTitle>
+              <DrawerDescription>
+                Create a new customer to add to your invoice.
+              </DrawerDescription>
+            </DrawerHeader>
+            <form id="add-customer-form" onSubmit={(e) => { console.log("Form submission event triggered."); form.handleSubmit(handleAddCustomer)(e); }} className="flex flex-col flex-1 overflow-y-auto px-4 space-y-4 mt-2">
+              <div className="space-y-2">
+                <Label htmlFor="name">Name *</Label>
+                <Input 
+                  id="name" 
+                  {...form.register('name')} 
+                  placeholder="Customer name"
+                  className="h-12 rounded-md focus:ring-2 focus:ring-primary"
+                  autoComplete="name"
+                  onKeyPress={(e) => handleKeyPress(e, 'email')}
+                />
+                {form.formState.errors.name && (
+                  <p className="text-sm text-red-500">{form.formState.errors.name.message}</p>
+                )}
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="email">Email </Label>
+                <Input 
+                  id="email" 
+                  type="email"
+                  {...form.register('email')} 
+                  placeholder="customer@example.com"
+                  className="h-12 rounded-md focus:ring-2 focus:ring-primary"
+                  autoComplete="email"
+                  onKeyPress={(e) => handleKeyPress(e, 'phone')}
+                />
+                {form.formState.errors.email && (
+                  <p className="text-sm text-red-500">{form.formState.errors.email.message}</p>
+                )}
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="phone">Phone</Label>
+                <Input 
+                  id="phone" 
+                  type="tel"
+                  inputMode="tel"
+                  {...form.register('phone')} 
+                  placeholder="Phone number"
+                  className="h-12 rounded-md focus:ring-2 focus:ring-primary"
+                  autoComplete="tel"
+                  maxLength={15}
+                  onKeyPress={(e) => handleKeyPress(e, 'address')}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="address">Address</Label>
+                <Input 
+                  id="address" 
+                  {...form.register('address')} 
+                  placeholder="Street address"
+                  className="h-12 rounded-md focus:ring-2 focus:ring-primary"
+                  autoComplete="street-address"
+                  onKeyPress={(e) => handleKeyPress(e, 'city')}
+                />
+              </div>
+              <div className="grid grid-cols-2 gap-3">
                 <div className="space-y-2">
-                  <Label htmlFor="name">Name *</Label>
+                  <Label htmlFor="city">City</Label>
                   <Input 
-                    id="name" 
-                    {...form.register('name')} 
-                    placeholder="Customer name"
+                    id="city" 
+                    {...form.register('city')} 
+                    placeholder="City"
                     className="h-12 rounded-md focus:ring-2 focus:ring-primary"
-                    autoComplete="name"
-                    onKeyPress={(e) => handleKeyPress(e, 'email')}
+                    autoComplete="address-level2"
+                    onKeyPress={(e) => handleKeyPress(e, 'state')}
                   />
-                  {form.formState.errors.name && (
-                    <p className="text-sm text-red-500">{form.formState.errors.name.message}</p>
-                  )}
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="email">Email </Label>
+                  <Label htmlFor="state">State</Label>
                   <Input 
-                    id="email" 
-                    type="email"
-                    {...form.register('email')} 
-                    placeholder="customer@example.com"
+                    id="state" 
+                    {...form.register('state')} 
+                    placeholder="State"
                     className="h-12 rounded-md focus:ring-2 focus:ring-primary"
-                    autoComplete="email"
-                    onKeyPress={(e) => handleKeyPress(e, 'phone')}
-                  />
-                  {form.formState.errors.email && (
-                    <p className="text-sm text-red-500">{form.formState.errors.email.message}</p>
-                  )}
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="phone">Phone</Label>
-                  <Input 
-                    id="phone" 
-                    type="tel"
-                    inputMode="tel"
-                    {...form.register('phone')} 
-                    placeholder="Phone number"
-                    className="h-12 rounded-md focus:ring-2 focus:ring-primary"
-                    autoComplete="tel"
-                    maxLength={15}
-                    onKeyPress={(e) => handleKeyPress(e, 'address')}
+                    autoComplete="address-level1"
+                    onKeyPress={(e) => handleKeyPress(e, 'zip')}
                   />
                 </div>
-                <div className="space-y-2">
-                  <Label htmlFor="address">Address</Label>
-                  <Input 
-                    id="address" 
-                    {...form.register('address')} 
-                    placeholder="Street address"
-                    className="h-12 rounded-md focus:ring-2 focus:ring-primary"
-                    autoComplete="street-address"
-                    onKeyPress={(e) => handleKeyPress(e, 'city')}
-                  />
-                </div>
-                <div className="grid grid-cols-2 gap-3">
-                  <div className="space-y-2">
-                    <Label htmlFor="city">City</Label>
-                    <Input 
-                      id="city" 
-                      {...form.register('city')} 
-                      placeholder="City"
-                      className="h-12 rounded-md focus:ring-2 focus:ring-primary"
-                      autoComplete="address-level2"
-                      onKeyPress={(e) => handleKeyPress(e, 'state')}
-                    />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="zip">ZIP Code</Label>
+                <Input 
+                  id="zip" 
+                  type="number"
+                  inputMode="numeric"
+                  {...form.register('zip')} 
+                  placeholder="ZIP code"
+                  className="h-12 rounded-md focus:ring-2 focus:ring-primary"
+                  autoComplete="postal-code"
+                  maxLength={5}
+                  onKeyPress={(e) => handleKeyPress(e, 'submit-button')}
+                />
+              </div>
+              <input type="hidden" {...form.register('country')} />
+            </form>
+            <DrawerFooter className="sticky bottom-0 bg-background z-10 border-t flex flex-row gap-2 p-4">
+              <Button 
+                type="button" 
+                variant="outline" 
+                onClick={() => setAddCustomerOpen(false)}
+                className="flex-1 h-12"
+              >
+                Cancel
+              </Button>
+              <Button 
+                id="submit-button"
+                type="submit"
+                form="add-customer-form"
+                className="flex-1 h-12 bg-primary hover:bg-primary/90"
+                disabled={form.formState.isSubmitting}
+              >
+                {form.formState.isSubmitting ? (
+                  <div className="flex items-center gap-2">
+                    <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                    <span>Adding...</span>
                   </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="state">State</Label>
-                    <Input 
-                      id="state" 
-                      {...form.register('state')} 
-                      placeholder="State"
-                      className="h-12 rounded-md focus:ring-2 focus:ring-primary"
-                      autoComplete="address-level1"
-                      onKeyPress={(e) => handleKeyPress(e, 'zip')}
-                    />
-                  </div>
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="zip">ZIP Code</Label>
-                  <Input 
-                    id="zip" 
-                    type="number"
-                    inputMode="numeric"
-                    {...form.register('zip')} 
-                    placeholder="ZIP code"
-                    className="h-12 rounded-md focus:ring-2 focus:ring-primary"
-                    autoComplete="postal-code"
-                    maxLength={5}
-                    onKeyPress={(e) => handleKeyPress(e, 'submit-button')}
-                  />
-                </div>
-                <input type="hidden" {...form.register('country')} />
-              </form>
-              <DrawerFooter className="sticky bottom-0 bg-background z-10 border-t flex flex-row gap-2 p-4">
-                <Button 
-                  type="button" 
-                  variant="outline" 
-                  onClick={() => setAddCustomerOpen(false)}
-                  className="flex-1 h-12"
-                >
-                  Cancel
-                </Button>
-                <Button 
-                  id="submit-button"
-                  type="submit"
-                  form="add-customer-form"
-                  className="flex-1 h-12 bg-primary hover:bg-primary/90"
-                  disabled={form.formState.isSubmitting}
-                >
-                  {form.formState.isSubmitting ? (
-                    <div className="flex items-center gap-2">
-                      <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                      <span>Adding...</span>
-                    </div>
-                  ) : (
-                    'Add Customer'
-                  )}
-                </Button>
-              </DrawerFooter>
-            </div>
+                ) : (
+                  'Add Customer'
+                )}
+              </Button>
+            </DrawerFooter>
           </DrawerContent>
         </Drawer>
       ) : (
