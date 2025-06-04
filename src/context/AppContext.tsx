@@ -169,7 +169,9 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     try {
       setIsLoadingInvoices(true);
       const data = await invoiceService.getInvoices();
-      setInvoices(data);
+      // Sort invoices by createdAt in descending order
+      const sortedData = data.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+      setInvoices(sortedData);
     } catch (error) {
       console.error("Error loading invoices:", error);
       toast({

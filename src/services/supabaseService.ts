@@ -28,7 +28,7 @@ const mapCustomerToSupabaseCustomer = async (customer: Omit<Customer, 'id' | 'cr
 
   return {
     name: customer.name,
-    email: customer.email,
+    email: customer.email || '',
     address: customer.address || null,
     city: customer.city || null,
     state: customer.state || null,

@@ -147,6 +147,8 @@ const InvoiceForm: React.FC<InvoiceFormProps> = ({
   const [isAdditionalChargesEnabled, setIsAdditionalChargesEnabled] = useState(false);
   const [isDiscountEnabled, setIsDiscountEnabled] = useState(false);
   const [refetchItemsTrigger, setRefetchItemsTrigger] = useState(0);
+  // New state to track which line item is creating a new item
+  const [indexCreatingNewItem, setIndexCreatingNewItem] = useState<number | null>(null);
 
   // Get units from App Context
   const { units } = useAppContext();
@@ -359,9 +361,9 @@ const InvoiceForm: React.FC<InvoiceFormProps> = ({
     const updatedLineItem = { ...items[index] };
     
     updatedLineItem.description = selectedItem.name;
-    if (selectedItem.enableSaleInfo && selectedItem.salePrice) {
+    if (selectedItem.enableSaleInfo && selectedItem.salePrice !== null && selectedItem.salePrice !== undefined) {
       updatedLineItem.rate = selectedItem.salePrice;
-    } else if (selectedItem.enablePurchaseInfo && selectedItem.purchasePrice) {
+    } else if (selectedItem.enablePurchaseInfo && selectedItem.purchasePrice !== null && selectedItem.purchasePrice !== undefined) {
       updatedLineItem.rate = selectedItem.purchasePrice;
     } else {
       updatedLineItem.rate = 0; // Default rate if no price info is available
@@ -380,13 +382,23 @@ const InvoiceForm: React.FC<InvoiceFormProps> = ({
     setItems(updatedItems);
   };
 
-  // Handle creation of a new item
-  const handleCreateNewItem = () => {
+  // Handle creation of a new item - Now accepts the index
+  const handleCreateNewItem = (index: number) => {
+    setIndexCreatingNewItem(index); // Store the index
     setIsItemDrawerOpen(true);
   };
 
-  // Handle saving a new item
+  // Handle saving a new item - Now accepts the index
   const handleSaveNewItem = async (values: ItemFormValues) => {
+    if (indexCreatingNewItem === null) {
+        console.error("Index for new item creation not set.");
+        toast({
+            title: "Error",
+            description: "Failed to determine where to add the new item.",
+            variant: "destructive",
+        });
+        return;
+    }
     try {
       // Assuming values from ItemFormValues are compatible with Item type needed for createItem
       const newItem = await itemService.createItem(values);
@@ -394,10 +406,11 @@ const InvoiceForm: React.FC<InvoiceFormProps> = ({
         title: "Item created successfully",
         description: `${newItem.name} has been added to your items.`,
       });
-      // TODO: Refresh items list in AppContext if it's not automatically updated
-      // For now, relying on AppContext to refetch items after creation
+      // Automatically select the new item in the line item
+      handleItemSelect(newItem, indexCreatingNewItem);
       setIsItemDrawerOpen(false);
-      triggerItemsRefetch();
+      setIndexCreatingNewItem(null); // Clear the stored index
+      triggerItemsRefetch(); // Trigger refetch to update item selector options
     } catch (error) {
       console.error('Error creating item:', error);
       toast({
@@ -405,6 +418,8 @@ const InvoiceForm: React.FC<InvoiceFormProps> = ({
         description: "Failed to create item. Please try again.",
         variant: "destructive",
       });
+      setIsItemDrawerOpen(false); // Close drawer on error too
+      setIndexCreatingNewItem(null); // Clear the stored index even on error
     }
   };
 
@@ -424,7 +439,8 @@ const InvoiceForm: React.FC<InvoiceFormProps> = ({
             <div className="mb-3">
               <ItemSelector
                 onItemSelect={(item) => handleItemSelect(item, currentItemIndex)}
-                onCreateNewItem={handleCreateNewItem}
+                // Pass the currentItemIndex to handleCreateNewItem
+                onCreateNewItem={() => handleCreateNewItem(currentItemIndex)}
                 buttonClassName="w-full justify-start text-primary border border-primary font-semibold"
                 refetch={triggerItemsRefetch}
               />
@@ -984,7 +1000,7 @@ const InvoiceForm: React.FC<InvoiceFormProps> = ({
                                           <div className="absolute right-2 top-1/2 -translate-y-1/2">
                                             <ItemSelector
                                               onItemSelect={(selectedItem) => handleItemSelect(selectedItem, index)}
-                                              onCreateNewItem={handleCreateNewItem}
+                                              onCreateNewItem={() => handleCreateNewItem(index)}
                                               buttonClassName="h-6 w-6 p-0"
                                               iconOnly
                                               refetch={triggerItemsRefetch}
