@@ -1,0 +1,8 @@
+---
+description: 
+globs: 
+alwaysApply: false
+---
+# Invoice Form Guide
+This file ([src/components/invoice/InvoiceForm.tsx](mdc:src/components/invoice/InvoiceForm.tsx)) is the main component for creating and editing invoices in the application. It handles the form state, line item management, calculations, and integration with customer and item selectors. It also includes functionality for generating invoice previews and downloading PDFs.
+

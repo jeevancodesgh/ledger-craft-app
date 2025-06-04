@@ -56,6 +56,7 @@ import ItemSelector from "./ItemSelector";
 import ItemDrawer from "../item/ItemDrawer";
 import { ItemFormValues } from "../item/ItemForm";
 import { Switch } from "@/components/ui/switch";
+import { useAppContext } from "@/context/AppContext";
 
 // Import template components
 import ClassicTemplate from "./preview/templates/ClassicTemplate";
@@ -80,6 +81,7 @@ interface InvoiceFormProps {
     invoiceNumber?: string;
   };
   availableItems?: Item[];
+  isLoadingItems?: boolean;
 }
 
 const invoiceFormSchema = z.object({
@@ -145,6 +147,9 @@ const InvoiceForm: React.FC<InvoiceFormProps> = ({
   const [isAdditionalChargesEnabled, setIsAdditionalChargesEnabled] = useState(false);
   const [isDiscountEnabled, setIsDiscountEnabled] = useState(false);
   const [refetchItemsTrigger, setRefetchItemsTrigger] = useState(0);
+
+  // Get units from App Context
+  const { units } = useAppContext();
 
   const form = useForm<InvoiceFormValues>({
     resolver: zodResolver(invoiceFormSchema),
@@ -349,12 +354,6 @@ const InvoiceForm: React.FC<InvoiceFormProps> = ({
     });
   };
 
-  const unitOptions = [
-    { value: "each", label: "Each", icon: Circle },
-    { value: "kg", label: "Kilogram", icon: Weight },
-    { value: "g", label: "Gram", icon: Weight }
-  ];
-
   // Handle selection of an item from the item selector
   const handleItemSelect = (selectedItem: Item, index: number) => {
     const updatedLineItem = { ...items[index] };
@@ -362,12 +361,19 @@ const InvoiceForm: React.FC<InvoiceFormProps> = ({
     updatedLineItem.description = selectedItem.name;
     if (selectedItem.enableSaleInfo && selectedItem.salePrice) {
       updatedLineItem.rate = selectedItem.salePrice;
+    } else if (selectedItem.enablePurchaseInfo && selectedItem.purchasePrice) {
+      updatedLineItem.rate = selectedItem.purchasePrice;
+    } else {
+      updatedLineItem.rate = 0; // Default rate if no price info is available
     }
     updatedLineItem.unit = selectedItem.unit || 'each';
-    updatedLineItem.tax = selectedItem.taxRate || 0;
+    // Tax is handled at the invoice level, not per item in this form currently
+    // updatedLineItem.tax = selectedItem.taxRate || 0;
     
     // Calculate total based on quantity and rate
-    updatedLineItem.total = updatedLineItem.quantity * updatedLineItem.rate;
+    // Ensure quantity is treated as a number
+    const quantity = Number(updatedLineItem.quantity) || 0; 
+    updatedLineItem.total = quantity * updatedLineItem.rate;
     
     const updatedItems = [...items];
     updatedItems[index] = updatedLineItem;
@@ -419,7 +425,7 @@ const InvoiceForm: React.FC<InvoiceFormProps> = ({
               <ItemSelector
                 onItemSelect={(item) => handleItemSelect(item, currentItemIndex)}
                 onCreateNewItem={handleCreateNewItem}
-                buttonClassName="w-full justify-start"
+                buttonClassName="w-full justify-start text-primary border border-primary font-semibold"
                 refetch={triggerItemsRefetch}
               />
             </div>
@@ -458,11 +464,15 @@ const InvoiceForm: React.FC<InvoiceFormProps> = ({
                   </SelectTrigger>
                 </FormControl>
                 <SelectContent>
-                  {unitOptions.map(unit => (
-                    <SelectItem key={unit.value} value={unit.value}>
+                  {/* Use units from App Context, directly using the string value */}
+                  {units.map(unitString => (
+                    <SelectItem key={unitString} value={unitString}>
                       <div className="flex items-center gap-2">
-                        <unit.icon className="h-4 w-4" />
-                        <span>{unit.label}</span>
+                        {/* Conditionally render icon based on unitString */}
+                        {unitString === 'each' && <Circle className="h-4 w-4" />}
+                        {unitString === 'kg' && <Weight className="h-4 w-4" />}
+                        {unitString === 'g' && <Weight className="h-4 w-4" />}
+                        <span>{unitString}</span>{/* Use unitString as the label */}
                       </div>
                     </SelectItem>
                   ))}
@@ -684,9 +694,7 @@ const InvoiceForm: React.FC<InvoiceFormProps> = ({
                                       {recentCustomers.map(customer => (
                                         <DropdownMenuItem 
                                           key={customer.id} 
-                                          onClick={() => handleSelectCustomer(customer.id)}
-                                          className="cursor-pointer"
-                                        >
+                                          onClick={() => handleSelectCustomer(customer.id)}>
                                           {customer.name}
                                         </DropdownMenuItem>
                                       ))}
@@ -1005,11 +1013,15 @@ const InvoiceForm: React.FC<InvoiceFormProps> = ({
                                           </SelectTrigger>
                                         </FormControl>
                                         <SelectContent>
-                                          {unitOptions.map(unit => (
-                                            <SelectItem key={unit.value} value={unit.value}>
+                                          {/* Use units from App Context, directly using the string value */}
+                                          {units.map(unitString => (
+                                            <SelectItem key={unitString} value={unitString}>
                                               <div className="flex items-center gap-2">
-                                                <unit.icon className="h-4 w-4" />
-                                                <span>{unit.label}</span>
+                                                {/* Conditionally render icon based on unitString */}
+                                                {unitString === 'each' && <Circle className="h-4 w-4" />}
+                                                {unitString === 'kg' && <Weight className="h-4 w-4" />}
+                                                {unitString === 'g' && <Weight className="h-4 w-4" />}
+                                                <span>{unitString}</span>{/* Use unitString as the label */}
                                               </div>
                                             </SelectItem>
                                           ))}

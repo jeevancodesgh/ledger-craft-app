@@ -6,7 +6,7 @@ import { customerService } from '@/services/supabaseService';
 import { Customer } from '@/types';
 import { useToast } from '@/hooks/use-toast';
 import { Spinner } from '@/components/ui/spinner';
-import { 
+import {
   Dialog,
   DialogContent,
   DialogDescription,
@@ -16,7 +16,7 @@ import {
 } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { 
+import {
   Form,
   FormControl,
   FormField,
@@ -29,75 +29,36 @@ import { useForm } from 'react-hook-form';
 import * as z from 'zod';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '@/components/ui/table';
+import CustomerFormDrawer from '@/components/customer/CustomerFormDrawer';
 
 const customerFormSchema = z.object({
   name: z.string().min(2, { message: 'Name must be at least 2 characters' }),
-  email: z.string().email().optional(),
-  phone: z.string().optional(),
-  address: z.string().optional(),
-  city: z.string().optional(),
-  state: z.string().optional(),
-  zip: z.string().optional(),
-  country: z.string().default('New Zealand'),
+  email: z.string().email().optional().or(z.literal('')),
+  phone: z.string().optional().or(z.literal('')),
+  address: z.string().optional().or(z.literal('')),
+  city: z.string().optional().or(z.literal('')),
+  state: z.string().optional().or(z.literal('')),
+  zip: z.string().optional().or(z.literal('')),
+  country: z.string().optional().or(z.literal('')).default('USA'),
   is_vip: z.boolean().default(false)
 });
+
+type CustomerFormValues = z.infer<typeof customerFormSchema>;
 
 const Customers = () => {
   const { toast } = useToast();
   const [customers, setCustomers] = useState<Customer[]>([]);
   const [loading, setLoading] = useState(true);
-  const [openCreateDialog, setOpenCreateDialog] = useState(false);
-  const [editingCustomer, setEditingCustomer] = useState<Customer | null>(null);
   const [deleteCustomerId, setDeleteCustomerId] = useState<string | null>(null);
   const isMobile = useIsMobile();
-  
-  const form = useForm<z.infer<typeof customerFormSchema>>({
-    resolver: zodResolver(customerFormSchema),
-    defaultValues: {
-      name: '',
-      email: '',
-      phone: '',
-      address: '',
-      city: '',
-      state: '',
-      zip: '',
-      country: 'USA',
-      is_vip: false
-    }
-  });
-  
+
+  const [isCustomerDrawerOpen, setIsCustomerDrawerOpen] = useState(false);
+  const [customerToEdit, setCustomerToEdit] = useState<Customer | null>(null);
+
   useEffect(() => {
     fetchCustomers();
   }, []);
-  
-  useEffect(() => {
-    if (editingCustomer) {
-      form.reset({
-        name: editingCustomer.name,
-        email: editingCustomer.email,
-        phone: editingCustomer.phone || '',
-        address: editingCustomer.address || '',
-        city: editingCustomer.city || '',
-        state: editingCustomer.state || '',
-        zip: editingCustomer.zip || '',
-        country: editingCustomer.country || 'USA',
-        is_vip: editingCustomer.isVip || false
-      });
-    } else {
-      form.reset({
-        name: '',
-        email: '',
-        phone: '',
-        address: '',
-        city: '',
-        state: '',
-        zip: '',
-        country: 'USA',
-        is_vip: false
-      });
-    }
-  }, [editingCustomer, form]);
-  
+
   const fetchCustomers = async () => {
     try {
       setLoading(true);
@@ -114,8 +75,8 @@ const Customers = () => {
       setLoading(false);
     }
   };
-  
-  const handleCreateCustomer = async (values: z.infer<typeof customerFormSchema>) => {
+
+  const handleCreateCustomer = async (values: CustomerFormValues) => {
     try {
       console.log("Attempting to create customer with values:", values);
       const newCustomer = {
@@ -126,20 +87,21 @@ const Customers = () => {
         city: values.city || null,
         state: values.state || null,
         zip: values.zip || null,
-        country: values.country,
+        country: values.country || 'USA',
         isVip: values.is_vip
       };
-      
+
       console.log("Transformed customer data:", newCustomer);
       await customerService.createCustomer(newCustomer);
       console.log("Customer created successfully");
-      
+
       toast({
         title: 'Success',
         description: 'Customer created successfully',
       });
-      
-      setOpenCreateDialog(false);
+
+      setIsCustomerDrawerOpen(false);
+      setCustomerToEdit(null);
       fetchCustomers();
     } catch (error) {
       console.error('Error creating customer:', error);
@@ -150,10 +112,10 @@ const Customers = () => {
       });
     }
   };
-  
-  const handleUpdateCustomer = async (values: z.infer<typeof customerFormSchema>) => {
-    if (!editingCustomer) return;
-    
+
+  const handleUpdateCustomer = async (values: CustomerFormValues) => {
+    if (!customerToEdit) return;
+
     try {
       const updatedCustomer = {
         name: values.name,
@@ -163,18 +125,19 @@ const Customers = () => {
         city: values.city || null,
         state: values.state || null,
         zip: values.zip || null,
-        country: values.country,
+        country: values.country || 'USA',
         isVip: values.is_vip
       };
-      
-      await customerService.updateCustomer(editingCustomer.id, updatedCustomer);
-      
+
+      await customerService.updateCustomer(customerToEdit.id, updatedCustomer);
+
       toast({
         title: 'Success',
         description: 'Customer updated successfully',
       });
-      
-      setEditingCustomer(null);
+
+      setIsCustomerDrawerOpen(false);
+      setCustomerToEdit(null);
       fetchCustomers();
     } catch (error) {
       console.error('Error updating customer:', error);
@@ -185,18 +148,18 @@ const Customers = () => {
       });
     }
   };
-  
+
   const handleDeleteCustomer = async () => {
     if (!deleteCustomerId) return;
-    
+
     try {
       await customerService.deleteCustomer(deleteCustomerId);
-      
+
       toast({
         title: 'Success',
         description: 'Customer deleted successfully',
       });
-      
+
       setDeleteCustomerId(null);
       fetchCustomers();
     } catch (error) {
@@ -206,11 +169,23 @@ const Customers = () => {
         description: 'Failed to delete customer',
         variant: 'destructive',
       });
+    } finally {
+      setDeleteCustomerId(null);
     }
   };
-  
-  const onSubmit = (values: z.infer<typeof customerFormSchema>) => {
-    if (editingCustomer) {
+
+  const handleOpenCreateCustomerDrawer = () => {
+    setCustomerToEdit(null);
+    setIsCustomerDrawerOpen(true);
+  };
+
+  const handleOpenEditCustomerDrawer = (customer: Customer) => {
+    setCustomerToEdit(customer);
+    setIsCustomerDrawerOpen(true);
+  };
+
+  const handleFormSubmit = (values: CustomerFormValues) => {
+    if (customerToEdit) {
       handleUpdateCustomer(values);
     } else {
       handleCreateCustomer(values);
@@ -229,9 +204,9 @@ const Customers = () => {
     <div className="space-y-6">
       <div className="flex justify-between items-center">
         <h1 className="text-3xl font-bold">Customers</h1>
-        <Button 
+        <Button
           className="flex items-center gap-2 bg-invoice-teal hover:bg-invoice-teal/90"
-          onClick={() => setOpenCreateDialog(true)}
+          onClick={handleOpenCreateCustomerDrawer}
         >
           <Plus size={18} />
           <span>New Customer</span>
@@ -262,7 +237,7 @@ const Customers = () => {
                         variant="ghost"
                         size="icon"
                         className="h-8 w-8"
-                        onClick={() => setEditingCustomer(customer)}
+                        onClick={() => handleOpenEditCustomerDrawer(customer)}
                       >
                         <Pencil className="h-4 w-4" />
                       </Button>
@@ -369,17 +344,17 @@ const Customers = () => {
                       </TableCell>
                       <TableCell className="text-right">
                         <div className="flex justify-end gap-2">
-                          <Button 
-                            variant="ghost" 
-                            size="icon" 
-                            onClick={() => setEditingCustomer(customer)}
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => handleOpenEditCustomerDrawer(customer)}
                           >
                             <Pencil className="h-4 w-4" />
                           </Button>
-                          <Button 
-                            variant="ghost" 
-                            size="icon" 
-                            className="text-red-500" 
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="text-red-500"
                             onClick={() => setDeleteCustomerId(customer.id)}
                           >
                             <Trash className="h-4 w-4" />
@@ -395,154 +370,12 @@ const Customers = () => {
         </Card>
       )}
       
-      <Dialog 
-        open={openCreateDialog || !!editingCustomer} 
-        onOpenChange={(open) => {
-          if (!open) {
-            setOpenCreateDialog(false);
-            setEditingCustomer(null);
-          }
-        }}
-      >
-        <DialogContent className="sm:max-w-[425px]">
-          <DialogHeader>
-            <DialogTitle>
-              {editingCustomer ? 'Edit Customer' : 'Create Customer'}
-            </DialogTitle>
-            <DialogDescription>
-              {editingCustomer 
-                ? 'Update the customer details below.' 
-                : 'Fill in the customer details below to create a new customer.'}
-            </DialogDescription>
-          </DialogHeader>
-          
-          <Form {...form}>
-            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-              <FormField
-                control={form.control}
-                name="name"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Name</FormLabel>
-                    <FormControl>
-                      <Input {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              
-              <FormField
-                control={form.control}
-                name="email"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Email</FormLabel>
-                    <FormControl>
-                      <Input type="email" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              
-              <FormField
-                control={form.control}
-                name="phone"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Phone</FormLabel>
-                    <FormControl>
-                      <Input {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              
-              <div className="grid grid-cols-2 gap-4">
-                <FormField
-                  control={form.control}
-                  name="address"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Address</FormLabel>
-                      <FormControl>
-                        <Input {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                
-                <FormField
-                  control={form.control}
-                  name="city"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>City</FormLabel>
-                      <FormControl>
-                        <Input {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-              </div>
-              
-              <div className="grid grid-cols-3 gap-4">
-                <FormField
-                  control={form.control}
-                  name="state"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>State</FormLabel>
-                      <FormControl>
-                        <Input {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                
-                <FormField
-                  control={form.control}
-                  name="zip"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Zip</FormLabel>
-                      <FormControl>
-                        <Input {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                
-                <FormField
-                  control={form.control}
-                  name="country"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Country</FormLabel>
-                      <FormControl>
-                        <Input {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-              </div>
-              
-              <DialogFooter>
-                <Button type="submit">
-                  {editingCustomer ? 'Update' : 'Create'}
-                </Button>
-              </DialogFooter>
-            </form>
-          </Form>
-        </DialogContent>
-      </Dialog>
+      <CustomerFormDrawer
+        open={isCustomerDrawerOpen}
+        onOpenChange={setIsCustomerDrawerOpen}
+        initialValues={customerToEdit}
+        onSubmit={handleFormSubmit}
+      />
       
       <Dialog 
         open={!!deleteCustomerId} 

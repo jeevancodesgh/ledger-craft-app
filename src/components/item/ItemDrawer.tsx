@@ -55,7 +55,7 @@ const ItemDrawer: React.FC<ItemDrawerProps> = ({
             <DrawerTitle>{item ? `Edit ${item.name}` : 'Create New Item'}</DrawerTitle>
             <DrawerDescription>{description}</DrawerDescription>
           </DrawerHeader>
-          <div className="flex-1 overflow-y-auto px-4 pb-28">
+          <div className="flex flex-col flex-grow overflow-y-auto px-4">
             <ItemForm
               initialData={item}
               onSubmit={onSave}
