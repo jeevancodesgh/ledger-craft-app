@@ -1,0 +1,151 @@
+---
+description: 
+globs: 
+alwaysApply: true
+---
+rules:
+  # React component best practices
+  - description: "Write React code following best practices (functional components, hooks, prop types, etc)."
+    match: "*.js|*.jsx|*.ts|*.tsx"
+    completion_guidelines:
+      - Use functional components and modern hooks (`useState`, `useEffect`, etc.)
+      - Type all props and state variables (with TypeScript if applicable).
+      - Keep components small, composable, and testable.
+      - Use TailwindCSS or CSS modules — avoid inline styles.
+      - Ensure accessibility (ARIA attributes, tab order, etc.)
+
+  # Component architecture
+  - description: "Structure atomic components using standard file organization."
+    match: "**/components/**/*"
+    completion_guidelines:
+      - Use folders like `/atoms`, `/molecules`, `/organisms` for scalability.
+      - Co-locate styles (`.module.css` or `.ts`) and tests with components.
+      - Use PascalCase for component file names and exports.
+      - Keep component logic clean and UI-focused; delegate logic to hooks/services.
+
+  # Custom hooks
+  - description: "Use and organize custom React hooks efficiently."
+    match: "**/hooks/**/*.ts"
+    completion_guidelines:
+      - Write `useX`-prefixed custom hooks.
+      - Encapsulate reusable logic and API/data fetching in hooks.
+      - Return memoized values and functions using `useMemo` / `useCallback`.
+      - Keep hooks pure and side-effect safe where possible.
+
+  # Supabase client and service layer
+  - description: "Integrate Supabase client in a modular, reusable, and secure way."
+    match: "**/lib/supabase.ts|**/services/supabase.ts"
+    completion_guidelines:
+      - Use the singleton pattern to initialize Supabase with `createClient`.
+      - Keep Supabase URL and anon/public keys in environment variables.
+      - Do not hardcode credentials.
+      - Create an abstraction layer around Supabase to avoid direct calls in components.
+
+  # Supabase auth
+  - description: "Create Supabase-auth-related hooks and logic cleanly."
+    match: "**/hooks/useAuth.ts"
+    completion_guidelines:
+      - Encapsulate `supabase.auth` methods in the hook.
+      - Return current user, sign-in, sign-up, sign-out methods.
+      - Watch for auth state changes with `onAuthStateChange`.
+
+  # Supabase data access
+  - description: "Write Supabase data access hooks that are optimized and scoped."
+    match: "**/hooks/use*.ts"
+    completion_guidelines:
+      - Use `useEffect` and `supabase.from(...).select(...)` for data fetching.
+      - Handle loading, error, and empty states.
+      - Optionally use SWR or TanStack Query for caching and reactivity.
+      - Avoid fetching inside components directly — always go through hooks.
+
+  # Supabase real-time
+  - description: "Use Supabase real-time subscriptions safely."
+    match: "**/hooks/use*.ts"
+    completion_guidelines:
+      - Use `supabase.channel(...)` or `supabase.from(...).on(...)` to subscribe to changes.
+      - Unsubscribe on component unmount to avoid memory leaks.
+      - Handle reconnection logic or errors gracefully.
+
+  # Supabase RLS
+  - description: "Use Supabase Row Level Security (RLS) principles."
+    match: "**/*.ts|**/*.tsx"
+    completion_guidelines:
+      - Avoid doing role-based access control in the frontend.
+      - Assume frontend is insecure and handle permissioning via RLS and policies.
+      - Ensure only authenticated users can read/write sensitive data.
+
+  # Supabase unit testing
+  - description: "Write unit tests for Supabase-powered hooks or logic."
+    match: "**/*.test.ts|**/*.test.tsx"
+    completion_guidelines:
+      - Mock Supabase client and methods using `jest.mock` or custom test utilities.
+      - Cover success, error, and edge cases.
+      - Keep tests small and fast — avoid actual network calls.
+
+  # AppContext (instead of Zustand)
+  - description: "Use AppContext to manage shared state cleanly and efficiently."
+    match: "**/context/**/*.ts"
+    completion_guidelines:
+      - Provide context via React's `createContext` and `useContext`.
+      - Use a provider wrapper to encapsulate logic and initial state.
+      - Memoize context values with `useMemo` to prevent re-renders.
+      - Avoid nesting multiple contexts unnecessarily.
+
+  # API and logic abstraction
+  - description: "Abstract API and data logic from UI components."
+    match: "**/services/**/*.ts"
+    completion_guidelines:
+      - Use clear naming for service methods (e.g., `getUserProfile`, `createOrder`).
+      - Handle exceptions and return consistent results.
+      - Use interfaces/types to define API response shapes.
+      - Keep services independent of React.
+
+  # Performance optimization
+  - description: "Improve performance by optimizing rendering and data usage."
+    match: "**/*.tsx"
+    completion_guidelines:
+      - Use `React.memo`, `useMemo`, and `useCallback` to avoid unnecessary re-renders.
+      - Use `React.lazy` + `Suspense` for code splitting of large components.
+      - Debounce/throttle expensive functions like search or resize handlers.
+      - Avoid anonymous inline functions unless necessary.
+
+  # Styling conventions
+  - description: "Follow consistent styling practices using TailwindCSS or CSS Modules."
+    match: "**/*.tsx"
+    completion_guidelines:
+      - Use utility classes from TailwindCSS for layout and spacing.
+      - Keep component styles modular and scoped.
+      - Avoid inline styles unless for dynamic or conditional rendering.
+
+  # Clean code & naming
+  - description: "Maintain clean, readable, and documented code."
+    match: "**/*.ts|**/*.tsx"
+    completion_guidelines:
+      - Use descriptive names for variables, hooks, and functions.
+      - Remove unused imports, dead code, and redundant logic.
+      - Write JSDoc or inline comments for complex logic.
+      - Prefer composition and small reusable utilities.
+
+  # Testing
+  - description: "Write unit/integration tests for components and hooks."
+    match: "**/*.test.tsx|**/*.test.ts"
+    completion_guidelines:
+      - Use React Testing Library for DOM interaction.
+      - Test loading, success, and error states.
+      - Prefer behavior-driven testing over implementation testing.
+      - Mock context and services as needed.
+
+  # Security
+  - description: "Enforce frontend security best practices."
+    match: "**/*.ts|**/*.tsx"
+    completion_guidelines:
+      - Never hardcode secrets or credentials.
+      - Sanitize user-generated content.
+      - Assume the frontend is not secure — validate and protect via backend/Supabase RLS.
+
+metadata:
+  name: "React + Supabase Best Practices"
+  description: "Cursor AI rules for building scalable, clean, and secure React apps using Supabase and AppContext."
+  version: "2.0.0"
+  project_type: "react"
+
