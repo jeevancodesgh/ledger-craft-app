@@ -24,7 +24,7 @@ interface ItemDrawerProps {
   onSave: (values: Item) => Promise<void>;
   categories: ItemCategory[];
   isLoading: boolean;
-  onCreateCategory?: (name: string) => Promise<ItemCategory>;
+  onCreateCategory?: (category: Omit<ItemCategory, "id" | "createdAt" | "updatedAt">) => Promise<ItemCategory>;
   title?: string;
   description?: string;
 }
@@ -49,32 +49,30 @@ const ItemDrawer: React.FC<ItemDrawerProps> = ({
 
   return (
     <Drawer open={open} onOpenChange={onOpenChange}>
-      <DrawerContent className="flex flex-col max-h-[92vh] sm:max-h-[85vh] h-full">
-        <div className="mx-auto w-full max-w-3xl flex flex-col flex-1">
-          <DrawerHeader className="shrink-0">
-            <DrawerTitle>{item ? `Edit ${item.name}` : 'Create New Item'}</DrawerTitle>
-            <DrawerDescription>{description}</DrawerDescription>
-          </DrawerHeader>
-          <div className="flex flex-col flex-grow overflow-y-auto px-4">
-            <ItemForm
-              initialData={item}
-              onSubmit={onSave}
-              onCancel={handleClose}
-              isLoading={isLoading}
-              categories={categories}
-              onCreateCategory={onCreateCategory}
-            />
-          </div>
-          <DrawerFooter className="sticky bottom-0 bg-background z-10 border-t flex flex-row gap-2 p-4">
-            <Button variant="outline" type="button" onClick={handleClose} disabled={isLoading} className="flex-1 h-12">
-              Cancel
-            </Button>
-            <Button type="submit" form="item-form" disabled={isLoading} className="flex-1 h-12">
-              {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
-              Save
-            </Button>
-          </DrawerFooter>
+      <DrawerContent className="max-h-[92vh] sm:max-h-[85vh]">
+        <DrawerHeader className="shrink-0 flex-shrink-0">
+          <DrawerTitle>{item ? `Edit ${item.name}` : 'Create New Item'}</DrawerTitle>
+          <DrawerDescription>{description}</DrawerDescription>
+        </DrawerHeader>
+        <div className="overflow-y-auto p-4">
+          
+          <ItemForm
+            initialData={item}
+            onSubmit={onSave}
+            isLoading={isLoading}
+            categories={categories}
+            onCreateCategory={onCreateCategory}
+          />
         </div>
+        <DrawerFooter className="flex-col px-4 pt-4 border-t bg-background">
+          <Button variant="outline" type="button" onClick={handleClose} disabled={isLoading} className="flex-1 h-12">
+            Cancel
+          </Button>
+          <Button type="submit" form="item-form" disabled={isLoading} className="flex-1 h-12">
+            {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
+            Save
+          </Button>
+        </DrawerFooter>
       </DrawerContent>
     </Drawer>
   );
