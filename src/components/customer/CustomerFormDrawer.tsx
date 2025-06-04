@@ -33,7 +33,7 @@ const customerFormSchema = z.object({
   city: z.string().optional().or(z.literal('')), // Allow empty string for optional
   state: z.string().optional().or(z.literal('')), // Allow empty string for optional
   zip: z.string().optional().or(z.literal('')), // Allow empty string for optional
-  country: z.string().optional().or(z.literal('')).default('USA'), // Allow empty string for optional, default USA
+  country: z.string().optional().or(z.literal('')).default('New Zealand'), // Allow empty string for optional, default USA
   is_vip: z.boolean().default(false)
 });
 
