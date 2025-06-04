@@ -24,13 +24,13 @@ interface ItemFormProps {
   onCancel: () => void;
   isLoading?: boolean;
   categories?: ItemCategory[];
-  onCreateCategory?: (name: string) => Promise<ItemCategory>;
+  onCreateCategory?: (category: Omit<ItemCategory, "id" | "createdAt" | "updatedAt">) => Promise<ItemCategory>;
 }
 
 export type ItemFormValues = Item;
 
 export function ItemForm({ initialData, onSubmit, onCancel, isLoading = false, categories, onCreateCategory }: ItemFormProps) {
-  const { itemCategories, createItemCategory } = useAppContext();
+  const { itemCategories, createItemCategory, units } = useAppContext();
   const { toast } = useToast();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [newCategoryName, setNewCategoryName] = useState("");
@@ -49,7 +49,7 @@ export function ItemForm({ initialData, onSubmit, onCancel, isLoading = false, c
   });
 
   const effectiveCategories = categories || itemCategories;
-  const effectiveCreateCategory = onCreateCategory || createItemCategory;
+  const effectiveCreateCategory = onCreateCategory ? onCreateCategory : createItemCategory;
 
   const handleChange = (field: keyof Item, value: any) => {
     setFormData({
@@ -93,7 +93,7 @@ export function ItemForm({ initialData, onSubmit, onCancel, isLoading = false, c
     if (!newCategoryName.trim()) return;
     try {
       setIsAddingCategory(true);
-      const newCategory = await effectiveCreateCategory(newCategoryName);
+      const newCategory = await effectiveCreateCategory({ name: newCategoryName });
       setFormData({
         ...formData,
         categoryId: newCategory.id
@@ -179,12 +179,21 @@ export function ItemForm({ initialData, onSubmit, onCancel, isLoading = false, c
           
           <div className="space-y-2">
             <Label htmlFor="unit">Unit</Label>
-            <Input
-              id="unit"
+            <Select
               value={formData.unit}
-              onChange={(e) => handleChange('unit', e.target.value)}
-              placeholder="each, hour, kg, etc."
-            />
+              onValueChange={(value) => handleChange('unit', value)}
+            >
+              <SelectTrigger id="unit">
+                <SelectValue placeholder="Select unit" />
+              </SelectTrigger>
+              <SelectContent>
+                {units.map((unit) => (
+                  <SelectItem key={unit} value={unit}>
+                    {unit}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
         </div>
         

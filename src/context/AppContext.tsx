@@ -44,6 +44,7 @@ interface AppContextType {
   updateAccount: (id: string, account: Partial<Omit<Account, "id" | "createdAt" | "updatedAt">>) => Promise<Account>;
   deleteAccount: (id: string) => Promise<void>;
   refreshAccounts: () => Promise<void>;
+  units: string[];
 }
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
@@ -61,6 +62,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const [isLoadingItemCategories, setIsLoadingItemCategories] = useState(true);
   const [accounts, setAccounts] = useState<Account[]>([]);
   const [isLoadingAccounts, setIsLoadingAccounts] = useState(true);
+  const defaultUnits = ['each', 'hour', 'kg', 'g', 'mg', 'liter', 'ml', 'meter', 'cm', 'mm', 'sq meter', 'sq foot', 'cubic meter', 'cubic foot', 'gallon', 'quart', 'pint', 'ounce', 'lb', 'box', 'pack', 'pair', 'roll', 'set', 'sheet', 'unit'];
+  const [units, setUnits] = useState<string[]>(defaultUnits);
   const { toast } = useToast();
 
   useEffect(() => {
@@ -621,7 +624,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       createAccount,
       updateAccount,
       deleteAccount,
-      refreshAccounts
+      refreshAccounts,
+      units
     }}>
       {children}
     </AppContext.Provider>
