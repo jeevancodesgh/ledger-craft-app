@@ -81,6 +81,7 @@ interface InvoiceFormProps {
     invoiceNumber?: string;
   };
   availableItems?: Item[];
+  isLoadingItems?: boolean;
 }
 
 const invoiceFormSchema = z.object({
@@ -693,9 +694,7 @@ const InvoiceForm: React.FC<InvoiceFormProps> = ({
                                       {recentCustomers.map(customer => (
                                         <DropdownMenuItem 
                                           key={customer.id} 
-                                          onClick={() => handleSelectCustomer(customer.id)}
-                                          className="cursor-pointer"
-                                        >
+                                          onClick={() => handleSelectCustomer(customer.id)}>
                                           {customer.name}
                                         </DropdownMenuItem>
                                       ))}
