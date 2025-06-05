@@ -156,6 +156,7 @@ const InvoiceForm: React.FC<InvoiceFormProps> = ({
 
   // Get units from App Context
   const { units } = useAppContext();
+  const { itemCategories } = useAppContext();
 
   const form = useForm<InvoiceFormValues>({
     resolver: zodResolver(invoiceFormSchema),
@@ -1175,7 +1176,7 @@ const InvoiceForm: React.FC<InvoiceFormProps> = ({
         open={isItemDrawerOpen}
         onOpenChange={setIsItemDrawerOpen}
         onSave={handleSaveNewItem}
-        categories={[]} // Pass your categories here
+        categories={itemCategories} // Pass your categories here
         isLoading={false}
         title="Create New Item"
         description="Add a new product or service to your inventory"
