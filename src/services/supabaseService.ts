@@ -128,7 +128,8 @@ const mapSupabaseBusinessProfileToBusinessProfile = (profile: SupabaseBusinessPr
   createdAt: profile.created_at,
   updatedAt: profile.updated_at,
   invoiceNumberFormat: profile.invoice_number_format,
-  invoiceNumberSequence: profile.invoice_number_sequence
+  invoiceNumberSequence: profile.invoice_number_sequence,
+  currency: profile.currency,
 });
 
 const mapBusinessProfileToSupabaseBusinessProfile = async (

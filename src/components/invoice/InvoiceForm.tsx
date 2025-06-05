@@ -82,6 +82,8 @@ interface InvoiceFormProps {
   };
   availableItems?: Item[];
   isLoadingItems?: boolean;
+  generatedInvoiceNumber?: string;
+  isLoadingInvoiceNumber?: boolean;
 }
 
 const invoiceFormSchema = z.object({
@@ -109,7 +111,9 @@ const InvoiceForm: React.FC<InvoiceFormProps> = ({
   onAddCustomer,
   newlyAddedCustomer,
   defaultValues,
-  availableItems = []
+  availableItems = [],
+  generatedInvoiceNumber,
+  isLoadingInvoiceNumber = false
 }) => {
   const navigate = useNavigate();
   const isMobile = useIsMobile();
@@ -152,6 +156,7 @@ const InvoiceForm: React.FC<InvoiceFormProps> = ({
 
   // Get units from App Context
   const { units } = useAppContext();
+  const { itemCategories } = useAppContext();
 
   const form = useForm<InvoiceFormValues>({
     resolver: zodResolver(invoiceFormSchema),
@@ -232,6 +237,13 @@ const InvoiceForm: React.FC<InvoiceFormProps> = ({
     }
   }, [customers]);
 
+  useEffect(() => {
+    if (generatedInvoiceNumber && !initialValues?.invoiceNumber) {
+      setInvoiceNumber(generatedInvoiceNumber);
+      form.setValue('invoiceNumber', generatedInvoiceNumber);
+    }
+  }, [generatedInvoiceNumber, initialValues?.invoiceNumber, form]);
+
   const handleInvoiceNumberChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setInvoiceNumber(e.target.value);
     form.setValue('invoiceNumber', e.target.value);
@@ -307,6 +319,7 @@ const InvoiceForm: React.FC<InvoiceFormProps> = ({
     const vals = form.getValues();
     const previewInvoice: Invoice = {
       id: initialValues?.id || "preview",
+      userId: initialValues?.userId || "preview-user",
       invoiceNumber: vals.invoiceNumber,
       customerId: vals.customerId,
       customer: customers.find(c => c.id === vals.customerId),
@@ -650,6 +663,7 @@ const InvoiceForm: React.FC<InvoiceFormProps> = ({
                               placeholder="Invoice Number"
                               className="w-full"
                               autoComplete="off"
+                              disabled={isLoadingInvoiceNumber}
                             />
                           </FormControl>
                           <FormMessage />
@@ -1162,7 +1176,7 @@ const InvoiceForm: React.FC<InvoiceFormProps> = ({
         open={isItemDrawerOpen}
         onOpenChange={setIsItemDrawerOpen}
         onSave={handleSaveNewItem}
-        categories={[]} // Pass your categories here
+        categories={itemCategories} // Pass your categories here
         isLoading={false}
         title="Create New Item"
         description="Add a new product or service to your inventory"

@@ -2,11 +2,12 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAppContext } from '@/context/AppContext';
 import InvoiceForm from "@/components/invoice/InvoiceForm";
-import { generateNextInvoiceNumber } from '@/utils/invoiceUtils';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
 import { Customer } from '@/types';
 import CustomerFormDrawer, { CustomerFormValues } from '@/components/customer/CustomerFormDrawer';
+import { invoiceService } from '@/services/supabaseService';
+import { useForm } from 'react-hook-form';
 
 const CreateInvoice = () => {
   const { 
@@ -23,10 +24,50 @@ const CreateInvoice = () => {
   const [newlyAddedCustomer, setNewlyAddedCustomer] = useState<Customer | null>(null);
   const [isCustomerDrawerOpen, setIsCustomerDrawerOpen] = useState(false);
 
-  const defaultInvoiceNumber = generateNextInvoiceNumber(
-    businessProfile?.invoiceNumberFormat,
-    businessProfile?.invoiceNumberSequence
-  );
+  const [calculatedInvoiceNumber, setCalculatedInvoiceNumber] = useState<string | undefined>(undefined);
+  const [isLoadingInvoiceNumber, setIsLoadingInvoiceNumber] = useState(true);
+
+  const form = useForm<any>({
+    defaultValues: {
+      invoiceNumber: '',
+      customerId: '',
+      date: new Date(),
+      dueDate: new Date(new Date().setDate(new Date().getDate() + 30)),
+      notes: businessProfile?.defaultNotes || "",
+      terms: businessProfile?.defaultTerms || "",
+      currency: businessProfile?.currency || "USD",
+      additionalCharges: 0,
+      discount: 0,
+    },
+  });
+
+  useEffect(() => {
+    const fetchAndCalculateInvoiceNumber = async () => {
+      setIsLoadingInvoiceNumber(true);
+      try {
+        const nextGeneratedNumber = await invoiceService.getNextInvoiceNumber();
+        setCalculatedInvoiceNumber(nextGeneratedNumber);
+      } catch (error) {
+        console.error('Error fetching/calculating invoice number from service:', error);
+        toast({
+          title: "Error",
+          description: "Failed to generate invoice number. Please try again.",
+          variant: "destructive",
+        });
+        setCalculatedInvoiceNumber(`INV-${Date.now()}`);
+      } finally {
+        setIsLoadingInvoiceNumber(false);
+      }
+    };
+
+    fetchAndCalculateInvoiceNumber();
+  }, []);
+
+  useEffect(() => {
+    if (newlyAddedCustomer) {
+      form.setValue('customerId', newlyAddedCustomer.id);
+    }
+  }, [newlyAddedCustomer, form]);
 
   const handleSubmit = async (
     values: any,
@@ -39,7 +80,7 @@ const CreateInvoice = () => {
   ) => {
     try {
       console.log("Attempting to create invoice with data:", {
-        invoiceNumber: values.invoiceNumber || defaultInvoiceNumber,
+        invoiceNumber: values.invoiceNumber,
         customerId: values.customerId,
         date: values.date.toISOString().split('T')[0],
         dueDate: values.dueDate.toISOString().split('T')[0],
@@ -55,7 +96,7 @@ const CreateInvoice = () => {
         discount: discount,
       });
       await createInvoice({
-        invoiceNumber: values.invoiceNumber || defaultInvoiceNumber,
+        invoiceNumber: values.invoiceNumber,
         customerId: values.customerId,
         date: values.date.toISOString().split('T')[0],
         dueDate: values.dueDate.toISOString().split('T')[0],
@@ -131,11 +172,10 @@ const CreateInvoice = () => {
         onCancel={() => navigate('/invoices')}
         onAddCustomer={() => setIsCustomerDrawerOpen(true)}
         newlyAddedCustomer={newlyAddedCustomer}
-        defaultValues={{
-          invoiceNumber: defaultInvoiceNumber,
-        }}
         availableItems={items}
         isLoadingItems={isLoadingItems}
+        generatedInvoiceNumber={calculatedInvoiceNumber}
+        isLoadingInvoiceNumber={isLoadingInvoiceNumber}
       />
 
       <CustomerFormDrawer
