@@ -57,6 +57,7 @@ import ItemDrawer from "../item/ItemDrawer";
 import { ItemFormValues } from "../item/ItemForm";
 import { Switch } from "@/components/ui/switch";
 import { useAppContext } from "@/context/AppContext";
+import { motion, AnimatePresence } from "framer-motion";
 
 // Import template components
 import ClassicTemplate from "./preview/templates/ClassicTemplate";
@@ -99,6 +100,58 @@ const invoiceFormSchema = z.object({
 });
 
 type InvoiceFormValues = z.infer<typeof invoiceFormSchema>;
+
+// Add these animation variants at the top of the file after imports
+const tabVariants = {
+  hidden: { opacity: 0, y: 20 },
+  visible: { 
+    opacity: 1, 
+    y: 0,
+    transition: {
+      duration: 0.3,
+      ease: "easeOut"
+    }
+  },
+  exit: { 
+    opacity: 0, 
+    y: -20,
+    transition: {
+      duration: 0.2,
+      ease: "easeIn"
+    }
+  }
+};
+
+const lineItemVariants = {
+  initial: { opacity: 0, x: -20 },
+  animate: { 
+    opacity: 1, 
+    x: 0,
+    transition: {
+      duration: 0.2,
+      ease: "easeOut"
+    }
+  },
+  exit: { 
+    opacity: 0, 
+    x: 20,
+    transition: {
+      duration: 0.2,
+      ease: "easeIn"
+    }
+  }
+};
+
+const buttonVariants = {
+  hover: { 
+    scale: 1.02,
+    transition: { duration: 0.2 }
+  },
+  tap: { 
+    scale: 0.98,
+    transition: { duration: 0.1 }
+  }
+};
 
 const InvoiceForm: React.FC<InvoiceFormProps> = ({
   mode,
@@ -604,6 +657,7 @@ const InvoiceForm: React.FC<InvoiceFormProps> = ({
         <InvoicePreview
           invoice={invoicePreview}
           selectedTemplate={selectedTemplate}
+          onBackToEdit={() => setActiveTab("edit")}
         />
       </div>
     );
@@ -644,530 +698,598 @@ const InvoiceForm: React.FC<InvoiceFormProps> = ({
         </TabsList>
 
         <TabsContent value="edit" className="px-4 sm:px-0">
-          <Card>
-            <CardContent className="pt-4 pb-2 px-3 sm:p-6 sm:pt-6">
-              <Form {...form}>
-                <form onSubmit={form.handleSubmit(localOnSubmit)} className="space-y-4">
-                  <div className="mb-3">
-                    <FormField
-                      control={form.control}
-                      name="invoiceNumber"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Invoice Number</FormLabel>
-                          <FormControl>
-                            <Input
-                              {...field}
-                              value={invoiceNumber}
-                              onChange={handleInvoiceNumberChange}
-                              placeholder="Invoice Number"
-                              className="w-full"
-                              autoComplete="off"
-                              disabled={isLoadingInvoiceNumber}
-                            />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
+          <motion.div
+            initial="hidden"
+            animate="visible"
+            exit="exit"
+            variants={tabVariants}
+          >
+            <Card>
+              <CardContent className="pt-4 pb-2 px-3 sm:p-6 sm:pt-6">
+                <Form {...form}>
+                  <form onSubmit={form.handleSubmit(localOnSubmit)} className="space-y-4">
+                    <div className="mb-3">
+                      <FormField
+                        control={form.control}
+                        name="invoiceNumber"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Invoice Number</FormLabel>
+                            <FormControl>
+                              <Input
+                                {...field}
+                                value={invoiceNumber}
+                                onChange={handleInvoiceNumberChange}
+                                placeholder="Invoice Number"
+                                className="w-full"
+                                autoComplete="off"
+                                disabled={isLoadingInvoiceNumber}
+                              />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                    </div>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <FormField
+                        control={form.control}
+                        name="customerId"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Customer</FormLabel>
+                            <div className="flex gap-2">
+                              <Select
+                                onValueChange={field.onChange}
+                                value={field.value}
+                              >
+                                <FormControl>
+                                  <SelectTrigger>
+                                    <SelectValue placeholder="Select a customer" />
+                                  </SelectTrigger>
+                                </FormControl>
+                                <SelectContent position="popper" className="min-w-[var(--radix-select-trigger-width)]">
+                                  {customers.map((customer) => (
+                                    <SelectItem key={customer.id} value={customer.id}>
+                                      {customer.name}
+                                    </SelectItem>
+                                  ))}
+                                </SelectContent>
+                              </Select>
+                              
+                              <div className="flex items-center">
+                                <DropdownMenu>
+                                  <DropdownMenuTrigger asChild>
+                                    <Button 
+                                      variant="outline" 
+                                      size="icon" 
+                                      className="h-10 w-10"
+                                      title="Customer shortcuts"
+                                    >
+                                      <UserPlus className="h-4 w-4" />
+                                    </Button>
+                                  </DropdownMenuTrigger>
+                                  <DropdownMenuContent align="end" className="w-56">
+                                    <DropdownMenuLabel>Customer Options</DropdownMenuLabel>
+                                    <DropdownMenuSeparator />
+                                    <DropdownMenuItem onClick={onAddCustomer} className="cursor-pointer">
+                                      <UserPlus className="mr-2 h-4 w-4" />
+                                      <span>Add New Customer</span>
+                                    </DropdownMenuItem>
+                                    
+                                    {recentCustomers.length > 0 && (
+                                      <>
+                                        <DropdownMenuSeparator />
+                                        <DropdownMenuLabel>Recent Customers</DropdownMenuLabel>
+                                        {recentCustomers.map(customer => (
+                                          <DropdownMenuItem 
+                                            key={customer.id} 
+                                            onClick={() => handleSelectCustomer(customer.id)}>
+                                            {customer.name}
+                                          </DropdownMenuItem>
+                                        ))}
+                                      </>
+                                    )}
+                                  </DropdownMenuContent>
+                                </DropdownMenu>
+                              </div>
+                            </div>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                      {/* Customer Info Card */}
+                      {selectedCustomer && (
+                        <Card className="col-span-1 md:col-span-2 bg-muted/50 border border-muted-foreground/10 mt-2">
+                          <CardContent className="py-3 flex flex-col gap-1">
+                            <div className="font-semibold text-base flex items-center gap-2">
+                              <UserPlus className="w-4 h-4 text-primary" />
+                              {selectedCustomer.name}
+                            </div>
+                            <div className="text-sm text-muted-foreground flex items-center gap-2">
+                              <span className="font-medium">Email:</span> {selectedCustomer.email}
+                            </div>
+                            {selectedCustomer.phone && (
+                              <div className="text-sm text-muted-foreground flex items-center gap-2">
+                                <span className="font-medium">Phone:</span> {selectedCustomer.phone}
+                              </div>
+                            )}
+                            {(selectedCustomer.address || selectedCustomer.city || selectedCustomer.state || selectedCustomer.zip || selectedCustomer.country) && (
+                              <div className="text-sm text-muted-foreground flex items-center gap-2">
+                                <span className="font-medium">Address:</span>
+                                <span>
+                                  {selectedCustomer.address ? selectedCustomer.address + ', ' : ''}
+                                  {selectedCustomer.city ? selectedCustomer.city + ', ' : ''}
+                                  {selectedCustomer.state ? selectedCustomer.state + ', ' : ''}
+                                  {selectedCustomer.zip ? selectedCustomer.zip + ', ' : ''}
+                                  {selectedCustomer.country}
+                                </span>
+                              </div>
+                            )}
+                          </CardContent>
+                        </Card>
                       )}
-                    />
-                  </div>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <FormField
-                      control={form.control}
-                      name="customerId"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Customer</FormLabel>
-                          <div className="flex gap-2">
+                      <FormField
+                        control={form.control}
+                        name="currency"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Currency</FormLabel>
                             <Select
                               onValueChange={field.onChange}
-                              value={field.value}
+                              defaultValue={field.value}
                             >
                               <FormControl>
                                 <SelectTrigger>
-                                  <SelectValue placeholder="Select a customer" />
+                                  <SelectValue placeholder="Select currency" />
                                 </SelectTrigger>
                               </FormControl>
                               <SelectContent position="popper" className="min-w-[var(--radix-select-trigger-width)]">
-                                {customers.map((customer) => (
-                                  <SelectItem key={customer.id} value={customer.id}>
-                                    {customer.name}
-                                  </SelectItem>
-                                ))}
+                                <SelectItem value="NZD">NZD ($)</SelectItem>
+                                <SelectItem value="EUR">EUR (€)</SelectItem>
+                                <SelectItem value="GBP">GBP (£)</SelectItem>
+                                <SelectItem value="CAD">CAD (C$)</SelectItem>
+                                <SelectItem value="AUD">AUD (A$)</SelectItem>
                               </SelectContent>
                             </Select>
-                            
-                            <div className="flex items-center">
-                              <DropdownMenu>
-                                <DropdownMenuTrigger asChild>
-                                  <Button 
-                                    variant="outline" 
-                                    size="icon" 
-                                    className="h-10 w-10"
-                                    title="Customer shortcuts"
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                      <FormField
+                        control={form.control}
+                        name="date"
+                        render={({ field }) => (
+                          <FormItem className="flex flex-col">
+                            <FormLabel>Invoice Date</FormLabel>
+                            <Popover>
+                              <PopoverTrigger asChild>
+                                <FormControl>
+                                  <Button
+                                    variant={"outline"}
+                                    className={cn(
+                                      "w-full pl-3 text-left font-normal justify-between",
+                                      !field.value && "text-muted-foreground"
+                                    )}
                                   >
-                                    <UserPlus className="h-4 w-4" />
+                                    {field.value ? (
+                                      format(field.value, "PPP")
+                                    ) : (
+                                      <span>Pick a date</span>
+                                    )}
+                                    <CalendarIcon className="h-4 w-4 opacity-50" />
                                   </Button>
-                                </DropdownMenuTrigger>
-                                <DropdownMenuContent align="end" className="w-56">
-                                  <DropdownMenuLabel>Customer Options</DropdownMenuLabel>
-                                  <DropdownMenuSeparator />
-                                  <DropdownMenuItem onClick={onAddCustomer} className="cursor-pointer">
-                                    <UserPlus className="mr-2 h-4 w-4" />
-                                    <span>Add New Customer</span>
-                                  </DropdownMenuItem>
-                                  
-                                  {recentCustomers.length > 0 && (
-                                    <>
-                                      <DropdownMenuSeparator />
-                                      <DropdownMenuLabel>Recent Customers</DropdownMenuLabel>
-                                      {recentCustomers.map(customer => (
-                                        <DropdownMenuItem 
-                                          key={customer.id} 
-                                          onClick={() => handleSelectCustomer(customer.id)}>
-                                          {customer.name}
-                                        </DropdownMenuItem>
-                                      ))}
-                                    </>
-                                  )}
-                                </DropdownMenuContent>
-                              </DropdownMenu>
-                            </div>
-                          </div>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                    {/* Customer Info Card */}
-                    {selectedCustomer && (
-                      <Card className="col-span-1 md:col-span-2 bg-muted/50 border border-muted-foreground/10 mt-2">
-                        <CardContent className="py-3 flex flex-col gap-1">
-                          <div className="font-semibold text-base flex items-center gap-2">
-                            <UserPlus className="w-4 h-4 text-primary" />
-                            {selectedCustomer.name}
-                          </div>
-                          <div className="text-sm text-muted-foreground flex items-center gap-2">
-                            <span className="font-medium">Email:</span> {selectedCustomer.email}
-                          </div>
-                          {selectedCustomer.phone && (
-                            <div className="text-sm text-muted-foreground flex items-center gap-2">
-                              <span className="font-medium">Phone:</span> {selectedCustomer.phone}
-                            </div>
-                          )}
-                          {(selectedCustomer.address || selectedCustomer.city || selectedCustomer.state || selectedCustomer.zip || selectedCustomer.country) && (
-                            <div className="text-sm text-muted-foreground flex items-center gap-2">
-                              <span className="font-medium">Address:</span>
-                              <span>
-                                {selectedCustomer.address ? selectedCustomer.address + ', ' : ''}
-                                {selectedCustomer.city ? selectedCustomer.city + ', ' : ''}
-                                {selectedCustomer.state ? selectedCustomer.state + ', ' : ''}
-                                {selectedCustomer.zip ? selectedCustomer.zip + ', ' : ''}
-                                {selectedCustomer.country}
-                              </span>
-                            </div>
-                          )}
-                        </CardContent>
-                      </Card>
-                    )}
-                    <FormField
-                      control={form.control}
-                      name="currency"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Currency</FormLabel>
-                          <Select
-                            onValueChange={field.onChange}
-                            defaultValue={field.value}
-                          >
-                            <FormControl>
-                              <SelectTrigger>
-                                <SelectValue placeholder="Select currency" />
-                              </SelectTrigger>
-                            </FormControl>
-                            <SelectContent position="popper" className="min-w-[var(--radix-select-trigger-width)]">
-                              <SelectItem value="NZD">NZD ($)</SelectItem>
-                              <SelectItem value="EUR">EUR (€)</SelectItem>
-                              <SelectItem value="GBP">GBP (£)</SelectItem>
-                              <SelectItem value="CAD">CAD (C$)</SelectItem>
-                              <SelectItem value="AUD">AUD (A$)</SelectItem>
-                            </SelectContent>
-                          </Select>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                    <FormField
-                      control={form.control}
-                      name="date"
-                      render={({ field }) => (
-                        <FormItem className="flex flex-col">
-                          <FormLabel>Invoice Date</FormLabel>
-                          <Popover>
-                            <PopoverTrigger asChild>
-                              <FormControl>
-                                <Button
-                                  variant={"outline"}
-                                  className={cn(
-                                    "w-full pl-3 text-left font-normal justify-between",
-                                    !field.value && "text-muted-foreground"
-                                  )}
-                                >
-                                  {field.value ? (
-                                    format(field.value, "PPP")
-                                  ) : (
-                                    <span>Pick a date</span>
-                                  )}
-                                  <CalendarIcon className="h-4 w-4 opacity-50" />
-                                </Button>
-                              </FormControl>
-                            </PopoverTrigger>
-                            <PopoverContent className="w-auto p-0" align="start">
-                              <Calendar
-                                mode="single"
-                                selected={field.value}
-                                onSelect={field.onChange}
-                                initialFocus
-                                className={cn("p-3 pointer-events-auto")}
-                              />
-                            </PopoverContent>
-                          </Popover>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                    <FormField
-                      control={form.control}
-                      name="dueDate"
-                      render={({ field }) => (
-                        <FormItem className="flex flex-col">
-                          <FormLabel>Due Date</FormLabel>
-                          <Popover>
-                            <PopoverTrigger asChild>
-                              <FormControl>
-                                <Button
-                                  variant={"outline"}
-                                  className={cn(
-                                    "w-full pl-3 text-left font-normal justify-between",
-                                    !field.value && "text-muted-foreground"
-                                  )}
-                                >
-                                  {field.value ? (
-                                    format(field.value, "PPP")
-                                  ) : (
-                                    <span>Pick a date</span>
-                                  )}
-                                  <CalendarIcon className="h-4 w-4 opacity-50" />
-                                </Button>
-                              </FormControl>
-                            </PopoverTrigger>
-                            <PopoverContent className="w-auto p-0" align="start">
-                              <Calendar
-                                mode="single"
-                                selected={field.value}
-                                onSelect={field.onChange}
-                                initialFocus
-                                className={cn("p-3 pointer-events-auto")}
-                              />
-                            </PopoverContent>
-                          </Popover>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                  </div>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div className="flex items-center gap-2 mt-2">
-                      <Switch
-                        checked={isAdditionalChargesEnabled}
-                        onCheckedChange={setIsAdditionalChargesEnabled}
-                        id="additional-charges-toggle"
+                                </FormControl>
+                              </PopoverTrigger>
+                              <PopoverContent className="w-auto p-0" align="start">
+                                <Calendar
+                                  mode="single"
+                                  selected={field.value}
+                                  onSelect={field.onChange}
+                                  initialFocus
+                                  className={cn("p-3 pointer-events-auto")}
+                                />
+                              </PopoverContent>
+                            </Popover>
+                            <FormMessage />
+                          </FormItem>
+                        )}
                       />
-                      <label htmlFor="additional-charges-toggle" className="text-sm font-medium">Enable Additional Charges</label>
-                      {isAdditionalChargesEnabled && (
-                        <Input
-                          type="number"
-                          min={0}
-                          step="0.01"
-                          value={additionalCharges}
-                          onChange={handleAdditionalChargesChange}
-                          placeholder="e.g. shipping, handling"
-                          className="w-32 ml-2"
-                        />
-                      )}
-                    </div>
-                    <div className="flex items-center gap-2 mt-2">
-                      <Switch
-                        checked={isDiscountEnabled}
-                        onCheckedChange={setIsDiscountEnabled}
-                        id="discount-toggle"
-                      />
-                      <label htmlFor="discount-toggle" className="text-sm font-medium">Enable Discount</label>
-                      {isDiscountEnabled && (
-                        <Input
-                          type="number"
-                          min={0}
-                          step="0.01"
-                          value={discount}
-                          onChange={handleDiscountChange}
-                          placeholder="Any deduction"
-                          className="w-32 ml-2"
-                        />
-                      )}
-                    </div>
-                    <div className="flex items-center gap-2 mt-2">
-                      <Switch
-                        checked={isTaxEnabled}
-                        onCheckedChange={setIsTaxEnabled}
-                        id="tax-toggle"
-                      />
-                      <label htmlFor="tax-toggle" className="text-sm font-medium">Enable Tax</label>
-                      {isTaxEnabled && (
-                        <Input
-                          type="number"
-                          min={0}
-                          max={100}
-                          step={0.01}
-                          value={taxRate}
-                          onChange={e => setTaxRate(Number(e.target.value))}
-                          placeholder="Tax %"
-                          className="w-24 ml-2"
-                        />
-                      )}
-                    </div>
-                  </div>
-                  <div className="space-y-4 pb-4">
-                    <Collapsible
-                      open={isLineItemsOpen}
-                      onOpenChange={setIsLineItemsOpen}
-                      className="border rounded-md p-2"
-                    >
-                      <CollapsibleTrigger className="flex w-full justify-between items-center p-2">
-                        <h3 className="text-lg font-medium">Line Items</h3>
-                        <ChevronsUpDown size={16} />
-                      </CollapsibleTrigger>
-                      <CollapsibleContent className="pt-2">
-                        {isMobile ? (
-                          <div className="space-y-2">
-                            {items.map((item, index) => (
-                              <div
-                                key={item.id}
-                                className="flex justify-between items-center border-b pb-2"
-                                onClick={() => editItem(index)}
-                              >
-                                <div className="flex-1">
-                                  <div className="font-medium">{item.description || "Untitled Item"}</div>
-                                  <div className="text-sm text-muted-foreground">
-                                    {item.quantity} × {formatCurrency(item.rate, form.getValues('currency'))}
-                                  </div>
-                                </div>
-                                <div className="text-right">
-                                  <div>{formatCurrency(item.total, form.getValues('currency'))}</div>
-                                  <button
-                                    type="button"
-                                    className="text-muted-foreground hover:text-destructive text-sm"
-                                    onClick={e => { e.stopPropagation(); removeItem(index); }}
+                      <FormField
+                        control={form.control}
+                        name="dueDate"
+                        render={({ field }) => (
+                          <FormItem className="flex flex-col">
+                            <FormLabel>Due Date</FormLabel>
+                            <Popover>
+                              <PopoverTrigger asChild>
+                                <FormControl>
+                                  <Button
+                                    variant={"outline"}
+                                    className={cn(
+                                      "w-full pl-3 text-left font-normal justify-between",
+                                      !field.value && "text-muted-foreground"
+                                    )}
                                   >
-                                    <Trash2 size={16} />
-                                  </button>
-                                </div>
-                              </div>
-                            ))}
-                            <Button
-                              type="button"
-                              onClick={addItem}
-                              variant="outline"
-                              size="sm"
-                              className="w-full flex items-center justify-center gap-2"
+                                    {field.value ? (
+                                      format(field.value, "PPP")
+                                    ) : (
+                                      <span>Pick a date</span>
+                                    )}
+                                    <CalendarIcon className="h-4 w-4 opacity-50" />
+                                  </Button>
+                                </FormControl>
+                              </PopoverTrigger>
+                              <PopoverContent className="w-auto p-0" align="start">
+                                <Calendar
+                                  mode="single"
+                                  selected={field.value}
+                                  onSelect={field.onChange}
+                                  initialFocus
+                                  className={cn("p-3 pointer-events-auto")}
+                                />
+                              </PopoverContent>
+                            </Popover>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                    </div>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div className="flex items-center gap-2 mt-2">
+                        <Switch
+                          checked={isAdditionalChargesEnabled}
+                          onCheckedChange={setIsAdditionalChargesEnabled}
+                          id="additional-charges-toggle"
+                        />
+                        <label htmlFor="additional-charges-toggle" className="text-sm font-medium">Enable Additional Charges</label>
+                        {isAdditionalChargesEnabled && (
+                          <Input
+                            type="number"
+                            min={0}
+                            step="0.01"
+                            value={additionalCharges}
+                            onChange={handleAdditionalChargesChange}
+                            placeholder="e.g. shipping, handling"
+                            className="w-32 ml-2"
+                          />
+                        )}
+                      </div>
+                      <div className="flex items-center gap-2 mt-2">
+                        <Switch
+                          checked={isDiscountEnabled}
+                          onCheckedChange={setIsDiscountEnabled}
+                          id="discount-toggle"
+                        />
+                        <label htmlFor="discount-toggle" className="text-sm font-medium">Enable Discount</label>
+                        {isDiscountEnabled && (
+                          <Input
+                            type="number"
+                            min={0}
+                            step="0.01"
+                            value={discount}
+                            onChange={handleDiscountChange}
+                            placeholder="Any deduction"
+                            className="w-32 ml-2"
+                          />
+                        )}
+                      </div>
+                      <div className="flex items-center gap-2 mt-2">
+                        <Switch
+                          checked={isTaxEnabled}
+                          onCheckedChange={setIsTaxEnabled}
+                          id="tax-toggle"
+                        />
+                        <label htmlFor="tax-toggle" className="text-sm font-medium">Enable Tax</label>
+                        {isTaxEnabled && (
+                          <Input
+                            type="number"
+                            min={0}
+                            max={100}
+                            step={0.01}
+                            value={taxRate}
+                            onChange={e => setTaxRate(Number(e.target.value))}
+                            placeholder="Tax %"
+                            className="w-24 ml-2"
+                          />
+                        )}
+                      </div>
+                    </div>
+                    <div className="space-y-4 pb-4">
+                      <Collapsible
+                        open={isLineItemsOpen}
+                        onOpenChange={setIsLineItemsOpen}
+                        className="border rounded-md p-2"
+                      >
+                        <motion.div
+                          initial={false}
+                          animate={{ backgroundColor: isLineItemsOpen ? "transparent" : "rgba(0,0,0,0.02)" }}
+                          transition={{ duration: 0.2 }}
+                        >
+                          <CollapsibleTrigger className="flex w-full justify-between items-center p-2">
+                            <h3 className="text-lg font-medium">Line Items</h3>
+                            <motion.div
+                              animate={{ rotate: isLineItemsOpen ? 180 : 0 }}
+                              transition={{ duration: 0.2 }}
                             >
-                              <Plus size={16} />
-                              <span>Add Item</span>
-                            </Button>
-                            <Drawer open={openLineItemDrawer} onOpenChange={setOpenLineItemDrawer}>
-                              {renderLineItemDrawer()}
-                            </Drawer>
-                          </div>
-                        ) : (
-                          <div className="overflow-x-auto">
-                            <table className="min-w-full">
-                              <thead>
-                                <tr className="border-b">
-                                  <th className="text-left py-2 text-sm font-medium">Description</th>
-                                  <th className="text-right py-2 text-sm font-medium">Qty</th>
-                                  <th className="text-left py-2 text-sm font-medium">Unit</th>
-                                  <th className="text-right py-2 text-sm font-medium">Rate</th>
-                                  <th className="text-right py-2 text-sm font-medium">Total</th>
-                                  <th className="py-2 w-10"></th>
-                                </tr>
-                              </thead>
-                              <tbody>
-                                {items.map((item, index) => (
-                                  <tr key={item.id} className="border-b last:border-b-0">
-                                    <td className="py-2 pr-2">
-                                      <div className="flex flex-col space-y-1">
-                                        <div className="flex items-center relative w-full">
-                                          <Input
-                                            value={item.description}
-                                            onChange={e => updateItem(index, "description", e.target.value)}
-                                            placeholder="Item description"
-                                            className="w-full"
-                                          />
-                                          <div className="absolute right-2 top-1/2 -translate-y-1/2">
-                                            <ItemSelector
-                                              onItemSelect={(selectedItem) => handleItemSelect(selectedItem, index)}
-                                              onCreateNewItem={() => handleCreateNewItem(index)}
-                                              buttonClassName="h-6 w-6 p-0"
-                                              iconOnly
-                                              refetch={triggerItemsRefetch}
-                                            />
+                              <ChevronsUpDown size={16} />
+                            </motion.div>
+                          </CollapsibleTrigger>
+                        </motion.div>
+                        
+                        <AnimatePresence>
+                          {isLineItemsOpen && (
+                            <motion.div
+                              initial={{ height: 0, opacity: 0 }}
+                              animate={{ height: "auto", opacity: 1 }}
+                              exit={{ height: 0, opacity: 0 }}
+                              transition={{ duration: 0.2 }}
+                            >
+                              <CollapsibleContent className="pt-2">
+                                {isMobile ? (
+                                  <div className="space-y-2">
+                                    {items.map((item, index) => (
+                                      <div
+                                        key={item.id}
+                                        className="flex justify-between items-center border-b pb-2"
+                                        onClick={() => editItem(index)}
+                                      >
+                                        <div className="flex-1">
+                                          <div className="font-medium">{item.description || "Untitled Item"}</div>
+                                          <div className="text-sm text-muted-foreground">
+                                            {item.quantity} × {formatCurrency(item.rate, form.getValues('currency'))}
                                           </div>
                                         </div>
+                                        <div className="text-right">
+                                          <div>{formatCurrency(item.total, form.getValues('currency'))}</div>
+                                          <button
+                                            type="button"
+                                            className="text-muted-foreground hover:text-destructive text-sm"
+                                            onClick={e => { e.stopPropagation(); removeItem(index); }}
+                                          >
+                                            <Trash2 size={16} />
+                                          </button>
+                                        </div>
                                       </div>
-                                    </td>
-                                    <td className="py-2 px-2">
-                                      <Input
-                                        type="number"
-                                        min="1"
-                                        value={item.quantity}
-                                        onChange={e => updateItem(index, "quantity", Number(e.target.value))}
-                                        className="w-full text-right"
-                                      />
-                                    </td>
-                                    <td className="py-2 px-2">
-                                      <Select
-                                        value={item.unit || "each"}
-                                        onValueChange={value => updateItem(index, "unit", value)}
-                                      >
-                                        <FormControl>
-                                          <SelectTrigger>
-                                            <SelectValue placeholder="Select unit" />
-                                          </SelectTrigger>
-                                        </FormControl>
-                                        <SelectContent>
-                                          {/* Use units from App Context, directly using the string value */}
-                                          {units.map(unitString => (
-                                            <SelectItem key={unitString} value={unitString}>
-                                              <div className="flex items-center gap-2">
-                                                {/* Conditionally render icon based on unitString */}
-                                                {unitString === 'each' && <Circle className="h-4 w-4" />}
-                                                {unitString === 'kg' && <Weight className="h-4 w-4" />}
-                                                {unitString === 'g' && <Weight className="h-4 w-4" />}
-                                                <span>{unitString}</span>{/* Use unitString as the label */}
-                                              </div>
-                                            </SelectItem>
-                                          ))}
-                                        </SelectContent>
-                                      </Select>
-                                    </td>
-                                    <td className="py-2 px-2">
-                                      <Input
-                                        type="number"
-                                        min="0"
-                                        step="0.01"
-                                        value={item.rate}
-                                        onChange={e => updateItem(index, "rate", Number(e.target.value))}
-                                        className="w-full text-right"
-                                      />
-                                    </td>
-                                    <td className="py-2 px-2 text-right">
-                                      {formatCurrency(item.total, form.getValues('currency'))}
-                                    </td>
-                                    <td className="py-2 pl-2">
-                                      <Button
-                                        type="button"
-                                        onClick={() => removeItem(index)}
-                                        variant="ghost"
-                                        size="icon"
-                                        className="h-8 w-8"
-                                        disabled={items.length <= 1}
-                                      >
-                                        <Trash2 size={16} />
-                                      </Button>
-                                    </td>
-                                  </tr>
-                                ))}
-                              </tbody>
-                              <tfoot>
-                                <tr>
-                                  <td colSpan={5} className="py-2">
+                                    ))}
                                     <Button
                                       type="button"
                                       onClick={addItem}
                                       variant="outline"
                                       size="sm"
-                                      className="flex items-center gap-1"
+                                      className="w-full flex items-center justify-center gap-2"
                                     >
                                       <Plus size={16} />
                                       <span>Add Item</span>
                                     </Button>
-                                  </td>
-                                </tr>
-                              </tfoot>
-                            </table>
-                          </div>
-                        )}
-                        <div className={cn(
-                          "border-t mt-4 pt-2 space-y-1",
-                          isMobile ? "px-2" : ""
-                        )}>
-                          <div className="flex justify-between">
-                            <span className="font-medium">Subtotal</span>
-                            <span>{formatCurrency(subtotal, form.getValues('currency'))}</span>
-                          </div>
-                          {isTaxEnabled && (
-                            <div className="flex justify-between">
-                              <span className="font-medium">Tax ({taxRate}%)</span>
-                              <span>{formatCurrency(taxAmount, form.getValues('currency'))}</span>
-                            </div>
+                                    <Drawer open={openLineItemDrawer} onOpenChange={setOpenLineItemDrawer}>
+                                      {renderLineItemDrawer()}
+                                    </Drawer>
+                                  </div>
+                                ) : (
+                                  <div className="overflow-x-auto">
+                                    <table className="min-w-full">
+                                      <thead>
+                                        <tr className="border-b">
+                                          <th className="text-left py-2 text-sm font-medium">Description</th>
+                                          <th className="text-right py-2 text-sm font-medium">Qty</th>
+                                          <th className="text-left py-2 text-sm font-medium">Unit</th>
+                                          <th className="text-right py-2 text-sm font-medium">Rate</th>
+                                          <th className="text-right py-2 text-sm font-medium">Total</th>
+                                          <th className="py-2 w-10"></th>
+                                        </tr>
+                                      </thead>
+                                      <tbody>
+                                        {items.map((item, index) => (
+                                          <motion.tr
+                                            key={item.id}
+                                            variants={lineItemVariants}
+                                            initial="initial"
+                                            animate="animate"
+                                            exit="exit"
+                                            layout
+                                            className="border-b last:border-b-0"
+                                          >
+                                            <td className="py-2 pr-2">
+                                              <div className="flex flex-col space-y-1">
+                                                <div className="flex items-center relative w-full">
+                                                  <Input
+                                                    value={item.description}
+                                                    onChange={e => updateItem(index, "description", e.target.value)}
+                                                    placeholder="Item description"
+                                                    className="w-full"
+                                                  />
+                                                  <div className="absolute right-2 top-1/2 -translate-y-1/2">
+                                                    <ItemSelector
+                                                      onItemSelect={(selectedItem) => handleItemSelect(selectedItem, index)}
+                                                      onCreateNewItem={() => handleCreateNewItem(index)}
+                                                      buttonClassName="h-6 w-6 p-0"
+                                                      iconOnly
+                                                      refetch={triggerItemsRefetch}
+                                                    />
+                                                  </div>
+                                                </div>
+                                              </div>
+                                            </td>
+                                            <td className="py-2 px-2">
+                                              <Input
+                                                type="number"
+                                                min="1"
+                                                value={item.quantity}
+                                                onChange={e => updateItem(index, "quantity", Number(e.target.value))}
+                                                className="w-full text-right"
+                                              />
+                                            </td>
+                                            <td className="py-2 px-2">
+                                              <Select
+                                                value={item.unit || "each"}
+                                                onValueChange={value => updateItem(index, "unit", value)}
+                                              >
+                                                <FormControl>
+                                                  <SelectTrigger>
+                                                    <SelectValue placeholder="Select unit" />
+                                                  </SelectTrigger>
+                                                </FormControl>
+                                                <SelectContent>
+                                                  {/* Use units from App Context, directly using the string value */}
+                                                  {units.map(unitString => (
+                                                    <SelectItem key={unitString} value={unitString}>
+                                                      <div className="flex items-center gap-2">
+                                                        {/* Conditionally render icon based on unitString */}
+                                                        {unitString === 'each' && <Circle className="h-4 w-4" />}
+                                                        {unitString === 'kg' && <Weight className="h-4 w-4" />}
+                                                        {unitString === 'g' && <Weight className="h-4 w-4" />}
+                                                        <span>{unitString}</span>{/* Use unitString as the label */}
+                                                      </div>
+                                                    </SelectItem>
+                                                  ))}
+                                                </SelectContent>
+                                              </Select>
+                                            </td>
+                                            <td className="py-2 px-2">
+                                              <Input
+                                                type="number"
+                                                min="0"
+                                                step="0.01"
+                                                value={item.rate}
+                                                onChange={e => updateItem(index, "rate", Number(e.target.value))}
+                                                className="w-full text-right"
+                                              />
+                                            </td>
+                                            <td className="py-2 px-2 text-right">
+                                              {formatCurrency(item.total, form.getValues('currency'))}
+                                            </td>
+                                            <td className="py-2 pl-2">
+                                              <Button
+                                                type="button"
+                                                onClick={() => removeItem(index)}
+                                                variant="ghost"
+                                                size="icon"
+                                                className="h-8 w-8"
+                                                disabled={items.length <= 1}
+                                              >
+                                                <Trash2 size={16} />
+                                              </Button>
+                                            </td>
+                                          </motion.tr>
+                                        ))}
+                                      </tbody>
+                                      <tfoot>
+                                        <tr>
+                                          <td colSpan={5} className="py-2">
+                                            <Button
+                                              type="button"
+                                              onClick={addItem}
+                                              variant="outline"
+                                              size="sm"
+                                              className="flex items-center gap-1"
+                                            >
+                                              <Plus size={16} />
+                                              <span>Add Item</span>
+                                            </Button>
+                                          </td>
+                                        </tr>
+                                      </tfoot>
+                                    </table>
+                                  </div>
+                                )}
+                                <div className={cn(
+                                  "border-t mt-4 pt-2 space-y-1",
+                                  isMobile ? "px-2" : ""
+                                )}>
+                                  <div className="flex justify-between">
+                                    <span className="font-medium">Subtotal</span>
+                                    <span>{formatCurrency(subtotal, form.getValues('currency'))}</span>
+                                  </div>
+                                  {isTaxEnabled && (
+                                    <div className="flex justify-between">
+                                      <span className="font-medium">Tax ({taxRate}%)</span>
+                                      <span>{formatCurrency(taxAmount, form.getValues('currency'))}</span>
+                                    </div>
+                                  )}
+                                  {isAdditionalChargesEnabled && (
+                                    <div className="flex justify-between">
+                                      <span className="font-medium">Additional Charges</span>
+                                      <span>{formatCurrency(Number(additionalCharges), form.getValues('currency'))}</span>
+                                    </div>
+                                  )}
+                                  {isDiscountEnabled && (
+                                    <div className="flex justify-between">
+                                      <span className="font-medium">Discount</span>
+                                      <span>-{formatCurrency(Number(discount), form.getValues('currency'))}</span>
+                                    </div>
+                                  )}
+                                  <div className="flex justify-between border-t pt-1">
+                                    <span className="font-bold">Total</span>
+                                    <span className="font-bold">{formatCurrency(total, form.getValues('currency'))}</span>
+                                  </div>
+                                </div>
+                              </CollapsibleContent>
+                            </motion.div>
                           )}
-                          {isAdditionalChargesEnabled && (
-                            <div className="flex justify-between">
-                              <span className="font-medium">Additional Charges</span>
-                              <span>{formatCurrency(Number(additionalCharges), form.getValues('currency'))}</span>
-                            </div>
-                          )}
-                          {isDiscountEnabled && (
-                            <div className="flex justify-between">
-                              <span className="font-medium">Discount</span>
-                              <span>-{formatCurrency(Number(discount), form.getValues('currency'))}</span>
-                            </div>
-                          )}
-                          <div className="flex justify-between border-t pt-1">
-                            <span className="font-bold">Total</span>
-                            <span className="font-bold">{formatCurrency(total, form.getValues('currency'))}</span>
-                          </div>
-                        </div>
-                      </CollapsibleContent>
-                    </Collapsible>
-                  </div>
+                        </AnimatePresence>
+                      </Collapsible>
+                    </div>
 
-                  {/* <div className="pt-4 flex gap-2 justify-end">
-                    <Button type="button" variant="outline" onClick={onCancel}>
-                      Cancel
-                    </Button>
-                    <Button type="submit" className="gap-2">
-                      <Save size={16} />
-                      <span>{mode === "create" ? "Create Invoice" : "Save Changes"}</span>
-                    </Button>
-                  </div> */}
-                   <div className="fixed bottom-0 left-0 w-full z-50 bg-background border-t p-4 flex gap-2 sm:static sm:p-0 sm:border-0 sm:bg-transparent">
-                  <Button type="button" variant="outline" onClick={onCancel} className="flex-1">
-                    Cancel
-                  </Button>
-                  <Button type="submit" className="gap-2 flex-1">
-                    <Save size={16} />
-                    <span>{mode === "create" ? "Create Invoice" : "Save Changes"}</span>
-                  </Button>
-                </div>
-                </form>
-                {/* Sticky action buttons for mobile */}
-               
-              </Form>
-            </CardContent>
-          </Card>
+                    <div className="fixed bottom-0 left-0 w-full z-50 bg-background border-t p-4 flex gap-2 sm:static sm:p-0 sm:border-0 sm:bg-transparent">
+                      <motion.div className="flex gap-2 w-full">
+                        <motion.div
+                          whileHover="hover"
+                          whileTap="tap"
+                          variants={buttonVariants}
+                          className="flex-1"
+                        >
+                          <Button type="button" variant="outline" onClick={onCancel} className="w-full">
+                            Cancel
+                          </Button>
+                        </motion.div>
+                        
+                        <motion.div
+                          whileHover="hover"
+                          whileTap="tap"
+                          variants={buttonVariants}
+                          className="flex-1"
+                        >
+                          <Button 
+                            type="button" 
+                            variant="outline" 
+                            onClick={generatePreview}
+                            className="w-full gap-2"
+                          >
+                            <Eye size={16} />
+                            <span>Preview</span>
+                          </Button>
+                        </motion.div>
+                        
+                        <motion.div
+                          whileHover="hover"
+                          whileTap="tap"
+                          variants={buttonVariants}
+                          className="flex-1"
+                        >
+                          <Button type="submit" className="gap-2 w-full">
+                            <Save size={16} />
+                            <span>{mode === "create" ? "Create Invoice" : "Save Changes"}</span>
+                          </Button>
+                        </motion.div>
+                      </motion.div>
+                    </div>
+                  </form>
+                </Form>
+              </CardContent>
+            </Card>
+          </motion.div>
         </TabsContent>
         
         <TabsContent value="preview" className="h-full">
-          {renderPreviewTab()}
+          <motion.div
+            initial="hidden"
+            animate="visible"
+            exit="exit"
+            variants={tabVariants}
+          >
+            {renderPreviewTab()}
+          </motion.div>
         </TabsContent>
       </Tabs>
 
