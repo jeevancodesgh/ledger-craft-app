@@ -48,7 +48,7 @@ const ModernTemplate = ({
   const companyCountry = companyAddressParts.length > 0 ? companyAddressParts[companyAddressParts.length - 1] : '';
   
   return (
-    <div className="w-full print-template">
+    <div className="w-full print-template p-3">
       {/* Header with Invoice Title */}
       <div className="p-3 sm:p-4 print:p-0">
         <h3 className="text-xl sm:text-2xl font-bold text-gray-800">Invoice</h3>

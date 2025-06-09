@@ -59,7 +59,7 @@ const CorporateTemplate = ({
               <img 
                 src={businessLogo} 
                 alt={companyName} 
-                className="h-10 w-10 sm:h-12 sm:w-12 object-contain rounded-full"
+                className="h-20 w-20 sm:h-12 sm:w-12 object-contain rounded-full"
               />
             </div>
           )}
