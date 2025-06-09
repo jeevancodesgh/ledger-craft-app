@@ -64,7 +64,7 @@ const ItemDrawer: React.FC<ItemDrawerProps> = ({
             onCreateCategory={onCreateCategory}
           />
         </div>
-        <DrawerFooter className="flex-col px-4 pt-4 border-t bg-background">
+        <DrawerFooter className="flex-row gap-2 px-4 pt-4 border-t bg-background">
           <Button variant="outline" type="button" onClick={handleClose} disabled={isLoading} className="flex-1 h-12">
             Cancel
           </Button>
