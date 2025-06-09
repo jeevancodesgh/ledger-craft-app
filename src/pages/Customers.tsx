@@ -39,7 +39,7 @@ const customerFormSchema = z.object({
   city: z.string().optional().or(z.literal('')),
   state: z.string().optional().or(z.literal('')),
   zip: z.string().optional().or(z.literal('')),
-  country: z.string().optional().or(z.literal('')).default('USA'),
+  country: z.string().optional().or(z.literal('')).default('New Zealand'),
   is_vip: z.boolean().default(false)
 });
 
@@ -87,7 +87,7 @@ const Customers = () => {
         city: values.city || null,
         state: values.state || null,
         zip: values.zip || null,
-        country: values.country || 'USA',
+        country: values.country || 'New Zealand',
         isVip: values.is_vip
       };
 
@@ -125,7 +125,7 @@ const Customers = () => {
         city: values.city || null,
         state: values.state || null,
         zip: values.zip || null,
-        country: values.country || 'USA',
+        country: values.country || 'New Zealand',
         isVip: values.is_vip
       };
 

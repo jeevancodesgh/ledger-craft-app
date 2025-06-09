@@ -137,7 +137,7 @@ const CreateInvoice = () => {
         city: values.city || null,
         state: values.state || null,
         zip: values.zip || null,
-        country: values.country || 'USA',
+        country: values.country || 'New Zealand',
         isVip: values.is_vip
       };
 

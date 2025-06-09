@@ -63,7 +63,7 @@ const CustomerFormDrawer: React.FC<CustomerFormDrawerProps> = ({
       city: '',
       state: '',
       zip: '',
-      country: 'USA', // Keep default USA as per InvoiceForm
+      country: 'New Zealand', // Keep default USA as per InvoiceForm
       is_vip: false
     }
   });
@@ -78,7 +78,7 @@ const CustomerFormDrawer: React.FC<CustomerFormDrawerProps> = ({
         city: initialValues.city || '',
         state: initialValues.state || '',
         zip: initialValues.zip || '',
-        country: initialValues.country || 'USA', // Use USA as default if null
+        country: initialValues.country || 'New Zealand', // Use USA as default if null
         is_vip: initialValues.isVip || false
       });
     } else {
@@ -112,7 +112,7 @@ const CustomerFormDrawer: React.FC<CustomerFormDrawerProps> = ({
         city: '',
         state: '',
         zip: '',
-        country: 'USA',
+        country: 'New Zealand',
         is_vip: false
       });
     }
