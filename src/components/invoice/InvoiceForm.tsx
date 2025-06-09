@@ -1153,6 +1153,15 @@ const InvoiceForm: React.FC<InvoiceFormProps> = ({
                   <Button type="button" variant="outline" onClick={onCancel} className="flex-1">
                     Cancel
                   </Button>
+                  <Button 
+                    type="button" 
+                    variant="outline" 
+                    onClick={generatePreview}
+                    className="flex-1 gap-2"
+                  >
+                    <Eye size={16} />
+                    <span>Preview</span>
+                  </Button>
                   <Button type="submit" className="gap-2 flex-1">
                     <Save size={16} />
                     <span>{mode === "create" ? "Create Invoice" : "Save Changes"}</span>

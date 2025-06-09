@@ -1,4 +1,3 @@
-
 import React, { useRef, useState } from 'react';
 import { Invoice } from '@/types';
 import { InvoiceTemplateId } from '../templates/InvoiceTemplates';
@@ -9,7 +8,7 @@ import ExecutiveTemplate from './templates/ExecutiveTemplate';
 import CorporateTemplate from './templates/CorporateTemplate';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { Button } from '@/components/ui/button';
-import { Download, Maximize2, Minimize2, ZoomIn, ZoomOut, Printer } from 'lucide-react';
+import { Download, Maximize2, Minimize2, ZoomIn, ZoomOut, Printer, ArrowLeft } from 'lucide-react';
 import { generateInvoicePdf } from '@/utils/pdfUtils';
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
@@ -18,9 +17,10 @@ import { useAppContext } from '@/context/AppContext';
 interface InvoicePreviewProps {
   invoice: Invoice;
   selectedTemplate: InvoiceTemplateId;
+  onBackToEdit?: () => void;
 }
 
-const InvoicePreview = ({ invoice, selectedTemplate }: InvoicePreviewProps) => {
+const InvoicePreview = ({ invoice, selectedTemplate, onBackToEdit }: InvoicePreviewProps) => {
   const contentRef = useRef<HTMLDivElement>(null);
   const templateRef = useRef<HTMLDivElement>(null);
   const isMobile = useIsMobile();
@@ -197,31 +197,8 @@ const InvoicePreview = ({ invoice, selectedTemplate }: InvoicePreviewProps) => {
               disabled={zoomLevel <= 0.6 || isPrinting}
             >
               <ZoomOut className="h-4 w-4 mr-1" />
-              <span className="text-xs">Zoom Out</span>
+              {/* <span className="text-xs">Zoom Out</span> */}
             </Button>
-            <Button 
-              variant="outline" 
-              size="sm"
-              onClick={resetZoom} 
-              className="flex-1 h-9"
-              aria-label="Reset zoom"
-              disabled={isPrinting}
-            >
-              <span className="text-xs">{(zoomLevel * 100).toFixed(0)}%</span>
-            </Button>
-            <Button 
-              variant="outline" 
-              size="sm"
-              onClick={zoomIn} 
-              className="flex-1 h-9"
-              aria-label="Zoom in"
-              disabled={zoomLevel >= 1.5 || isPrinting}
-            >
-              <ZoomIn className="h-4 w-4 mr-1" />
-              <span className="text-xs">Zoom In</span>
-            </Button>
-          </div>
-          <div className="flex gap-2">
             <Button 
               variant="outline" 
               size="sm"
@@ -231,7 +208,7 @@ const InvoicePreview = ({ invoice, selectedTemplate }: InvoicePreviewProps) => {
               disabled={isPrinting}
             >
               {isFullscreen ? <Minimize2 className="h-4 w-4 mr-1" /> : <Maximize2 className="h-4 w-4 mr-1" />}
-              <span className="text-xs">{isFullscreen ? "Exit Fullscreen" : "Fullscreen"}</span>
+              {/* <span className="text-xs">{isFullscreen ? "Exit Fullscreen" : "Fullscreen"}</span> */}
             </Button>
             <Button 
               variant="outline"
@@ -242,8 +219,44 @@ const InvoicePreview = ({ invoice, selectedTemplate }: InvoicePreviewProps) => {
               disabled={isPrinting}
             >
               <Printer className="h-4 w-4 mr-1" />
-              <span className="text-xs">{isPrinting ? "Printing..." : "Print"}</span>
+              {/* <span className="text-xs">{isPrinting ? "Printing..." : "Print"}</span> */}
             </Button>
+            {/* <Button 
+              variant="outline" 
+              size="sm"
+              onClick={resetZoom} 
+              className="flex-1 h-9"
+              aria-label="Reset zoom"
+              disabled={isPrinting}
+            >
+              <span className="text-xs">{(zoomLevel * 100).toFixed(0)}%</span>
+            </Button> */}
+            <Button 
+              variant="outline" 
+              size="sm"
+              onClick={zoomIn} 
+              className="flex-1 h-9"
+              aria-label="Zoom in"
+              disabled={zoomLevel >= 1.5 || isPrinting}
+            >
+              <ZoomIn className="h-4 w-4 mr-1" />
+              {/* <span className="text-xs">Zoom In</span> */}
+            </Button>
+          </div>
+          <div className="flex gap-2">
+            <Button 
+              variant="outline" 
+              size="sm"
+              onClick={onBackToEdit} 
+              className="flex-1 h-9"
+              aria-label="Back to edit"
+              disabled={isPrinting || isGeneratingPdf}
+            >
+              <ArrowLeft className="h-4 w-4 mr-1" />
+              <span className="text-xs">Back to Edit</span>
+            </Button>
+           
+           
             <Button 
               size="sm"
               onClick={handleDownloadPdf} 
