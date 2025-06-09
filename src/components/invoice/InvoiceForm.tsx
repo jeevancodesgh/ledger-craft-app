@@ -604,6 +604,7 @@ const InvoiceForm: React.FC<InvoiceFormProps> = ({
         <InvoicePreview
           invoice={invoicePreview}
           selectedTemplate={selectedTemplate}
+          onBackToEdit={() => setActiveTab("edit")}
         />
       </div>
     );
