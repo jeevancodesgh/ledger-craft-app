@@ -629,13 +629,13 @@ const InvoiceForm: React.FC<InvoiceFormProps> = ({
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
         <TabsList className="grid w-full grid-cols-2 mb-4 mx-4 sm:mx-0 sticky top-0 z-40 bg-background border-b sm:static sm:border-0 sm:bg-transparent">
-          <TabsTrigger value="edit" className="flex items-center gap-2">
+          <TabsTrigger value="edit" className="flex items-center gap-2 h-12">
             <Edit size={16} />
             <span>Edit</span>
           </TabsTrigger>
           <TabsTrigger
             value="preview"
-            className="flex items-center gap-2"
+            className="flex items-center gap-2 h-12"
             onClick={generatePreview}
           >
             <Eye size={16} />

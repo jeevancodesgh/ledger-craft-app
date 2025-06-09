@@ -53,7 +53,7 @@ const ClassicTemplate = ({
   const companyCountry = companyAddressParts.length > 0 ? companyAddressParts[companyAddressParts.length - 1] : '';
   
   return (
-    <div className="w-full print-template">
+    <div className="w-full print-template mb-4">
       {/* Header */}
       <div className="p-3 sm:p-4">
         <div className="flex justify-between items-start">
@@ -63,7 +63,7 @@ const ClassicTemplate = ({
                 <img 
                   src={businessLogo} 
                   alt={companyName} 
-                  className="h-14 w-14 object-contain rounded-full"
+                  className="h-40 w-40 object-contain rounded-full"
                 />
               </div>
             )}

@@ -50,7 +50,7 @@ const ExecutiveTemplate = ({
                 <img 
                   src={businessLogo} 
                   alt={companyName} 
-                  className="h-10 w-10 sm:h-14 sm:w-14 object-contain rounded-full" 
+                  className="h-20 w-20 sm:h-14 sm:w-14 object-contain rounded-full" 
                 />
               </div>
             )}
