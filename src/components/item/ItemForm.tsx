@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
@@ -57,6 +57,8 @@ export function ItemForm({ initialData, onSubmit, isLoading = false, categories,
   const { toast } = useToast();
   const [newCategoryName, setNewCategoryName] = useState("");
   const [isAddingCategory, setIsAddingCategory] = useState(false);
+  const formRef = useRef<HTMLFormElement>(null);
+  const activeInputRef = useRef<HTMLInputElement | null>(null);
 
   const form = useForm<z.infer<typeof itemFormSchema>>({
     resolver: zodResolver(itemFormSchema),
@@ -176,9 +178,51 @@ export function ItemForm({ initialData, onSubmit, isLoading = false, categories,
     onSubmit(itemData);
   };
 
+  // Handle input focus with smooth scroll
+  const handleInputFocus = (e: React.FocusEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+    const target = e.target as HTMLInputElement;
+    activeInputRef.current = target;
+    const inputRect = target.getBoundingClientRect();
+    const drawerContent = document.querySelector('.drawer-content');
+    
+    if (drawerContent) {
+      const drawerRect = drawerContent.getBoundingClientRect();
+      const scrollTop = drawerContent.scrollTop;
+      const inputTop = inputRect.top - drawerRect.top + scrollTop;
+      
+      // Add some padding to ensure the input is not at the very top
+      const targetScroll = inputTop - 100;
+      
+      drawerContent.scrollTo({
+        top: targetScroll,
+        behavior: 'smooth'
+      });
+    }
+  };
+
+  // Handle keyboard navigation
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      const inputs = formRef.current?.querySelectorAll('input, textarea, select');
+      if (inputs) {
+        const currentIndex = Array.from(inputs).indexOf(e.target as HTMLElement);
+        const nextInput = inputs[currentIndex + 1] as HTMLElement;
+        if (nextInput) {
+          nextInput.focus();
+        }
+      }
+    }
+  };
+
   return (
     <Form {...form}>
-      <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-6" id="item-form">
+      <form 
+        ref={formRef}
+        onSubmit={form.handleSubmit(handleSubmit)} 
+        className="space-y-6" 
+        id="item-form"
+      >
         <div className="space-y-4">
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <FormField
@@ -244,7 +288,13 @@ export function ItemForm({ initialData, onSubmit, isLoading = false, categories,
               <FormItem className="space-y-2">
                 <FormLabel htmlFor="name">Name*</FormLabel>
                 <FormControl>
-                  <Input placeholder="Item name" {...field} />
+                  <Input 
+                    placeholder="Item name" 
+                    {...field} 
+                    onFocus={handleInputFocus}
+                    onKeyDown={handleKeyDown}
+                    className="focus:ring-2 focus:ring-primary focus:border-primary transition-all duration-200"
+                  />
                 </FormControl>
                 <FormMessage />
               </FormItem>
@@ -317,7 +367,15 @@ export function ItemForm({ initialData, onSubmit, isLoading = false, categories,
               <FormItem className="space-y-2">
                 <FormLabel htmlFor="description">Description</FormLabel>
                 <FormControl>
-                  <Textarea placeholder="Item description" rows={3} {...field} value={field.value || ''} />
+                  <Textarea 
+                    placeholder="Item description" 
+                    rows={3} 
+                    {...field} 
+                    value={field.value || ''} 
+                    onFocus={handleInputFocus}
+                    onKeyDown={handleKeyDown}
+                    className="focus:ring-2 focus:ring-primary focus:border-primary transition-all duration-200"
+                  />
                 </FormControl>
                 <FormMessage />
               </FormItem>
@@ -357,16 +415,21 @@ export function ItemForm({ initialData, onSubmit, isLoading = false, categories,
                         <Input
                           id="salePrice"
                           type="number"
+                          inputMode="decimal"
+                          pattern="[0-9]*"
                           step="0.01"
                           placeholder="0.00"
                           {...field}
                           value={field.value === null || field.value === undefined ? '' : field.value}
                           onChange={e => field.onChange(e.target.value === '' ? undefined : parseFloat(e.target.value))}
+                          onFocus={handleInputFocus}
+                          onKeyDown={handleKeyDown}
+                          className="focus:ring-2 focus:ring-primary focus:border-primary transition-all duration-200"
                         />
                       </FormControl>
-                       {form.formState.errors.salePrice && (
-                         <FormMessage>{form.formState.errors.salePrice.message}</FormMessage>
-                       )}
+                      {form.formState.errors.salePrice && (
+                        <FormMessage>{form.formState.errors.salePrice.message}</FormMessage>
+                      )}
                     </FormItem>
                   )}
                 />
@@ -380,11 +443,16 @@ export function ItemForm({ initialData, onSubmit, isLoading = false, categories,
                         <Input
                           id="taxRate"
                           type="number"
+                          inputMode="decimal"
+                          pattern="[0-9]*"
                           step="0.01"
                           placeholder="0.00"
-                           {...field}
-                           value={field.value === null || field.value === undefined ? '' : field.value}
-                           onChange={e => field.onChange(e.target.value === '' ? undefined : parseFloat(e.target.value))}
+                          {...field}
+                          value={field.value === null || field.value === undefined ? '' : field.value}
+                          onChange={e => field.onChange(e.target.value === '' ? undefined : parseFloat(e.target.value))}
+                          onFocus={handleInputFocus}
+                          onKeyDown={handleKeyDown}
+                          className="focus:ring-2 focus:ring-primary focus:border-primary transition-all duration-200"
                         />
                       </FormControl>
                       <FormMessage />

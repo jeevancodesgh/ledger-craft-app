@@ -41,7 +41,6 @@ const ItemDrawer: React.FC<ItemDrawerProps> = ({
   description = 'View or edit item information'
 }) => {
   const isMobile = useIsMobile();
-  // Use max-h-screen for best fit, let flexbox handle layout
 
   const handleClose = () => {
     onOpenChange(false);
@@ -49,13 +48,12 @@ const ItemDrawer: React.FC<ItemDrawerProps> = ({
 
   return (
     <Drawer open={open} onOpenChange={onOpenChange}>
-      <DrawerContent className="max-h-[92vh] sm:max-h-[85vh]">
-        <DrawerHeader className="shrink-0 flex-shrink-0">
+      <DrawerContent className="max-h-[92vh] sm:max-h-[85vh] drawer-content">
+        <DrawerHeader className="shrink-0 flex-shrink-0 sticky top-0 bg-background z-10">
           <DrawerTitle>{item ? `Edit ${item.name}` : 'Create New Item'}</DrawerTitle>
           <DrawerDescription>{description}</DrawerDescription>
         </DrawerHeader>
-        <div className="overflow-y-auto p-4">
-          
+        <div className="overflow-y-auto p-4 pb-24">
           <ItemForm
             initialData={item}
             onSubmit={onSave}
@@ -64,7 +62,7 @@ const ItemDrawer: React.FC<ItemDrawerProps> = ({
             onCreateCategory={onCreateCategory}
           />
         </div>
-        <DrawerFooter className="flex-row gap-2 px-4 pt-4 border-t bg-background">
+        <DrawerFooter className="flex-row gap-2 px-4 pt-4 border-t bg-background sticky bottom-0">
           <Button variant="outline" type="button" onClick={handleClose} disabled={isLoading} className="flex-1 h-12">
             Cancel
           </Button>
