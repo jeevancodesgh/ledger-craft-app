@@ -5,11 +5,6 @@ import { Label } from '@/components/ui/label';
 import {
   Drawer,
   DrawerContent,
-  DrawerDescription,
-  DrawerHeader,
-  DrawerTitle,
-  DrawerFooter,
-  DrawerClose
 } from '@/components/ui/drawer';
 import {
   Form,
@@ -24,6 +19,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { useForm } from 'react-hook-form';
 import * as z from 'zod';
 import { Customer } from '@/types';
+import { DrawerFormLayout } from '@/components/ui/DrawerFormLayout';
 
 const customerFormSchema = z.object({
   name: z.string().min(2, { message: 'Name must be at least 2 characters' }),
@@ -52,7 +48,6 @@ const CustomerFormDrawer: React.FC<CustomerFormDrawerProps> = ({
   initialValues,
   onSubmit,
 }) => {
-
   const form = useForm<CustomerFormValues>({
     resolver: zodResolver(customerFormSchema),
     defaultValues: {
@@ -63,7 +58,7 @@ const CustomerFormDrawer: React.FC<CustomerFormDrawerProps> = ({
       city: '',
       state: '',
       zip: '',
-      country: 'New Zealand', // Keep default USA as per InvoiceForm
+      country: 'New Zealand',
       is_vip: false
     }
   });
@@ -78,7 +73,7 @@ const CustomerFormDrawer: React.FC<CustomerFormDrawerProps> = ({
         city: initialValues.city || '',
         state: initialValues.state || '',
         zip: initialValues.zip || '',
-        country: initialValues.country || 'New Zealand', // Use USA as default if null
+        country: initialValues.country || 'New Zealand',
         is_vip: initialValues.isVip || false
       });
     } else {
@@ -102,7 +97,6 @@ const CustomerFormDrawer: React.FC<CustomerFormDrawerProps> = ({
   };
 
   useEffect(() => {
-    // Reset form when drawer is closed
     if (!open) {
       form.reset({
         name: '',
@@ -120,19 +114,21 @@ const CustomerFormDrawer: React.FC<CustomerFormDrawerProps> = ({
 
   return (
     <Drawer open={open} onOpenChange={onOpenChange}>
-      <DrawerContent className="max-h-[85vh]"> {/* Limit height for better mobile experience */}
-        <DrawerHeader>
-          <DrawerTitle>
-            {initialValues ? 'Edit Customer' : 'Create Customer'}
-          </DrawerTitle>
-          <DrawerDescription>
-            {initialValues
-              ? 'Update the customer details below.'
-              : 'Fill in the customer details below to create a new customer.'}
-          </DrawerDescription>
-        </DrawerHeader>
-
-        <div className="p-4 overflow-y-auto"> {/* Add padding and scrolling */}
+      <DrawerContent className="drawer-content">
+        <DrawerFormLayout
+          title={initialValues ? 'Edit Customer' : 'Create Customer'}
+          description={initialValues ? 'Update the customer details below.' : 'Fill in the customer details below to create a new customer.'}
+          footer={
+            <>
+              <Button type="submit" form="customer-form" className="flex-1 h-12">
+                {initialValues ? 'Update Customer' : 'Create Customer'}
+              </Button>
+              <Button type="button" variant="outline" onClick={() => onOpenChange(false)} className="flex-1 h-12">
+                Cancel
+              </Button>
+            </>
+          }
+        >
           <Form {...form}>
             <form id="customer-form" onSubmit={form.handleSubmit(handleSubmit)} className="space-y-4">
               <FormField
@@ -264,21 +260,9 @@ const CustomerFormDrawer: React.FC<CustomerFormDrawerProps> = ({
                   </FormItem>
                 )}
               /> */}
-
-              <DrawerFooter className="flex-col px-0 pt-4"> {/* Adjust padding and layout for drawer footer */}
-                 {/* Button is inside the form */}
-              </DrawerFooter>
             </form>
           </Form>
-        </div>
-        <DrawerFooter className="flex-col px-4 pt-4 border-t bg-background"> {/* Sticky footer */}
-           <Button type="submit" form="customer-form">
-              {initialValues ? 'Update Customer' : 'Create Customer'}
-            </Button>
-          <DrawerClose asChild>
-            <Button variant="outline">Cancel</Button>
-          </DrawerClose>
-        </DrawerFooter>
+        </DrawerFormLayout>
       </DrawerContent>
     </Drawer>
   );

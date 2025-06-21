@@ -9,13 +9,14 @@ import {
   CommandSeparator
 } from '@/components/ui/command';
 import { Dialog, DialogContent, DialogTrigger, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
-import { Drawer, DrawerContent, DrawerTrigger, DrawerHeader, DrawerTitle, DrawerDescription } from '@/components/ui/drawer';
+import { Drawer, DrawerContent, DrawerTrigger } from '@/components/ui/drawer';
 import { Button } from '@/components/ui/button';
 import { PlusCircle, SearchIcon, Package2, Sparkles } from 'lucide-react';
 import { Item } from '@/types';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { useAppContext } from '@/context/AppContext';
 import { itemService } from '@/services/supabaseService';
+import { DrawerFormLayout } from '@/components/ui/DrawerFormLayout';
 
 interface ItemSelectorProps {
   onItemSelect: (item: Item) => void;
@@ -91,12 +92,14 @@ const ItemSelector: React.FC<ItemSelectorProps> = ({
 
   const content = (
     <>
-      <DialogHeader className="p-4">
-        <DialogTitle>Select an Item</DialogTitle>
-        <DialogDescription>
-          Search for an existing item or create a new one.
-        </DialogDescription>
-      </DialogHeader>
+      <div className="p-4">
+        <div className="mb-2">
+          <div className="text-lg font-semibold">Select an Item</div>
+          <div className="text-sm text-muted-foreground">
+            Search for an existing item or create a new one.
+          </div>
+        </div>
+      </div>
       <Command className="rounded-lg border shadow-md">
         <div className="flex items-center border-b px-3">
           <SearchIcon className="mr-2 h-4 w-4 shrink-0 opacity-50" />
@@ -110,7 +113,6 @@ const ItemSelector: React.FC<ItemSelectorProps> = ({
         </div>
         <CommandList className="max-h-[300px] overflow-auto">
           <CommandEmpty>No items found.</CommandEmpty>
-          
           {products.length > 0 && (
             <CommandGroup heading="Products">
               {products.map((item) => (
@@ -134,7 +136,6 @@ const ItemSelector: React.FC<ItemSelectorProps> = ({
               ))}
             </CommandGroup>
           )}
-          
           {services.length > 0 && (
             <CommandGroup heading="Services">
               {services.map((item) => (
@@ -159,7 +160,6 @@ const ItemSelector: React.FC<ItemSelectorProps> = ({
             </CommandGroup>
           )}
         </CommandList>
-        {/* Create New Item Button */}
         {onCreateNewItem && (
           <div className="p-4 border-t">
             <Button
@@ -182,9 +182,9 @@ const ItemSelector: React.FC<ItemSelectorProps> = ({
         <DrawerTrigger asChild>
           <Button
             variant="outline"
-            size="sm" // Mobile size is always sm
+            size="sm"
             className={buttonClassName}
-            disabled={isLoading} // Disable button while loading
+            disabled={isLoading}
           >
             {iconOnly ? (
               <Package2 className="h-4 w-4" />
@@ -193,18 +193,16 @@ const ItemSelector: React.FC<ItemSelectorProps> = ({
             )}
           </Button>
         </DrawerTrigger>
-        <DrawerContent className="h-[95%]"> {/* Full page height */}
-          {/* Use DrawerHeader, DrawerTitle, etc. for mobile */}
-          {/* <DrawerHeader>
-            <DrawerTitle>Select an Item</DrawerTitle>
-            <DrawerDescription>
-              Search for an existing item or create a new one.
-            </DrawerDescription>
-          </DrawerHeader> */}
-          {content} {/* Reuse the common content */}
+        <DrawerContent className="drawer-content">
+          <DrawerFormLayout
+            title="Select an Item"
+            description="Search for an existing item or create a new one."
+            footer={<></>}>
+            {content}
+          </DrawerFormLayout>
         </DrawerContent>
       </Drawer>
-    )
+    );
   }
 
   return (
@@ -212,9 +210,9 @@ const ItemSelector: React.FC<ItemSelectorProps> = ({
       <DialogTrigger asChild>
         <Button
           variant="outline"
-          size="default" // Desktop size is always default
+          size="default"
           className={buttonClassName}
-          disabled={isLoading} // Disable button while loading
+          disabled={isLoading}
         >
           {iconOnly ? (
             <Package2 className="h-4 w-4" />
@@ -223,9 +221,8 @@ const ItemSelector: React.FC<ItemSelectorProps> = ({
           )}
         </Button>
       </DialogTrigger>
-      <DialogContent className={`p-0 ${isMobile ? 'w-[95%]' : 'sm:max-w-[700px]'}`}> {/* Wider desktop dialog */}
-        {/* Use DialogHeader, DialogTitle, etc. for desktop */}
-        {content} {/* Reuse the common content */}
+      <DialogContent className={`p-0 ${isMobile ? 'w-[95%]' : 'sm:max-w-[700px]'}`}>
+        {content}
       </DialogContent>
     </Dialog>
   );
