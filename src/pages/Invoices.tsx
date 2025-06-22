@@ -234,8 +234,23 @@ const Invoices = () => {
                     aria-label="Share invoice"
                     onClick={() => {
                       const url = `${window.location.origin}/public/invoice/${invoice.id}`;
-                      navigator.clipboard.writeText(url);
-                      toast({ title: 'Share link copied', description: 'Public invoice link copied to clipboard.' });
+                      if (navigator.share) {
+                        navigator.share({
+                          title: `Invoice ${invoice.invoiceNumber}`,
+                          text: `View your invoice from ${businessProfile?.name || 'us'}.`,
+                          url: url,
+                        })
+                        .then(() => toast({ title: 'Invoice shared successfully!' }))
+                        .catch((error) => {
+                          if (error.name !== 'AbortError') {
+                            console.error('Error sharing:', error);
+                            toast({ title: 'Sharing failed', description: 'Could not share the invoice.', variant: 'destructive' });
+                          }
+                        });
+                      } else {
+                        navigator.clipboard.writeText(url);
+                        toast({ title: 'Share link copied', description: 'Public invoice link copied to clipboard.' });
+                      }
                     }}
                   >
                     <Share2 size={16} />
@@ -334,8 +349,23 @@ const Invoices = () => {
                           aria-label="Share invoice"
                           onClick={() => {
                             const url = `${window.location.origin}/public/invoice/${invoice.id}`;
-                            navigator.clipboard.writeText(url);
-                            toast({ title: 'Share link copied', description: 'Public invoice link copied to clipboard.' });
+                            if (navigator.share) {
+                              navigator.share({
+                                title: `Invoice ${invoice.invoiceNumber}`,
+                                text: `View your invoice from ${businessProfile?.name || 'us'}.`,
+                                url: url,
+                              })
+                              .then(() => toast({ title: 'Invoice shared successfully!' }))
+                              .catch((error) => {
+                                if (error.name !== 'AbortError') {
+                                  console.error('Error sharing:', error);
+                                  toast({ title: 'Sharing failed', description: 'Could not share the invoice.', variant: 'destructive' });
+                                }
+                              });
+                            } else {
+                              navigator.clipboard.writeText(url);
+                              toast({ title: 'Share link copied', description: 'Public invoice link copied to clipboard.' });
+                            }
                           }}
                         >
                           <Share2 size={16} />

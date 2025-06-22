@@ -7,6 +7,7 @@ import { ToastProvider } from "@/hooks/use-toast";
 import { AppProvider } from "./context/AppContext";
 import { AuthProvider } from "./context/AuthContext";
 import { AppLayout } from "./components/layout/AppLayout";
+import { PublicLayout } from "./components/layout/PublicLayout";
 import Dashboard from "./pages/Dashboard";
 import Invoices from "./pages/Invoices";
 import CreateInvoice from "./pages/CreateInvoice";
@@ -62,7 +63,11 @@ const App = () => (
                     <AppLayout><InvoiceViewPage /></AppLayout>
                   </ProtectedRoute>
                 } />
-                <Route path="/public/invoice/:id" element={<PublicInvoice />} />
+                <Route path="/public/invoice/:invoiceId" element={
+                  <PublicLayout>
+                    <PublicInvoice />
+                  </PublicLayout>
+                } />
                 <Route path="/customers" element={
                   <ProtectedRoute>
                     <AppLayout><Customers /></AppLayout>

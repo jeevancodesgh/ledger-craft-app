@@ -1264,3 +1264,46 @@ export const accountService = {
     }
   },
 };
+
+export const publicInvoiceService = {
+  async getPublicInvoice(invoiceId: string): Promise<Invoice | null> {
+    try {
+      const { data: invoiceData, error: invoiceError } = await supabase
+        .from('invoices')
+        .select(`
+          *,
+          customers (*)
+        `)
+        .eq('id', invoiceId)
+        .single();
+
+      if (invoiceError || !invoiceData) {
+        console.error('Error fetching public invoice:', invoiceError);
+        return null;
+      }
+      
+      const { data: lineItemsData, error: lineItemsError } = await supabase
+        .from('line_items')
+        .select('*')
+        .eq('invoice_id', invoiceId);
+        
+      if (lineItemsError) {
+        console.error('Error fetching line items:', lineItemsError);
+        return null;
+      }
+      
+      const invoice = mapSupabaseInvoiceToInvoice(invoiceData as unknown as SupabaseInvoice, lineItemsData as SupabaseLineItem[]);
+      
+      // Update public_viewed_at timestamp
+      await supabase
+        .from('invoices')
+        .update({ public_viewed_at: new Date().toISOString() })
+        .eq('id', invoiceId);
+      
+      return invoice;
+    } catch (error) {
+      console.error('Error in getPublicInvoice:', error);
+      return null;
+    }
+  }
+};
