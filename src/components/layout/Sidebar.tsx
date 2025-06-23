@@ -7,8 +7,10 @@ import {
   FileText, 
   Users, 
   Settings, 
-  X
+  X,
+  LogOut
 } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 
 interface SidebarProps {
   collapsed: boolean;
@@ -17,7 +19,8 @@ interface SidebarProps {
 }
 
 export function Sidebar({ collapsed, isMobile, onCloseMobileMenu }: SidebarProps) {
-  const { user } = useAuth();
+  const { user, signOut } = useAuth();
+  const navigate = useNavigate();
   
   const navItems = [
     { name: 'Dashboard', path: '/', icon: LayoutDashboard },
@@ -69,7 +72,7 @@ export function Sidebar({ collapsed, isMobile, onCloseMobileMenu }: SidebarProps
         </nav>
         
         <div className="p-4 border-t border-sidebar-border mt-auto">
-          <div className="flex items-center">
+          <div className="flex items-center mb-4">
             <div className="w-10 h-10 rounded-full bg-invoice-teal text-white flex items-center justify-center mr-3">
               {user?.email ? user.email.charAt(0).toUpperCase() : 'U'}
             </div>
@@ -84,6 +87,19 @@ export function Sidebar({ collapsed, isMobile, onCloseMobileMenu }: SidebarProps
               )}
             </div>
           </div>
+          {user && (
+            <button
+              className="w-full flex items-center justify-center gap-2 px-4 py-3 mt-2 rounded-md bg-red-600 text-white font-semibold text-base hover:bg-red-700 transition-colors"
+              onClick={async () => {
+                await signOut();
+                if (onCloseMobileMenu) onCloseMobileMenu();
+                if (navigate) navigate('/login');
+              }}
+            >
+              <LogOut className="h-5 w-5" />
+              <span>Sign Out</span>
+            </button>
+          )}
         </div>
       </aside>
     );
