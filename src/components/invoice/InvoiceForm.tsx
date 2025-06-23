@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useBlocker } from "react-router-dom";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -58,6 +58,16 @@ import { ItemFormValues } from "../item/ItemForm";
 import { Switch } from "@/components/ui/switch";
 import { useAppContext } from "@/context/AppContext";
 import { motion, AnimatePresence } from "framer-motion";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 // Import template components
 import ClassicTemplate from "./preview/templates/ClassicTemplate";
@@ -172,10 +182,14 @@ const InvoiceForm: React.FC<InvoiceFormProps> = ({
   const isMobile = useIsMobile();
   const { toast } = useToast();
 
-  const [items, setItems] = useState<LineItem[]>(initialValues?.items && initialValues.items.length > 0
-    ? initialValues.items
-    : [{ id: "1", description: "", quantity: 1, unit: "each", rate: 0, total: 0 }]
-  );
+  const getInitialItems = () =>
+    initialValues?.items && initialValues.items.length > 0
+      ? initialValues.items
+      : [{ id: "1", description: "", quantity: 1, unit: "each", rate: 0, total: 0 }];
+
+  const [items, setItems] = useState<LineItem[]>(getInitialItems());
+  const [initialItemsJSON, setInitialItemsJSON] = useState(() => JSON.stringify(getInitialItems()));
+
   const [subtotal, setSubtotal] = useState(0);
   const [taxAmount, setTaxAmount] = useState(0);
   const [total, setTotal] = useState(0);
@@ -185,15 +199,6 @@ const InvoiceForm: React.FC<InvoiceFormProps> = ({
   const [openLineItemDrawer, setOpenLineItemDrawer] = useState(false);
   const [currentItemIndex, setCurrentItemIndex] = useState<number | null>(null);
   const [isLineItemsOpen, setIsLineItemsOpen] = useState(true);
-  const [invoiceNumber, setInvoiceNumber] = useState(
-    initialValues?.invoiceNumber || defaultValues?.invoiceNumber || ""
-  );
-  const [additionalCharges, setAdditionalCharges] = useState(
-    initialValues?.additionalCharges ?? 0
-  );
-  const [discount, setDiscount] = useState(
-    initialValues?.discount ?? 0
-  );
   const [selectedTemplate, setSelectedTemplate] = useState<InvoiceTemplateId>('classic');
   const [recentCustomers, setRecentCustomers] = useState<Customer[]>([]);
   
@@ -204,6 +209,7 @@ const InvoiceForm: React.FC<InvoiceFormProps> = ({
   const [isAdditionalChargesEnabled, setIsAdditionalChargesEnabled] = useState(false);
   const [isDiscountEnabled, setIsDiscountEnabled] = useState(false);
   const [refetchItemsTrigger, setRefetchItemsTrigger] = useState(0);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   // New state to track which line item is creating a new item
   const [indexCreatingNewItem, setIndexCreatingNewItem] = useState<number | null>(null);
 
@@ -234,13 +240,19 @@ const InvoiceForm: React.FC<InvoiceFormProps> = ({
     }
   });
 
+  const { isDirty } = form.formState;
+  const itemsChanged = JSON.stringify(items) !== initialItemsJSON;
+  const hasUnsavedChanges = !isSubmitting && (isDirty || itemsChanged);
+
+  const blocker = useBlocker(hasUnsavedChanges);
+
   const triggerItemsRefetch = () => {
     setRefetchItemsTrigger(prev => prev + 1);
   };
 
   useEffect(() => {
-    form.setValue("invoiceNumber", invoiceNumber);
-  }, [invoiceNumber]);
+    form.setValue("invoiceNumber", form.watch('invoiceNumber'));
+  }, [form.watch('invoiceNumber')]);
 
   useEffect(() => {
     if (initialValues) {
@@ -263,12 +275,11 @@ const InvoiceForm: React.FC<InvoiceFormProps> = ({
         additionalCharges: initialValues.additionalCharges ?? 0,
         discount: initialValues.discount ?? 0,
       });
-      setInvoiceNumber(initialValues.invoiceNumber || "");
-      setItems(initialValues.items && initialValues.items.length > 0
+      const newItems = initialValues.items && initialValues.items.length > 0
         ? initialValues.items
-        : [{ id: "1", description: "", quantity: 1, unit: "each", rate: 0, total: 0 }]);
-      setAdditionalCharges(initialValues.additionalCharges ?? 0);
-      setDiscount(initialValues.discount ?? 0);
+        : [{ id: "1", description: "", quantity: 1, unit: "each", rate: 0, total: 0 }];
+      setItems(newItems);
+      setInitialItemsJSON(JSON.stringify(newItems));
     }
   }, [initialValues]);
 
@@ -292,21 +303,19 @@ const InvoiceForm: React.FC<InvoiceFormProps> = ({
 
   useEffect(() => {
     if (generatedInvoiceNumber && !initialValues?.invoiceNumber) {
-      setInvoiceNumber(generatedInvoiceNumber);
       form.setValue('invoiceNumber', generatedInvoiceNumber);
     }
   }, [generatedInvoiceNumber, initialValues?.invoiceNumber, form]);
 
   const handleInvoiceNumberChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setInvoiceNumber(e.target.value);
-    form.setValue('invoiceNumber', e.target.value);
+    form.setValue('invoiceNumber', e.target.value, { shouldDirty: true });
   };
 
   useEffect(() => {
     if (!isTaxEnabled) setTaxRate(0);
-    if (!isAdditionalChargesEnabled) setAdditionalCharges(0);
-    if (!isDiscountEnabled) setDiscount(0);
-  }, [isTaxEnabled, isAdditionalChargesEnabled, isDiscountEnabled]);
+    if (!isAdditionalChargesEnabled) form.setValue("additionalCharges", 0);
+    if (!isDiscountEnabled) form.setValue("discount", 0);
+  }, [isTaxEnabled, isAdditionalChargesEnabled, isDiscountEnabled, form]);
 
   useEffect(() => {
     const newSubtotal = items.reduce((sum, item) => sum + (Number(item.total) || 0), 0);
@@ -316,10 +325,10 @@ const InvoiceForm: React.FC<InvoiceFormProps> = ({
       newTaxAmount = (newSubtotal * taxRate) / 100;
     }
     setTaxAmount(newTaxAmount);
-    const addCharges = isAdditionalChargesEnabled ? Number(additionalCharges) : 0;
-    const disc = isDiscountEnabled ? Number(discount) : 0;
+    const addCharges = isAdditionalChargesEnabled ? Number(form.watch('additionalCharges')) : 0;
+    const disc = isDiscountEnabled ? Number(form.watch('discount')) : 0;
     setTotal(newSubtotal + newTaxAmount + addCharges - disc);
-  }, [items, additionalCharges, discount, isTaxEnabled, taxRate, isAdditionalChargesEnabled, isDiscountEnabled]);
+  }, [items, isTaxEnabled, taxRate, isAdditionalChargesEnabled, isDiscountEnabled, form.watch('additionalCharges'), form.watch('discount')]);
 
   const updateItem = (idx: number, field: keyof LineItem, value: any) => {
     const updated = [...items];
@@ -358,17 +367,26 @@ const InvoiceForm: React.FC<InvoiceFormProps> = ({
 
   const handleAdditionalChargesChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const v = Number(e.target.value);
-    setAdditionalCharges(isNaN(v) ? 0 : v);
-    form.setValue("additionalCharges", isNaN(v) ? 0 : v);
+    form.setValue("additionalCharges", isNaN(v) ? 0 : v, { shouldDirty: true });
   };
 
   const handleDiscountChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const v = Number(e.target.value);
-    setDiscount(isNaN(v) ? 0 : v);
-    form.setValue("discount", isNaN(v) ? 0 : v);
+    form.setValue("discount", isNaN(v) ? 0 : v, { shouldDirty: true });
   };
 
   const generatePreview = () => {
+    // Only validate the form, don't submit
+    const isValid = form.trigger();
+    if (!isValid) {
+      toast({
+        title: "Cannot generate preview",
+        description: "Please fix the errors in the form to proceed.",
+        variant: "destructive",
+      });
+      return;
+    }
+
     const vals = form.getValues();
     const previewInvoice: Invoice = {
       id: initialValues?.id || "preview",
@@ -388,8 +406,8 @@ const InvoiceForm: React.FC<InvoiceFormProps> = ({
       terms: vals.terms,
       createdAt: initialValues?.createdAt || new Date().toISOString(),
       updatedAt: new Date().toISOString(),
-      additionalCharges: additionalCharges,
-      discount: discount,
+      additionalCharges: vals.additionalCharges,
+      discount: vals.discount,
     };
     setInvoicePreview(previewInvoice);
     setActiveTab("preview");
@@ -602,16 +620,26 @@ const InvoiceForm: React.FC<InvoiceFormProps> = ({
   };
 
   const localOnSubmit = async (values: InvoiceFormValues) => {
-    console.log("localOnSubmit called in InvoiceForm");
-    await onSubmit(
-      values,
-      items,
-      subtotal + taxAmount + Number(additionalCharges) - Number(discount),
-      subtotal,
-      taxAmount,
-      Number(additionalCharges),
-      Number(discount)
-    );
+    setIsSubmitting(true);
+    try {
+      await onSubmit(
+        values,
+        items,
+        subtotal + taxAmount + Number(values.additionalCharges) - Number(values.discount),
+        subtotal,
+        taxAmount,
+        Number(values.additionalCharges),
+        Number(values.discount)
+      );
+      // Reset form and items in sync
+      form.reset(values);
+      setItems([...items]);
+      setInitialItemsJSON(JSON.stringify(items));
+    } catch (error) {
+      console.error("Submission failed in InvoiceForm:", error);
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   const selectedCustomer = customers.find(c => c.id === form.watch('customerId'));
@@ -718,7 +746,7 @@ const InvoiceForm: React.FC<InvoiceFormProps> = ({
                             <FormControl>
                               <Input
                                 {...field}
-                                value={invoiceNumber}
+                                value={form.watch('invoiceNumber')}
                                 onChange={handleInvoiceNumberChange}
                                 placeholder="Invoice Number"
                                 className="w-full"
@@ -948,7 +976,7 @@ const InvoiceForm: React.FC<InvoiceFormProps> = ({
                             type="number"
                             min={0}
                             step="0.01"
-                            value={additionalCharges}
+                            value={form.watch('additionalCharges')}
                             onChange={handleAdditionalChargesChange}
                             placeholder="e.g. shipping, handling"
                             className="w-32 ml-2"
@@ -967,7 +995,7 @@ const InvoiceForm: React.FC<InvoiceFormProps> = ({
                             type="number"
                             min={0}
                             step="0.01"
-                            value={discount}
+                            value={form.watch('discount')}
                             onChange={handleDiscountChange}
                             placeholder="Any deduction"
                             className="w-32 ml-2"
@@ -1210,13 +1238,13 @@ const InvoiceForm: React.FC<InvoiceFormProps> = ({
                                   {isAdditionalChargesEnabled && (
                                     <div className="flex justify-between">
                                       <span className="font-medium">Additional Charges</span>
-                                      <span>{formatCurrency(Number(additionalCharges), form.getValues('currency'))}</span>
+                                      <span>{formatCurrency(Number(form.watch('additionalCharges')), form.getValues('currency'))}</span>
                                     </div>
                                   )}
                                   {isDiscountEnabled && (
                                     <div className="flex justify-between">
                                       <span className="font-medium">Discount</span>
-                                      <span>-{formatCurrency(Number(discount), form.getValues('currency'))}</span>
+                                      <span>-{formatCurrency(Number(form.watch('discount')), form.getValues('currency'))}</span>
                                     </div>
                                   )}
                                   <div className="flex justify-between border-t pt-1">
@@ -1269,7 +1297,7 @@ const InvoiceForm: React.FC<InvoiceFormProps> = ({
                         >
                           <Button type="submit" className="gap-2 w-full">
                             <Save size={16} />
-                            <span>{mode === "create" ? "Create Invoice" : "Save Changes"}</span>
+                            <span>{mode === "create" ? "Save Invoice" : "Save Changes"}</span>
                           </Button>
                         </motion.div>
                       </motion.div>
@@ -1303,6 +1331,27 @@ const InvoiceForm: React.FC<InvoiceFormProps> = ({
         title="Create New Item"
         description="Add a new product or service to your inventory"
       />
+
+      {blocker && blocker.state === "blocked" && (
+        <AlertDialog open={blocker.state === "blocked"}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Are you sure you want to leave?</AlertDialogTitle>
+              <AlertDialogDescription>
+                You have unsaved changes. If you leave, your changes will be lost.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel onClick={() => blocker.reset?.()}>
+                Stay
+              </AlertDialogCancel>
+              <AlertDialogAction onClick={() => blocker.proceed?.()}>
+                Leave
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
+      )}
     </div>
   );
 };

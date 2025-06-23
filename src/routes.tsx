@@ -1,7 +1,14 @@
 import React, { lazy, Suspense } from "react";
-import { Navigate, Route, Routes } from "react-router-dom";
+import { createBrowserRouter, Outlet, RouteObject } from "react-router-dom";
 import { AppLayout } from "@/components/layout/AppLayout";
 import { Spinner } from "@/components/ui/spinner";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { ToastProvider } from "@/hooks/use-toast";
+import { AppProvider } from "./context/AppContext";
+import { TooltipProvider } from "./components/ui/tooltip";
+import { AuthProvider } from "./context/AuthContext";
+import { Toaster } from "./components/ui/toaster";
+import { Toaster as Sonner } from "./components/ui/sonner";
 //import AccountsPage from './pages/Accounts';
 
 const Dashboard = lazy(() => import("@/pages/Dashboard"));
@@ -21,35 +28,78 @@ const Categories = lazy(() => import("@/pages/Categories"));
 // Loading component
 const LoadingScreen = () => (
   <div className="flex h-screen w-screen items-center justify-center">
-    <Spinner size="lg" />
+    <Spinner />
   </div>
 );
 
-const AppRoutes = () => {
-  return (
-    <Suspense fallback={<LoadingScreen />}>
-      <Routes>
-        <Route path="/login" element={<Login />} />
-        <Route path="/signup" element={<Signup />} />
-        
-        <Route path="/" element={<AppLayout />}>
-          <Route index element={<Dashboard />} />
-          <Route path="invoices" element={<Invoices />} />
-          <Route path="invoices/new" element={<CreateInvoice />} />
-          <Route path="invoices/:id/edit" element={<EditInvoice />} />
-          <Route path="invoices/:id" element={<InvoiceViewPage />} />
-          <Route path="customers" element={<Customers />} />
-          <Route path="items" element={<Items />} />
-          <Route path="settings" element={<Settings />} />
-          <Route path="accounts" element={<AccountsPage />} />
-          <Route path="categories" element={<Categories />} />
-        </Route>
-        
-        <Route path="*" element={<NotFound />} />
-        <Route path="public/invoice/:invoiceId" element={<PublicInvoice />} />
-      </Routes>
-    </Suspense>
-  );
-};
+const SuspenseWrapper = ({ children }: { children: React.ReactNode }) => (
+  <Suspense fallback={<LoadingScreen />}>{children}</Suspense>
+);
 
-export default AppRoutes;
+const queryClient = new QueryClient();
+
+const Root = () => {
+  return (
+    <QueryClientProvider client={queryClient}>
+      <ToastProvider>
+        <AppProvider>
+          <TooltipProvider>
+            <AuthProvider>
+              <Outlet />
+              <Toaster />
+              <Sonner />
+            </AuthProvider>
+          </TooltipProvider>
+        </AppProvider>
+      </ToastProvider>
+    </QueryClientProvider>
+  );
+}
+
+const appRoutes: RouteObject[] = [
+  {
+    element: <Root />,
+    children: [
+      {
+        path: "/login",
+        element: <SuspenseWrapper><Login /></SuspenseWrapper>,
+      },
+      {
+        path: "/signup",
+        element: <SuspenseWrapper><Signup /></SuspenseWrapper>,
+      },
+      {
+        path: "/",
+        element: (
+          <SuspenseWrapper>
+            <AppLayout>
+              <Outlet />
+            </AppLayout>
+          </SuspenseWrapper>
+        ),
+        children: [
+          { index: true, element: <Dashboard /> },
+          { path: "invoices", element: <Invoices /> },
+          { path: "invoices/new", element: <CreateInvoice /> },
+          { path: "invoices/:id/edit", element: <EditInvoice /> },
+          { path: "invoices/:id", element: <InvoiceViewPage /> },
+          { path: "customers", element: <Customers /> },
+          { path: "items", element: <Items /> },
+          { path: "settings", element: <Settings /> },
+          { path: "accounts", element: <AccountsPage /> },
+          { path: "categories", element: <Categories /> },
+        ],
+      },
+      {
+        path: "/public/invoice/:invoiceId",
+        element: <SuspenseWrapper><PublicInvoice /></SuspenseWrapper>,
+      },
+      {
+        path: "*",
+        element: <SuspenseWrapper><NotFound /></SuspenseWrapper>,
+      },
+    ]
+  }
+];
+
+export const router = createBrowserRouter(appRoutes);

@@ -59,6 +59,7 @@ export interface Invoice {
   invoiceNumber: string;
   customerId: string;
   customer?: Customer;
+  businessProfile?: BusinessProfile;
   date: string;
   dueDate: string;
   items: LineItem[];
