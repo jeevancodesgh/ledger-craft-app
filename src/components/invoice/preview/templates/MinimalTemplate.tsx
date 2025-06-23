@@ -63,11 +63,11 @@ const MinimalTemplate = ({
           <div className="flex justify-between text-sm invoice-parties">
             <div className="w-1/2 pr-4">
               <p className="font-medium mb-1">{companyName}</p>
-              <p className="text-gray-600 text-xs sm:text-sm whitespace-pre-wrap">{companyAddress}</p>
+              <p className="text-gray-600 text-xs sm:text-sm whitespace-pre-wrap no-underline no-autolink">{companyAddress}</p>
             </div>
             <div className="w-1/2 text-right">
               <p className="font-medium mb-1">{clientName}</p>
-              <p className="text-gray-600 text-xs sm:text-sm whitespace-pre-wrap">{clientAddress}</p>
+              <p className="text-gray-600 text-xs sm:text-sm whitespace-pre-wrap no-underline no-autolink">{clientAddress}</p>
               {invoice.customer?.phone && (
                 isMobile ? (
                   <span className="text-xs sm:text-sm no-autolink">{invoice.customer.phone}</span>

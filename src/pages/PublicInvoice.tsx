@@ -12,6 +12,7 @@ import { useToast } from '@/hooks/use-toast';
 const PublicInvoice = () => {
   const { invoiceId } = useParams<{ invoiceId: string }>();
   const [invoice, setInvoice] = useState<Invoice | null>(null);
+  const [businessProfile, setBusinessProfile] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [isGeneratingPdf, setIsGeneratingPdf] = useState(false);
@@ -29,14 +30,14 @@ const PublicInvoice = () => {
           return;
         }
 
-        const invoiceData = await publicInvoiceService.getPublicInvoice(invoiceId);
-        if (!invoiceData) {
+        const result = await publicInvoiceService.getPublicInvoice(invoiceId);
+        if (!result || !result.invoice) {
           setError('Invoice not found');
           setLoading(false);
           return;
         }
-        
-        setInvoice(invoiceData);
+        setInvoice(result.invoice);
+        setBusinessProfile(result.businessProfile);
       } catch (e) {
         setError('Error loading invoice');
       } finally {
@@ -124,7 +125,7 @@ const PublicInvoice = () => {
 
       {/* Invoice preview */}
       <div ref={invoiceRef} className="bg-white rounded-lg shadow-sm border">
-        <InvoicePreview invoice={invoice} selectedTemplate="classic" />
+        <InvoicePreview invoice={invoice} selectedTemplate="classic" businessProfile={businessProfile} />
       </div>
     </div>
   );

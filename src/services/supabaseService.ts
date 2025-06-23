@@ -1266,7 +1266,7 @@ export const accountService = {
 };
 
 export const publicInvoiceService = {
-  async getPublicInvoice(invoiceId: string): Promise<Invoice | null> {
+  async getPublicInvoice(invoiceId: string): Promise<{ invoice: Invoice; businessProfile: BusinessProfile | null } | null> {
     try {
       const { data: invoiceData, error: invoiceError } = await supabase
         .from('invoices')
@@ -1294,13 +1294,28 @@ export const publicInvoiceService = {
       
       const invoice = mapSupabaseInvoiceToInvoice(invoiceData as unknown as SupabaseInvoice, lineItemsData as SupabaseLineItem[]);
       
+      // Fetch business profile for the invoice's user_id
+      let businessProfile: BusinessProfile | null = null;
+      if (invoiceData.user_id) {
+        const { data: businessProfileData, error: businessProfileError } = await supabase
+          .from('business_profiles')
+          .select('*')
+          .eq('user_id', invoiceData.user_id)
+          .maybeSingle();
+        if (businessProfileError) {
+          console.error('Error fetching business profile:', businessProfileError);
+        } else if (businessProfileData) {
+          businessProfile = mapSupabaseBusinessProfileToBusinessProfile(businessProfileData as SupabaseBusinessProfile);
+        }
+      }
+      
       // Update public_viewed_at timestamp
       await supabase
         .from('invoices')
         .update({ public_viewed_at: new Date().toISOString() })
         .eq('id', invoiceId);
       
-      return invoice;
+      return { invoice, businessProfile };
     } catch (error) {
       console.error('Error in getPublicInvoice:', error);
       return null;

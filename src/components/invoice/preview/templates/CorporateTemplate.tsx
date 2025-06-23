@@ -88,12 +88,12 @@ const CorporateTemplate = ({
           <div className="mb-4 sm:mb-6">
             <h3 className="text-xs font-bold uppercase tracking-wider text-gray-500 mb-1 sm:mb-2">From</h3>
             <h4 className="text-lg sm:text-xl font-bold mb-1">{companyName}</h4>
-            <p className="text-gray-600 text-xs sm:text-sm whitespace-pre-line">{companyAddress}</p>
+            <p className="text-gray-600 text-xs sm:text-sm whitespace-pre-line no-underline no-autolink">{companyAddress}</p>
           </div>
           <div>
             <h3 className="text-xs font-bold uppercase tracking-wider text-gray-500 mb-1 sm:mb-2">To</h3>
             <h4 className="text-lg sm:text-xl font-bold mb-1">{clientName}</h4>
-            <p className="text-gray-600 text-xs sm:text-sm whitespace-pre-line">{clientAddress}</p>
+            <p className="text-gray-600 text-xs sm:text-sm whitespace-pre-line no-underline no-autolink">{clientAddress}</p>
             {invoice.customer?.phone && (
               isMobile ? (
                 <span className="text-xs sm:text-sm no-autolink">{invoice.customer.phone}</span>

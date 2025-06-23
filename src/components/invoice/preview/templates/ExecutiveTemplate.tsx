@@ -59,7 +59,7 @@ const ExecutiveTemplate = ({
           </div>
           <div className="text-right">
             <h2 className="text-lg sm:text-xl font-bold">{companyName}</h2>
-            <p className="text-gray-600 text-xs sm:text-sm whitespace-pre-line">{companyAddress}</p>
+            <p className="text-gray-600 text-xs sm:text-sm whitespace-pre-line no-underline no-autolink">{companyAddress}</p>
             {invoice.customer?.email && (
               isMobile ? (
                 <span className="text-xs sm:text-sm no-autolink">{invoice.customer.email}</span>
@@ -76,7 +76,7 @@ const ExecutiveTemplate = ({
         <div>
           <h3 className="text-xs sm:text-sm font-semibold uppercase tracking-wider text-gray-500 mb-1 sm:mb-2">Billed To</h3>
           <h4 className="text-base sm:text-lg font-bold mb-1">{clientName}</h4>
-          <p className="text-gray-600 text-xs sm:text-sm whitespace-pre-line">{clientAddress}</p>
+          <p className="text-gray-600 text-xs sm:text-sm whitespace-pre-line no-underline no-autolink">{clientAddress}</p>
           {invoice.customer?.phone && (
             isMobile ? (
               <span className="text-xs sm:text-sm no-autolink">{invoice.customer.phone}</span>

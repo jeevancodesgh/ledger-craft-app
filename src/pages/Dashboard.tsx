@@ -4,7 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { formatCurrency } from '@/utils/invoiceUtils';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, TooltipProps } from 'recharts';
 import { PieChart, Pie, Cell, Legend } from 'recharts';
-import { Calendar, DollarSign, Users, TrendingUp, TrendingDown, Clock, Plus } from 'lucide-react';
+import { Calendar, DollarSign, Users, TrendingUp, TrendingDown, Clock, Plus, Edit, ChevronRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Link } from 'react-router-dom';
 import { useIsMobile } from '@/hooks/use-mobile';
@@ -331,7 +331,7 @@ const Dashboard = () => {
                       <p className="font-medium">{invoice.invoiceNumber}</p>
                       <p className="text-sm text-muted-foreground">{invoice.customer?.name || invoice.customerId}</p>
                     </div>
-                    <div className="text-right">
+                    <div className="flex flex-col items-end gap-2 min-w-[120px]">
                       <p className="font-medium">{formatCurrency(invoice.total)}</p>
                       <span className={`text-xs px-2 py-1 rounded-full ${
                         invoice.status === 'paid' ? 'bg-green-100 text-green-800' :
@@ -340,6 +340,25 @@ const Dashboard = () => {
                       }`}>
                         {invoice.status.charAt(0).toUpperCase() + invoice.status.slice(1)}
                       </span>
+                      <div className="flex gap-2 mt-1">
+                        <Button variant="ghost" className="h-8 px-3 text-xs" asChild>
+                          <Link to={`/invoices/${invoice.id}`} className="flex items-center">
+                            View
+                            <ChevronRight className="ml-1 w-4 h-4" />
+                          </Link>
+                        </Button>
+                        <Button
+                          variant="outline"
+                          size="icon"
+                          className="h-8 w-8"
+                          asChild
+                          aria-label="Edit invoice"
+                        >
+                          <Link to={`/invoices/${invoice.id}/edit`}>
+                            <Edit size={16} />
+                          </Link>
+                        </Button>
+                      </div>
                     </div>
                   </div>
                 ))}
@@ -368,13 +387,32 @@ const Dashboard = () => {
                         Due: {new Date(invoice.dueDate).toLocaleDateString()}
                       </p>
                     </div>
-                    <div className="text-right">
+                    <div className="flex flex-col items-end gap-2 min-w-[120px]">
                       <p className="font-medium">{formatCurrency(invoice.total)}</p>
                       <span className={`text-xs px-2 py-1 rounded-full ${
                         invoice.status === 'overdue' ? 'bg-red-100 text-red-800' : 'bg-amber-100 text-amber-800'
                       }`}>
                         {invoice.status === 'overdue' ? 'Overdue' : 'Pending'}
                       </span>
+                      <div className="flex gap-2 mt-1">
+                        <Button variant="ghost" className="h-8 px-3 text-xs" asChild>
+                          <Link to={`/invoices/${invoice.id}`} className="flex items-center">
+                            View
+                            <ChevronRight className="ml-1 w-4 h-4" />
+                          </Link>
+                        </Button>
+                        <Button
+                          variant="outline"
+                          size="icon"
+                          className="h-8 w-8"
+                          asChild
+                          aria-label="Edit invoice"
+                        >
+                          <Link to={`/invoices/${invoice.id}/edit`}>
+                            <Edit size={16} />
+                          </Link>
+                        </Button>
+                      </div>
                     </div>
                   </div>
                 ))}

@@ -1,5 +1,5 @@
 import React, { useRef, useState } from 'react';
-import { Invoice } from '@/types';
+import { Invoice, BusinessProfile } from '@/types';
 import { InvoiceTemplateId } from '../templates/InvoiceTemplates';
 import ClassicTemplate from './templates/ClassicTemplate';
 import ModernTemplate from './templates/ModernTemplate';
@@ -18,9 +18,10 @@ interface InvoicePreviewProps {
   invoice: Invoice;
   selectedTemplate: InvoiceTemplateId;
   onBackToEdit?: () => void;
+  businessProfile?: BusinessProfile | null;
 }
 
-const InvoicePreview = ({ invoice, selectedTemplate, onBackToEdit }: InvoicePreviewProps) => {
+const InvoicePreview = ({ invoice, selectedTemplate, onBackToEdit, businessProfile }: InvoicePreviewProps) => {
   const contentRef = useRef<HTMLDivElement>(null);
   const templateRef = useRef<HTMLDivElement>(null);
   const isMobile = useIsMobile();
@@ -29,18 +30,31 @@ const InvoicePreview = ({ invoice, selectedTemplate, onBackToEdit }: InvoicePrev
   const [isGeneratingPdf, setIsGeneratingPdf] = useState(false);
   const [isPrinting, setIsPrinting] = useState(false);
   const [zoomLevel, setZoomLevel] = useState(isMobile ? 0.9 : 1); // Slightly smaller default for mobile
-  const { businessProfile } = useAppContext();
+  const contextBusinessProfile = useAppContext().businessProfile;
+  const effectiveBusinessProfile = businessProfile !== undefined ? businessProfile : contextBusinessProfile;
 
   // Create template data from invoice
   const templateData = {
     invoice,
-    companyName: businessProfile?.name || invoice.customer?.name || 'Company Name',
-    companyAddress: businessProfile?.address || `${invoice.customer?.address || ''} ${invoice.customer?.city || ''} ${invoice.customer?.state || ''} ${invoice.customer?.zip || ''}`.trim(),
+    companyName: effectiveBusinessProfile?.name || 'Business Name',
+    companyAddress: [
+      effectiveBusinessProfile?.address,
+      effectiveBusinessProfile?.city,
+      effectiveBusinessProfile?.state,
+      effectiveBusinessProfile?.zip,
+      effectiveBusinessProfile?.country
+    ].filter(Boolean).join(', ') || '',
     clientName: invoice.customer?.name || 'Client Name',
-    clientAddress: `${invoice.customer?.address || ''} ${invoice.customer?.city || ''} ${invoice.customer?.state || ''} ${invoice.customer?.zip || ''}`.trim(),
+    clientAddress: [
+      invoice.customer?.address,
+      invoice.customer?.city,
+      invoice.customer?.state,
+      invoice.customer?.zip,
+      invoice.customer?.country
+    ].filter(Boolean).join(', ') || '',
     taxRate: ((invoice.taxAmount / invoice.subtotal) * 100).toFixed(2),
     tax: invoice.taxAmount,
-    businessLogo: businessProfile?.logoUrl || '',
+    businessLogo: effectiveBusinessProfile?.logoUrl || '',
   };
 
   const handleDownloadPdf = async () => {
@@ -60,7 +74,7 @@ const InvoicePreview = ({ invoice, selectedTemplate, onBackToEdit }: InvoicePrev
           invoice, 
           templateRef.current, 
           selectedTemplate, 
-          businessProfile?.logoUrl
+          effectiveBusinessProfile?.logoUrl
         );
         
         toast({

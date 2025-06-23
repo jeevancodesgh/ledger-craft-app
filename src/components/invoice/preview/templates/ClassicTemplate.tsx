@@ -74,7 +74,7 @@ const ClassicTemplate = ({
           </div>
           <div className="text-right">
             <p className="text-sm sm:text-base font-semibold">{companyName}</p>
-            <p className="text-xs sm:text-sm text-gray-600">{companyAddressParts.join(', ')}</p>
+            <p className="text-xs sm:text-sm text-gray-600 no-underline no-autolink">{companyAddressParts.join(', ')}</p>
             {invoice.customer?.email && (
               isMobile ? (
                 <span className="text-xs sm:text-sm text-gray-600 no-autolink">{invoice.customer.email}</span>
@@ -91,7 +91,7 @@ const ClassicTemplate = ({
         <div className="w-1/2">
           <p className="font-semibold text-sm sm:text-base mb-1">Bill To:</p>
           <p className="text-sm font-medium">{clientName}</p>
-          <p className="text-xs sm:text-sm">{addressParts.join(', ')}</p>
+          <p className="text-xs sm:text-sm no-underline no-autolink">{addressParts.join(', ')}</p>
           {invoice.customer?.phone && (
             isMobile ? (
               <span className="text-xs sm:text-sm no-autolink">{invoice.customer.phone}</span>
