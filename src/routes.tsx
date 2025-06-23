@@ -9,6 +9,7 @@ import { TooltipProvider } from "./components/ui/tooltip";
 import { AuthProvider } from "./context/AuthContext";
 import { Toaster } from "./components/ui/toaster";
 import { Toaster as Sonner } from "./components/ui/sonner";
+import ProtectedRoute from "@/components/auth/ProtectedRoute";
 //import AccountsPage from './pages/Accounts';
 
 const Dashboard = lazy(() => import("@/pages/Dashboard"));
@@ -71,11 +72,13 @@ const appRoutes: RouteObject[] = [
       {
         path: "/",
         element: (
-          <SuspenseWrapper>
-            <AppLayout>
-              <Outlet />
-            </AppLayout>
-          </SuspenseWrapper>
+          <ProtectedRoute>
+            <SuspenseWrapper>
+              <AppLayout>
+                <Outlet />
+              </AppLayout>
+            </SuspenseWrapper>
+          </ProtectedRoute>
         ),
         children: [
           { index: true, element: <Dashboard /> },
