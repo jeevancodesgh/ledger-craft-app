@@ -184,19 +184,22 @@ const ExpenseTable: React.FC<ExpenseTableProps> = ({
                 <div className="flex justify-between items-center">
                   <span>Receipt:</span>
                   {expense.receiptUrl ? (
-                    <Button 
-                      variant="ghost" 
-                      size="sm"
-                      onClick={(e) => { 
-                        e.stopPropagation(); 
-                        window.open(expense.receiptUrl!, '_blank'); 
-                      }}
-                      className="h-7 px-2"
-                      title={`View ${getReceiptLabel(expense.receiptUrl)}`}
-                    >
-                      {getReceiptIcon(expense.receiptUrl)}
-                      <span className="ml-1 text-xs">{getReceiptLabel(expense.receiptUrl)}</span>
-                    </Button>
+                    <div className="flex items-center gap-1">
+                      <Button 
+                        variant="ghost" 
+                        size="sm"
+                        onClick={(e) => { 
+                          e.stopPropagation(); 
+                          window.open(expense.receiptUrl!, '_blank'); 
+                        }}
+                        className="h-7 px-2 text-blue-600 hover:text-blue-800"
+                        title={`View ${getReceiptLabel(expense.receiptUrl)}`}
+                      >
+                        {getReceiptIcon(expense.receiptUrl)}
+                        <span className="ml-1 text-xs font-medium">{getReceiptLabel(expense.receiptUrl)}</span>
+                      </Button>
+                      <div className="w-2 h-2 bg-green-500 rounded-full" title="Receipt available" />
+                    </div>
                   ) : (
                     <span className="text-muted-foreground">No receipt</span>
                   )}
@@ -300,15 +303,18 @@ const ExpenseTable: React.FC<ExpenseTableProps> = ({
                       variant="ghost" 
                       size="sm"
                       onClick={() => window.open(expense.receiptUrl!, '_blank')}
-                      className="h-8 px-2"
+                      className="h-8 px-2 text-blue-600 hover:text-blue-800 hover:bg-blue-50"
                       title={`View ${getReceiptLabel(expense.receiptUrl)}`}
                     >
                       {getReceiptIcon(expense.receiptUrl)}
                       <Eye className="h-3 w-3 ml-1" />
                     </Button>
-                    <span className="text-xs text-muted-foreground hidden sm:inline">
-                      {getReceiptLabel(expense.receiptUrl)}
-                    </span>
+                    <div className="hidden sm:flex items-center gap-1">
+                      <span className="text-xs text-muted-foreground">
+                        {getReceiptLabel(expense.receiptUrl)}
+                      </span>
+                      <div className="w-2 h-2 bg-green-500 rounded-full" title="Receipt available" />
+                    </div>
                   </div>
                 ) : (
                   <span className="text-muted-foreground text-sm">No receipt</span>

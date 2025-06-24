@@ -17,7 +17,8 @@ import {
   Eye, 
   FileImage,
   AlertCircle,
-  Check
+  Check,
+  FileText
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { storageService } from '@/services/storageService';
@@ -285,35 +286,110 @@ export const ReceiptUpload: React.FC<ReceiptUploadProps> = ({
                     {selectedFile ? (
                       <>
                         <FileImage className="h-5 w-5 text-green-600" />
-                        <span className="text-sm truncate">{selectedFile.name}</span>
+                        <div className="flex flex-col">
+                          <span className="text-sm font-medium truncate">{selectedFile.name}</span>
+                          <span className="text-xs text-muted-foreground">
+                            {(selectedFile.size / 1024 / 1024).toFixed(2)} MB • Just uploaded
+                          </span>
+                        </div>
                         <Check className="h-4 w-4 text-green-600" />
                       </>
                     ) : (
                       <>
-                        <FileImage className="h-5 w-5 text-blue-600" />
-                        <span className="text-sm truncate">External URL</span>
+                        {previewUrl && previewUrl.toLowerCase().includes('.pdf') ? (
+                          <FileText className="h-5 w-5 text-red-600" />
+                        ) : (
+                          <FileImage className="h-5 w-5 text-blue-600" />
+                        )}
+                        <div className="flex flex-col">
+                          <span className="text-sm font-medium truncate">
+                            {previewUrl && previewUrl.includes('/storage/v1/object/public/business-assets/receipts/') 
+                              ? 'Uploaded Receipt' 
+                              : 'External Receipt'
+                            }
+                          </span>
+                          <span className="text-xs text-muted-foreground truncate max-w-[200px]">
+                            {previewUrl ? new URL(previewUrl).pathname.split('/').pop() : 'External URL'}
+                          </span>
+                        </div>
                       </>
                     )}
                   </div>
                   
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="sm"
-                    onClick={viewReceipt}
-                    className="h-8 px-2"
-                  >
-                    <Eye className="h-4 w-4" />
-                  </Button>
+                  <div className="flex gap-1">
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={viewReceipt}
+                      className="h-8 px-2"
+                      title="View Receipt"
+                    >
+                      <Eye className="h-4 w-4" />
+                    </Button>
+                    {previewUrl && !previewUrl.startsWith('blob:') && (
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={() => {
+                          const link = document.createElement('a');
+                          link.href = previewUrl;
+                          link.download = previewUrl.split('/').pop() || 'receipt';
+                          link.click();
+                        }}
+                        className="h-8 px-2"
+                        title="Download Receipt"
+                      >
+                        <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                        </svg>
+                      </Button>
+                    )}
+                  </div>
                 </div>
                 
-                {previewUrl && previewUrl.startsWith('blob:') && (
-                  <div className="mt-3">
-                    <img
-                      src={previewUrl}
-                      alt="Receipt preview"
-                      className="w-full h-32 object-cover rounded border"
-                    />
+                {/* Enhanced preview for different file types */}
+                {previewUrl && (
+                  <div className="mt-3 border rounded-lg overflow-hidden">
+                    {previewUrl.startsWith('blob:') || previewUrl.toLowerCase().match(/\.(jpg|jpeg|png|gif|webp)(\?|$)/i) ? (
+                      <div className="relative group">
+                        <img
+                          src={previewUrl}
+                          alt="Receipt preview"
+                          className="w-full h-40 object-cover"
+                        />
+                        <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-20 transition-all duration-200 flex items-center justify-center">
+                          <Button
+                            type="button"
+                            variant="secondary"
+                            size="sm"
+                            onClick={viewReceipt}
+                            className="opacity-0 group-hover:opacity-100 transition-opacity duration-200"
+                          >
+                            <Eye className="h-4 w-4 mr-1" />
+                            View Full Size
+                          </Button>
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="p-4 bg-muted/50 text-center">
+                        <FileText className="h-12 w-12 mx-auto mb-2 text-muted-foreground" />
+                        <p className="text-sm font-medium">PDF Receipt</p>
+                        <p className="text-xs text-muted-foreground mb-3">
+                          Click to view in new tab
+                        </p>
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          onClick={viewReceipt}
+                        >
+                          <Eye className="h-4 w-4 mr-1" />
+                          Open PDF
+                        </Button>
+                      </div>
+                    )}
                   </div>
                 )}
               </CardContent>
