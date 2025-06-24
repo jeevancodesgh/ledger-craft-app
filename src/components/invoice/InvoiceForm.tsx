@@ -75,6 +75,7 @@ import ModernTemplate from "./preview/templates/ModernTemplate";
 import MinimalTemplate from "./preview/templates/MinimalTemplate";
 import ExecutiveTemplate from "./preview/templates/ExecutiveTemplate";
 import CorporateTemplate from "./preview/templates/CorporateTemplate";
+import ModernInvoiceTemplate from './preview/templates/ModernInvoiceTemplate';
 import { itemService } from "@/services/supabaseService";
 
 type InvoiceFormMode = "create" | "edit";

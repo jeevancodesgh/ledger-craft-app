@@ -6,6 +6,7 @@ import ModernTemplate from './templates/ModernTemplate';
 import MinimalTemplate from './templates/MinimalTemplate';
 import ExecutiveTemplate from './templates/ExecutiveTemplate';
 import CorporateTemplate from './templates/CorporateTemplate';
+import ModernInvoiceTemplate from './templates/ModernInvoiceTemplate';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { Button } from '@/components/ui/button';
 import { Download, Maximize2, Minimize2, ZoomIn, ZoomOut, Printer, ArrowLeft } from 'lucide-react';
@@ -154,6 +155,8 @@ const InvoicePreview = ({ invoice, selectedTemplate, onBackToEdit, businessProfi
         return <ExecutiveTemplate {...templateData} />;
       case 'corporate':
         return <CorporateTemplate {...templateData} />;
+      case 'modernpro':
+        return <ModernInvoiceTemplate {...templateData} />;
       default:
         return <ClassicTemplate {...templateData} />;
     }
