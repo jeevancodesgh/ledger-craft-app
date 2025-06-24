@@ -236,3 +236,72 @@ export interface SupabaseAccount {
   created_at: string;
   updated_at: string;
 }
+
+// Expense types
+export type ExpenseStatus = 'pending' | 'approved' | 'rejected';
+export type PaymentMethod = 'cash' | 'card' | 'bank_transfer' | 'check' | 'other';
+
+export interface ExpenseCategory {
+  id: string;
+  name: string;
+  description?: string | null;
+  color?: string | null;
+  userId?: string;
+  createdAt?: string;
+  updatedAt?: string;
+}
+
+export interface Expense {
+  id: string;
+  description: string;
+  amount: number;
+  categoryId?: string | null;
+  category?: ExpenseCategory;
+  accountId?: string | null;
+  account?: Account;
+  vendorName?: string | null;
+  receiptUrl?: string | null;
+  expenseDate: string;
+  status: ExpenseStatus;
+  isBillable: boolean;
+  customerId?: string | null;
+  customer?: Customer;
+  taxAmount: number;
+  currency: string;
+  paymentMethod?: PaymentMethod | null;
+  notes?: string | null;
+  userId?: string;
+  createdAt?: string;
+  updatedAt?: string;
+}
+
+export interface SupabaseExpenseCategory {
+  id: string;
+  name: string;
+  description: string | null;
+  color: string | null;
+  user_id: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface SupabaseExpense {
+  id: string;
+  description: string;
+  amount: number;
+  category_id: string | null;
+  account_id: string | null;
+  vendor_name: string | null;
+  receipt_url: string | null;
+  expense_date: string;
+  status: ExpenseStatus;
+  is_billable: boolean;
+  customer_id: string | null;
+  tax_amount: number;
+  currency: string;
+  payment_method: PaymentMethod | null;
+  notes: string | null;
+  user_id: string;
+  created_at: string;
+  updated_at: string;
+}

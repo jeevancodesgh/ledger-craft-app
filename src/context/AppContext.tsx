@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useState, useEffect } from "react";
-import { customerService, invoiceService, businessProfileService, itemService, itemCategoryService, accountService } from "@/services/supabaseService";
-import { Customer, Invoice, BusinessProfile, Item, ItemCategory, Account } from "@/types";
+import { customerService, invoiceService, businessProfileService, itemService, itemCategoryService, accountService, expenseService, expenseCategoryService } from "@/services/supabaseService";
+import { Customer, Invoice, BusinessProfile, Item, ItemCategory, Account, Expense, ExpenseCategory } from "@/types";
 import { useToast } from "@/hooks/use-toast";
 
 interface AppContextType {
@@ -44,6 +44,20 @@ interface AppContextType {
   updateAccount: (id: string, account: Partial<Omit<Account, "id" | "createdAt" | "updatedAt">>) => Promise<Account>;
   deleteAccount: (id: string) => Promise<void>;
   refreshAccounts: () => Promise<void>;
+  expenses: Expense[];
+  isLoadingExpenses: boolean;
+  getExpense: (id: string) => Promise<Expense | null>;
+  createExpense: (expense: Omit<Expense, "id" | "createdAt" | "updatedAt" | "category" | "account" | "customer">) => Promise<Expense>;
+  updateExpense: (id: string, expense: Partial<Omit<Expense, "id" | "createdAt" | "updatedAt" | "category" | "account" | "customer">>) => Promise<Expense>;
+  deleteExpense: (id: string) => Promise<void>;
+  refreshExpenses: () => Promise<void>;
+  expenseCategories: ExpenseCategory[];
+  isLoadingExpenseCategories: boolean;
+  getExpenseCategory: (id: string) => Promise<ExpenseCategory | null>;
+  createExpenseCategory: (category: Omit<ExpenseCategory, "id" | "createdAt" | "updatedAt">) => Promise<ExpenseCategory>;
+  updateExpenseCategory: (id: string, category: Partial<Omit<ExpenseCategory, "id" | "createdAt" | "updatedAt">>) => Promise<ExpenseCategory>;
+  deleteExpenseCategory: (id: string) => Promise<void>;
+  refreshExpenseCategories: () => Promise<void>;
   units: string[];
 }
 
@@ -62,6 +76,10 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const [isLoadingItemCategories, setIsLoadingItemCategories] = useState(true);
   const [accounts, setAccounts] = useState<Account[]>([]);
   const [isLoadingAccounts, setIsLoadingAccounts] = useState(true);
+  const [expenses, setExpenses] = useState<Expense[]>([]);
+  const [isLoadingExpenses, setIsLoadingExpenses] = useState(true);
+  const [expenseCategories, setExpenseCategories] = useState<ExpenseCategory[]>([]);
+  const [isLoadingExpenseCategories, setIsLoadingExpenseCategories] = useState(true);
   const defaultUnits = ['each', 'hour', 'kg', 'g', 'mg', 'liter', 'ml', 'meter', 'cm', 'mm', 'sq meter', 'sq foot', 'cubic meter', 'cubic foot', 'gallon', 'quart', 'pint', 'ounce', 'lb', 'box', 'pack', 'pair', 'roll', 'set', 'sheet', 'unit'];
   const [units, setUnits] = useState<string[]>(defaultUnits);
   const { toast } = useToast();
@@ -73,6 +91,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     fetchItems();
     fetchItemCategories();
     fetchAccounts();
+    fetchExpenses();
+    fetchExpenseCategories();
   }, []);
 
   const fetchCustomers = async () => {
@@ -585,6 +605,196 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     await fetchAccounts();
   };
 
+  // Expense Category functions
+  const fetchExpenseCategories = async () => {
+    try {
+      setIsLoadingExpenseCategories(true);
+      const data = await expenseCategoryService.getExpenseCategories();
+      setExpenseCategories(data);
+    } catch (error) {
+      console.error("Error loading expense categories:", error);
+      toast({
+        title: "Error",
+        description: "Failed to load expense categories. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoadingExpenseCategories(false);
+    }
+  };
+
+  const getExpenseCategory = async (id: string) => {
+    try {
+      return await expenseCategoryService.getExpenseCategory(id);
+    } catch (error) {
+      console.error("Error loading expense category:", error);
+      toast({
+        title: "Error",
+        description: "Failed to load expense category. Please try again.",
+        variant: "destructive",
+      });
+      return null;
+    }
+  };
+
+  const createExpenseCategory = async (category: Omit<ExpenseCategory, "id" | "createdAt" | "updatedAt">) => {
+    try {
+      const newCategory = await expenseCategoryService.createExpenseCategory(category);
+      setExpenseCategories([...expenseCategories, newCategory]);
+      toast({
+        title: "Success",
+        description: "Expense category created successfully.",
+      });
+      return newCategory;
+    } catch (error) {
+      console.error("Error creating expense category:", error);
+      toast({
+        title: "Error",
+        description: "Failed to create expense category. Please try again.",
+        variant: "destructive",
+      });
+      throw error;
+    }
+  };
+
+  const updateExpenseCategory = async (id: string, category: Partial<Omit<ExpenseCategory, "id" | "createdAt" | "updatedAt">>) => {
+    try {
+      const updatedCategory = await expenseCategoryService.updateExpenseCategory(id, category);
+      setExpenseCategories(expenseCategories.map(c => c.id === id ? updatedCategory : c));
+      toast({
+        title: "Success",
+        description: "Expense category updated successfully.",
+      });
+      return updatedCategory;
+    } catch (error) {
+      console.error("Error updating expense category:", error);
+      toast({
+        title: "Error",
+        description: "Failed to update expense category. Please try again.",
+        variant: "destructive",
+      });
+      throw error;
+    }
+  };
+
+  const deleteExpenseCategory = async (id: string) => {
+    try {
+      await expenseCategoryService.deleteExpenseCategory(id);
+      setExpenseCategories(expenseCategories.filter(c => c.id !== id));
+      toast({
+        title: "Success",
+        description: "Expense category deleted successfully.",
+      });
+    } catch (error) {
+      console.error("Error deleting expense category:", error);
+      toast({
+        title: "Error",
+        description: "Failed to delete expense category. Please try again.",
+        variant: "destructive",
+      });
+      throw error;
+    }
+  };
+
+  const refreshExpenseCategories = async () => {
+    await fetchExpenseCategories();
+  };
+
+  // Expense functions
+  const fetchExpenses = async () => {
+    try {
+      setIsLoadingExpenses(true);
+      const data = await expenseService.getExpenses();
+      setExpenses(data);
+    } catch (error) {
+      console.error("Error loading expenses:", error);
+      toast({
+        title: "Error",
+        description: "Failed to load expenses. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoadingExpenses(false);
+    }
+  };
+
+  const getExpense = async (id: string) => {
+    try {
+      return await expenseService.getExpense(id);
+    } catch (error) {
+      console.error("Error loading expense:", error);
+      toast({
+        title: "Error",
+        description: "Failed to load expense. Please try again.",
+        variant: "destructive",
+      });
+      return null;
+    }
+  };
+
+  const createExpense = async (expense: Omit<Expense, "id" | "createdAt" | "updatedAt" | "category" | "account" | "customer">) => {
+    try {
+      const newExpense = await expenseService.createExpense(expense);
+      setExpenses([...expenses, newExpense]);
+      toast({
+        title: "Success",
+        description: "Expense created successfully.",
+      });
+      return newExpense;
+    } catch (error) {
+      console.error("Error creating expense:", error);
+      toast({
+        title: "Error",
+        description: "Failed to create expense. Please try again.",
+        variant: "destructive",
+      });
+      throw error;
+    }
+  };
+
+  const updateExpense = async (id: string, expense: Partial<Omit<Expense, "id" | "createdAt" | "updatedAt" | "category" | "account" | "customer">>) => {
+    try {
+      const updatedExpense = await expenseService.updateExpense(id, expense);
+      setExpenses(expenses.map(e => e.id === id ? updatedExpense : e));
+      toast({
+        title: "Success",
+        description: "Expense updated successfully.",
+      });
+      return updatedExpense;
+    } catch (error) {
+      console.error("Error updating expense:", error);
+      toast({
+        title: "Error",
+        description: "Failed to update expense. Please try again.",
+        variant: "destructive",
+      });
+      throw error;
+    }
+  };
+
+  const deleteExpense = async (id: string) => {
+    try {
+      await expenseService.deleteExpense(id);
+      setExpenses(expenses.filter(e => e.id !== id));
+      toast({
+        title: "Success",
+        description: "Expense deleted successfully.",
+      });
+    } catch (error) {
+      console.error("Error deleting expense:", error);
+      toast({
+        title: "Error",
+        description: "Failed to delete expense. Please try again.",
+        variant: "destructive",
+      });
+      throw error;
+    }
+  };
+
+  const refreshExpenses = async () => {
+    await fetchExpenses();
+  };
+
   return (
     <AppContext.Provider value={{
       customers,
@@ -627,6 +837,20 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       updateAccount,
       deleteAccount,
       refreshAccounts,
+      expenses,
+      isLoadingExpenses,
+      getExpense,
+      createExpense,
+      updateExpense,
+      deleteExpense,
+      refreshExpenses,
+      expenseCategories,
+      isLoadingExpenseCategories,
+      getExpenseCategory,
+      createExpenseCategory,
+      updateExpenseCategory,
+      deleteExpenseCategory,
+      refreshExpenseCategories,
       units
     }}>
       {children}

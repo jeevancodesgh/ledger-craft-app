@@ -8,7 +8,9 @@ import {
   Users, 
   Settings, 
   X,
-  LogOut
+  LogOut,
+  CreditCard,
+  Tag
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
@@ -26,6 +28,8 @@ export function Sidebar({ collapsed, isMobile, onCloseMobileMenu }: SidebarProps
     { name: 'Dashboard', path: '/', icon: LayoutDashboard },
     { name: 'Invoices', path: '/invoices', icon: FileText },
     { name: 'Customers', path: '/customers', icon: Users },
+    { name: 'Expenses', path: '/expenses', icon: CreditCard },
+    { name: 'Expense Categories', path: '/expense-categories', icon: Tag },
     { name: 'Settings', path: '/settings', icon: Settings },
     { name: 'Items', path: '/items', icon: FileText },
     { name: 'Accounts', path: '/accounts', icon: FileText },

@@ -2,7 +2,8 @@ import { supabase } from '@/integrations/supabase/client';
 import { 
   Customer, Invoice, BusinessProfile, LineItem, ItemCategory, Item,
   SupabaseCustomer, SupabaseInvoice, SupabaseLineItem, SupabaseBusinessProfile, SupabaseItemCategory, SupabaseItem,
-  Account, SupabaseAccount, AccountType, InvoiceStatus
+  Account, SupabaseAccount, AccountType, InvoiceStatus,
+  Expense, ExpenseCategory, SupabaseExpense, SupabaseExpenseCategory, ExpenseStatus, PaymentMethod
 } from '@/types';
 
 const mapSupabaseCustomerToCustomer = (customer: SupabaseCustomer): Customer => ({
@@ -243,6 +244,83 @@ const mapAccountToSupabaseAccount = async (
     opening_balance: account.openingBalance,
     current_balance: account.currentBalance,
     user_id: account.userId || userId,
+  };
+};
+
+const mapSupabaseExpenseCategoryToExpenseCategory = (category: SupabaseExpenseCategory): ExpenseCategory => ({
+  id: category.id,
+  name: category.name,
+  description: category.description,
+  color: category.color,
+  userId: category.user_id,
+  createdAt: category.created_at,
+  updatedAt: category.updated_at,
+});
+
+const mapExpenseCategoryToSupabaseExpenseCategory = async (
+  category: Omit<ExpenseCategory, 'id' | 'createdAt' | 'updatedAt'>
+): Promise<Omit<SupabaseExpenseCategory, 'id' | 'created_at' | 'updated_at'>> => {
+  const { data: { user } } = await supabase.auth.getUser();
+  const userId = user?.id || '';
+  return {
+    name: category.name,
+    description: category.description || null,
+    color: category.color || null,
+    user_id: category.userId || userId,
+  };
+};
+
+const mapSupabaseExpenseToExpense = (
+  expense: SupabaseExpense & { 
+    expense_categories?: SupabaseExpenseCategory;
+    accounts?: SupabaseAccount;
+    customers?: SupabaseCustomer;
+  }
+): Expense => ({
+  id: expense.id,
+  description: expense.description,
+  amount: expense.amount,
+  categoryId: expense.category_id,
+  category: expense.expense_categories ? mapSupabaseExpenseCategoryToExpenseCategory(expense.expense_categories) : undefined,
+  accountId: expense.account_id,
+  account: expense.accounts ? mapSupabaseAccountToAccount(expense.accounts) : undefined,
+  vendorName: expense.vendor_name,
+  receiptUrl: expense.receipt_url,
+  expenseDate: expense.expense_date,
+  status: expense.status,
+  isBillable: expense.is_billable,
+  customerId: expense.customer_id,
+  customer: expense.customers ? mapSupabaseCustomerToCustomer(expense.customers) : undefined,
+  taxAmount: expense.tax_amount,
+  currency: expense.currency,
+  paymentMethod: expense.payment_method,
+  notes: expense.notes,
+  userId: expense.user_id,
+  createdAt: expense.created_at,
+  updatedAt: expense.updated_at,
+});
+
+const mapExpenseToSupabaseExpense = async (
+  expense: Omit<Expense, 'id' | 'createdAt' | 'updatedAt' | 'category' | 'account' | 'customer'>
+): Promise<Omit<SupabaseExpense, 'id' | 'created_at' | 'updated_at'>> => {
+  const { data: { user } } = await supabase.auth.getUser();
+  const userId = user?.id || '';
+  return {
+    description: expense.description,
+    amount: expense.amount,
+    category_id: expense.categoryId || null,
+    account_id: expense.accountId || null,
+    vendor_name: expense.vendorName || null,
+    receipt_url: expense.receiptUrl || null,
+    expense_date: expense.expenseDate,
+    status: expense.status,
+    is_billable: expense.isBillable,
+    customer_id: expense.customerId || null,
+    tax_amount: expense.taxAmount,
+    currency: expense.currency,
+    payment_method: expense.paymentMethod || null,
+    notes: expense.notes || null,
+    user_id: expense.userId || userId,
   };
 };
 
@@ -1263,6 +1341,354 @@ export const accountService = {
       throw error;
     }
   },
+};
+
+export const expenseCategoryService = {
+  async getExpenseCategories(): Promise<ExpenseCategory[]> {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user?.id) {
+      console.error('No authenticated user found');
+      return [];
+    }
+    
+    const { data, error } = await supabase
+      .from('expense_categories')
+      .select('*')
+      .eq('user_id', user.id)
+      .order('name');
+
+    if (error) {
+      console.error('Error fetching expense categories:', error);
+      throw error;
+    }
+    
+    return (data as SupabaseExpenseCategory[]).map(mapSupabaseExpenseCategoryToExpenseCategory) || [];
+  },
+
+  async getExpenseCategory(id: string): Promise<ExpenseCategory | null> {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user?.id) {
+      console.error('No authenticated user found');
+      return null;
+    }
+    
+    const { data, error } = await supabase
+      .from('expense_categories')
+      .select('*')
+      .eq('id', id)
+      .eq('user_id', user.id)
+      .single();
+
+    if (error) {
+      if (error.code === 'PGRST116') {
+        return null;
+      }
+      console.error('Error fetching expense category:', error);
+      throw error;
+    }
+    
+    return data ? mapSupabaseExpenseCategoryToExpenseCategory(data as SupabaseExpenseCategory) : null;
+  },
+
+  async createExpenseCategory(category: Omit<ExpenseCategory, 'id' | 'createdAt' | 'updatedAt'>): Promise<ExpenseCategory> {
+    const supabaseCategory = await mapExpenseCategoryToSupabaseExpenseCategory(category);
+    
+    const { data, error } = await supabase
+      .from('expense_categories')
+      .insert([supabaseCategory])
+      .select()
+      .single();
+
+    if (error) {
+      console.error('Error creating expense category:', error);
+      throw error;
+    }
+    
+    return mapSupabaseExpenseCategoryToExpenseCategory(data as SupabaseExpenseCategory);
+  },
+
+  async updateExpenseCategory(id: string, category: Partial<Omit<ExpenseCategory, 'id' | 'createdAt' | 'updatedAt'>>): Promise<ExpenseCategory> {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user?.id) {
+      throw new Error('No authenticated user found');
+    }
+
+    const updateData: Partial<SupabaseExpenseCategory> = {};
+    if (category.name !== undefined) updateData.name = category.name;
+    if (category.description !== undefined) updateData.description = category.description || null;
+    if (category.color !== undefined) updateData.color = category.color || null;
+
+    const { data, error } = await supabase
+      .from('expense_categories')
+      .update(updateData)
+      .eq('id', id)
+      .eq('user_id', user.id)
+      .select()
+      .single();
+
+    if (error) {
+      console.error('Error updating expense category:', error);
+      throw error;
+    }
+    
+    return mapSupabaseExpenseCategoryToExpenseCategory(data as SupabaseExpenseCategory);
+  },
+
+  async deleteExpenseCategory(id: string): Promise<void> {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user?.id) {
+      throw new Error('No authenticated user found');
+    }
+
+    const { error } = await supabase
+      .from('expense_categories')
+      .delete()
+      .eq('id', id)
+      .eq('user_id', user.id);
+
+    if (error) {
+      console.error('Error deleting expense category:', error);
+      throw error;
+    }
+  },
+};
+
+export const expenseService = {
+  async getExpenses(filters?: { 
+    categoryId?: string; 
+    accountId?: string; 
+    customerId?: string; 
+    status?: ExpenseStatus; 
+    dateFrom?: string; 
+    dateTo?: string; 
+  }): Promise<Expense[]> {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user?.id) {
+      console.error('No authenticated user found');
+      return [];
+    }
+    
+    let query = supabase
+      .from('expenses')
+      .select(`
+        *,
+        expense_categories(*),
+        accounts(*),
+        customers(*)
+      `)
+      .eq('user_id', user.id);
+
+    if (filters?.categoryId) {
+      query = query.eq('category_id', filters.categoryId);
+    }
+    if (filters?.accountId) {
+      query = query.eq('account_id', filters.accountId);
+    }
+    if (filters?.customerId) {
+      query = query.eq('customer_id', filters.customerId);
+    }
+    if (filters?.status) {
+      query = query.eq('status', filters.status);
+    }
+    if (filters?.dateFrom) {
+      query = query.gte('expense_date', filters.dateFrom);
+    }
+    if (filters?.dateTo) {
+      query = query.lte('expense_date', filters.dateTo);
+    }
+
+    const { data, error } = await query.order('expense_date', { ascending: false });
+
+    if (error) {
+      console.error('Error fetching expenses:', error);
+      throw error;
+    }
+    
+    return (data as any[]).map(mapSupabaseExpenseToExpense) || [];
+  },
+
+  async getExpense(id: string): Promise<Expense | null> {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user?.id) {
+      console.error('No authenticated user found');
+      return null;
+    }
+    
+    const { data, error } = await supabase
+      .from('expenses')
+      .select(`
+        *,
+        expense_categories(*),
+        accounts(*),
+        customers(*)
+      `)
+      .eq('id', id)
+      .eq('user_id', user.id)
+      .single();
+
+    if (error) {
+      if (error.code === 'PGRST116') {
+        return null;
+      }
+      console.error('Error fetching expense:', error);
+      throw error;
+    }
+    
+    return data ? mapSupabaseExpenseToExpense(data as any) : null;
+  },
+
+  async createExpense(expense: Omit<Expense, 'id' | 'createdAt' | 'updatedAt' | 'category' | 'account' | 'customer'>): Promise<Expense> {
+    const supabaseExpense = await mapExpenseToSupabaseExpense(expense);
+    
+    const { data, error } = await supabase
+      .from('expenses')
+      .insert([supabaseExpense])
+      .select(`
+        *,
+        expense_categories(*),
+        accounts(*),
+        customers(*)
+      `)
+      .single();
+
+    if (error) {
+      console.error('Error creating expense:', error);
+      throw error;
+    }
+    
+    return mapSupabaseExpenseToExpense(data as any);
+  },
+
+  async updateExpense(id: string, expense: Partial<Omit<Expense, 'id' | 'createdAt' | 'updatedAt' | 'category' | 'account' | 'customer'>>): Promise<Expense> {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user?.id) {
+      throw new Error('No authenticated user found');
+    }
+
+    const updateData: Partial<SupabaseExpense> = {};
+    if (expense.description !== undefined) updateData.description = expense.description;
+    if (expense.amount !== undefined) updateData.amount = expense.amount;
+    if (expense.categoryId !== undefined) updateData.category_id = expense.categoryId || null;
+    if (expense.accountId !== undefined) updateData.account_id = expense.accountId || null;
+    if (expense.vendorName !== undefined) updateData.vendor_name = expense.vendorName || null;
+    if (expense.receiptUrl !== undefined) updateData.receipt_url = expense.receiptUrl || null;
+    if (expense.expenseDate !== undefined) updateData.expense_date = expense.expenseDate;
+    if (expense.status !== undefined) updateData.status = expense.status;
+    if (expense.isBillable !== undefined) updateData.is_billable = expense.isBillable;
+    if (expense.customerId !== undefined) updateData.customer_id = expense.customerId || null;
+    if (expense.taxAmount !== undefined) updateData.tax_amount = expense.taxAmount;
+    if (expense.currency !== undefined) updateData.currency = expense.currency;
+    if (expense.paymentMethod !== undefined) updateData.payment_method = expense.paymentMethod || null;
+    if (expense.notes !== undefined) updateData.notes = expense.notes || null;
+
+    const { data, error } = await supabase
+      .from('expenses')
+      .update(updateData)
+      .eq('id', id)
+      .eq('user_id', user.id)
+      .select(`
+        *,
+        expense_categories(*),
+        accounts(*),
+        customers(*)
+      `)
+      .single();
+
+    if (error) {
+      console.error('Error updating expense:', error);
+      throw error;
+    }
+    
+    return mapSupabaseExpenseToExpense(data as any);
+  },
+
+  async deleteExpense(id: string): Promise<void> {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user?.id) {
+      throw new Error('No authenticated user found');
+    }
+
+    const { error } = await supabase
+      .from('expenses')
+      .delete()
+      .eq('id', id)
+      .eq('user_id', user.id);
+
+    if (error) {
+      console.error('Error deleting expense:', error);
+      throw error;
+    }
+  },
+
+  async getExpensesByCategory(): Promise<{ category: string; amount: number; count: number }[]> {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user?.id) {
+      console.error('No authenticated user found');
+      return [];
+    }
+
+    const { data, error } = await supabase
+      .from('expenses')
+      .select(`
+        amount,
+        expense_categories(name)
+      `)
+      .eq('user_id', user.id);
+
+    if (error) {
+      console.error('Error fetching expenses by category:', error);
+      throw error;
+    }
+
+    const categoryTotals = new Map<string, { amount: number; count: number }>();
+    
+    data?.forEach((expense: any) => {
+      const categoryName = expense.expense_categories?.name || 'Uncategorized';
+      const existing = categoryTotals.get(categoryName) || { amount: 0, count: 0 };
+      categoryTotals.set(categoryName, {
+        amount: existing.amount + expense.amount,
+        count: existing.count + 1
+      });
+    });
+
+    return Array.from(categoryTotals.entries()).map(([category, data]) => ({
+      category,
+      amount: data.amount,
+      count: data.count
+    }));
+  },
+
+  async getMonthlyExpenseTotals(year: number): Promise<{ month: number; amount: number }[]> {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user?.id) {
+      console.error('No authenticated user found');
+      return [];
+    }
+
+    const { data, error } = await supabase
+      .from('expenses')
+      .select('amount, expense_date')
+      .eq('user_id', user.id)
+      .gte('expense_date', `${year}-01-01`)
+      .lte('expense_date', `${year}-12-31`);
+
+    if (error) {
+      console.error('Error fetching monthly expense totals:', error);
+      throw error;
+    }
+
+    const monthlyTotals = new Array(12).fill(0);
+    
+    data?.forEach((expense: any) => {
+      const month = new Date(expense.expense_date).getMonth();
+      monthlyTotals[month] += expense.amount;
+    });
+
+    return monthlyTotals.map((amount, index) => ({
+      month: index + 1,
+      amount
+    }));
+  }
 };
 
 export const publicInvoiceService = {
