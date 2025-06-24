@@ -28,7 +28,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Expense } from '@/types';
 import { formatCurrency } from '@/utils/invoiceUtils';
-import { Edit, MoreHorizontal, Receipt, Trash, ExternalLink } from 'lucide-react';
+import { Edit, MoreHorizontal, Receipt, Trash, ExternalLink, FileImage, FileText, Eye } from 'lucide-react';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { format } from 'date-fns';
 
@@ -48,6 +48,36 @@ const getStatusBadgeVariant = (status: string) => {
     default:
       return 'secondary';
   }
+};
+
+const getReceiptIcon = (url: string) => {
+  if (!url) return null;
+  
+  const lowerUrl = url.toLowerCase();
+  if (lowerUrl.includes('.pdf') || lowerUrl.includes('pdf')) {
+    return <FileText className="h-4 w-4" />;
+  }
+  if (lowerUrl.includes('.jpg') || lowerUrl.includes('.jpeg') || 
+      lowerUrl.includes('.png') || lowerUrl.includes('.gif') || 
+      lowerUrl.includes('.webp')) {
+    return <FileImage className="h-4 w-4" />;
+  }
+  return <FileText className="h-4 w-4" />;
+};
+
+const getReceiptLabel = (url: string) => {
+  if (!url) return 'No receipt';
+  
+  const lowerUrl = url.toLowerCase();
+  if (lowerUrl.includes('.pdf') || lowerUrl.includes('pdf')) {
+    return 'PDF Receipt';
+  }
+  if (lowerUrl.includes('.jpg') || lowerUrl.includes('.jpeg') || 
+      lowerUrl.includes('.png') || lowerUrl.includes('.gif') || 
+      lowerUrl.includes('.webp')) {
+    return 'Image Receipt';
+  }
+  return 'Receipt';
 };
 
 const ExpenseTable: React.FC<ExpenseTableProps> = ({
@@ -151,6 +181,26 @@ const ExpenseTable: React.FC<ExpenseTableProps> = ({
                     <Badge variant="outline">Billable</Badge>
                   </div>
                 )}
+                <div className="flex justify-between items-center">
+                  <span>Receipt:</span>
+                  {expense.receiptUrl ? (
+                    <Button 
+                      variant="ghost" 
+                      size="sm"
+                      onClick={(e) => { 
+                        e.stopPropagation(); 
+                        window.open(expense.receiptUrl!, '_blank'); 
+                      }}
+                      className="h-7 px-2"
+                      title={`View ${getReceiptLabel(expense.receiptUrl)}`}
+                    >
+                      {getReceiptIcon(expense.receiptUrl)}
+                      <span className="ml-1 text-xs">{getReceiptLabel(expense.receiptUrl)}</span>
+                    </Button>
+                  ) : (
+                    <span className="text-muted-foreground">No receipt</span>
+                  )}
+                </div>
               </div>
             </div>
           ))}
@@ -245,15 +295,23 @@ const ExpenseTable: React.FC<ExpenseTableProps> = ({
               </TableCell>
               <TableCell>
                 {expense.receiptUrl ? (
-                  <Button 
-                    variant="ghost" 
-                    size="sm"
-                    onClick={() => window.open(expense.receiptUrl!, '_blank')}
-                  >
-                    <ExternalLink className="h-4 w-4" />
-                  </Button>
+                  <div className="flex items-center gap-2">
+                    <Button 
+                      variant="ghost" 
+                      size="sm"
+                      onClick={() => window.open(expense.receiptUrl!, '_blank')}
+                      className="h-8 px-2"
+                      title={`View ${getReceiptLabel(expense.receiptUrl)}`}
+                    >
+                      {getReceiptIcon(expense.receiptUrl)}
+                      <Eye className="h-3 w-3 ml-1" />
+                    </Button>
+                    <span className="text-xs text-muted-foreground hidden sm:inline">
+                      {getReceiptLabel(expense.receiptUrl)}
+                    </span>
+                  </div>
                 ) : (
-                  <span className="text-muted-foreground">-</span>
+                  <span className="text-muted-foreground text-sm">No receipt</span>
                 )}
               </TableCell>
               <TableCell>

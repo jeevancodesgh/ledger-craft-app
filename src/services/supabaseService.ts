@@ -1608,6 +1608,10 @@ export const expenseService = {
       throw new Error('No authenticated user found');
     }
 
+    // First get the expense to check for receipt files
+    const expense = await this.getExpense(id);
+    
+    // Delete the expense record
     const { error } = await supabase
       .from('expenses')
       .delete()
@@ -1617,6 +1621,17 @@ export const expenseService = {
     if (error) {
       console.error('Error deleting expense:', error);
       throw error;
+    }
+
+    // If expense had a receipt file uploaded to our storage, delete it
+    if (expense?.receiptUrl && expense.receiptUrl.includes('/storage/v1/object/public/business-assets/receipts/')) {
+      try {
+        const { storageService } = await import('./storageService');
+        await storageService.deleteReceipt(expense.receiptUrl);
+      } catch (storageError) {
+        console.warn('Failed to delete receipt file:', storageError);
+        // Don't throw here - expense deletion succeeded, file cleanup is secondary
+      }
     }
   },
 

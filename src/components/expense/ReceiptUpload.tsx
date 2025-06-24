@@ -1,0 +1,385 @@
+import React, { useState, useRef, useCallback } from 'react';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from '@/components/ui/card';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { 
+  Upload, 
+  Camera, 
+  X, 
+  Eye, 
+  FileImage,
+  AlertCircle,
+  Check
+} from 'lucide-react';
+import { cn } from '@/lib/utils';
+import { storageService } from '@/services/storageService';
+import { useToast } from '@/hooks/use-toast';
+
+interface ReceiptUploadProps {
+  onReceiptChange: (url: string | null, file: File | null) => void;
+  initialReceiptUrl?: string | null;
+  disabled?: boolean;
+}
+
+const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
+const ACCEPTED_FORMATS = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp', 'application/pdf'];
+
+export const ReceiptUpload: React.FC<ReceiptUploadProps> = ({
+  onReceiptChange,
+  initialReceiptUrl,
+  disabled = false
+}) => {
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [previewUrl, setPreviewUrl] = useState<string | null>(initialReceiptUrl || null);
+  const [isUploading, setIsUploading] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState(0);
+  const [manualUrl, setManualUrl] = useState(initialReceiptUrl || '');
+  const [activeTab, setActiveTab] = useState('upload');
+  
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const cameraInputRef = useRef<HTMLInputElement>(null);
+  const { toast } = useToast();
+
+  const validateFile = (file: File): string | null => {
+    if (file.size > MAX_FILE_SIZE) {
+      return 'File size must be less than 10MB';
+    }
+    
+    if (!ACCEPTED_FORMATS.includes(file.type)) {
+      return 'Only JPEG, PNG, WebP, and PDF files are supported';
+    }
+    
+    return null;
+  };
+
+  const generateFileName = (file: File): string => {
+    const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
+    const extension = file.name.split('.').pop() || 'jpg';
+    return `receipt-${timestamp}.${extension}`;
+  };
+
+  const handleFileUpload = useCallback(async (file: File) => {
+    const validationError = validateFile(file);
+    if (validationError) {
+      toast({
+        title: "Invalid File",
+        description: validationError,
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setIsUploading(true);
+    setUploadProgress(0);
+    
+    try {
+      // Create preview
+      const preview = URL.createObjectURL(file);
+      setPreviewUrl(preview);
+      setSelectedFile(file);
+      
+      // Simulate upload progress
+      const progressInterval = setInterval(() => {
+        setUploadProgress(prev => {
+          if (prev >= 90) {
+            clearInterval(progressInterval);
+            return 90;
+          }
+          return prev + 10;
+        });
+      }, 100);
+
+      // Upload to Supabase Storage using receipt-specific method
+      const uploadResult = await storageService.uploadReceipt(file);
+      
+      clearInterval(progressInterval);
+      setUploadProgress(100);
+      
+      if (uploadResult?.url) {
+        onReceiptChange(uploadResult.url, file);
+        toast({
+          title: "Success",
+          description: "Receipt uploaded successfully",
+        });
+      } else {
+        throw new Error('Upload failed');
+      }
+    } catch (error) {
+      console.error('Upload error:', error);
+      toast({
+        title: "Upload Failed",
+        description: "Failed to upload receipt. Please try again.",
+        variant: "destructive",
+      });
+      setPreviewUrl(null);
+      setSelectedFile(null);
+      onReceiptChange(null, null);
+    } finally {
+      setIsUploading(false);
+      setUploadProgress(0);
+    }
+  }, [onReceiptChange, toast]);
+
+  const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (file) {
+      handleFileUpload(file);
+    }
+  };
+
+  const handleDragOver = (event: React.DragEvent) => {
+    event.preventDefault();
+  };
+
+  const handleDrop = (event: React.DragEvent) => {
+    event.preventDefault();
+    const file = event.dataTransfer.files[0];
+    if (file) {
+      handleFileUpload(file);
+    }
+  };
+
+  const removeReceipt = () => {
+    setSelectedFile(null);
+    setPreviewUrl(null);
+    setManualUrl('');
+    onReceiptChange(null, null);
+    
+    // Clear file inputs
+    if (fileInputRef.current) fileInputRef.current.value = '';
+    if (cameraInputRef.current) cameraInputRef.current.value = '';
+  };
+
+  const handleManualUrlChange = (url: string) => {
+    setManualUrl(url);
+    if (url) {
+      setPreviewUrl(url);
+      onReceiptChange(url, null);
+    } else {
+      setPreviewUrl(null);
+      onReceiptChange(null, null);
+    }
+  };
+
+  const openFileDialog = () => {
+    fileInputRef.current?.click();
+  };
+
+  const openCamera = () => {
+    cameraInputRef.current?.click();
+  };
+
+  const viewReceipt = () => {
+    if (previewUrl) {
+      window.open(previewUrl, '_blank');
+    }
+  };
+
+  return (
+    <div className="space-y-4">
+      <Label>Receipt</Label>
+      
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+        <TabsList className="grid w-full grid-cols-2">
+          <TabsTrigger value="upload">Upload/Camera</TabsTrigger>
+          <TabsTrigger value="url">Manual URL</TabsTrigger>
+        </TabsList>
+        
+        <TabsContent value="upload" className="space-y-4">
+          {!previewUrl ? (
+            <Card>
+              <CardHeader className="pb-2">
+                <CardTitle className="text-sm">Upload Receipt</CardTitle>
+                <CardDescription className="text-xs">
+                  Take a photo or upload an image/PDF (max 10MB)
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="grid grid-cols-2 gap-2 mb-4">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={openCamera}
+                    disabled={disabled || isUploading}
+                    className="h-20 flex-col gap-2"
+                  >
+                    <Camera className="h-6 w-6" />
+                    <span className="text-xs">Take Photo</span>
+                  </Button>
+                  
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={openFileDialog}
+                    disabled={disabled || isUploading}
+                    className="h-20 flex-col gap-2"
+                  >
+                    <Upload className="h-6 w-6" />
+                    <span className="text-xs">Upload File</span>
+                  </Button>
+                </div>
+                
+                <div
+                  className={cn(
+                    "border-2 border-dashed border-gray-300 rounded-lg p-6 text-center transition-colors",
+                    "hover:border-gray-400 cursor-pointer",
+                    disabled && "opacity-50 cursor-not-allowed"
+                  )}
+                  onDragOver={handleDragOver}
+                  onDrop={handleDrop}
+                  onClick={!disabled ? openFileDialog : undefined}
+                >
+                  <FileImage className="h-8 w-8 mx-auto mb-2 text-gray-400" />
+                  <p className="text-sm text-gray-600 mb-1">
+                    Drop receipt here or click to upload
+                  </p>
+                  <p className="text-xs text-gray-500">
+                    PNG, JPG, WebP, PDF up to 10MB
+                  </p>
+                </div>
+                
+                {isUploading && (
+                  <div className="mt-4">
+                    <div className="flex items-center justify-between mb-2">
+                      <span className="text-sm text-gray-600">Uploading...</span>
+                      <span className="text-sm text-gray-600">{uploadProgress}%</span>
+                    </div>
+                    <div className="w-full bg-gray-200 rounded-full h-2">
+                      <div
+                        className="bg-blue-600 h-2 rounded-full transition-all duration-300"
+                        style={{ width: `${uploadProgress}%` }}
+                      />
+                    </div>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          ) : (
+            <Card>
+              <CardHeader className="pb-2">
+                <CardTitle className="text-sm flex items-center justify-between">
+                  Receipt Attached
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    onClick={removeReceipt}
+                    disabled={disabled}
+                    className="h-8 w-8 p-0 text-red-500 hover:text-red-700"
+                  >
+                    <X className="h-4 w-4" />
+                  </Button>
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="flex items-center gap-3">
+                  <div className="flex-1 flex items-center gap-2">
+                    {selectedFile ? (
+                      <>
+                        <FileImage className="h-5 w-5 text-green-600" />
+                        <span className="text-sm truncate">{selectedFile.name}</span>
+                        <Check className="h-4 w-4 text-green-600" />
+                      </>
+                    ) : (
+                      <>
+                        <FileImage className="h-5 w-5 text-blue-600" />
+                        <span className="text-sm truncate">External URL</span>
+                      </>
+                    )}
+                  </div>
+                  
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={viewReceipt}
+                    className="h-8 px-2"
+                  >
+                    <Eye className="h-4 w-4" />
+                  </Button>
+                </div>
+                
+                {previewUrl && previewUrl.startsWith('blob:') && (
+                  <div className="mt-3">
+                    <img
+                      src={previewUrl}
+                      alt="Receipt preview"
+                      className="w-full h-32 object-cover rounded border"
+                    />
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          )}
+        </TabsContent>
+        
+        <TabsContent value="url" className="space-y-4">
+          <Card>
+            <CardHeader className="pb-2">
+              <CardTitle className="text-sm">Manual URL</CardTitle>
+              <CardDescription className="text-xs">
+                Enter a direct link to your receipt image or PDF
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-3">
+                <Input
+                  placeholder="https://example.com/receipt.jpg"
+                  value={manualUrl}
+                  onChange={(e) => handleManualUrlChange(e.target.value)}
+                  disabled={disabled}
+                />
+                
+                {previewUrl && !previewUrl.startsWith('blob:') && (
+                  <div className="flex items-center gap-2 text-sm text-green-600">
+                    <Check className="h-4 w-4" />
+                    <span>URL set successfully</span>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={viewReceipt}
+                      className="h-6 px-2 ml-auto"
+                    >
+                      <Eye className="h-3 w-3" />
+                    </Button>
+                  </div>
+                )}
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+      </Tabs>
+      
+      {/* Hidden file inputs */}
+      <input
+        ref={fileInputRef}
+        type="file"
+        accept={ACCEPTED_FORMATS.join(',')}
+        onChange={handleFileSelect}
+        className="hidden"
+        disabled={disabled}
+      />
+      
+      <input
+        ref={cameraInputRef}
+        type="file"
+        accept="image/*"
+        capture="environment"
+        onChange={handleFileSelect}
+        className="hidden"
+        disabled={disabled}
+      />
+    </div>
+  );
+};
+
+export default ReceiptUpload;

@@ -33,6 +33,7 @@ import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
+import ReceiptUpload from './ReceiptUpload';
 
 const expenseFormSchema = z.object({
   description: z.string().min(1, { message: 'Description is required' }),
@@ -40,7 +41,7 @@ const expenseFormSchema = z.object({
   categoryId: z.string().optional(),
   accountId: z.string().optional(),
   vendorName: z.string().optional().or(z.literal('')),
-  receiptUrl: z.string().url({ message: 'Must be a valid URL' }).optional().or(z.literal('')),
+  receiptUrl: z.string().optional().or(z.literal('')),
   expenseDate: z.string().min(1, { message: 'Expense date is required' }),
   status: z.enum(['pending', 'approved', 'rejected']).default('pending'),
   isBillable: z.boolean().default(false),
@@ -67,6 +68,8 @@ const ExpenseFormDrawer: React.FC<ExpenseFormDrawerProps> = ({
   onSubmit,
 }) => {
   const { expenseCategories, accounts, customers } = useAppContext();
+  const [receiptFile, setReceiptFile] = useState<File | null>(null);
+  const [receiptUrl, setReceiptUrl] = useState<string | null>(initialValues?.receiptUrl || null);
 
   const form = useForm<ExpenseFormValues>({
     resolver: zodResolver(expenseFormSchema),
@@ -106,6 +109,8 @@ const ExpenseFormDrawer: React.FC<ExpenseFormDrawerProps> = ({
         paymentMethod: initialValues.paymentMethod || undefined,
         notes: initialValues.notes || ''
       });
+      setReceiptUrl(initialValues.receiptUrl || null);
+      setReceiptFile(null);
     } else {
       form.reset({
         description: '',
@@ -123,11 +128,18 @@ const ExpenseFormDrawer: React.FC<ExpenseFormDrawerProps> = ({
         paymentMethod: undefined,
         notes: ''
       });
+      setReceiptUrl(null);
+      setReceiptFile(null);
     }
   }, [initialValues, form]);
 
   const handleSubmit = (values: ExpenseFormValues) => {
-    onSubmit(values);
+    // Include the current receipt URL in the form values
+    const formData = {
+      ...values,
+      receiptUrl: receiptUrl || values.receiptUrl || null
+    };
+    onSubmit(formData);
   };
 
   useEffect(() => {
@@ -148,8 +160,17 @@ const ExpenseFormDrawer: React.FC<ExpenseFormDrawerProps> = ({
         paymentMethod: undefined,
         notes: ''
       });
+      setReceiptUrl(null);
+      setReceiptFile(null);
     }
   }, [open, form]);
+
+  const handleReceiptChange = (url: string | null, file: File | null) => {
+    setReceiptUrl(url);
+    setReceiptFile(file);
+    // Update the form field as well
+    form.setValue('receiptUrl', url || '');
+  };
 
   return (
     <Drawer open={open} onOpenChange={onOpenChange}>
@@ -406,18 +427,10 @@ const ExpenseFormDrawer: React.FC<ExpenseFormDrawerProps> = ({
                 />
               )}
 
-              <FormField
-                control={form.control}
-                name="receiptUrl"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Receipt URL</FormLabel>
-                    <FormControl>
-                      <Input {...field} placeholder="Enter receipt URL" />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
+              <ReceiptUpload
+                onReceiptChange={handleReceiptChange}
+                initialReceiptUrl={receiptUrl}
+                disabled={false}
               />
 
               <FormField
