@@ -1,13 +1,14 @@
 import { RouterProvider } from "react-router-dom";
 import { router } from "./routes";
 import AddToHomeScreenPrompt from "@/components/common/AddToHomeScreenPrompt";
+import { ThemeProvider } from "@/context/ThemeContext";
 
 function App() {
   return (
-    <>
+    <ThemeProvider defaultTheme="system" storageKey="ledger-craft-theme">
       <RouterProvider router={router} />
       <AddToHomeScreenPrompt />
-    </>
+    </ThemeProvider>
   );
 }
 

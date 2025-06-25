@@ -48,42 +48,43 @@
   }
 
   .dark {
-    --background: 222 21% 14%; /* #1A1F2C */
-    --foreground: 210 40% 98%;
+    --background: 222 21% 14%; /* #1A1F2C - Beautiful dark blue-gray from mobile menu */
+    --foreground: 210 40% 98%; /* Near white text */
 
-    --card: 215 31% 18%;
+    --card: 215 31% 18%; /* Slightly lighter than background for cards */
     --card-foreground: 210 40% 98%;
 
-    --popover: 215 31% 18%;
+    --popover: 215 31% 16%; /* Darker for elevated content */
     --popover-foreground: 210 40% 98%;
 
-    --primary: 183 67% 44%; /* #5BC0BE */
-    --primary-foreground: 222.2 47.4% 11.2%;
+    --primary: 183 67% 44%; /* #5BC0BE - Teal accent from mobile menu */
+    --primary-foreground: 222 21% 14%; /* Dark background on teal */
 
-    --secondary: 215 31% 28%; /* #33415C */
+    --secondary: 215 31% 20%; /* Elevated surface color */
     --secondary-foreground: 210 40% 98%;
 
-    --muted: 215 31% 18%;
-    --muted-foreground: 215 20.2% 65.1%;
+    --muted: 215 31% 16%; /* Subtle background for muted content */
+    --muted-foreground: 215 20.2% 65.1%; /* Muted text */
 
-    --accent: 215 31% 28%;
-    --accent-foreground: 210 40% 98%;
+    --accent: 183 67% 44%; /* Same as primary for consistency */
+    --accent-foreground: 222 21% 14%;
 
-    --destructive: 3 89% 66%; /* #F25F5C */
+    --destructive: 3 89% 66%; /* #F25F5C - Keep destructive color bright */
     --destructive-foreground: 210 40% 98%;
 
-    --border: 215 31% 28%;
-    --input: 215 31% 28%;
-    --ring: 183 67% 44%;
+    --border: 215 31% 22%; /* Subtle borders */
+    --input: 215 31% 18%; /* Input background */
+    --ring: 183 67% 44%; /* Focus ring matches primary */
     
-    --sidebar-background: 222 21% 14%; /* #1A1F2C */
+    /* Sidebar colors - consistent with mobile menu theme */
+    --sidebar-background: 222 21% 14%; /* Same as app background */
     --sidebar-foreground: 210 40% 98%;
-    --sidebar-primary: 183 67% 44%; /* #5BC0BE */
-    --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 215 31% 20%;
+    --sidebar-primary: 183 67% 44%; /* Teal accent */
+    --sidebar-primary-foreground: 222 21% 14%;
+    --sidebar-accent: 215 31% 20%; /* Elevated elements */
     --sidebar-accent-foreground: 210 40% 98%;
-    --sidebar-border: 215 31% 24%;
-    --sidebar-ring: 183 67% 44%;
+    --sidebar-border: 215 31% 18%; /* Subtle borders */
+    --sidebar-ring: 183 67% 44%; /* Focus states */
   }
 }
 
@@ -269,6 +270,74 @@
     max-width: 100% !important;
     max-height: 100px !important;
   }
+}
+
+/* Invoice Preview Theme Isolation - Protect UI controls only */
+.invoice-preview-container {
+  /* Force light theme for invoice preview container */
+  background-color: white !important;
+  color: black !important;
+}
+
+/* Protect invoice control buttons and UI elements, but NOT the template content */
+.invoice-preview-container > div:not([ref]),
+.invoice-preview-container .bg-background:not(.print-template *),
+.invoice-preview-container .bg-secondary:not(.print-template *),
+.invoice-preview-container .text-foreground:not(.print-template *),
+.invoice-preview-container button,
+.invoice-preview-container input {
+  background-color: white !important;
+  color: black !important;
+  border-color: #e2e8f0 !important;
+}
+
+/* CRITICAL: Do NOT apply theme isolation to print template content */
+.print-template-wrapper,
+.print-template-wrapper *,
+.pdf-template-container,
+.pdf-template-container *,
+.print-template,
+.print-template * {
+  /* Reset any theme isolation - let business theme styles work */
+  background-color: unset !important;
+  background: unset !important;
+  color: unset !important;
+  border-color: unset !important;
+}
+
+/* Completely isolate the dark theme from invoice templates */
+.dark .print-template-wrapper,
+.dark .print-template-wrapper *,
+.dark .pdf-template-container,
+.dark .pdf-template-container *,
+.dark .print-template,
+.dark .print-template * {
+  /* Prevent dark theme CSS variables from affecting invoices */
+  background-color: initial !important;
+  background: initial !important;
+  color: initial !important;
+  border-color: initial !important;
+}
+
+/* Ensure invoice buttons and controls remain functional but properly styled */
+.invoice-preview-container .bg-background {
+  background-color: #f8fafc !important;
+}
+
+.invoice-preview-container .bg-secondary {
+  background-color: #f1f5f9 !important;
+}
+
+.invoice-preview-container .text-foreground {
+  color: #0f172a !important;
+}
+
+.invoice-preview-container .text-muted-foreground {
+  color: #64748b !important;
+}
+
+.invoice-preview-container .border {
+  border-color: #e2e8f0 !important;
 }
 
 .no-autolink {

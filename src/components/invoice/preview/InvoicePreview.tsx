@@ -166,7 +166,7 @@ const InvoicePreview = ({ invoice, selectedTemplate, onBackToEdit, businessProfi
   return (
     <div 
       className={cn(
-        "w-full bg-white shadow-sm rounded-lg transition-all duration-300", 
+        "invoice-preview-container w-full bg-white text-black shadow-sm rounded-lg transition-all duration-300", 
         isMobile && (isFullscreen 
           ? "fixed inset-0 z-50 pb-24 overflow-auto" 
           : "mx-auto max-w-full relative pb-20")
@@ -196,7 +196,7 @@ const InvoicePreview = ({ invoice, selectedTemplate, onBackToEdit, businessProfi
             margin: '0 auto'
           }}
         >
-          <div ref={templateRef} className="pdf-template-container">
+          <div ref={templateRef} className="pdf-template-container print-template-wrapper">
             {renderTemplate()}
           </div>
         </div>

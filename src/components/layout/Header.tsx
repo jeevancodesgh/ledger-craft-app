@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useIsMobile } from '@/hooks/use-mobile';
+import { ThemeToggle } from '@/components/ui/theme-toggle';
 
 interface HeaderProps {
   toggleSidebar: () => void;
@@ -69,7 +70,9 @@ export function Header({ toggleSidebar, isMobile }: HeaderProps) {
         </div>
       )}
       
-      <div className="flex items-center justify-end space-x-4">
+      <div className="flex items-center justify-end space-x-2">
+        <ThemeToggle />
+        
         <button className="p-2 rounded-md text-muted-foreground hover:bg-secondary transition-colors relative">
           <Bell className="h-5 w-5" />
           <span className="absolute top-1 right-1 w-2 h-2 bg-invoice-coral rounded-full"></span>
