@@ -32,7 +32,7 @@ export function AppLayout({
       <div className="flex flex-col h-screen bg-background">
         <Header toggleSidebar={toggleMobileMenu} isMobile={true} />
         <Drawer open={mobileMenuOpen} onOpenChange={setMobileMenuOpen}>
-          <DrawerContent className="h-[85vh]">
+          <DrawerContent className="h-[85vh] border-0 bg-transparent [&>div:first-child]:hidden">
             <div className="h-full">
               <Sidebar collapsed={false} isMobile={true} onCloseMobileMenu={() => setMobileMenuOpen(false)} />
             </div>

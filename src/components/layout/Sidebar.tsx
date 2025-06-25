@@ -62,12 +62,17 @@ export function Sidebar({ collapsed, isMobile, onCloseMobileMenu }: SidebarProps
     }
   ];
 
-  // Mobile sidebar is a full-screen menu
+  // Mobile sidebar is a bottom sheet menu
   if (isMobile) {
     return (
-      <aside className="flex flex-col h-full bg-gradient-to-br from-sidebar via-sidebar to-sidebar/95 overflow-y-auto animate-in slide-in-from-left duration-300">
+      <aside className="flex flex-col h-full bg-gradient-to-t from-sidebar via-sidebar to-sidebar/95 overflow-y-auto animate-in slide-in-from-bottom duration-300 rounded-t-2xl">
+        {/* Drag Handle */}
+        <div className="flex justify-center pt-3 pb-2">
+          <div className="w-12 h-1 bg-sidebar-foreground/30 rounded-full"></div>
+        </div>
+        
         {/* Enhanced Header */}
-        <div className="flex items-center justify-between p-6 border-b border-sidebar-border/20 bg-sidebar-accent/10">
+        <div className="flex items-center justify-between px-6 pb-6 border-b border-sidebar-border/20 bg-sidebar-accent/10">
           <div className="flex items-center space-x-3">
             <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-invoice-teal to-blue-500 flex items-center justify-center shadow-lg">
               <span className="text-white font-bold text-lg">LC</span>
