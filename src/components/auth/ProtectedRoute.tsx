@@ -15,8 +15,16 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children, requireOnboar
   // If still loading authentication state, show a loading indicator
   if (loading) {
     return (
-      <div className="flex justify-center items-center h-screen">
-        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary"></div>
+      <div className="flex flex-col justify-center items-center h-screen bg-gradient-to-br from-background via-background to-muted/20">
+        <div className="text-center space-y-8">
+          <div className="w-20 h-20 mx-auto bg-gradient-to-r from-primary/10 to-accent/10 rounded-2xl flex items-center justify-center">
+            <div className="w-8 h-8 border-4 border-primary/30 border-t-primary rounded-full animate-spin"></div>
+          </div>
+          <div className="space-y-2">
+            <h2 className="text-xl font-semibold text-foreground">Loading your workspace</h2>
+            <p className="text-muted-foreground">Please wait while we prepare everything for you...</p>
+          </div>
+        </div>
       </div>
     );
   }

@@ -21,13 +21,13 @@ export default function OnboardingLayout({ children, currentStep, title, subtitl
   const currentStepIndex = steps.findIndex(step => step.key === currentStep);
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-gradient-to-br from-background via-background to-muted/20">
       <div className="container mx-auto px-4 py-8">
         {/* Theme Toggle */}
         <div className="flex justify-end mb-4">
           <ThemeToggle />
         </div>
-        
+          
         {/* Header */}
         <div className="text-center mb-8">
           <h1 className="text-3xl font-bold text-foreground mb-2">Welcome to Ledger Craft</h1>
@@ -46,34 +46,34 @@ export default function OnboardingLayout({ children, currentStep, title, subtitl
                 <div key={step.key} className="flex items-center flex-1">
                   {/* Step Circle */}
                   <div className="flex flex-col items-center">
-                    <div className={`flex items-center justify-center w-10 h-10 rounded-full border-2 transition-colors ${
+                    <div className={`flex items-center justify-center w-10 h-10 rounded-full border-2 transition-all duration-500 transform hover:scale-110 ${
                       isCompleted 
-                        ? 'bg-green-500 border-green-500 text-white' 
-                        : isCurrent 
-                        ? 'bg-primary border-primary text-primary-foreground' 
-                        : 'bg-background border-border text-muted-foreground'
-                    }`}>
-                      {isCompleted ? (
-                        <CheckCircle className="h-6 w-6" />
-                      ) : (
-                        <span className="text-sm font-medium">{index + 1}</span>
-                      )}
-                    </div>
-                    <div className="mt-2 text-center">
-                      <div className={`text-sm font-medium ${
-                        isCompleted || isCurrent ? 'text-foreground' : 'text-muted-foreground'
-                      }`}>
-                        {step.label}
-                      </div>
-                      <div className="text-xs text-muted-foreground mt-1 max-w-24">
-                        {step.description}
-                      </div>
-                    </div>
+                    ? 'bg-green-500 border-green-500 text-white' 
+                    : isCurrent 
+                    ? 'bg-primary border-primary text-primary-foreground' 
+                    : 'bg-background border-border text-muted-foreground'
+                }`}>
+                  {isCompleted ? (
+                    <CheckCircle className="h-6 w-6" />
+                  ) : (
+                    <span className="text-sm font-medium">{index + 1}</span>
+                  )}
+                </div>
+                <div className="mt-2 text-center">
+                  <div className={`text-sm font-medium ${
+                    isCompleted || isCurrent ? 'text-foreground' : 'text-muted-foreground'
+                  }`}>
+                    {step.label}
                   </div>
+                  <div className="text-xs text-muted-foreground mt-1 max-w-24">
+                    {step.description}
+                  </div>
+                </div>
+              </div>
 
                   {/* Connector Line */}
                   {index < steps.length - 1 && (
-                    <div className={`flex-1 h-0.5 mx-4 ${
+                    <div className={`flex-1 h-0.5 mx-4 transition-all duration-700 ${
                       isCompleted ? 'bg-green-500' : 'bg-border'
                     }`} />
                   )}
@@ -85,7 +85,7 @@ export default function OnboardingLayout({ children, currentStep, title, subtitl
 
         {/* Main Content */}
         <div className="max-w-2xl mx-auto">
-          <div className="bg-card rounded-lg shadow-lg border p-8">
+          <div className="bg-card/80 backdrop-blur-sm rounded-2xl shadow-xl border border-border/50 p-8 hover:shadow-2xl transition-all duration-500 hover:scale-[1.02]">
             <div className="text-center mb-8">
               <h2 className="text-2xl font-bold text-card-foreground mb-2">{title}</h2>
               {subtitle && <p className="text-muted-foreground">{subtitle}</p>}

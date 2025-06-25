@@ -42,10 +42,11 @@ const ModernInput = forwardRef<HTMLInputElement, ModernInputProps>(
           {/* Floating Label */}
           <label
             className={cn(
-              "absolute left-3 transition-all duration-200 pointer-events-none",
+              "absolute left-3 transition-all duration-300 ease-out pointer-events-none",
+              "transform-gpu", // Hardware acceleration
               (isFocused || hasValue) 
-                ? "top-2 text-xs text-primary font-medium" 
-                : "top-1/2 -translate-y-1/2 text-muted-foreground",
+                ? "top-2 text-xs text-primary font-medium scale-90" 
+                : "top-1/2 -translate-y-1/2 text-muted-foreground scale-100",
               Icon && !isFocused && !hasValue && "left-10"
             )}
           >
@@ -55,8 +56,9 @@ const ModernInput = forwardRef<HTMLInputElement, ModernInputProps>(
           {/* Left Icon */}
           {Icon && (
             <div className={cn(
-              "absolute left-3 top-1/2 -translate-y-1/2 transition-colors duration-200",
-              isFocused ? "text-primary" : "text-muted-foreground",
+              "absolute left-3 top-1/2 -translate-y-1/2 transition-all duration-300 ease-out",
+              "transform-gpu", // Hardware acceleration
+              isFocused ? "text-primary scale-105" : "text-muted-foreground scale-100",
               (isFocused || hasValue) && "top-7"
             )}>
               <Icon className="h-4 w-4" />
@@ -68,13 +70,15 @@ const ModernInput = forwardRef<HTMLInputElement, ModernInputProps>(
             ref={ref}
             type={inputType}
             className={cn(
-              "w-full px-3 pt-6 pb-2 border rounded-lg transition-all duration-200",
+              "w-full px-3 pt-6 pb-2 border rounded-lg transition-all duration-300 ease-out",
               "bg-background text-foreground placeholder:text-transparent",
               "focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary",
-              "hover:border-primary/50",
+              "hover:border-primary/50 hover:shadow-sm",
+              "transform-gpu", // Hardware acceleration
+              isFocused && "shadow-md shadow-primary/10 scale-[1.01]",
               Icon && "pl-10",
               showPasswordToggle && "pr-10",
-              hasError && "border-destructive focus:border-destructive focus:ring-destructive/20",
+              hasError && "border-destructive focus:border-destructive focus:ring-destructive/20 animate-pulse",
               hasSuccess && "border-green-500 focus:border-green-500 focus:ring-green-500/20",
               className
             )}
@@ -90,17 +94,18 @@ const ModernInput = forwardRef<HTMLInputElement, ModernInputProps>(
               type="button"
               onClick={() => setShowPassword(!showPassword)}
               className={cn(
-                "absolute right-3 transition-colors duration-200",
-                "text-muted-foreground hover:text-foreground",
+                "absolute right-3 transition-all duration-300 ease-out",
+                "text-muted-foreground hover:text-foreground hover:scale-110",
+                "transform-gpu active:scale-95", // Hardware acceleration + click animation
                 (isFocused || hasValue) ? "top-6" : "top-1/2 -translate-y-1/2"
               )}
               tabIndex={-1}
               aria-label={showPassword ? "Hide password" : "Show password"}
             >
               {showPassword ? (
-                <EyeOff className="h-4 w-4" />
+                <EyeOff className="h-4 w-4 transition-transform duration-200" />
               ) : (
-                <Eye className="h-4 w-4" />
+                <Eye className="h-4 w-4 transition-transform duration-200" />
               )}
             </button>
           )}
@@ -108,11 +113,12 @@ const ModernInput = forwardRef<HTMLInputElement, ModernInputProps>(
           {/* Success Indicator */}
           {hasSuccess && (
             <div className={cn(
-              "absolute right-3 transition-colors duration-200",
+              "absolute right-3 transition-all duration-300 ease-out animate-in fade-in scale-in",
+              "transform-gpu", // Hardware acceleration
               (isFocused || hasValue) ? "top-6" : "top-1/2 -translate-y-1/2",
               showPasswordToggle && "right-10"
             )}>
-              <div className="w-2 h-2 bg-green-500 rounded-full" />
+              <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse" />
             </div>
           )}
         </div>
@@ -120,8 +126,9 @@ const ModernInput = forwardRef<HTMLInputElement, ModernInputProps>(
         {/* Help Text or Error */}
         {(error || helpText) && (
           <div className={cn(
-            "text-xs transition-colors duration-200",
-            hasError ? "text-destructive" : "text-muted-foreground"
+            "text-xs transition-all duration-300 ease-out animate-in slide-in-from-top-1",
+            "transform-gpu", // Hardware acceleration
+            hasError ? "text-destructive animate-pulse" : "text-muted-foreground"
           )}>
             {error || helpText}
           </div>

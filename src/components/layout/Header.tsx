@@ -63,10 +63,15 @@ export function Header({ toggleSidebar, isMobile }: HeaderProps) {
       
       {/* Mobile page title */}
       {isMobile && (
-        <div className="flex-1 mx-2 text-center">
-          <h1 className="text-lg font-medium truncate">
-            {isInvoicePreview ? "Invoice" : "LedgerCraft"}
-          </h1>
+        <div className="flex-1 mx-2 flex justify-center">
+          {isInvoicePreview ? (
+            <h1 className="text-lg font-medium">Invoice</h1>
+          ) : (
+            <div className="flex items-center">
+              <img src="/logo.png" alt="LedgerCraft" className="w-6 h-6 mr-2" />
+              <span className="text-lg font-medium">LedgerCraft</span>
+            </div>
+          )}
         </div>
       )}
       
