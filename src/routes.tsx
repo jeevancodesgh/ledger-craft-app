@@ -22,6 +22,8 @@ const Settings = lazy(() => import("@/pages/Settings"));
 const NotFound = lazy(() => import("@/pages/NotFound"));
 const Login = lazy(() => import("@/pages/Login"));
 const Signup = lazy(() => import("@/pages/Signup"));
+const ModernLogin = lazy(() => import("@/pages/ModernLogin"));
+const ModernSignup = lazy(() => import("@/pages/ModernSignup"));
 const InvoiceViewPage = lazy(() => import("@/pages/InvoiceViewPage"));
 const PublicInvoice = lazy(() => import("@/pages/PublicInvoice"));
 const AccountsPage = lazy(() => import("@/pages/Accounts"));
@@ -66,11 +68,11 @@ const appRoutes: RouteObject[] = [
     children: [
       {
         path: "/login",
-        element: <SuspenseWrapper><Login /></SuspenseWrapper>,
+        element: <SuspenseWrapper><ModernLogin /></SuspenseWrapper>,
       },
       {
         path: "/signup",
-        element: <SuspenseWrapper><Signup /></SuspenseWrapper>,
+        element: <SuspenseWrapper><ModernSignup /></SuspenseWrapper>,
       },
       {
         path: "/onboarding",

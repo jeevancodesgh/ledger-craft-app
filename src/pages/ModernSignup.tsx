@@ -1,0 +1,247 @@
+import React, { useState } from 'react';
+import { Link } from 'react-router-dom';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import * as z from 'zod';
+import { useAuth } from '@/context/AuthContext';
+import { useToast } from '@/hooks/use-toast';
+import { User, Mail, Lock, ArrowRight, Chrome, Github, Shield } from 'lucide-react';
+import ModernAuthLayout from '../components/auth/modern/ModernAuthLayout';
+import { ModernInput } from '../components/auth/modern/ModernInput';
+import { ModernButton } from '../components/auth/modern/ModernButton';
+import PasswordStrengthIndicator from '../components/auth/modern/PasswordStrengthIndicator';
+
+const signupSchema = z.object({
+  fullName: z.string().min(2, 'Full name must be at least 2 characters'),
+  email: z.string().email('Invalid email address'),
+  password: z.string()
+    .min(8, 'Password must be at least 8 characters')
+    .regex(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/, 'Password must contain uppercase, lowercase, and number'),
+  confirmPassword: z.string(),
+  agreeToTerms: z.boolean().refine(val => val === true, 'You must agree to the terms and conditions')
+}).refine((data) => data.password === data.confirmPassword, {
+  message: "Passwords don't match",
+  path: ["confirmPassword"],
+});
+
+type SignupFormValues = z.infer<typeof signupSchema>;
+
+const ModernSignup = () => {
+  const { signUp } = useAuth();
+  const { toast } = useToast();
+  const [isLoading, setIsLoading] = useState(false);
+  const [showPasswordStrength, setShowPasswordStrength] = useState(false);
+
+  const {
+    register,
+    handleSubmit,
+    watch,
+    formState: { errors, isValid }
+  } = useForm<SignupFormValues>({
+    resolver: zodResolver(signupSchema),
+    mode: 'onChange'
+  });
+
+  const password = watch('password');
+  const agreeToTerms = watch('agreeToTerms');
+
+  const onSubmit = async (values: SignupFormValues) => {
+    setIsLoading(true);
+    try {
+      const { error } = await signUp(values.email, values.password, values.fullName);
+
+      if (error) {
+        toast({
+          title: 'Sign Up Failed',
+          description: error.message,
+          variant: 'destructive'
+        });
+      } else {
+        toast({
+          title: 'Account Created!',
+          description: 'Please check your email to verify your account.'
+        });
+      }
+    } catch (error) {
+      toast({
+        title: 'Sign Up Failed',
+        description: 'An unexpected error occurred. Please try again.',
+        variant: 'destructive'
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  return (
+    <ModernAuthLayout
+      title="Create your account"
+      subtitle="Join thousands of professionals using LedgerCraft"
+      showFeatures={true}
+    >
+      <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
+        {/* Full Name Field */}
+        <ModernInput
+          {...register('fullName')}
+          label="Full name"
+          type="text"
+          icon={User}
+          error={errors.fullName?.message}
+          autoComplete="name"
+          autoFocus
+        />
+
+        {/* Email Field */}
+        <ModernInput
+          {...register('email')}
+          label="Email address"
+          type="email"
+          icon={Mail}
+          error={errors.email?.message}
+          autoComplete="email"
+        />
+
+        {/* Password Field */}
+        <div className="space-y-3">
+          <ModernInput
+            {...register('password')}
+            label="Password"
+            type="password"
+            icon={Lock}
+            showPasswordToggle
+            error={errors.password?.message}
+            autoComplete="new-password"
+            onFocus={() => setShowPasswordStrength(true)}
+          />
+          
+          {showPasswordStrength && password && (
+            <PasswordStrengthIndicator 
+              password={password} 
+              showCriteria={true}
+            />
+          )}
+        </div>
+
+        {/* Confirm Password Field */}
+        <ModernInput
+          {...register('confirmPassword')}
+          label="Confirm password"
+          type="password"
+          icon={Lock}
+          showPasswordToggle
+          error={errors.confirmPassword?.message}
+          autoComplete="new-password"
+        />
+
+        {/* Terms and Conditions */}
+        <div className="space-y-4">
+          <label className="flex items-start space-x-3 cursor-pointer">
+            <input
+              {...register('agreeToTerms')}
+              type="checkbox"
+              className="w-4 h-4 text-primary bg-background border-border rounded focus:ring-primary focus:ring-2 mt-0.5"
+            />
+            <div className="text-sm text-muted-foreground leading-relaxed">
+              I agree to the{' '}
+              <Link to="/terms" className="text-primary hover:text-primary/80 transition-colors">
+                Terms of Service
+              </Link>{' '}
+              and{' '}
+              <Link to="/privacy" className="text-primary hover:text-primary/80 transition-colors">
+                Privacy Policy
+              </Link>
+            </div>
+          </label>
+          {errors.agreeToTerms && (
+            <p className="text-xs text-destructive">{errors.agreeToTerms.message}</p>
+          )}
+        </div>
+
+        {/* Security Notice */}
+        <div className="bg-muted/50 border border-border/50 rounded-lg p-4">
+          <div className="flex items-start space-x-3">
+            <Shield className="h-5 w-5 text-primary flex-shrink-0 mt-0.5" />
+            <div>
+              <h4 className="text-sm font-medium text-foreground mb-1">Your data is secure</h4>
+              <p className="text-xs text-muted-foreground leading-relaxed">
+                We use bank-level encryption to protect your information and never store your password in plain text.
+              </p>
+            </div>
+          </div>
+        </div>
+
+        {/* Create Account Button */}
+        <ModernButton
+          type="submit"
+          variant="primary"
+          size="lg"
+          fullWidth
+          loading={isLoading}
+          disabled={!isValid || !agreeToTerms}
+          icon={ArrowRight}
+          iconPosition="right"
+        >
+          {isLoading ? 'Creating account...' : 'Create account'}
+        </ModernButton>
+
+        {/* Divider */}
+        <div className="relative">
+          <div className="absolute inset-0 flex items-center">
+            <div className="w-full border-t border-border" />
+          </div>
+          <div className="relative flex justify-center text-xs uppercase">
+            <span className="bg-card px-2 text-muted-foreground">Or continue with</span>
+          </div>
+        </div>
+
+        {/* Social Signup Buttons */}
+        <div className="grid grid-cols-2 gap-3">
+          <ModernButton
+            type="button"
+            variant="outline"
+            size="md"
+            icon={Chrome}
+            disabled={isLoading}
+            onClick={() => {
+              toast({
+                title: 'Coming Soon',
+                description: 'Social signup will be available soon!',
+              });
+            }}
+          >
+            Google
+          </ModernButton>
+          
+          <ModernButton
+            type="button"
+            variant="outline"
+            size="md"
+            icon={Github}
+            disabled={isLoading}
+            onClick={() => {
+              toast({
+                title: 'Coming Soon',
+                description: 'Social signup will be available soon!',
+              });
+            }}
+          >
+            GitHub
+          </ModernButton>
+        </div>
+
+        {/* Sign In Link */}
+        <div className="text-center">
+          <span className="text-muted-foreground">Already have an account? </span>
+          <Link
+            to="/login"
+            className="text-primary hover:text-primary/80 font-medium transition-colors"
+          >
+            Sign in instead
+          </Link>
+        </div>
+      </form>
+    </ModernAuthLayout>
+  );
+};
+
+export default ModernSignup;

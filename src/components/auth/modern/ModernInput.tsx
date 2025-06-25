@@ -1,0 +1,136 @@
+import React, { useState, forwardRef } from 'react';
+import { Eye, EyeOff, LucideIcon } from 'lucide-react';
+import { cn } from '../../../lib/utils';
+
+interface ModernInputProps extends React.InputHTMLAttributes<HTMLInputElement> {
+  label: string;
+  icon?: LucideIcon;
+  error?: string;
+  success?: boolean;
+  showPasswordToggle?: boolean;
+  helpText?: string;
+}
+
+const ModernInput = forwardRef<HTMLInputElement, ModernInputProps>(
+  ({ 
+    label, 
+    icon: Icon, 
+    error, 
+    success, 
+    showPasswordToggle, 
+    helpText, 
+    type, 
+    className, 
+    ...props 
+  }, ref) => {
+    const [showPassword, setShowPassword] = useState(false);
+    const [isFocused, setIsFocused] = useState(false);
+    const [hasValue, setHasValue] = useState(false);
+
+    const inputType = showPasswordToggle ? (showPassword ? 'text' : 'password') : type;
+    const hasError = !!error;
+    const hasSuccess = success && !hasError;
+
+    const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+      setHasValue(e.target.value.length > 0);
+      props.onChange?.(e);
+    };
+
+    return (
+      <div className="space-y-2">
+        <div className="relative">
+          {/* Floating Label */}
+          <label
+            className={cn(
+              "absolute left-3 transition-all duration-200 pointer-events-none",
+              (isFocused || hasValue) 
+                ? "top-2 text-xs text-primary font-medium" 
+                : "top-1/2 -translate-y-1/2 text-muted-foreground",
+              Icon && !isFocused && !hasValue && "left-10"
+            )}
+          >
+            {label}
+          </label>
+
+          {/* Left Icon */}
+          {Icon && (
+            <div className={cn(
+              "absolute left-3 top-1/2 -translate-y-1/2 transition-colors duration-200",
+              isFocused ? "text-primary" : "text-muted-foreground",
+              (isFocused || hasValue) && "top-7"
+            )}>
+              <Icon className="h-4 w-4" />
+            </div>
+          )}
+
+          {/* Input Field */}
+          <input
+            ref={ref}
+            type={inputType}
+            className={cn(
+              "w-full px-3 pt-6 pb-2 border rounded-lg transition-all duration-200",
+              "bg-background text-foreground placeholder:text-transparent",
+              "focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary",
+              "hover:border-primary/50",
+              Icon && "pl-10",
+              showPasswordToggle && "pr-10",
+              hasError && "border-destructive focus:border-destructive focus:ring-destructive/20",
+              hasSuccess && "border-green-500 focus:border-green-500 focus:ring-green-500/20",
+              className
+            )}
+            onFocus={() => setIsFocused(true)}
+            onBlur={() => setIsFocused(false)}
+            onChange={handleInputChange}
+            {...props}
+          />
+
+          {/* Password Toggle */}
+          {showPasswordToggle && (
+            <button
+              type="button"
+              onClick={() => setShowPassword(!showPassword)}
+              className={cn(
+                "absolute right-3 transition-colors duration-200",
+                "text-muted-foreground hover:text-foreground",
+                (isFocused || hasValue) ? "top-6" : "top-1/2 -translate-y-1/2"
+              )}
+              tabIndex={-1}
+              aria-label={showPassword ? "Hide password" : "Show password"}
+            >
+              {showPassword ? (
+                <EyeOff className="h-4 w-4" />
+              ) : (
+                <Eye className="h-4 w-4" />
+              )}
+            </button>
+          )}
+
+          {/* Success Indicator */}
+          {hasSuccess && (
+            <div className={cn(
+              "absolute right-3 transition-colors duration-200",
+              (isFocused || hasValue) ? "top-6" : "top-1/2 -translate-y-1/2",
+              showPasswordToggle && "right-10"
+            )}>
+              <div className="w-2 h-2 bg-green-500 rounded-full" />
+            </div>
+          )}
+        </div>
+
+        {/* Help Text or Error */}
+        {(error || helpText) && (
+          <div className={cn(
+            "text-xs transition-colors duration-200",
+            hasError ? "text-destructive" : "text-muted-foreground"
+          )}>
+            {error || helpText}
+          </div>
+        )}
+      </div>
+    );
+  }
+);
+
+ModernInput.displayName = "ModernInput";
+
+export { ModernInput };
