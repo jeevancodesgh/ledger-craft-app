@@ -27,7 +27,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const checkOnboardingStatus = async (userId: string) => {
     try {
+      console.log('Checking onboarding status for user:', userId);
       const businessProfile = await businessProfileService.getBusinessProfile();
+      console.log('Business profile found:', !!businessProfile);
       setHasCompletedOnboarding(!!businessProfile);
     } catch (error) {
       console.error('Error checking onboarding status:', error);
@@ -52,8 +54,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         setSession(currentSession);
         setUser(currentSession?.user ?? null);
         
+        // Check onboarding status asynchronously without blocking
         if (currentSession?.user?.id) {
-          await checkOnboardingStatus(currentSession.user.id);
+          checkOnboardingStatus(currentSession.user.id).catch(console.error);
         } else {
           setHasCompletedOnboarding(false);
         }
@@ -69,15 +72,20 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
     // Check for existing session
     const checkSession = async () => {
-      const { data: { session: currentSession } } = await supabase.auth.getSession();
-      setSession(currentSession);
-      setUser(currentSession?.user ?? null);
-      
-      if (currentSession?.user?.id) {
-        await checkOnboardingStatus(currentSession.user.id);
+      try {
+        const { data: { session: currentSession } } = await supabase.auth.getSession();
+        setSession(currentSession);
+        setUser(currentSession?.user ?? null);
+        
+        // Check onboarding status asynchronously without blocking loading
+        if (currentSession?.user?.id) {
+          checkOnboardingStatus(currentSession.user.id).catch(console.error);
+        }
+      } catch (error) {
+        console.error('Error checking session:', error);
+      } finally {
+        setLoading(false);
       }
-      
-      setLoading(false);
     };
 
     checkSession();
