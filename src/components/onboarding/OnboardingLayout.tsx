@@ -20,12 +20,12 @@ export default function OnboardingLayout({ children, currentStep, title, subtitl
   const currentStepIndex = steps.findIndex(step => step.key === currentStep);
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100">
+    <div className="min-h-screen bg-background">
       <div className="container mx-auto px-4 py-8">
         {/* Header */}
         <div className="text-center mb-8">
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">Welcome to Ledger Craft</h1>
-          <p className="text-gray-600">Let's set up your business profile to get you started</p>
+          <h1 className="text-3xl font-bold text-foreground mb-2">Welcome to Ledger Craft</h1>
+          <p className="text-muted-foreground">Let's set up your business profile to get you started</p>
         </div>
 
         {/* Progress Indicator */}
@@ -44,8 +44,8 @@ export default function OnboardingLayout({ children, currentStep, title, subtitl
                       isCompleted 
                         ? 'bg-green-500 border-green-500 text-white' 
                         : isCurrent 
-                        ? 'bg-blue-500 border-blue-500 text-white' 
-                        : 'bg-white border-gray-300 text-gray-400'
+                        ? 'bg-primary border-primary text-primary-foreground' 
+                        : 'bg-background border-border text-muted-foreground'
                     }`}>
                       {isCompleted ? (
                         <CheckCircle className="h-6 w-6" />
@@ -55,11 +55,11 @@ export default function OnboardingLayout({ children, currentStep, title, subtitl
                     </div>
                     <div className="mt-2 text-center">
                       <div className={`text-sm font-medium ${
-                        isCompleted || isCurrent ? 'text-gray-900' : 'text-gray-500'
+                        isCompleted || isCurrent ? 'text-foreground' : 'text-muted-foreground'
                       }`}>
                         {step.label}
                       </div>
-                      <div className="text-xs text-gray-500 mt-1 max-w-24">
+                      <div className="text-xs text-muted-foreground mt-1 max-w-24">
                         {step.description}
                       </div>
                     </div>
@@ -68,7 +68,7 @@ export default function OnboardingLayout({ children, currentStep, title, subtitl
                   {/* Connector Line */}
                   {index < steps.length - 1 && (
                     <div className={`flex-1 h-0.5 mx-4 ${
-                      isCompleted ? 'bg-green-500' : 'bg-gray-300'
+                      isCompleted ? 'bg-green-500' : 'bg-border'
                     }`} />
                   )}
                 </div>
@@ -79,10 +79,10 @@ export default function OnboardingLayout({ children, currentStep, title, subtitl
 
         {/* Main Content */}
         <div className="max-w-2xl mx-auto">
-          <div className="bg-white rounded-lg shadow-lg p-8">
+          <div className="bg-card rounded-lg shadow-lg border p-8">
             <div className="text-center mb-8">
-              <h2 className="text-2xl font-bold text-gray-900 mb-2">{title}</h2>
-              {subtitle && <p className="text-gray-600">{subtitle}</p>}
+              <h2 className="text-2xl font-bold text-card-foreground mb-2">{title}</h2>
+              {subtitle && <p className="text-muted-foreground">{subtitle}</p>}
             </div>
             
             {children}
@@ -90,7 +90,7 @@ export default function OnboardingLayout({ children, currentStep, title, subtitl
         </div>
 
         {/* Footer */}
-        <div className="text-center mt-8 text-gray-500 text-sm">
+        <div className="text-center mt-8 text-muted-foreground text-sm">
           <p>You can always update these settings later in your business profile.</p>
         </div>
       </div>

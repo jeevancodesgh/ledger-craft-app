@@ -18,10 +18,10 @@ export default function InvoiceSetupStep({ data, onDataChange, onNext, onBack, i
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
       <div className="text-center mb-8">
-        <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
-          <FileText className="h-8 w-8 text-green-600" />
+        <div className="w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-4">
+          <FileText className="h-8 w-8 text-primary" />
         </div>
-        <p className="text-gray-600">
+        <p className="text-muted-foreground">
           Set up your invoice preferences to ensure professional, consistent billing.
         </p>
       </div>
