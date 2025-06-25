@@ -75,6 +75,14 @@ const appRoutes: RouteObject[] = [
         element: <SuspenseWrapper><ModernSignup /></SuspenseWrapper>,
       },
       {
+        path: "/login-classic",
+        element: <SuspenseWrapper><Login /></SuspenseWrapper>,
+      },
+      {
+        path: "/signup-classic",
+        element: <SuspenseWrapper><Signup /></SuspenseWrapper>,
+      },
+      {
         path: "/onboarding",
         element: (
           <ProtectedRoute requireOnboarding={false}>
