@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Palette, Upload, ArrowLeft, Skip } from 'lucide-react';
+import { Palette, Upload, ArrowLeft, ChevronRight } from 'lucide-react';
 import { OnboardingStepProps, BusinessTheme, PRESET_THEMES, DEFAULT_BUSINESS_THEME } from '../../types';
 
 export default function BrandingStep({ data, onDataChange, onNext, onBack, isLoading }: OnboardingStepProps) {
@@ -203,7 +203,7 @@ export default function BrandingStep({ data, onDataChange, onNext, onBack, isLoa
             onClick={handleSkip}
             className="px-4 py-2 text-gray-600 hover:text-gray-800 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2 transition-colors flex items-center"
           >
-            <Skip className="h-4 w-4 mr-2" />
+            <ChevronRight className="h-4 w-4 mr-2" />
             Skip for now
           </button>
           <button

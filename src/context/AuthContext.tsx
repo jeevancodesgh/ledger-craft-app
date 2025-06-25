@@ -27,9 +27,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const checkOnboardingStatus = async (userId: string) => {
     try {
-      console.log('Checking onboarding status for user:', userId);
       const businessProfile = await businessProfileService.getBusinessProfile();
-      console.log('Business profile found:', !!businessProfile);
       setHasCompletedOnboarding(!!businessProfile);
     } catch (error) {
       console.error('Error checking onboarding status:', error);
