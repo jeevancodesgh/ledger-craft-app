@@ -2,39 +2,92 @@ import React, { useEffect } from 'react';
 import { useAppContext } from '@/context/AppContext';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { formatCurrency } from '@/utils/invoiceUtils';
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, TooltipProps } from 'recharts';
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, TooltipProps, LineChart, Line, ComposedChart } from 'recharts';
 import { PieChart, Pie, Cell, Legend } from 'recharts';
-import { Calendar, DollarSign, Users, TrendingUp, TrendingDown, Clock, Plus, Edit, ChevronRight } from 'lucide-react';
+import { Calendar, DollarSign, Users, TrendingUp, TrendingDown, Clock, Plus, Edit, ChevronRight, CreditCard, Receipt, AlertTriangle, Target } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Link } from 'react-router-dom';
 import { useIsMobile } from '@/hooks/use-mobile';
 
 const Dashboard = () => {
-  const { invoices, isLoadingInvoices, customers, isLoadingCustomers, refreshInvoices, refreshCustomers } = useAppContext();
+  const { 
+    invoices, 
+    isLoadingInvoices, 
+    customers, 
+    isLoadingCustomers, 
+    expenses,
+    isLoadingExpenses,
+    expenseCategories,
+    refreshInvoices, 
+    refreshCustomers,
+    refreshExpenses 
+  } = useAppContext();
   
   useEffect(() => {
     refreshInvoices();
     refreshCustomers();
+    refreshExpenses();
   }, []);
   
-  const isLoadingStats = isLoadingInvoices || isLoadingCustomers;
+  const isLoadingStats = isLoadingInvoices || isLoadingCustomers || isLoadingExpenses;
   const isMobile = useIsMobile();
   
-  // Calculate stats from invoices
+  // Calculate invoice stats
   const totalInvoices = invoices.length;
   const totalCustomers = customers.length;
   const customerCount = customers.length;
   const totalEarnings = invoices.reduce((sum, invoice) => sum + invoice.total, 0);
 
-  // Calculate revenue by month for current year
+  // Calculate expense stats
+  const totalExpenses = expenses.reduce((sum, expense) => sum + expense.amount, 0);
+  const currentMonthExpenses = expenses
+    .filter(expense => {
+      const expenseDate = new Date(expense.expenseDate);
+      const now = new Date();
+      return expenseDate.getMonth() === now.getMonth() && expenseDate.getFullYear() === now.getFullYear();
+    })
+    .reduce((sum, expense) => sum + expense.amount, 0);
+
+  // Financial KPIs
+  const netIncome = totalEarnings - totalExpenses;
+  const profitMargin = totalEarnings > 0 ? ((netIncome / totalEarnings) * 100) : 0;
+  const expenseRatio = totalEarnings > 0 ? ((totalExpenses / totalEarnings) * 100) : 0;
+  const burnRate = currentMonthExpenses; // Monthly burn rate
+
+  // Calculate revenue and expenses by month for current year
   const currentYear = new Date().getFullYear();
-  const revenueByMonth = Array.from({ length: 12 }, (_, i) => ({ month: i + 1, revenue: 0 }));
+  const monthlyData = Array.from({ length: 12 }, (_, i) => ({ 
+    month: i + 1, 
+    revenue: 0, 
+    expenses: 0,
+    netIncome: 0 
+  }));
+
+  // Process invoices
   invoices.forEach(invoice => {
     const date = new Date(invoice.date);
     if (date.getFullYear() === currentYear && invoice.status === 'paid') {
-      revenueByMonth[date.getMonth()].revenue += invoice.total;
+      monthlyData[date.getMonth()].revenue += invoice.total;
     }
   });
+
+  // Process expenses
+  expenses.forEach(expense => {
+    const date = new Date(expense.expenseDate);
+    if (date.getFullYear() === currentYear) {
+      monthlyData[date.getMonth()].expenses += expense.amount;
+    }
+  });
+
+  // Calculate net income for each month
+  monthlyData.forEach(month => {
+    month.netIncome = month.revenue - month.expenses;
+  });
+
+  const revenueByMonth = monthlyData.map(item => ({
+    month: item.month,
+    revenue: item.revenue
+  }));
 
   // Calculate invoice status counts
   let paidInvoices = 0, unpaidInvoices = 0, overdueInvoices = 0;
@@ -44,16 +97,76 @@ const Dashboard = () => {
     else if (invoice.status === 'overdue') overdueInvoices++;
   });
 
+  // Calculate expense categories breakdown
+  const expensesByCategory = expenses.reduce((acc, expense) => {
+    const categoryName = expense.category?.name || 'Uncategorized';
+    acc[categoryName] = (acc[categoryName] || 0) + expense.amount;
+    return acc;
+  }, {} as Record<string, number>);
+
+  const expenseCategoryData = Object.entries(expensesByCategory)
+    .map(([name, amount]) => ({ name, amount, color: getRandomColor() }))
+    .sort((a, b) => b.amount - a.amount)
+    .slice(0, 5); // Top 5 categories
+
+  // Helper function for category colors
+  function getRandomColor() {
+    const colors = ['#8B5CF6', '#10B981', '#F59E0B', '#EF4444', '#3B82F6', '#EC4899', '#84CC16'];
+    return colors[Math.floor(Math.random() * colors.length)];
+  }
+
+  // Recent high-value expenses
+  const recentHighExpenses = [...expenses]
+    .sort((a, b) => new Date(b.expenseDate).getTime() - new Date(a.expenseDate).getTime())
+    .slice(0, 5)
+    .filter(expense => expense.amount > 100); // Only show expenses > $100
+
+  // Billable expenses not yet invoiced
+  const billableExpenses = expenses
+    .filter(expense => expense.isBillable && expense.customerId)
+    .reduce((sum, expense) => sum + expense.amount, 0);
+
   if (isLoadingStats) {
     return <div className="flex justify-center items-center h-64">Loading dashboard...</div>;
   }
 
-  // Calculate month names for chart
+  // Helper function to get trend indicator
+  const getTrendIcon = (value: number, isGoodWhenPositive = true) => {
+    if (value === 0) return null;
+    const isPositive = value > 0;
+    const isGood = isGoodWhenPositive ? isPositive : !isPositive;
+    return isGood ? 
+      <TrendingUp className="h-4 w-4 text-emerald-600" /> : 
+      <TrendingDown className="h-4 w-4 text-red-500" />;
+  };
+
+  // Get financial health color
+  const getHealthColor = (margin: number) => {
+    if (margin >= 10) return 'text-emerald-600';
+    if (margin >= 5) return 'text-amber-500';
+    return 'text-red-500';
+  };
+
+  // Calculate month names for charts
   const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
   const revenueData = revenueByMonth.map(item => ({
     name: monthNames[item.month - 1],
     revenue: item.revenue
   }));
+
+  // Combined financial data for cash flow chart
+  const cashFlowData = monthlyData.map(item => ({
+    name: monthNames[item.month - 1],
+    revenue: item.revenue,
+    expenses: item.expenses,
+    netIncome: item.netIncome
+  }));
+
+  // Financial overview pie chart data
+  const financialOverviewData = [
+    { name: 'Revenue', value: totalEarnings, color: '#10B981' },
+    { name: 'Expenses', value: totalExpenses, color: '#EF4444' }
+  ];
 
   // Calculate invoice status distribution for pie chart
   const totalStatusInvoices = paidInvoices + unpaidInvoices + overdueInvoices;
@@ -62,6 +175,23 @@ const Dashboard = () => {
     { name: 'Unpaid', value: unpaidInvoices, color: '#F59E0B' },
     { name: 'Overdue', value: overdueInvoices, color: '#EF4444' },
   ];
+
+  // Enhanced tooltip for cash flow chart
+  const CashFlowTooltip = ({ active, payload, label }: TooltipProps<number, string>) => {
+    if (active && payload && payload.length) {
+      return (
+        <div className="bg-white p-3 border rounded shadow-lg">
+          <p className="font-medium text-gray-700 mb-2">{label}</p>
+          {payload.map((entry, index) => (
+            <p key={index} style={{ color: entry.color }} className="text-sm">
+              {entry.name}: {formatCurrency(entry.value || 0)}
+            </p>
+          ))}
+        </div>
+      );
+    }
+    return null;
+  };
 
   // Get recent invoices
   const recentInvoices = [...(invoices || [])]
@@ -189,98 +319,246 @@ const Dashboard = () => {
         </div>
       )}
       
+      {/* Executive Financial KPIs */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         <Card>
           <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">Total Earnings</CardTitle>
+            <CardTitle className="text-sm font-medium text-muted-foreground">Net Income</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="flex items-center justify-between">
-              <div className="text-2xl font-bold">
-                {formatCurrency(totalEarnings)}
+              <div className={`text-2xl font-bold ${netIncome >= 0 ? 'text-emerald-600' : 'text-red-500'}`}>
+                {formatCurrency(netIncome)}
               </div>
-              <DollarSign className="h-4 w-4 text-muted-foreground" />
+              <div className="flex items-center gap-1">
+                {getTrendIcon(netIncome)}
+                <DollarSign className="h-4 w-4 text-muted-foreground" />
+              </div>
             </div>
+            <p className="text-xs text-muted-foreground mt-1">
+              Revenue: {formatCurrency(totalEarnings)} | Expenses: {formatCurrency(totalExpenses)}
+            </p>
           </CardContent>
         </Card>
         
         <Card>
           <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">YTD Revenue</CardTitle>
+            <CardTitle className="text-sm font-medium text-muted-foreground">Profit Margin</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="flex items-center justify-between">
-              <div className="text-2xl font-bold text-emerald-600">
-                {formatCurrency(ytdRevenue)}
+              <div className={`text-2xl font-bold ${getHealthColor(profitMargin)}`}>
+                {profitMargin.toFixed(1)}%
               </div>
-              <TrendingUp className="h-4 w-4 text-emerald-600" />
+              <div className="flex items-center gap-1">
+                {getTrendIcon(profitMargin - 10)}
+                <Target className="h-4 w-4 text-muted-foreground" />
+              </div>
             </div>
+            <p className="text-xs text-muted-foreground mt-1">
+              {profitMargin >= 10 ? 'Healthy' : profitMargin >= 5 ? 'Fair' : 'Needs Attention'}
+            </p>
           </CardContent>
         </Card>
         
         <Card>
           <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">Collection Efficiency</CardTitle>
+            <CardTitle className="text-sm font-medium text-muted-foreground">Monthly Burn Rate</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="flex items-center justify-between">
-              <div className="text-2xl font-bold text-blue-500">
-                {collectionEfficiency}%
+              <div className="text-2xl font-bold text-amber-600">
+                {formatCurrency(burnRate)}
               </div>
-              <TrendingUp className="h-4 w-4 text-blue-500" />
+              <div className="flex items-center gap-1">
+                <CreditCard className="h-4 w-4 text-muted-foreground" />
+              </div>
             </div>
+            <p className="text-xs text-muted-foreground mt-1">
+              Current month expenses
+            </p>
           </CardContent>
         </Card>
         
         <Card>
           <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">Total Customers</CardTitle>
+            <CardTitle className="text-sm font-medium text-muted-foreground">Billable Expenses</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="flex items-center justify-between">
-              <div className="text-2xl font-bold">
-                {customerCount}
+              <div className="text-2xl font-bold text-blue-600">
+                {formatCurrency(billableExpenses)}
               </div>
-              <Users className="h-4 w-4 text-muted-foreground" />
+              <div className="flex items-center gap-1">
+                {billableExpenses > 0 && <AlertTriangle className="h-4 w-4 text-amber-500" />}
+                <Receipt className="h-4 w-4 text-muted-foreground" />
+              </div>
             </div>
+            <p className="text-xs text-muted-foreground mt-1">
+              {billableExpenses > 0 ? 'Ready to invoice' : 'All caught up'}
+            </p>
           </CardContent>
         </Card>
       </div>
       
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+      {/* Financial Health Charts */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <Card className="lg:col-span-2">
           <CardHeader>
-            <CardTitle>Revenue Overview</CardTitle>
-            <CardDescription>Monthly revenue for the current year</CardDescription>
+            <CardTitle>Cash Flow Overview</CardTitle>
+            <CardDescription>Monthly revenue vs expenses comparison</CardDescription>
           </CardHeader>
           <CardContent className="pb-6">
-            <div className="h-[300px]">
-              {revenueData.length > 0 ? (
+            <div className="h-[350px]">
+              {cashFlowData.length > 0 ? (
                 <ResponsiveContainer width="100%" height="100%">
-                  <BarChart
-                    data={revenueData}
-                    margin={{ top: 5, right: 30, left: 20, bottom: 5 }}
+                  <ComposedChart
+                    data={cashFlowData}
+                    margin={{ top: 20, right: 30, left: 20, bottom: 5 }}
                   >
                     <CartesianGrid strokeDasharray="3 3" />
                     <XAxis dataKey="name" />
                     <YAxis tickFormatter={(value) => formatCurrency(value)} />
-                    <Tooltip content={<CustomTooltip />} />
-                    <Bar dataKey="revenue" fill="#8B5CF6" />
-                  </BarChart>
+                    <Tooltip content={<CashFlowTooltip />} />
+                    <Bar dataKey="revenue" fill="#10B981" name="Revenue" />
+                    <Bar dataKey="expenses" fill="#EF4444" name="Expenses" />
+                    <Line dataKey="netIncome" stroke="#3B82F6" strokeWidth={3} name="Net Income" type="monotone" />
+                  </ComposedChart>
                 </ResponsiveContainer>
               ) : (
                 <div className="flex items-center justify-center h-full">
-                  <p className="text-muted-foreground">No revenue data available</p>
+                  <p className="text-muted-foreground">No financial data available</p>
                 </div>
               )}
             </div>
           </CardContent>
         </Card>
-        
+
+        <Card>
+          <CardHeader>
+            <CardTitle>Financial Breakdown</CardTitle>
+            <CardDescription>Revenue vs expenses split</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="h-[280px]">
+              {(totalEarnings > 0 || totalExpenses > 0) ? (
+                <ResponsiveContainer width="100%" height="100%">
+                  <PieChart>
+                    <Pie
+                      data={financialOverviewData}
+                      cx="50%"
+                      cy="50%"
+                      outerRadius={80}
+                      fill="#8884d8"
+                      dataKey="value"
+                      label={({name, percent}) => `${name}: ${(percent * 100).toFixed(0)}%`}
+                    >
+                      {financialOverviewData.map((entry, index) => (
+                        <Cell key={`cell-${index}`} fill={entry.color} />
+                      ))}
+                    </Pie>
+                    <Tooltip formatter={(value) => formatCurrency(value as number)} />
+                  </PieChart>
+                </ResponsiveContainer>
+              ) : (
+                <div className="flex items-center justify-center h-full">
+                  <p className="text-muted-foreground">No financial data available</p>
+                </div>
+              )}
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Expense Intelligence */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <Card>
+          <CardHeader>
+            <CardTitle>Top Expense Categories</CardTitle>
+            <CardDescription>Spending breakdown by category</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="h-[280px]">
+              {expenseCategoryData.length > 0 ? (
+                <ResponsiveContainer width="100%" height="100%">
+                  <PieChart>
+                    <Pie
+                      data={expenseCategoryData}
+                      cx="50%"
+                      cy="50%"
+                      outerRadius={80}
+                      fill="#8884d8"
+                      dataKey="amount"
+                      nameKey="name"
+                      label={({name, percent}) => `${name}: ${(percent * 100).toFixed(0)}%`}
+                    >
+                      {expenseCategoryData.map((entry, index) => (
+                        <Cell key={`cell-${index}`} fill={entry.color} />
+                      ))}
+                    </Pie>
+                    <Tooltip formatter={(value) => formatCurrency(value as number)} />
+                  </PieChart>
+                </ResponsiveContainer>
+              ) : (
+                <div className="flex items-center justify-center h-full">
+                  <p className="text-muted-foreground">No expense data available</p>
+                </div>
+              )}
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle>Recent High-Value Expenses</CardTitle>
+            <CardDescription>Latest significant expenses</CardDescription>
+          </CardHeader>
+          <CardContent>
+            {recentHighExpenses.length > 0 ? (
+              <div className="space-y-3">
+                {recentHighExpenses.map(expense => (
+                  <div key={expense.id} className="flex items-center justify-between p-2 border-b last:border-0">
+                    <div className="flex-1 min-w-0">
+                      <p className="font-medium truncate">{expense.description}</p>
+                      <p className="text-sm text-muted-foreground">
+                        {expense.category?.name || 'Uncategorized'} • {new Date(expense.expenseDate).toLocaleDateString()}
+                      </p>
+                    </div>
+                    <div className="flex flex-col items-end gap-1">
+                      <p className="font-semibold text-red-600">{formatCurrency(expense.amount)}</p>
+                      {expense.isBillable && (
+                        <span className="text-xs px-2 py-1 bg-blue-100 text-blue-800 rounded-full">
+                          Billable
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                ))}
+                <Button variant="outline" className="w-full mt-3" asChild>
+                  <Link to="/expenses">View All Expenses</Link>
+                </Button>
+              </div>
+            ) : (
+              <div className="py-4 text-center text-muted-foreground">
+                <p>No recent high-value expenses</p>
+                <Button className="mt-3" asChild>
+                  <Link to="/expenses">
+                    <Plus className="mr-2 h-4 w-4" />
+                    Add Expense
+                  </Link>
+                </Button>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      </div>
+      
+      {/* Invoice Status and Recent Activity */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         <Card>
           <CardHeader>
             <CardTitle>Invoice Status</CardTitle>
-            <CardDescription>Distribution of invoice statuses</CardDescription>
+            <CardDescription>Current invoice distribution</CardDescription>
           </CardHeader>
           <CardContent>
             <div className="h-[240px]">
@@ -292,7 +570,7 @@ const Dashboard = () => {
                       cx="50%"
                       cy="50%"
                       labelLine={false}
-                      outerRadius={80}
+                      outerRadius={70}
                       fill="#8884d8"
                       dataKey="value"
                       nameKey="name"
@@ -302,7 +580,6 @@ const Dashboard = () => {
                         <Cell key={`cell-${index}`} fill={entry.color} />
                       ))}
                     </Pie>
-                    <Legend />
                     <Tooltip />
                   </PieChart>
                 </ResponsiveContainer>
@@ -314,9 +591,7 @@ const Dashboard = () => {
             </div>
           </CardContent>
         </Card>
-      </div>
-      
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        
         <Card>
           <CardHeader>
             <CardTitle>Recent Invoices</CardTitle>
@@ -324,15 +599,15 @@ const Dashboard = () => {
           </CardHeader>
           <CardContent>
             {recentInvoices.length > 0 ? (
-              <div className="space-y-4">
+              <div className="space-y-3 max-h-[240px] overflow-y-auto">
                 {recentInvoices.map(invoice => (
                   <div key={invoice.id} className="flex items-center justify-between p-2 border-b last:border-0">
-                    <div>
-                      <p className="font-medium">{invoice.invoiceNumber}</p>
-                      <p className="text-sm text-muted-foreground">{invoice.customer?.name || invoice.customerId}</p>
+                    <div className="flex-1 min-w-0">
+                      <p className="font-medium truncate">{invoice.invoiceNumber}</p>
+                      <p className="text-sm text-muted-foreground truncate">{invoice.customer?.name || invoice.customerId}</p>
                     </div>
-                    <div className="flex flex-col items-end gap-2 min-w-[120px]">
-                      <p className="font-medium">{formatCurrency(invoice.total)}</p>
+                    <div className="flex flex-col items-end gap-1">
+                      <p className="font-medium text-sm">{formatCurrency(invoice.total)}</p>
                       <span className={`text-xs px-2 py-1 rounded-full ${
                         invoice.status === 'paid' ? 'bg-green-100 text-green-800' :
                         invoice.status === 'sent' ? 'bg-amber-100 text-amber-800' :
@@ -340,32 +615,22 @@ const Dashboard = () => {
                       }`}>
                         {invoice.status.charAt(0).toUpperCase() + invoice.status.slice(1)}
                       </span>
-                      <div className="flex gap-2 mt-1">
-                        <Button variant="ghost" className="h-8 px-3 text-xs" asChild>
-                          <Link to={`/invoices/${invoice.id}`} className="flex items-center">
-                            View
-                            <ChevronRight className="ml-1 w-4 h-4" />
-                          </Link>
-                        </Button>
-                        <Button
-                          variant="outline"
-                          size="icon"
-                          className="h-8 w-8"
-                          asChild
-                          aria-label="Edit invoice"
-                        >
-                          <Link to={`/invoices/${invoice.id}/edit`}>
-                            <Edit size={16} />
-                          </Link>
-                        </Button>
-                      </div>
                     </div>
                   </div>
                 ))}
+                <Button variant="outline" className="w-full mt-2" asChild>
+                  <Link to="/invoices">View All Invoices</Link>
+                </Button>
               </div>
             ) : (
               <div className="py-4 text-center text-muted-foreground">
-                No recent invoices found
+                <p>No recent invoices found</p>
+                <Button className="mt-3" asChild>
+                  <Link to="/invoices/new">
+                    <Plus className="mr-2 h-4 w-4" />
+                    Create Invoice
+                  </Link>
+                </Button>
               </div>
             )}
           </CardContent>
@@ -378,120 +643,172 @@ const Dashboard = () => {
           </CardHeader>
           <CardContent>
             {pendingInvoices.length > 0 ? (
-              <div className="space-y-4">
+              <div className="space-y-3 max-h-[240px] overflow-y-auto">
                 {pendingInvoices.map(invoice => (
                   <div key={invoice.id} className="flex items-center justify-between p-2 border-b last:border-0">
-                    <div>
-                      <p className="font-medium">{invoice.invoiceNumber}</p>
+                    <div className="flex-1 min-w-0">
+                      <p className="font-medium truncate">{invoice.invoiceNumber}</p>
                       <p className="text-sm text-muted-foreground">
                         Due: {new Date(invoice.dueDate).toLocaleDateString()}
                       </p>
                     </div>
-                    <div className="flex flex-col items-end gap-2 min-w-[120px]">
-                      <p className="font-medium">{formatCurrency(invoice.total)}</p>
+                    <div className="flex flex-col items-end gap-1">
+                      <p className="font-medium text-sm">{formatCurrency(invoice.total)}</p>
                       <span className={`text-xs px-2 py-1 rounded-full ${
                         invoice.status === 'overdue' ? 'bg-red-100 text-red-800' : 'bg-amber-100 text-amber-800'
                       }`}>
                         {invoice.status === 'overdue' ? 'Overdue' : 'Pending'}
                       </span>
-                      <div className="flex gap-2 mt-1">
-                        <Button variant="ghost" className="h-8 px-3 text-xs" asChild>
-                          <Link to={`/invoices/${invoice.id}`} className="flex items-center">
-                            View
-                            <ChevronRight className="ml-1 w-4 h-4" />
-                          </Link>
-                        </Button>
-                        <Button
-                          variant="outline"
-                          size="icon"
-                          className="h-8 w-8"
-                          asChild
-                          aria-label="Edit invoice"
-                        >
-                          <Link to={`/invoices/${invoice.id}/edit`}>
-                            <Edit size={16} />
-                          </Link>
-                        </Button>
-                      </div>
                     </div>
                   </div>
                 ))}
+                <Button variant="outline" className="w-full mt-2" asChild>
+                  <Link to="/invoices?filter=pending">View All Pending</Link>
+                </Button>
               </div>
             ) : (
               <div className="py-4 text-center text-muted-foreground">
-                No pending invoices
+                <p>No pending invoices</p>
               </div>
             )}
           </CardContent>
         </Card>
       </div>
+
+      {/* Quick Actions Section */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Quick Actions</CardTitle>
+          <CardDescription>Fast access to common tasks</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            <Button className="h-16 flex-col" asChild>
+              <Link to="/invoices/new">
+                <Plus className="h-5 w-5 mb-1" />
+                New Invoice
+              </Link>
+            </Button>
+            <Button variant="outline" className="h-16 flex-col" asChild>
+              <Link to="/expenses">
+                <Receipt className="h-5 w-5 mb-1" />
+                Add Expense
+              </Link>
+            </Button>
+            <Button variant="outline" className="h-16 flex-col" asChild>
+              <Link to="/customers">
+                <Users className="h-5 w-5 mb-1" />
+                Manage Customers
+              </Link>
+            </Button>
+            <Button variant="outline" className="h-16 flex-col" asChild>
+              <Link to="/reports">
+                <Calendar className="h-5 w-5 mb-1" />
+                View Reports
+              </Link>
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
       
-      {/* --- New Analytics Row --- */}
+      {/* Business Intelligence Analytics */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-        {/* Status Breakdown */}
+        {/* Customer Metrics */}
         <Card>
           <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">Invoice Status Breakdown</CardTitle>
+            <CardTitle className="text-sm font-medium text-muted-foreground">Customer Insights</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="flex flex-wrap gap-2">
-              {statusBreakdown.map(s => (
-                <span key={s.label} className={`px-3 py-1 rounded-full text-xs font-semibold ${s.color}`}>
-                  {s.label}: {s.value}
+            <div className="space-y-2">
+              <div className="flex justify-between text-sm">
+                <span>Total Customers:</span>
+                <span className="font-semibold">{totalCustomers}</span>
+              </div>
+              <div className="flex justify-between text-sm">
+                <span>Avg. Invoice Value:</span>
+                <span className="font-semibold">{formatCurrency(avgInvoiceValue)}</span>
+              </div>
+              <div className="flex justify-between text-sm">
+                <span>Collection Rate:</span>
+                <span className="font-semibold">{collectionEfficiency}%</span>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Payment Metrics */}
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm font-medium text-muted-foreground">Payment Insights</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-2">
+              <div className="flex justify-between text-sm">
+                <span>Avg. Days to Payment:</span>
+                <span className="font-semibold">
+                  {avgDaysToPayment !== null ? `${avgDaysToPayment} days` : 'N/A'}
                 </span>
-              ))}
+              </div>
+              <div className="flex justify-between text-sm">
+                <span>Overdue Amount:</span>
+                <span className="font-semibold text-red-600">
+                  {formatCurrency(invoices.filter(i => i.status === 'overdue').reduce((sum, i) => sum + i.total, 0))}
+                </span>
+              </div>
             </div>
           </CardContent>
         </Card>
-        {/* Average Days to Payment */}
+
+        {/* Top Performing Customer */}
         <Card>
           <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">Avg. Days to Payment</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">
-              {avgDaysToPayment !== null ? `${avgDaysToPayment} days` : <span className="text-muted-foreground">N/A</span>}
-            </div>
-          </CardContent>
-        </Card>
-        {/* Top Customers by Paid Amount */}
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">Top Customers (Paid)</CardTitle>
+            <CardTitle className="text-sm font-medium text-muted-foreground">Top Customer</CardTitle>
           </CardHeader>
           <CardContent>
             {topCustomers.length > 0 ? (
-              <ul className="space-y-1">
-                {topCustomers.map(([name, amt]) => (
-                  <li key={name} className="flex justify-between">
-                    <span className="truncate max-w-[120px]" title={name}>{name}</span>
-                    <span className="font-mono">{formatCurrency(typeof amt === 'number' ? amt : 0)}</span>
-                  </li>
-                ))}
-              </ul>
+              <div className="space-y-1">
+                <p className="font-semibold truncate" title={topCustomers[0][0]}>
+                  {topCustomers[0][0]}
+                </p>
+                <p className="text-lg font-bold text-emerald-600">
+                  {formatCurrency(typeof topCustomers[0][1] === 'number' ? topCustomers[0][1] : 0)}
+                </p>
+                <p className="text-xs text-muted-foreground">Total paid</p>
+              </div>
             ) : (
-              <span className="text-muted-foreground">No paid invoices</span>
+              <div className="text-center text-muted-foreground">
+                <p className="text-sm">No paid invoices yet</p>
+              </div>
             )}
           </CardContent>
         </Card>
-        {/* Most Overdue Invoices */}
+
+        {/* Financial Health Score */}
         <Card>
           <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">Most Overdue Invoices</CardTitle>
+            <CardTitle className="text-sm font-medium text-muted-foreground">Financial Health</CardTitle>
           </CardHeader>
           <CardContent>
-            {mostOverdueInvoices.length > 0 ? (
-              <ul className="space-y-1">
-                {mostOverdueInvoices.map(i => (
-                  <li key={i.id} className="flex justify-between">
-                    <span className="truncate max-w-[100px]" title={i.invoiceNumber}>{i.invoiceNumber}</span>
-                    <span className="text-red-700 font-semibold">{i.overdueDays} days</span>
-                  </li>
-                ))}
-              </ul>
-            ) : (
-              <span className="text-muted-foreground">No overdue invoices</span>
-            )}
+            <div className="text-center">
+              <div className={`text-3xl font-bold ${getHealthColor(profitMargin)}`}>
+                {profitMargin >= 15 ? 'A' : profitMargin >= 10 ? 'B' : profitMargin >= 5 ? 'C' : 'D'}
+              </div>
+              <p className="text-xs text-muted-foreground mt-1">
+                {profitMargin >= 15 ? 'Excellent' : 
+                 profitMargin >= 10 ? 'Good' : 
+                 profitMargin >= 5 ? 'Fair' : 'Needs Improvement'}
+              </p>
+              <div className="mt-2 space-y-1">
+                <div className="flex justify-between text-xs">
+                  <span>Profit Margin:</span>
+                  <span className={getHealthColor(profitMargin)}>{profitMargin.toFixed(1)}%</span>
+                </div>
+                <div className="flex justify-between text-xs">
+                  <span>Expense Ratio:</span>
+                  <span>{expenseRatio.toFixed(1)}%</span>
+                </div>
+              </div>
+            </div>
           </CardContent>
         </Card>
       </div>
