@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
@@ -29,6 +29,7 @@ type SignupFormValues = z.infer<typeof signupSchema>;
 const ModernSignup = () => {
   const { signUp } = useAuth();
   const { toast } = useToast();
+  const navigate = useNavigate();
   const [isLoading, setIsLoading] = useState(false);
   const [showPasswordStrength, setShowPasswordStrength] = useState(false);
 
@@ -59,10 +60,10 @@ const ModernSignup = () => {
       } else {
         toast({
           title: 'Account Created!',
-          description: 'Please check your email to verify your account.'
+          description: 'Welcome to LedgerCraft! Let\'s set up your business profile.'
         });
-        // Note: After signup, user needs to verify email first
-        // Navigation will be handled by auth state change
+        // Redirect to onboarding after successful signup
+        navigate('/onboarding', { replace: true });
       }
     } catch (error) {
       toast({
