@@ -3,6 +3,7 @@ import React, { createContext, useContext, useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { User, Session } from '@supabase/supabase-js';
 import { useNavigate } from 'react-router-dom';
+import { businessProfileService } from '../services/supabaseService';
 
 interface AuthContextType {
   user: User | null;
@@ -11,6 +12,8 @@ interface AuthContextType {
   signIn: (email: string, password: string) => Promise<{ error: any }>;
   signOut: () => Promise<void>;
   loading: boolean;
+  hasCompletedOnboarding: boolean;
+  refreshUser: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -19,18 +22,46 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [user, setUser] = useState<User | null>(null);
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
+  const [hasCompletedOnboarding, setHasCompletedOnboarding] = useState(false);
   const navigate = useNavigate();
+
+  const checkOnboardingStatus = async (userId: string) => {
+    try {
+      const businessProfile = await businessProfileService.getBusinessProfile();
+      setHasCompletedOnboarding(!!businessProfile);
+    } catch (error) {
+      console.error('Error checking onboarding status:', error);
+      setHasCompletedOnboarding(false);
+    }
+  };
+
+  const refreshUser = async () => {
+    const { data: { session: currentSession } } = await supabase.auth.getSession();
+    setSession(currentSession);
+    setUser(currentSession?.user ?? null);
+    
+    if (currentSession?.user?.id) {
+      await checkOnboardingStatus(currentSession.user.id);
+    }
+  };
 
   useEffect(() => {
     // Set up auth state listener
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      (event, currentSession) => {
+      async (event, currentSession) => {
         setSession(currentSession);
         setUser(currentSession?.user ?? null);
         
+        if (currentSession?.user?.id) {
+          await checkOnboardingStatus(currentSession.user.id);
+        } else {
+          setHasCompletedOnboarding(false);
+        }
+        
         if (event === 'SIGNED_IN') {
-          navigate('/');
+          // Don't navigate immediately - let ProtectedRoute handle onboarding check
         } else if (event === 'SIGNED_OUT') {
+          setHasCompletedOnboarding(false);
           navigate('/login');
         }
       }
@@ -41,6 +72,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       const { data: { session: currentSession } } = await supabase.auth.getSession();
       setSession(currentSession);
       setUser(currentSession?.user ?? null);
+      
+      if (currentSession?.user?.id) {
+        await checkOnboardingStatus(currentSession.user.id);
+      }
+      
       setLoading(false);
     };
 
@@ -87,7 +123,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     signUp,
     signIn,
     signOut,
-    loading
+    loading,
+    hasCompletedOnboarding,
+    refreshUser
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

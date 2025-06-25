@@ -5,10 +5,11 @@ import { useAuth } from '@/context/AuthContext';
 
 interface ProtectedRouteProps {
   children: React.ReactNode;
+  requireOnboarding?: boolean;
 }
 
-const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children }) => {
-  const { user, loading } = useAuth();
+const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children, requireOnboarding = true }) => {
+  const { user, loading, hasCompletedOnboarding } = useAuth();
   const location = useLocation();
 
   // If still loading authentication state, show a loading indicator
@@ -25,7 +26,17 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children }) => {
     return <Navigate to="/login" state={{ from: location }} replace />;
   }
 
-  // If authenticated, render the protected content
+  // If authenticated but onboarding is required and not completed, redirect to onboarding
+  if (requireOnboarding && !hasCompletedOnboarding) {
+    return <Navigate to="/onboarding" replace />;
+  }
+
+  // If accessing onboarding page but already completed, redirect to dashboard
+  if (!requireOnboarding && hasCompletedOnboarding && location.pathname === '/onboarding') {
+    return <Navigate to="/" replace />;
+  }
+
+  // If authenticated and onboarding requirements met, render the protected content
   return <>{children}</>;
 };
 

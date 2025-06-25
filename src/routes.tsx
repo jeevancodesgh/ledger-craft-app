@@ -28,6 +28,7 @@ const AccountsPage = lazy(() => import("@/pages/Accounts"));
 const Categories = lazy(() => import("@/pages/Categories"));
 const Expenses = lazy(() => import("@/pages/Expenses"));
 const ExpenseCategories = lazy(() => import("@/pages/ExpenseCategories"));
+const Onboarding = lazy(() => import("@/pages/Onboarding"));
 // Loading component
 const LoadingScreen = () => (
   <div className="flex h-screen w-screen items-center justify-center">
@@ -70,6 +71,14 @@ const appRoutes: RouteObject[] = [
       {
         path: "/signup",
         element: <SuspenseWrapper><Signup /></SuspenseWrapper>,
+      },
+      {
+        path: "/onboarding",
+        element: (
+          <ProtectedRoute requireOnboarding={false}>
+            <SuspenseWrapper><Onboarding /></SuspenseWrapper>
+          </ProtectedRoute>
+        ),
       },
       {
         path: "/",
