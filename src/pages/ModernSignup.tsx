@@ -61,6 +61,8 @@ const ModernSignup = () => {
           title: 'Account Created!',
           description: 'Please check your email to verify your account.'
         });
+        // Note: After signup, user needs to verify email first
+        // Navigation will be handled by auth state change
       }
     } catch (error) {
       toast({

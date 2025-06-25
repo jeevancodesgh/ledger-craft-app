@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
@@ -20,6 +20,8 @@ type LoginFormValues = z.infer<typeof loginSchema>;
 const ModernLogin = () => {
   const { signIn } = useAuth();
   const { toast } = useToast();
+  const navigate = useNavigate();
+  const location = useLocation();
   const [isLoading, setIsLoading] = useState(false);
   const [rememberMe, setRememberMe] = useState(false);
 
@@ -48,6 +50,10 @@ const ModernLogin = () => {
           title: 'Welcome back!',
           description: 'You have been successfully logged in.'
         });
+        
+        // Navigate to the intended destination or dashboard
+        const from = location.state?.from?.pathname || '/';
+        navigate(from, { replace: true });
       }
     } catch (error) {
       toast({
