@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { toast } from 'react-hot-toast';
+import { useToast } from '@/hooks/use-toast';
 import { OnboardingStep, OnboardingData, DEFAULT_BUSINESS_THEME } from '../types';
 import { useAuth } from '../context/AuthContext';
 import { businessProfileService } from '../services/supabaseService';
@@ -31,6 +31,7 @@ const stepTitles: Record<OnboardingStep, { title: string; subtitle?: string }> =
 export default function Onboarding() {
   const navigate = useNavigate();
   const { user, refreshUser } = useAuth();
+  const { toast } = useToast();
   const [currentStep, setCurrentStep] = useState<OnboardingStep>('welcome');
   const [isLoading, setIsLoading] = useState(false);
   
@@ -59,7 +60,11 @@ export default function Onboarding() {
 
   const completeOnboarding = async () => {
     if (!user?.id) {
-      toast.error('Authentication error. Please try logging in again.');
+      toast({
+        title: 'Authentication Error',
+        description: 'Please try logging in again.',
+        variant: 'destructive'
+      });
       return;
     }
 
@@ -93,11 +98,18 @@ export default function Onboarding() {
       // Refresh user data to update onboarding status
       await refreshUser();
       
-      toast.success('Welcome to Ledger Craft! Your business profile has been set up.');
+      toast({
+        title: 'Welcome to Ledger Craft!',
+        description: 'Your business profile has been set up successfully.'
+      });
       navigate('/');
     } catch (error) {
       console.error('Error completing onboarding:', error);
-      toast.error('Failed to complete setup. Please try again.');
+      toast({
+        title: 'Setup Failed',
+        description: 'Failed to complete setup. Please try again.',
+        variant: 'destructive'
+      });
     } finally {
       setIsLoading(false);
     }
