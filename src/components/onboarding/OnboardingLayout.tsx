@@ -1,6 +1,7 @@
 import React from 'react';
 import { CheckCircle, Circle } from 'lucide-react';
 import { OnboardingStep } from '../../types';
+import { ThemeToggle } from '../ui/theme-toggle';
 
 interface OnboardingLayoutProps {
   children: React.ReactNode;
@@ -22,6 +23,11 @@ export default function OnboardingLayout({ children, currentStep, title, subtitl
   return (
     <div className="min-h-screen bg-background">
       <div className="container mx-auto px-4 py-8">
+        {/* Theme Toggle */}
+        <div className="flex justify-end mb-4">
+          <ThemeToggle />
+        </div>
+        
         {/* Header */}
         <div className="text-center mb-8">
           <h1 className="text-3xl font-bold text-foreground mb-2">Welcome to Ledger Craft</h1>
