@@ -272,51 +272,36 @@
   }
 }
 
-/* Invoice Preview Theme Isolation - Protect UI controls only */
+/* Invoice Preview Theme Isolation - Minimal and surgical approach */
+
+/* 1. Keep invoice preview container light */
 .invoice-preview-container {
-  /* Force light theme for invoice preview container */
   background-color: white !important;
   color: black !important;
 }
 
-/* Protect invoice control buttons and UI elements, but NOT the template content */
-.invoice-preview-container > div:not([ref]),
-.invoice-preview-container .bg-background:not(.print-template *),
-.invoice-preview-container .bg-secondary:not(.print-template *),
-.invoice-preview-container .text-foreground:not(.print-template *),
-.invoice-preview-container button,
-.invoice-preview-container input {
+/* 2. Only protect UI controls (buttons, inputs) from dark theme */
+.invoice-preview-container > div > div:not(.print-template-wrapper) button,
+.invoice-preview-container > div > div:not(.print-template-wrapper) input,
+.invoice-preview-container > .fixed {
   background-color: white !important;
   color: black !important;
   border-color: #e2e8f0 !important;
 }
 
-/* CRITICAL: Do NOT apply theme isolation to print template content */
-.print-template-wrapper,
-.print-template-wrapper *,
-.pdf-template-container,
-.pdf-template-container *,
-.print-template,
-.print-template * {
-  /* Reset any theme isolation - let business theme styles work */
-  background-color: unset !important;
-  background: unset !important;
-  color: unset !important;
-  border-color: unset !important;
+/* 3. Reset ONLY the problematic dark theme variables inside invoice templates */
+.dark .print-template-wrapper *:not([style*="background"]):not([style*="color"]) {
+  /* Only override CSS variables for elements WITHOUT inline styles */
+  background-color: initial;
+  color: initial;
 }
 
-/* Completely isolate the dark theme from invoice templates */
-.dark .print-template-wrapper,
-.dark .print-template-wrapper *,
-.dark .pdf-template-container,
-.dark .pdf-template-container *,
-.dark .print-template,
-.dark .print-template * {
-  /* Prevent dark theme CSS variables from affecting invoices */
-  background-color: initial !important;
-  background: initial !important;
-  color: initial !important;
-  border-color: initial !important;
+/* 4. Force light theme CSS variables within template wrapper in dark mode */
+.dark .print-template-wrapper {
+  --background: 0 0% 100%;
+  --foreground: 222.2 84% 4.9%;
+  --card: 0 0% 100%;
+  --card-foreground: 222.2 84% 4.9%;
 }
 
 /* Ensure invoice buttons and controls remain functional but properly styled */
