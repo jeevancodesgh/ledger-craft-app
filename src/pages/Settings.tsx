@@ -8,10 +8,11 @@ import { z } from 'zod';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
-import { BusinessProfile } from '@/types';
+import { BusinessProfile, BusinessTheme, DEFAULT_BUSINESS_THEME } from '@/types';
 import { useToast } from '@/hooks/use-toast';
 import { Loader2, Upload } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
+import ThemePicker from '@/components/business/ThemePicker';
 
 const profileFormSchema = z.object({
   name: z.string().min(1, { message: "Business name is required" }),
@@ -44,6 +45,7 @@ const Settings = () => {
   const { toast } = useToast();
   const [activeTab, setActiveTab] = useState("profile");
   const [previewLogoUrl, setPreviewLogoUrl] = useState<string | undefined>(businessProfile?.logoUrl || undefined);
+  const [currentTheme, setCurrentTheme] = useState<BusinessTheme>(businessProfile?.theme || DEFAULT_BUSINESS_THEME);
 
   const form = useForm<ProfileFormValues>({
     resolver: zodResolver(profileFormSchema),
@@ -94,6 +96,7 @@ const Settings = () => {
         logoFile: undefined,
       });
       setPreviewLogoUrl(businessProfile.logoUrl || undefined);
+      setCurrentTheme(businessProfile.theme || DEFAULT_BUSINESS_THEME);
     }
   }, [businessProfile, isLoadingBusinessProfile, form]);
 
@@ -169,6 +172,29 @@ const Settings = () => {
       const file = e.target.files[0];
       const previewUrl = URL.createObjectURL(file);
       setPreviewLogoUrl(previewUrl);
+    }
+  };
+
+  const handleThemeChange = async (theme: BusinessTheme) => {
+    try {
+      setCurrentTheme(theme);
+      
+      if (businessProfile) {
+        const updatedProfile = { ...businessProfile, theme };
+        await updateBusinessProfile(updatedProfile);
+        
+        toast({
+          title: "Success",
+          description: "Theme updated successfully"
+        });
+      }
+    } catch (error) {
+      console.error("Error updating theme:", error);
+      toast({
+        title: "Error",
+        description: "Failed to update theme",
+        variant: "destructive"
+      });
     }
   };
 
@@ -452,19 +478,10 @@ const Settings = () => {
             </TabsContent>
             
             <TabsContent value="appearance" className="mt-4">
-              <Card>
-                <CardHeader>
-                  <CardTitle>Appearance</CardTitle>
-                  <CardDescription>
-                    Customize the appearance of your application
-                  </CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <p className="text-muted-foreground">
-                    Theme preference options will be available here.
-                  </p>
-                </CardContent>
-              </Card>
+              <ThemePicker
+                currentTheme={currentTheme}
+                onThemeChange={handleThemeChange}
+              />
             </TabsContent>
             
             <div className="mt-6">

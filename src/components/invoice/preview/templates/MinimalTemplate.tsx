@@ -1,5 +1,5 @@
 import React from 'react';
-import { Invoice } from '@/types';
+import { Invoice, BusinessTheme, DEFAULT_BUSINESS_THEME } from '@/types';
 import { Card, CardContent } from "@/components/ui/card";
 import { formatCurrency } from '@/utils/invoiceUtils';
 import { useIsMobile } from '@/hooks/use-mobile';
@@ -13,6 +13,7 @@ interface MinimalTemplateProps {
   taxRate: string;
   tax: number;
   businessLogo?: string;
+  theme?: BusinessTheme;
 }
 
 const MinimalTemplate = ({ 
@@ -23,7 +24,8 @@ const MinimalTemplate = ({
   clientAddress,
   taxRate,
   tax,
-  businessLogo
+  businessLogo,
+  theme = DEFAULT_BUSINESS_THEME
 }: MinimalTemplateProps) => {
   const isMobile = useIsMobile();
   
@@ -40,7 +42,7 @@ const MinimalTemplate = ({
   }, [isMobile]);
   
   return (
-    <Card className="p-4 sm:p-8 bg-white minimal-invoice-template print-template">
+    <Card className="p-4 sm:p-8 minimal-invoice-template print-template" style={{ backgroundColor: theme.surface }}>
       <CardContent className="p-0">
         <div className="w-full mx-auto space-y-4 sm:space-y-6">
           {/* Header with Logo */}
@@ -55,31 +57,31 @@ const MinimalTemplate = ({
                 />
               </div>
             )}
-            <h1 className="text-xl sm:text-2xl font-light tracking-wide">INVOICE</h1>
-            <p className="text-gray-500 mt-1 sm:mt-2 text-sm sm:text-base">#{invoice.invoiceNumber}</p>
+            <h1 className="text-xl sm:text-2xl font-light tracking-wide" style={{ color: theme.text }}>INVOICE</h1>
+            <p className="mt-1 sm:mt-2 text-sm sm:text-base" style={{ color: theme.primary }}>#{invoice.invoiceNumber}</p>
           </div>
 
           {/* Company and Client Info */}
           <div className="flex justify-between text-sm invoice-parties">
             <div className="w-1/2 pr-4">
-              <p className="font-medium mb-1">{companyName}</p>
-              <p className="text-gray-600 text-xs sm:text-sm whitespace-pre-wrap no-underline no-autolink">{companyAddress}</p>
+              <p className="font-medium mb-1" style={{ color: theme.text }}>{companyName}</p>
+              <p className="text-xs sm:text-sm whitespace-pre-wrap no-underline no-autolink" style={{ color: theme.textLight }}>{companyAddress}</p>
             </div>
             <div className="w-1/2 text-right">
-              <p className="font-medium mb-1">{clientName}</p>
-              <p className="text-gray-600 text-xs sm:text-sm whitespace-pre-wrap no-underline no-autolink">{clientAddress}</p>
+              <p className="font-medium mb-1" style={{ color: theme.text }}>{clientName}</p>
+              <p className="text-xs sm:text-sm whitespace-pre-wrap no-underline no-autolink" style={{ color: theme.textLight }}>{clientAddress}</p>
               {invoice.customer?.phone && (
                 isMobile ? (
-                  <span className="text-xs sm:text-sm no-autolink">{invoice.customer.phone}</span>
+                  <span className="text-xs sm:text-sm no-autolink" style={{ color: theme.textLight }}>{invoice.customer.phone}</span>
                 ) : (
-                  <p className="text-xs sm:text-sm">{invoice.customer.phone}</p>
+                  <p className="text-xs sm:text-sm" style={{ color: theme.textLight }}>{invoice.customer.phone}</p>
                 )
               )}
               {invoice.customer?.email && (
                 isMobile ? (
-                  <span className="text-xs sm:text-sm no-autolink">{invoice.customer.email}</span>
+                  <span className="text-xs sm:text-sm no-autolink" style={{ color: theme.textLight }}>{invoice.customer.email}</span>
                 ) : (
-                  <p className="text-xs sm:text-sm">{invoice.customer.email}</p>
+                  <p className="text-xs sm:text-sm" style={{ color: theme.textLight }}>{invoice.customer.email}</p>
                 )
               )}
             </div>
@@ -89,28 +91,28 @@ const MinimalTemplate = ({
           <div className="mt-8 sm:mt-12 invoice-items-table">
             <table className="w-full text-xs sm:text-sm border-collapse">
               <thead>
-                <tr className="border-b">
-                  <th className="py-2 text-left font-medium">Description</th>
-                  <th className="py-2 text-right font-medium">Qty</th>
-                  <th className="py-2 text-right font-medium">Rate</th>
-                  <th className="py-2 text-right font-medium">Amount</th>
+                <tr className="border-b" style={{ borderColor: theme.textLight + '30' }}>
+                  <th className="py-2 text-left font-medium" style={{ color: theme.text }}>Description</th>
+                  <th className="py-2 text-right font-medium" style={{ color: theme.text }}>Qty</th>
+                  <th className="py-2 text-right font-medium" style={{ color: theme.text }}>Rate</th>
+                  <th className="py-2 text-right font-medium" style={{ color: theme.text }}>Amount</th>
                 </tr>
               </thead>
               <tbody>
                 {invoice.items.map((item, index) => (
-                  <tr key={index} className="border-b last:border-b-0">
-                    <td className="py-2 sm:py-3">
+                  <tr key={index} className="border-b last:border-b-0" style={{ borderColor: theme.textLight + '20' }}>
+                    <td className="py-2 sm:py-3" style={{ color: theme.text }}>
                       {item.description}
                       {/* Cast item to any and check for details */}
                       {((item as any).details) && (
-                        <div className="text-xs text-gray-500 break-words">
+                        <div className="text-xs break-words" style={{ color: theme.textLight }}>
                           {(item as any).details}
                         </div>
                       )}
                     </td>
-                    <td className="py-2 sm:py-3 text-right">{item.quantity}</td>
-                    <td className="py-2 sm:py-3 text-right">{formatCurrency(item.rate, invoice.currency)}</td>
-                    <td className="py-2 sm:py-3 text-right">{formatCurrency(item.quantity * item.rate, invoice.currency)}</td>
+                    <td className="py-2 sm:py-3 text-right" style={{ color: theme.text }}>{item.quantity}</td>
+                    <td className="py-2 sm:py-3 text-right" style={{ color: theme.text }}>{formatCurrency(item.rate, invoice.currency)}</td>
+                    <td className="py-2 sm:py-3 text-right" style={{ color: theme.text }}>{formatCurrency(item.quantity * item.rate, invoice.currency)}</td>
                   </tr>
                 ))}
               </tbody>
@@ -121,25 +123,25 @@ const MinimalTemplate = ({
           <div className="mt-6 sm:mt-8 invoice-totals">
             <div className="flex flex-col items-end space-y-1 sm:space-y-2">
               <div className="flex justify-between w-36 sm:w-48">
-                <span className="text-gray-600 text-xs sm:text-sm">Subtotal</span>
-                <span className="text-xs sm:text-sm">{formatCurrency(invoice.subtotal, invoice.currency)}</span>
+                <span className="text-xs sm:text-sm" style={{ color: theme.textLight }}>Subtotal</span>
+                <span className="text-xs sm:text-sm" style={{ color: theme.text }}>{formatCurrency(invoice.subtotal, invoice.currency)}</span>
               </div>
               <div className="flex justify-between w-36 sm:w-48">
-                <span className="text-gray-600 text-xs sm:text-sm">Tax ({taxRate}%)</span>
-                <span className="text-xs sm:text-sm">{formatCurrency(tax, invoice.currency)}</span>
+                <span className="text-xs sm:text-sm" style={{ color: theme.textLight }}>Tax ({taxRate}%)</span>
+                <span className="text-xs sm:text-sm" style={{ color: theme.text }}>{formatCurrency(tax, invoice.currency)}</span>
               </div>
-              <div className="flex justify-between w-36 sm:w-48 font-medium border-t pt-1 sm:pt-2 mt-1 sm:mt-2">
-                <span className="text-sm sm:text-base">Total</span>
-                <span className="text-sm sm:text-base">{formatCurrency(invoice.total, invoice.currency)}</span>
+              <div className="flex justify-between w-36 sm:w-48 font-medium border-t pt-1 sm:pt-2 mt-1 sm:mt-2" style={{ borderColor: theme.textLight + '30' }}>
+                <span className="text-sm sm:text-base" style={{ color: theme.text }}>Total</span>
+                <span className="text-sm sm:text-base" style={{ color: theme.primary }}>{formatCurrency(invoice.total, invoice.currency)}</span>
               </div>
             </div>
           </div>
 
           {/* Notes */}
           {invoice.notes && (
-            <div className="mt-8 sm:mt-12 pt-4 sm:pt-6 border-t text-xs sm:text-sm notes-section">
-              <h2 className="font-medium mb-1 sm:mb-2">Notes</h2>
-              <p className="text-gray-600 whitespace-pre-wrap">{invoice.notes}</p>
+            <div className="mt-8 sm:mt-12 pt-4 sm:pt-6 border-t text-xs sm:text-sm notes-section" style={{ borderColor: theme.textLight + '30' }}>
+              <h2 className="font-medium mb-1 sm:mb-2" style={{ color: theme.text }}>Notes</h2>
+              <p className="whitespace-pre-wrap" style={{ color: theme.textLight }}>{invoice.notes}</p>
             </div>
           )}
         </div>

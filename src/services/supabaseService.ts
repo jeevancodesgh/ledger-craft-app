@@ -125,12 +125,12 @@ const mapSupabaseBusinessProfileToBusinessProfile = (profile: SupabaseBusinessPr
   defaultTerms: profile.default_terms,
   defaultNotes: profile.default_notes,
   bankInfo: profile.bank_info,
+  theme: profile.theme,
   userId: profile.user_id,
   createdAt: profile.created_at,
   updatedAt: profile.updated_at,
   invoiceNumberFormat: profile.invoice_number_format,
   invoiceNumberSequence: profile.invoice_number_sequence,
-  currency: profile.currency,
 });
 
 const mapBusinessProfileToSupabaseBusinessProfile = async (
@@ -155,6 +155,7 @@ const mapBusinessProfileToSupabaseBusinessProfile = async (
     default_terms: profile.defaultTerms || null,
     default_notes: profile.defaultNotes || null,
     bank_info: profile.bankInfo || null,
+    theme: profile.theme || null,
     user_id: profile.userId || userId,
     invoice_number_format: profile.invoiceNumberFormat || null,
     invoice_number_sequence: profile.invoiceNumberSequence ?? null

@@ -15,6 +15,75 @@ export interface Customer {
   updatedAt?: string;
 }
 
+// Theme types for business branding
+export interface BusinessTheme {
+  primary: string;      // Primary brand color (hex)
+  secondary: string;    // Secondary brand color (hex)  
+  accent: string;       // Accent color for highlights (hex)
+  text: string;         // Primary text color (hex)
+  textLight: string;    // Light/muted text color (hex)
+  background: string;   // Background color (hex)
+  surface: string;      // Surface/card background color (hex)
+}
+
+export const DEFAULT_BUSINESS_THEME: BusinessTheme = {
+  primary: '#3B82F6',     // Blue-600
+  secondary: '#06B6D4',   // Cyan-500
+  accent: '#10B981',      // Emerald-500
+  text: '#111827',        // Gray-900
+  textLight: '#6B7280',   // Gray-500
+  background: '#F9FAFB',  // Gray-50
+  surface: '#FFFFFF'      // White
+};
+
+export const PRESET_THEMES: Record<string, BusinessTheme> = {
+  blue: {
+    primary: '#3B82F6',
+    secondary: '#06B6D4', 
+    accent: '#10B981',
+    text: '#111827',
+    textLight: '#6B7280',
+    background: '#F9FAFB',
+    surface: '#FFFFFF'
+  },
+  purple: {
+    primary: '#8B5CF6',
+    secondary: '#A855F7',
+    accent: '#EC4899',
+    text: '#111827',
+    textLight: '#6B7280',
+    background: '#FAF5FF',
+    surface: '#FFFFFF'
+  },
+  green: {
+    primary: '#10B981',
+    secondary: '#059669',
+    accent: '#F59E0B',
+    text: '#111827',
+    textLight: '#6B7280',
+    background: '#F0FDF4',
+    surface: '#FFFFFF'
+  },
+  red: {
+    primary: '#EF4444',
+    secondary: '#F97316',
+    accent: '#8B5CF6',
+    text: '#111827',
+    textLight: '#6B7280',
+    background: '#FEF2F2',
+    surface: '#FFFFFF'
+  },
+  slate: {
+    primary: '#475569',
+    secondary: '#64748B',
+    accent: '#0EA5E9',
+    text: '#0F172A',
+    textLight: '#64748B',
+    background: '#F8FAFC',
+    surface: '#FFFFFF'
+  }
+};
+
 export interface BusinessProfile {
   id?: string;
   name: string;
@@ -32,6 +101,7 @@ export interface BusinessProfile {
   defaultTerms?: string | null;
   defaultNotes?: string | null;
   bankInfo?: string | null;
+  theme?: BusinessTheme | null;  // Business theme colors
   userId?: string;
   createdAt?: string;
   updatedAt?: string;
@@ -151,6 +221,7 @@ export interface SupabaseBusinessProfile {
   default_terms: string | null;
   default_notes: string | null;
   bank_info: string | null;
+  theme: BusinessTheme | null;  // Business theme stored as JSON
   user_id: string;
   created_at: string;
   updated_at: string;

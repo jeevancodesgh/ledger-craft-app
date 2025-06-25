@@ -1,5 +1,5 @@
 import React, { useRef, useState } from 'react';
-import { Invoice, BusinessProfile } from '@/types';
+import { Invoice, BusinessProfile, DEFAULT_BUSINESS_THEME } from '@/types';
 import { InvoiceTemplateId } from '../templates/InvoiceTemplates';
 import ClassicTemplate from './templates/ClassicTemplate';
 import ModernTemplate from './templates/ModernTemplate';
@@ -56,6 +56,7 @@ const InvoicePreview = ({ invoice, selectedTemplate, onBackToEdit, businessProfi
     taxRate: ((invoice.taxAmount / invoice.subtotal) * 100).toFixed(2),
     tax: invoice.taxAmount,
     businessLogo: effectiveBusinessProfile?.logoUrl || '',
+    theme: effectiveBusinessProfile?.theme || DEFAULT_BUSINESS_THEME,
   };
 
   const handleDownloadPdf = async () => {
