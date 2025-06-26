@@ -73,6 +73,15 @@ export const PRESET_THEMES: Record<string, BusinessTheme> = {
     background: '#FEF2F2',
     surface: '#FFFFFF'
   },
+  pink: {
+    primary: '#EC4899',      // Hot Pink-500 - vibrant and professional
+    secondary: '#F472B6',    // Pink-400 - softer pink for accents
+    accent: '#8B5CF6',       // Violet-500 - complementary purple accent
+    text: '#1F2937',         // Gray-800 - strong contrast for readability
+    textLight: '#6B7280',    // Gray-500 - muted text
+    background: '#FDF2F8',   // Pink-50 - very light pink background
+    surface: '#FFFFFF'       // White - clean surface color  
+  },
   slate: {
     primary: '#475569',
     secondary: '#64748B',

@@ -72,9 +72,9 @@ const CorporateTemplate = ({
             <p className="text-sm sm:text-lg">#{invoice.invoiceNumber}</p>
           </div>
           <div className="text-right">
-            <span className="inline-block px-2 sm:px-3 py-1 rounded-full text-xs sm:text-sm font-semibold capitalize" style={getStatusColor()}>
+            {/* <span className="inline-block px-2 sm:px-3 py-1 rounded-full text-xs sm:text-sm font-semibold capitalize" style={getStatusColor()}>
               {invoice.status}
-            </span>
+            </span> */}
             {invoice.customer?.email && (
               isMobile ? (
                 <span className="text-xs sm:text-sm no-autolink text-white">{invoice.customer.email}</span>
