@@ -139,6 +139,41 @@ const MinimalTemplate = ({
                 <span className="text-xs sm:text-sm" style={{ color: theme.textLight }}>Tax ({taxRate}%)</span>
                 <span className="text-xs sm:text-sm" style={{ color: theme.text }}>{formatCurrency(tax, invoice.currency)}</span>
               </div>
+              
+              {/* Individual Additional Charges */}
+              {invoice.additionalChargesList && invoice.additionalChargesList.length > 0 ? (
+                <>
+                  {invoice.additionalChargesList.map((charge, index) => {
+                    if (!charge.isActive) return null;
+                    const chargeAmount = charge.calculationType === 'percentage' 
+                      ? (invoice.subtotal * charge.amount) / 100
+                      : charge.amount;
+                    
+                    return (
+                      <div key={index} className="flex justify-between w-36 sm:w-48">
+                        <span className="text-xs sm:text-sm" style={{ color: theme.textLight }}>{charge.label}</span>
+                        <span className="text-xs sm:text-sm" style={{ color: theme.text }}>{formatCurrency(chargeAmount, invoice.currency)}</span>
+                      </div>
+                    );
+                  })}
+                </>
+              ) : (
+                /* Fallback to legacy additional charges */
+                invoice.additionalCharges && invoice.additionalCharges > 0 && (
+                  <div className="flex justify-between w-36 sm:w-48">
+                    <span className="text-xs sm:text-sm" style={{ color: theme.textLight }}>Additional Charges</span>
+                    <span className="text-xs sm:text-sm" style={{ color: theme.text }}>{formatCurrency(invoice.additionalCharges, invoice.currency)}</span>
+                  </div>
+                )
+              )}
+              
+              {invoice.discount && invoice.discount > 0 && (
+                <div className="flex justify-between w-36 sm:w-48">
+                  <span className="text-xs sm:text-sm" style={{ color: theme.textLight }}>Discount</span>
+                  <span className="text-xs sm:text-sm" style={{ color: theme.accent }}>-{formatCurrency(invoice.discount, invoice.currency)}</span>
+                </div>
+              )}
+              
               <div className="flex justify-between w-36 sm:w-48 font-medium border-t pt-1 sm:pt-2 mt-1 sm:mt-2" style={{ borderColor: theme.textLight + '30' }}>
                 <span className="text-sm sm:text-base" style={{ color: theme.text }}>Total</span>
                 <span className="text-sm sm:text-base" style={{ color: theme.primary }}>{formatCurrency(invoice.total, invoice.currency)}</span>

@@ -162,6 +162,34 @@ const ExecutiveTemplate = ({
             <span className="font-medium" style={{ color: theme.text }}>Tax ({taxRate}%):</span>
             <span style={{ color: theme.text }}>{formatCurrency(tax, invoice.currency)}</span>
           </div>
+          
+          {/* Individual Additional Charges */}
+          {invoice.additionalChargesList && invoice.additionalChargesList.length > 0 ? (
+            <>
+              {invoice.additionalChargesList.map((charge, index) => {
+                if (!charge.isActive) return null;
+                const chargeAmount = charge.calculationType === 'percentage' 
+                  ? (invoice.subtotal * charge.amount) / 100
+                  : charge.amount;
+                
+                return (
+                  <div key={index} className="flex justify-between py-1 sm:py-2 text-xs sm:text-sm">
+                    <span className="font-medium" style={{ color: theme.text }}>{charge.label}:</span>
+                    <span style={{ color: theme.text }}>{formatCurrency(chargeAmount, invoice.currency)}</span>
+                  </div>
+                );
+              })}
+            </>
+          ) : (
+            /* Fallback to legacy additional charges */
+            invoice.additionalCharges && invoice.additionalCharges > 0 && (
+              <div className="flex justify-between py-1 sm:py-2 text-xs sm:text-sm">
+                <span className="font-medium" style={{ color: theme.text }}>Additional Charges:</span>
+                <span style={{ color: theme.text }}>{formatCurrency(invoice.additionalCharges, invoice.currency)}</span>
+              </div>
+            )
+          )}
+          
           {invoice.discount && invoice.discount > 0 && (
             <div className="flex justify-between py-1 sm:py-2 text-xs sm:text-sm">
               <span className="font-medium" style={{ color: theme.text }}>Discount:</span>

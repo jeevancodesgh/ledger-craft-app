@@ -320,8 +320,8 @@ const InvoiceForm: React.FC<InvoiceFormProps> = ({
     if (!isDiscountEnabled) form.setValue("discount", 0);
   }, [isTaxEnabled, isAdditionalChargesEnabled, isDiscountEnabled, form]);
 
-  // Calculate additional charges total
-  const calculateAdditionalChargesTotal = (): number => {
+  // Calculate additional charges total - memoized to prevent unnecessary recalculations
+  const calculateAdditionalChargesTotal = React.useCallback((): number => {
     if (!isAdditionalChargesEnabled) return 0;
     
     return additionalChargesList.reduce((total, charge) => {
@@ -332,7 +332,11 @@ const InvoiceForm: React.FC<InvoiceFormProps> = ({
       }
       return total + charge.amount;
     }, 0);
-  };
+  }, [isAdditionalChargesEnabled, additionalChargesList, subtotal]);
+
+  // Memoize form values to prevent excessive re-renders
+  const additionalChargesFormValue = form.watch('additionalCharges');
+  const discountFormValue = form.watch('discount');
 
   useEffect(() => {
     const newSubtotal = items.reduce((sum, item) => sum + (Number(item.total) || 0), 0);
@@ -347,12 +351,12 @@ const InvoiceForm: React.FC<InvoiceFormProps> = ({
     const addCharges = isAdditionalChargesEnabled 
       ? (additionalChargesList.length > 0 
           ? calculateAdditionalChargesTotal() 
-          : Number(form.watch('additionalCharges')))
+          : Number(additionalChargesFormValue))
       : 0;
     
-    const disc = isDiscountEnabled ? Number(form.watch('discount')) : 0;
+    const disc = isDiscountEnabled ? Number(discountFormValue) : 0;
     setTotal(newSubtotal + newTaxAmount + addCharges - disc);
-  }, [items, isTaxEnabled, taxRate, isAdditionalChargesEnabled, isDiscountEnabled, additionalChargesList, form.watch('additionalCharges'), form.watch('discount')]);
+  }, [items, isTaxEnabled, taxRate, isAdditionalChargesEnabled, isDiscountEnabled, additionalChargesList, additionalChargesFormValue, discountFormValue, calculateAdditionalChargesTotal]);
 
   const updateItem = (idx: number, field: keyof LineItem, value: any) => {
     const updated = [...items];
@@ -431,6 +435,8 @@ const InvoiceForm: React.FC<InvoiceFormProps> = ({
       createdAt: initialValues?.createdAt || new Date().toISOString(),
       updatedAt: new Date().toISOString(),
       additionalCharges: vals.additionalCharges,
+      additionalChargesList: additionalChargesList, // Add structured charges for preview
+      additionalChargesTotal: calculateAdditionalChargesTotal(), // Add calculated total
       discount: vals.discount,
     };
     setInvoicePreview(previewInvoice);

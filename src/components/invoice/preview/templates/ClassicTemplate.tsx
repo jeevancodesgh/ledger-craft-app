@@ -186,11 +186,31 @@ const ClassicTemplate = ({
             </div>
           )}
           
-          {invoice.additionalCharges > 0 && (
-            <div className="flex justify-between py-1">
-              <span className="font-semibold">Additional Charges:</span>
-              <span>{formatCurrency(invoice.additionalCharges, invoice.currency)}</span>
-            </div>
+          {/* Individual Additional Charges */}
+          {invoice.additionalChargesList && invoice.additionalChargesList.length > 0 ? (
+            <>
+              {invoice.additionalChargesList.map((charge, index) => {
+                if (!charge.isActive) return null;
+                const chargeAmount = charge.calculationType === 'percentage' 
+                  ? (invoice.subtotal * charge.amount) / 100
+                  : charge.amount;
+                
+                return (
+                  <div key={index} className="flex justify-between py-1">
+                    <span className="font-semibold">{charge.label}:</span>
+                    <span>{formatCurrency(chargeAmount, invoice.currency)}</span>
+                  </div>
+                );
+              })}
+            </>
+          ) : (
+            /* Fallback to legacy additional charges */
+            invoice.additionalCharges > 0 && (
+              <div className="flex justify-between py-1">
+                <span className="font-semibold">Additional Charges:</span>
+                <span>{formatCurrency(invoice.additionalCharges, invoice.currency)}</span>
+              </div>
+            )
           )}
           
           {invoice.discount > 0 && (

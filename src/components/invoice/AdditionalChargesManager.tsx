@@ -90,7 +90,10 @@ export const AdditionalChargesManager: React.FC<AdditionalChargesManagerProps> =
     }, 0);
   };
 
-  const handleAddCharge = (data: ChargeFormData) => {
+  const handleAddCharge = (data: ChargeFormData, event?: React.FormEvent) => {
+    event?.preventDefault();
+    event?.stopPropagation();
+    
     const newCharge: AdditionalCharge = {
       id: Date.now().toString(),
       type: data.type as AdditionalChargeType,
@@ -106,7 +109,10 @@ export const AdditionalChargesManager: React.FC<AdditionalChargesManagerProps> =
     form.reset();
   };
 
-  const handleEditCharge = (data: ChargeFormData) => {
+  const handleEditCharge = (data: ChargeFormData, event?: React.FormEvent) => {
+    event?.preventDefault();
+    event?.stopPropagation();
+    
     if (!editingCharge) return;
 
     const updatedCharges = charges.map(charge =>
@@ -198,9 +204,14 @@ export const AdditionalChargesManager: React.FC<AdditionalChargesManagerProps> =
           <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
             <DialogTrigger asChild>
               <Button
+                type="button"
                 variant="outline"
                 size="sm"
-                onClick={openAddDialog}
+                onClick={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  openAddDialog();
+                }}
                 className="w-full"
               >
                 <Plus className="w-4 h-4 mr-2" />
@@ -220,7 +231,11 @@ export const AdditionalChargesManager: React.FC<AdditionalChargesManagerProps> =
               
               <Form {...form}>
                 <form
-                  onSubmit={form.handleSubmit(editingCharge ? handleEditCharge : handleAddCharge)}
+                  onSubmit={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    form.handleSubmit(editingCharge ? handleEditCharge : handleAddCharge)(e);
+                  }}
                   className="space-y-4"
                 >
                   <FormField
@@ -331,7 +346,15 @@ export const AdditionalChargesManager: React.FC<AdditionalChargesManagerProps> =
                   />
 
                   <DialogFooter>
-                    <Button type="button" variant="outline" onClick={() => setDialogOpen(false)}>
+                    <Button 
+                      type="button" 
+                      variant="outline" 
+                      onClick={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        setDialogOpen(false);
+                      }}
+                    >
                       Cancel
                     </Button>
                     <Button type="submit">
@@ -389,16 +412,26 @@ export const AdditionalChargesManager: React.FC<AdditionalChargesManagerProps> =
                       
                       <div className="flex gap-1">
                         <Button
+                          type="button"
                           variant="ghost"
                           size="sm"
-                          onClick={() => openEditDialog(charge)}
+                          onClick={(e) => {
+                            e.preventDefault();
+                            e.stopPropagation();
+                            openEditDialog(charge);
+                          }}
                         >
                           <Edit className="w-3 h-3" />
                         </Button>
                         <Button
+                          type="button"
                           variant="ghost"
                           size="sm"
-                          onClick={() => handleDeleteCharge(charge.id)}
+                          onClick={(e) => {
+                            e.preventDefault();
+                            e.stopPropagation();
+                            handleDeleteCharge(charge.id);
+                          }}
                         >
                           <Trash2 className="w-3 h-3" />
                         </Button>
