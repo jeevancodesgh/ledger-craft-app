@@ -197,7 +197,7 @@ const InvoicePreview = ({ invoice, selectedTemplate, onBackToEdit, businessProfi
             margin: '0 auto'
           }}
         >
-          <div ref={templateRef} className="pdf-template-container print-template-wrapper">
+          <div ref={templateRef} className="pdf-template-container print-template-wrapper mb-5">
             {renderTemplate()}
           </div>
         </div>
@@ -291,12 +291,12 @@ const InvoicePreview = ({ invoice, selectedTemplate, onBackToEdit, businessProfi
 
       {/* Desktop controls */}
       {!isMobile && (
-        <div className="flex justify-center gap-3 mt-4 mb-2">
+        <div className="flex justify-center gap-3 mt-4 mb-10">
           <Button
             variant="outline"
             size="sm"
             onClick={handlePrint}
-            className="flex items-center"
+            className="flex items-center mb-5"
             aria-label="Print invoice"
             disabled={isPrinting}
           >
@@ -306,7 +306,7 @@ const InvoicePreview = ({ invoice, selectedTemplate, onBackToEdit, businessProfi
           <Button
             size="sm"
             onClick={handleDownloadPdf}
-            className="flex items-center"
+            className="flex items-center mb-5"
             disabled={isGeneratingPdf || isPrinting}
           >
             <Download className="h-4 w-4 mr-2" />
