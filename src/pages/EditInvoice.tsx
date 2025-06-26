@@ -6,6 +6,7 @@ import InvoiceForm from "@/components/invoice/InvoiceForm";
 import { Invoice, Item } from "@/types";
 import { Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { formatDate } from "@/utils/invoiceUtils";
 
 const EditInvoicePage = () => {
   const { id } = useParams<{ id: string }>();
@@ -52,6 +53,8 @@ const EditInvoicePage = () => {
       await updateInvoice({
         ...invoice,
         ...values,
+        date: formatDate(values.date),
+        dueDate: formatDate(values.dueDate),
         items,
         subtotal,
         taxAmount,

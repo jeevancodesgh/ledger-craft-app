@@ -8,6 +8,7 @@ import { Customer } from '@/types';
 import CustomerFormDrawer, { CustomerFormValues } from '@/components/customer/CustomerFormDrawer';
 import { invoiceService } from '@/services/supabaseService';
 import { useForm } from 'react-hook-form';
+import { formatDate } from '@/utils/invoiceUtils';
 
 const CreateInvoice = () => {
   const { 
@@ -82,8 +83,8 @@ const CreateInvoice = () => {
       console.log("Attempting to create invoice with data:", {
         invoiceNumber: values.invoiceNumber,
         customerId: values.customerId,
-        date: values.date.toISOString().split('T')[0],
-        dueDate: values.dueDate.toISOString().split('T')[0],
+        date: formatDate(values.date),
+        dueDate: formatDate(values.dueDate),
         items: items,
         subtotal: subtotal,
         taxAmount: taxAmount,
@@ -98,8 +99,8 @@ const CreateInvoice = () => {
       await createInvoice({
         invoiceNumber: values.invoiceNumber,
         customerId: values.customerId,
-        date: values.date.toISOString().split('T')[0],
-        dueDate: values.dueDate.toISOString().split('T')[0],
+        date: formatDate(values.date),
+        dueDate: formatDate(values.dueDate),
         items: items,
         subtotal: subtotal,
         taxAmount: taxAmount,

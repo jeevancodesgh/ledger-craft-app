@@ -1,7 +1,7 @@
 import React from 'react';
 import { useAppContext } from '@/context/AppContext';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
-import { formatCurrency, getStatusColor } from '@/utils/invoiceUtils';
+import { formatCurrency, getStatusColor, formatDate } from '@/utils/invoiceUtils';
 import { Button } from '@/components/ui/button';
 import { Plus, ChevronRight, Calendar, DollarSign, Edit, Trash2, Copy, Loader2, Share2 } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
@@ -64,8 +64,8 @@ const Invoices = () => {
         ...rest,
         invoiceNumber: newInvoiceNumber,
         status: 'draft',
-        date: new Date().toISOString().split('T')[0],
-        dueDate: new Date().toISOString().split('T')[0],
+        date: formatDate(new Date()),
+        dueDate: formatDate(new Date()),
         items: invoice.items.map(item => ({ ...item, id: undefined })),
       };
       const created = await createInvoice(clonedInvoice);

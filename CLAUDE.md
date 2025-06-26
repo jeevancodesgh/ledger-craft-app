@@ -120,3 +120,6 @@ npm run type-check
 - Set up CI/CD pipelines
 - Monitor performance metrics
 - Implement proper backup strategies
+
+## MCP Server
+- User supabase MCP server for supabase communication

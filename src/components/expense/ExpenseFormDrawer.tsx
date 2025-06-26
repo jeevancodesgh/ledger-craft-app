@@ -22,6 +22,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { Switch } from "@/components/ui/switch";
+import { formatDate } from '@/utils/invoiceUtils';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useForm } from 'react-hook-form';
 import * as z from 'zod';
@@ -80,7 +81,7 @@ const ExpenseFormDrawer: React.FC<ExpenseFormDrawerProps> = ({
       accountId: 'no-account',
       vendorName: '',
       receiptUrl: '',
-      expenseDate: new Date().toISOString().split('T')[0],
+      expenseDate: formatDate(new Date()),
       status: 'pending',
       isBillable: false,
       customerId: 'no-customer',
@@ -100,7 +101,7 @@ const ExpenseFormDrawer: React.FC<ExpenseFormDrawerProps> = ({
         accountId: initialValues.accountId || 'no-account',
         vendorName: initialValues.vendorName || '',
         receiptUrl: initialValues.receiptUrl || '',
-        expenseDate: initialValues.expenseDate || new Date().toISOString().split('T')[0],
+        expenseDate: initialValues.expenseDate || formatDate(new Date()),
         status: initialValues.status || 'pending',
         isBillable: initialValues.isBillable || false,
         customerId: initialValues.customerId || 'no-customer',
@@ -119,7 +120,7 @@ const ExpenseFormDrawer: React.FC<ExpenseFormDrawerProps> = ({
         accountId: 'no-account',
         vendorName: '',
         receiptUrl: '',
-        expenseDate: new Date().toISOString().split('T')[0],
+        expenseDate: formatDate(new Date()),
         status: 'pending',
         isBillable: false,
         customerId: 'no-customer',
@@ -151,7 +152,7 @@ const ExpenseFormDrawer: React.FC<ExpenseFormDrawerProps> = ({
         accountId: 'no-account',
         vendorName: '',
         receiptUrl: '',
-        expenseDate: new Date().toISOString().split('T')[0],
+        expenseDate: formatDate(new Date()),
         status: 'pending',
         isBillable: false,
         customerId: 'no-customer',
