@@ -77,7 +77,8 @@ const CreateInvoice = () => {
     subtotal: number,
     taxAmount: number,
     additionalCharges: number,
-    discount: number
+    discount: number,
+    additionalChargesList?: any[]
   ) => {
     try {
       console.log("Attempting to create invoice with data:", {
@@ -111,6 +112,8 @@ const CreateInvoice = () => {
         terms: values.terms,
         additionalCharges: additionalCharges,
         discount: discount,
+        additionalChargesList: additionalChargesList,
+        additionalChargesTotal: additionalCharges, // Store calculated total
       });
       toast({
         title: "Invoice Created",

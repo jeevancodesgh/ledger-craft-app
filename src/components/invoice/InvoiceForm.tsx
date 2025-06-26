@@ -21,7 +21,7 @@ import { generateInvoicePdf } from "@/utils/pdfUtils";
 import { formatCurrency, formatDate } from "@/utils/invoiceUtils";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Calendar } from "@/components/ui/calendar";
-import { LineItem, Invoice, Customer, BusinessProfile, Item } from "@/types";
+import { LineItem, Invoice, Customer, BusinessProfile, Item, AdditionalCharge } from "@/types";
 import { format } from "date-fns";
 import { cn } from "@/lib/utils";
 import { useIsMobile } from "@/hooks/use-mobile";
@@ -42,6 +42,7 @@ import {
 } from "@/components/ui/collapsible";
 import TemplateSelector from './templates/TemplateSelector';
 import { invoiceTemplates, InvoiceTemplateId } from './templates/InvoiceTemplates';
+import AdditionalChargesManager from './AdditionalChargesManager';
 import {
   DropdownMenu,
   DropdownMenuTrigger,
@@ -85,7 +86,7 @@ interface InvoiceFormProps {
   customers: Customer[];
   businessProfile: BusinessProfile | null;
   isLoadingCustomers: boolean;
-  onSubmit: (values: any, lineItems: LineItem[], total: number, subtotal: number, taxAmount: number, additionalCharges: number, discount: number) => Promise<void>;
+  onSubmit: (values: any, lineItems: LineItem[], total: number, subtotal: number, taxAmount: number, additionalCharges: number, discount: number, additionalChargesList?: AdditionalCharge[]) => Promise<void>;
   onCancel: () => void;
   onAddCustomer?: () => void;
   newlyAddedCustomer?: Customer | null;
@@ -208,6 +209,7 @@ const InvoiceForm: React.FC<InvoiceFormProps> = ({
   const [isTaxEnabled, setIsTaxEnabled] = useState(false);
   const [taxRate, setTaxRate] = useState(0);
   const [isAdditionalChargesEnabled, setIsAdditionalChargesEnabled] = useState(false);
+  const [additionalChargesList, setAdditionalChargesList] = useState<AdditionalCharge[]>([]);
   const [isDiscountEnabled, setIsDiscountEnabled] = useState(false);
   const [refetchItemsTrigger, setRefetchItemsTrigger] = useState(0);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -318,6 +320,20 @@ const InvoiceForm: React.FC<InvoiceFormProps> = ({
     if (!isDiscountEnabled) form.setValue("discount", 0);
   }, [isTaxEnabled, isAdditionalChargesEnabled, isDiscountEnabled, form]);
 
+  // Calculate additional charges total
+  const calculateAdditionalChargesTotal = (): number => {
+    if (!isAdditionalChargesEnabled) return 0;
+    
+    return additionalChargesList.reduce((total, charge) => {
+      if (!charge.isActive) return total;
+      
+      if (charge.calculationType === 'percentage') {
+        return total + (subtotal * charge.amount) / 100;
+      }
+      return total + charge.amount;
+    }, 0);
+  };
+
   useEffect(() => {
     const newSubtotal = items.reduce((sum, item) => sum + (Number(item.total) || 0), 0);
     setSubtotal(newSubtotal);
@@ -326,10 +342,17 @@ const InvoiceForm: React.FC<InvoiceFormProps> = ({
       newTaxAmount = (newSubtotal * taxRate) / 100;
     }
     setTaxAmount(newTaxAmount);
-    const addCharges = isAdditionalChargesEnabled ? Number(form.watch('additionalCharges')) : 0;
+    
+    // Use new structured charges or fall back to legacy single charge
+    const addCharges = isAdditionalChargesEnabled 
+      ? (additionalChargesList.length > 0 
+          ? calculateAdditionalChargesTotal() 
+          : Number(form.watch('additionalCharges')))
+      : 0;
+    
     const disc = isDiscountEnabled ? Number(form.watch('discount')) : 0;
     setTotal(newSubtotal + newTaxAmount + addCharges - disc);
-  }, [items, isTaxEnabled, taxRate, isAdditionalChargesEnabled, isDiscountEnabled, form.watch('additionalCharges'), form.watch('discount')]);
+  }, [items, isTaxEnabled, taxRate, isAdditionalChargesEnabled, isDiscountEnabled, additionalChargesList, form.watch('additionalCharges'), form.watch('discount')]);
 
   const updateItem = (idx: number, field: keyof LineItem, value: any) => {
     const updated = [...items];
@@ -623,14 +646,21 @@ const InvoiceForm: React.FC<InvoiceFormProps> = ({
   const localOnSubmit = async (values: InvoiceFormValues) => {
     setIsSubmitting(true);
     try {
+      // Calculate additional charges total from structured charges
+      const structuredChargesTotal = calculateAdditionalChargesTotal();
+      const finalAdditionalCharges = additionalChargesList.length > 0 
+        ? structuredChargesTotal 
+        : Number(values.additionalCharges);
+
       await onSubmit(
         values,
         items,
-        subtotal + taxAmount + Number(values.additionalCharges) - Number(values.discount),
+        subtotal + taxAmount + finalAdditionalCharges - Number(values.discount),
         subtotal,
         taxAmount,
-        Number(values.additionalCharges),
-        Number(values.discount)
+        finalAdditionalCharges,
+        Number(values.discount),
+        additionalChargesList // Pass the structured charges list
       );
       // Reset form and items in sync
       form.reset(values);
@@ -964,26 +994,17 @@ const InvoiceForm: React.FC<InvoiceFormProps> = ({
                         )}
                       />
                     </div>
+                    {/* Additional Charges Manager */}
+                    <AdditionalChargesManager
+                      charges={additionalChargesList}
+                      onChargesChange={setAdditionalChargesList}
+                      subtotal={subtotal}
+                      currency={form.watch('currency') || 'USD'}
+                      enabled={isAdditionalChargesEnabled}
+                      onEnabledChange={setIsAdditionalChargesEnabled}
+                    />
+
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <div className="flex items-center gap-2 mt-2">
-                        <Switch
-                          checked={isAdditionalChargesEnabled}
-                          onCheckedChange={setIsAdditionalChargesEnabled}
-                          id="additional-charges-toggle"
-                        />
-                        <label htmlFor="additional-charges-toggle" className="text-sm font-medium">Enable Additional Charges</label>
-                        {isAdditionalChargesEnabled && (
-                          <Input
-                            type="number"
-                            min={0}
-                            step="0.01"
-                            value={form.watch('additionalCharges')}
-                            onChange={handleAdditionalChargesChange}
-                            placeholder="e.g. shipping, handling"
-                            className="w-32 ml-2"
-                          />
-                        )}
-                      </div>
                       <div className="flex items-center gap-2 mt-2">
                         <Switch
                           checked={isDiscountEnabled}

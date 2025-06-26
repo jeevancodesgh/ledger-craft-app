@@ -159,6 +159,33 @@ const ModernInvoiceTemplate = ({
               <span className="font-medium" style={{ color: theme.textLight }}>Tax ({taxRate}%)</span>
               <span className="font-semibold" style={{ color: theme.text }}>{formatCurrency(tax, invoice.currency)}</span>
             </div>
+            {/* Individual Additional Charges */}
+            {invoice.additionalChargesList && invoice.additionalChargesList.length > 0 && (
+              <>
+                {invoice.additionalChargesList.map((charge, index) => {
+                  if (!charge.isActive) return null;
+                  const chargeAmount = charge.calculationType === 'percentage' 
+                    ? (invoice.subtotal * charge.amount) / 100
+                    : charge.amount;
+                  
+                  return (
+                    <div key={index} className="flex justify-between py-1 text-sm">
+                      <span className="font-medium" style={{ color: theme.textLight }}>{charge.label}</span>
+                      <span className="font-semibold" style={{ color: theme.text }}>{formatCurrency(chargeAmount, invoice.currency)}</span>
+                    </div>
+                  );
+                })}
+              </>
+            )}
+            
+            {/* Fallback to legacy additional charges if no structured charges */}
+            {(!invoice.additionalChargesList || invoice.additionalChargesList.length === 0) && invoice.additionalCharges && invoice.additionalCharges > 0 && (
+              <div className="flex justify-between py-1 text-sm">
+                <span className="font-medium" style={{ color: theme.textLight }}>Additional Charges</span>
+                <span className="font-semibold" style={{ color: theme.text }}>{formatCurrency(invoice.additionalCharges, invoice.currency)}</span>
+              </div>
+            )}
+            
             {invoice.discount && invoice.discount > 0 && (
               <div className="flex justify-between py-1 text-sm">
                 <span className="font-medium" style={{ color: theme.textLight }}>Discount</span>

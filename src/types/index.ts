@@ -131,6 +131,39 @@ export interface LineItem {
   updatedAt?: string;
 }
 
+export type AdditionalChargeType = 
+  | 'delivery' 
+  | 'handling' 
+  | 'rush' 
+  | 'service' 
+  | 'processing' 
+  | 'international' 
+  | 'setup' 
+  | 'administrative' 
+  | 'custom';
+
+export interface AdditionalCharge {
+  id: string;
+  type: AdditionalChargeType;
+  label: string;
+  calculationType: 'fixed' | 'percentage';
+  amount: number;
+  description?: string;
+  isActive: boolean;
+}
+
+export const ADDITIONAL_CHARGE_PRESETS: Record<AdditionalChargeType, { label: string; icon: string; description: string }> = {
+  delivery: { label: 'Delivery', icon: '🚚', description: 'Shipping and delivery charges' },
+  handling: { label: 'Handling Fee', icon: '📦', description: 'Packaging and handling costs' },
+  rush: { label: 'Rush/Expedite', icon: '⚡', description: 'Priority processing fee' },
+  service: { label: 'Service Fee', icon: '🏪', description: 'General service charges' },
+  processing: { label: 'Payment Processing', icon: '💳', description: 'Credit card processing fees' },
+  international: { label: 'International Fee', icon: '🌍', description: 'Cross-border transaction fees' },
+  setup: { label: 'Setup/Installation', icon: '🔧', description: 'One-time setup costs' },
+  administrative: { label: 'Administrative Fee', icon: '📋', description: 'Paperwork and admin costs' },
+  custom: { label: 'Custom', icon: '🎯', description: 'Custom additional charge' }
+};
+
 export type InvoiceStatus = 'draft' | 'sent' | 'paid' | 'overdue';
 
 export interface Invoice {
@@ -145,7 +178,9 @@ export interface Invoice {
   subtotal: number;
   taxAmount: number;
   discount?: number | null;
-  additionalCharges?: number | null;
+  additionalCharges?: number | null; // Keep for backward compatibility
+  additionalChargesList?: AdditionalCharge[]; // New structured charges
+  additionalChargesTotal?: number; // Calculated total of all additional charges
   total: number;
   status: InvoiceStatus;
   notes?: string | null;
@@ -185,6 +220,8 @@ export interface SupabaseInvoice {
   tax_amount: number;
   discount: number | null;
   additional_charges: number | null;
+  additional_charges_list: AdditionalCharge[] | null;
+  additional_charges_total: number | null;
   total: number;
   status: InvoiceStatus;
   notes: string | null;
