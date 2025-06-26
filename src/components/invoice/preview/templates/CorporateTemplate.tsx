@@ -8,6 +8,7 @@ interface CorporateTemplateProps {
   invoice: Invoice;
   companyName: string;
   companyAddress: string;
+  companyPhone: string;
   clientName: string;
   clientAddress: string;
   taxRate: string;
@@ -20,6 +21,7 @@ const CorporateTemplate = ({
   invoice,
   companyName,
   companyAddress,
+  companyPhone,
   clientName,
   clientAddress,
   taxRate,
@@ -91,6 +93,13 @@ const CorporateTemplate = ({
             <h3 className="text-xs font-bold uppercase tracking-wider mb-1 sm:mb-2" style={{ color: theme.textLight }}>From</h3>
             <h4 className="text-lg sm:text-xl font-bold mb-1" style={{ color: theme.text }}>{companyName}</h4>
             <p className="text-xs sm:text-sm whitespace-pre-line no-underline no-autolink" style={{ color: theme.textLight }}>{companyAddress}</p>
+            {companyPhone && (
+              isMobile ? (
+                <span className="text-xs sm:text-sm no-autolink" style={{ color: theme.textLight }}>{companyPhone}</span>
+              ) : (
+                <p className="text-xs sm:text-sm" style={{ color: theme.textLight }}>{companyPhone}</p>
+              )
+            )}
           </div>
           <div>
             <h3 className="text-xs font-bold uppercase tracking-wider mb-1 sm:mb-2" style={{ color: theme.textLight }}>To</h3>

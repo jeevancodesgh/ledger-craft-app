@@ -45,6 +45,7 @@ const InvoicePreview = ({ invoice, selectedTemplate, onBackToEdit, businessProfi
       effectiveBusinessProfile?.zip,
       effectiveBusinessProfile?.country
     ].filter(Boolean).join(', ') || '',
+    companyPhone: effectiveBusinessProfile?.phone || '',
     clientName: invoice.customer?.name || 'Client Name',
     clientAddress: [
       invoice.customer?.address,

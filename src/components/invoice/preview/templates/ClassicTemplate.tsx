@@ -8,6 +8,7 @@ interface ClassicTemplateProps {
   invoice: Invoice;
   companyName: string;
   companyAddress: string;
+  companyPhone: string;
   clientName: string;
   clientAddress: string;
   taxRate: string;
@@ -19,6 +20,7 @@ const ClassicTemplate = ({
   invoice, 
   companyName, 
   companyAddress, 
+  companyPhone,
   clientName, 
   clientAddress,
   taxRate,
@@ -75,11 +77,11 @@ const ClassicTemplate = ({
           <div className="text-right">
             <p className="text-sm sm:text-base font-semibold">{companyName}</p>
             <p className="text-xs sm:text-sm text-gray-600 no-underline no-autolink">{companyAddressParts.join(', ')}</p>
-            {invoice.customer?.email && (
+            {companyPhone && (
               isMobile ? (
-                <span className="text-xs sm:text-sm text-gray-600 no-autolink">{invoice.customer.email}</span>
+                <span className="text-xs sm:text-sm text-gray-600 no-autolink">{companyPhone}</span>
               ) : (
-                <p className="text-xs sm:text-sm text-gray-600">{invoice.customer.email}</p>
+                <p className="text-xs sm:text-sm text-gray-600">{companyPhone}</p>
               )
             )}
           </div>

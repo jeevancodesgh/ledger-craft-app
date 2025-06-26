@@ -8,6 +8,7 @@ interface ModernTemplateProps {
   invoice: Invoice;
   companyName: string;
   companyAddress: string;
+  companyPhone: string;
   clientName: string;
   clientAddress: string;
   taxRate: string;
@@ -20,6 +21,7 @@ const ModernTemplate = ({
   invoice, 
   companyName, 
   companyAddress, 
+  companyPhone,
   clientName, 
   clientAddress, 
   taxRate, 
@@ -74,11 +76,11 @@ const ModernTemplate = ({
         <div className="w-1/2 text-right">
           <p className="font-semibold text-sm sm:text-base" style={{ color: 'white' }}>{companyName}</p>
           <p className="text-xs sm:text-sm no-underline no-autolink" style={{ color: 'white' }}>{companyAddressParts.join(', ')}</p>
-          {invoice.customer?.email && (
+          {companyPhone && (
             isMobile ? (
-              <span className="text-xs mt-1 no-autolink" style={{ color: 'white' }}>{invoice.customer.email}</span>
+              <span className="text-xs mt-1 no-autolink" style={{ color: 'white' }}>{companyPhone}</span>
             ) : (
-              <p className="text-xs mt-1" style={{ color: 'white' }}>{invoice.customer.email}</p>
+              <p className="text-xs mt-1" style={{ color: 'white' }}>{companyPhone}</p>
             )
           )}
         </div>

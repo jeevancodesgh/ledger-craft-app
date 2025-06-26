@@ -8,6 +8,7 @@ interface MinimalTemplateProps {
   invoice: Invoice;
   companyName: string;
   companyAddress: string;
+  companyPhone: string;
   clientName: string;
   clientAddress: string;
   taxRate: string;
@@ -20,6 +21,7 @@ const MinimalTemplate = ({
   invoice, 
   companyName, 
   companyAddress, 
+  companyPhone,
   clientName, 
   clientAddress,
   taxRate,
@@ -66,6 +68,13 @@ const MinimalTemplate = ({
             <div className="w-1/2 pr-4">
               <p className="font-medium mb-1" style={{ color: theme.text }}>{companyName}</p>
               <p className="text-xs sm:text-sm whitespace-pre-wrap no-underline no-autolink" style={{ color: theme.textLight }}>{companyAddress}</p>
+              {companyPhone && (
+                isMobile ? (
+                  <span className="text-xs sm:text-sm no-autolink" style={{ color: theme.textLight }}>{companyPhone}</span>
+                ) : (
+                  <p className="text-xs sm:text-sm" style={{ color: theme.textLight }}>{companyPhone}</p>
+                )
+              )}
             </div>
             <div className="w-1/2 text-right">
               <p className="font-medium mb-1" style={{ color: theme.text }}>{clientName}</p>

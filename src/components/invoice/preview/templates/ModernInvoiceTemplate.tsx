@@ -8,6 +8,7 @@ interface ModernInvoiceTemplateProps {
   invoice: Invoice;
   companyName: string;
   companyAddress: string;
+  companyPhone: string;
   clientName: string;
   clientAddress: string;
   taxRate: string;
@@ -20,6 +21,7 @@ const ModernInvoiceTemplate = ({
   invoice,
   companyName,
   companyAddress,
+  companyPhone,
   clientName,
   clientAddress,
   taxRate,
@@ -63,6 +65,13 @@ const ModernInvoiceTemplate = ({
             <div>
               <h1 className="text-2xl font-extrabold tracking-tight">{companyName}</h1>
               <p className="text-xs opacity-80 whitespace-pre-line">{companyAddress}</p>
+              {companyPhone && (
+                isMobile ? (
+                  <span className="text-xs opacity-80 no-autolink">{companyPhone}</span>
+                ) : (
+                  <p className="text-xs opacity-80">{companyPhone}</p>
+                )
+              )}
             </div>
           </div>
           <div className="mt-6 sm:mt-0 text-right w-full sm:w-auto">

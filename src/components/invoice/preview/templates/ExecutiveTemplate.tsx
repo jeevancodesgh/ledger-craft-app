@@ -8,6 +8,7 @@ interface ExecutiveTemplateProps {
   invoice: Invoice;
   companyName: string;
   companyAddress: string;
+  companyPhone: string;
   clientName: string;
   clientAddress: string;
   taxRate: string;
@@ -20,6 +21,7 @@ const ExecutiveTemplate = ({
   invoice,
   companyName,
   companyAddress,
+  companyPhone,
   clientName,
   clientAddress,
   taxRate,
@@ -62,6 +64,13 @@ const ExecutiveTemplate = ({
           <div className="text-right">
             <h2 className="text-lg sm:text-xl font-bold" style={{ color: theme.text }}>{companyName}</h2>
             <p className="text-xs sm:text-sm whitespace-pre-line no-underline no-autolink" style={{ color: theme.textLight }}>{companyAddress}</p>
+            {companyPhone && (
+              isMobile ? (
+                <span className="text-xs sm:text-sm no-autolink" style={{ color: theme.textLight }}>{companyPhone}</span>
+              ) : (
+                <p className="text-xs sm:text-sm" style={{ color: theme.textLight }}>{companyPhone}</p>
+              )
+            )}
             {invoice.customer?.email && (
               isMobile ? (
                 <span className="text-xs sm:text-sm no-autolink" style={{ color: theme.textLight }}>{invoice.customer.email}</span>
