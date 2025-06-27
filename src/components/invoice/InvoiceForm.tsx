@@ -283,6 +283,23 @@ const InvoiceForm: React.FC<InvoiceFormProps> = ({
         : [{ id: "1", description: "", quantity: 1, unit: "each", rate: 0, total: 0 }];
       setItems(newItems);
       setInitialItemsJSON(JSON.stringify(newItems));
+      
+      // Set the template from initial values or default to classic
+      setSelectedTemplate((initialValues.templateName as InvoiceTemplateId) || 'classic');
+      
+      // Initialize additional charges list from existing invoice
+      if (initialValues.additionalChargesList && initialValues.additionalChargesList.length > 0) {
+        setAdditionalChargesList(initialValues.additionalChargesList);
+        setIsAdditionalChargesEnabled(true);
+      } else {
+        setAdditionalChargesList([]);
+        setIsAdditionalChargesEnabled(false);
+      }
+    } else {
+      // Create mode - ensure template is set to classic
+      setSelectedTemplate('classic');
+      setAdditionalChargesList([]);
+      setIsAdditionalChargesEnabled(false);
     }
   }, [initialValues]);
 
@@ -658,8 +675,14 @@ const InvoiceForm: React.FC<InvoiceFormProps> = ({
         ? structuredChargesTotal 
         : Number(values.additionalCharges);
 
+      // Add template name to values
+      const valuesWithTemplate = {
+        ...values,
+        templateName: selectedTemplate
+      };
+
       await onSubmit(
-        values,
+        valuesWithTemplate,
         items,
         subtotal + taxAmount + finalAdditionalCharges - Number(values.discount),
         subtotal,
@@ -1266,7 +1289,12 @@ const InvoiceForm: React.FC<InvoiceFormProps> = ({
                                   {isAdditionalChargesEnabled && (
                                     <div className="flex justify-between">
                                       <span className="font-medium">Additional Charges</span>
-                                      <span>{formatCurrency(Number(form.watch('additionalCharges')), form.getValues('currency'))}</span>
+                                      <span>{formatCurrency(
+                                        additionalChargesList.length > 0 
+                                          ? calculateAdditionalChargesTotal() 
+                                          : Number(form.watch('additionalCharges')),
+                                        form.getValues('currency')
+                                      )}</span>
                                     </div>
                                   )}
                                   {isDiscountEnabled && (

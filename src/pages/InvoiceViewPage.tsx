@@ -33,7 +33,10 @@ const InvoiceViewPage = () => {
       <Button variant="ghost" className="mb-4" onClick={() => navigate(-1)}>
         <ChevronLeft className="mr-2 w-4 h-4" /> Back to Invoices
       </Button>
-      <InvoicePreview invoice={invoice} selectedTemplate="classic" />
+      <InvoicePreview 
+        invoice={invoice} 
+        selectedTemplate={(invoice.templateName as any) || "classic"} 
+      />
     </div>
   );
 };

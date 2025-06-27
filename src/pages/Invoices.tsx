@@ -17,6 +17,8 @@ import {
   SelectItem,
   SelectValue
 } from '@/components/ui/select';
+import ShareInvoiceModal from '@/components/invoice/ShareInvoiceModal';
+import { Invoice } from '@/types';
 
 const STATUS_OPTIONS = [
   { value: 'draft', label: 'Draft' },
@@ -35,6 +37,8 @@ const Invoices = () => {
   const [invoiceToDelete, setInvoiceToDelete] = useState<string | null>(null);
   const [deleting, setDeleting] = useState(false);
   const [statusLoading, setStatusLoading] = useState<{ [id: string]: boolean }>({});
+  const [shareModalOpen, setShareModalOpen] = useState(false);
+  const [invoiceToShare, setInvoiceToShare] = useState<Invoice | null>(null);
 
   const handleDeleteClick = (id: string) => {
     setInvoiceToDelete(id);
@@ -89,6 +93,11 @@ const Invoices = () => {
     } finally {
       setStatusLoading((prev) => ({ ...prev, [id]: false }));
     }
+  };
+
+  const handleShareClick = (invoice: Invoice) => {
+    setInvoiceToShare(invoice);
+    setShareModalOpen(true);
   };
 
   if (isLoadingInvoices) {
@@ -232,26 +241,7 @@ const Invoices = () => {
                     size="icon"
                     className="h-8 w-8"
                     aria-label="Share invoice"
-                    onClick={() => {
-                      const url = `${window.location.origin}/public/invoice/${invoice.id}`;
-                      if (navigator.share) {
-                        navigator.share({
-                          title: `Invoice ${invoice.invoiceNumber}`,
-                          text: `View your invoice from ${businessProfile?.name || 'us'}.`,
-                          url: url,
-                        })
-                        .then(() => toast({ title: 'Invoice shared successfully!' }))
-                        .catch((error) => {
-                          if (error.name !== 'AbortError') {
-                            console.error('Error sharing:', error);
-                            toast({ title: 'Sharing failed', description: 'Could not share the invoice.', variant: 'destructive' });
-                          }
-                        });
-                      } else {
-                        navigator.clipboard.writeText(url);
-                        toast({ title: 'Share link copied', description: 'Public invoice link copied to clipboard.' });
-                      }
-                    }}
+                    onClick={() => handleShareClick(invoice)}
                   >
                     <Share2 size={16} />
                   </Button>
@@ -347,26 +337,7 @@ const Invoices = () => {
                           size="icon"
                           className="h-8 w-8"
                           aria-label="Share invoice"
-                          onClick={() => {
-                            const url = `${window.location.origin}/public/invoice/${invoice.id}`;
-                            if (navigator.share) {
-                              navigator.share({
-                                title: `Invoice ${invoice.invoiceNumber}`,
-                                text: `View your invoice from ${businessProfile?.name || 'us'}.`,
-                                url: url,
-                              })
-                              .then(() => toast({ title: 'Invoice shared successfully!' }))
-                              .catch((error) => {
-                                if (error.name !== 'AbortError') {
-                                  console.error('Error sharing:', error);
-                                  toast({ title: 'Sharing failed', description: 'Could not share the invoice.', variant: 'destructive' });
-                                }
-                              });
-                            } else {
-                              navigator.clipboard.writeText(url);
-                              toast({ title: 'Share link copied', description: 'Public invoice link copied to clipboard.' });
-                            }
-                          }}
+                          onClick={() => handleShareClick(invoice)}
                         >
                           <Share2 size={16} />
                         </Button>
@@ -378,6 +349,47 @@ const Invoices = () => {
             </Table>
           </div>
         </Card>
+      )}
+
+      {/* Delete Confirmation Dialog */}
+      <Dialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Delete Invoice</DialogTitle>
+            <DialogDescription>
+              Are you sure you want to delete this invoice? This action cannot be undone.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <DialogClose asChild>
+              <Button variant="outline">Cancel</Button>
+            </DialogClose>
+            <Button
+              variant="destructive"
+              onClick={handleDeleteConfirm}
+              disabled={deleting}
+            >
+              {deleting ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Deleting...
+                </>
+              ) : (
+                'Delete'
+              )}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Share Invoice Modal */}
+      {invoiceToShare && (
+        <ShareInvoiceModal
+          open={shareModalOpen}
+          onOpenChange={setShareModalOpen}
+          invoice={invoiceToShare}
+          businessName={businessProfile?.name}
+        />
       )}
     </div>
   );

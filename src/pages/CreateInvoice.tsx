@@ -114,6 +114,7 @@ const CreateInvoice = () => {
         discount: discount,
         additionalChargesList: additionalChargesList,
         additionalChargesTotal: additionalCharges, // Store calculated total
+        templateName: values.templateName, // Save selected template
       });
       toast({
         title: "Invoice Created",

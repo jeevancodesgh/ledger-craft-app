@@ -49,7 +49,7 @@ const ModernSignup = () => {
   const onSubmit = async (values: SignupFormValues) => {
     setIsLoading(true);
     try {
-      const { error } = await signUp(values.email, values.password, values.fullName);
+      const { error, needsEmailConfirmation } = await signUp(values.email, values.password, values.fullName);
 
       if (error) {
         toast({
@@ -57,12 +57,25 @@ const ModernSignup = () => {
           description: error.message,
           variant: 'destructive'
         });
+      } else if (needsEmailConfirmation) {
+        toast({
+          title: 'Account Created!',
+          description: 'Please check your email to confirm your account, then sign in to continue.'
+        });
+        // Redirect to login with a message about email confirmation
+        navigate('/login', { 
+          replace: true,
+          state: { 
+            message: 'Account created! Please check your email to confirm your account. If you need help with confirmation, visit the confirmation page.',
+            email: values.email
+          }
+        });
       } else {
         toast({
           title: 'Account Created!',
           description: 'Welcome to LedgerCraft! Let\'s set up your business profile.'
         });
-        // Redirect to onboarding after successful signup
+        // User is immediately authenticated, redirect to onboarding
         navigate('/onboarding', { replace: true });
       }
     } catch (error) {
@@ -89,6 +102,7 @@ const ModernSignup = () => {
           label="Full name"
           type="text"
           icon={User}
+          placeholder="Enter your full name"
           error={errors.fullName?.message}
           autoComplete="name"
           autoFocus
@@ -100,6 +114,7 @@ const ModernSignup = () => {
           label="Email address"
           type="email"
           icon={Mail}
+          placeholder="Enter your email"
           error={errors.email?.message}
           autoComplete="email"
         />
@@ -111,6 +126,7 @@ const ModernSignup = () => {
             label="Password"
             type="password"
             icon={Lock}
+            placeholder="Create a password"
             showPasswordToggle
             error={errors.password?.message}
             autoComplete="new-password"
@@ -131,6 +147,7 @@ const ModernSignup = () => {
           label="Confirm password"
           type="password"
           icon={Lock}
+          placeholder="Confirm your password"
           showPasswordToggle
           error={errors.confirmPassword?.message}
           autoComplete="new-password"

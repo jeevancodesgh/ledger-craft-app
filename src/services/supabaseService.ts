@@ -3,7 +3,8 @@ import {
   Customer, Invoice, BusinessProfile, LineItem, ItemCategory, Item,
   SupabaseCustomer, SupabaseInvoice, SupabaseLineItem, SupabaseBusinessProfile, SupabaseItemCategory, SupabaseItem,
   Account, SupabaseAccount, AccountType, InvoiceStatus,
-  Expense, ExpenseCategory, SupabaseExpense, SupabaseExpenseCategory, ExpenseStatus, PaymentMethod
+  Expense, ExpenseCategory, SupabaseExpense, SupabaseExpenseCategory, ExpenseStatus, PaymentMethod,
+  SharedInvoice, SupabaseSharedInvoice, InvoiceTemplateName
 } from '@/types';
 
 const mapSupabaseCustomerToCustomer = (customer: SupabaseCustomer): Customer => ({
@@ -74,11 +75,14 @@ const mapSupabaseInvoiceToInvoice = (invoice: SupabaseInvoice | any, items: Supa
   taxAmount: invoice.tax_amount,
   discount: invoice.discount,
   additionalCharges: invoice.additional_charges,
+  additionalChargesList: invoice.additional_charges_list,
+  additionalChargesTotal: invoice.additional_charges_total,
   total: invoice.total,
   status: invoice.status as InvoiceStatus,
   notes: invoice.notes || undefined,
   terms: invoice.terms || undefined,
   currency: invoice.currency,
+  templateName: invoice.template_name || 'classic',
   userId: invoice.user_id,
   createdAt: invoice.created_at,
   updatedAt: invoice.updated_at,
@@ -98,11 +102,14 @@ const mapInvoiceToSupabaseInvoice = async (invoice: Omit<Invoice, 'id' | 'create
     tax_amount: invoice.taxAmount,
     discount: invoice.discount || null,
     additional_charges: invoice.additionalCharges || null,
+    additional_charges_list: invoice.additionalChargesList || null,
+    additional_charges_total: invoice.additionalChargesTotal || null,
     total: invoice.total,
     status: invoice.status,
     notes: invoice.notes || null,
     terms: invoice.terms || null,
     currency: invoice.currency,
+    template_name: invoice.templateName || 'classic',
     user_id: invoice.userId || userId,
     public_viewed_at: invoice.public_viewed_at || null
   };
@@ -532,6 +539,7 @@ export const invoiceService = {
   async createInvoice(invoice: Omit<Invoice, 'id' | 'createdAt' | 'updatedAt'>, lineItems: Omit<LineItem, 'id' | 'invoiceId' | 'createdAt' | 'updatedAt'>[]): Promise<Invoice> {
     const supabaseInvoice = await mapInvoiceToSupabaseInvoice(invoice);
     
+    
     const { data: invoiceData, error: invoiceError } = await supabase
       .from('invoices')
       .insert([supabaseInvoice])
@@ -585,11 +593,14 @@ export const invoiceService = {
     if (updatableInvoice.taxAmount !== undefined) updatedInvoiceFields.tax_amount = updatableInvoice.taxAmount;
     if (updatableInvoice.discount !== undefined) updatedInvoiceFields.discount = updatableInvoice.discount;
     if (updatableInvoice.additionalCharges !== undefined) updatedInvoiceFields.additional_charges = updatableInvoice.additionalCharges;
+    if (updatableInvoice.additionalChargesList !== undefined) updatedInvoiceFields.additional_charges_list = updatableInvoice.additionalChargesList;
+    if (updatableInvoice.additionalChargesTotal !== undefined) updatedInvoiceFields.additional_charges_total = updatableInvoice.additionalChargesTotal;
     if (updatableInvoice.total) updatedInvoiceFields.total = updatableInvoice.total;
     if (updatableInvoice.status) updatedInvoiceFields.status = updatableInvoice.status;
     if (updatableInvoice.notes !== undefined) updatedInvoiceFields.notes = updatableInvoice.notes;
     if (updatableInvoice.terms !== undefined) updatedInvoiceFields.terms = updatableInvoice.terms;
     if (updatableInvoice.currency) updatedInvoiceFields.currency = updatableInvoice.currency;
+    if (updatableInvoice.templateName !== undefined) updatedInvoiceFields.template_name = updatableInvoice.templateName;
     if (updatableInvoice.public_viewed_at !== undefined) updatedInvoiceFields.public_viewed_at = updatableInvoice.public_viewed_at;
     
     const { data, error } = await supabase
@@ -1761,6 +1772,193 @@ export const publicInvoiceService = {
     } catch (error) {
       console.error('Error in getPublicInvoice:', error);
       return null;
+    }
+  }
+};
+
+// Helper functions for shared invoices
+const mapSupabaseSharedInvoiceToSharedInvoice = (sharedInvoice: SupabaseSharedInvoice): SharedInvoice => ({
+  id: sharedInvoice.id,
+  originalInvoiceId: sharedInvoice.original_invoice_id,
+  invoiceData: sharedInvoice.invoice_data,
+  templateData: sharedInvoice.template_data,
+  shareToken: sharedInvoice.share_token,
+  createdAt: sharedInvoice.created_at,
+  expiresAt: sharedInvoice.expires_at,
+  accessCount: sharedInvoice.access_count,
+  isActive: sharedInvoice.is_active,
+  createdBy: sharedInvoice.created_by,
+});
+
+export const sharedInvoiceService = {
+  async createSharedInvoice(
+    invoiceId: string, 
+    templateName: InvoiceTemplateName,
+    expiresAt?: string
+  ): Promise<SharedInvoice> {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user?.id) {
+      throw new Error('No authenticated user');
+    }
+
+    // Get the invoice data with all related information
+    const { data: invoiceData, error: invoiceError } = await supabase
+      .from('invoices')
+      .select(`
+        *,
+        customers(*),
+        line_items(*)
+      `)
+      .eq('id', invoiceId)
+      .eq('user_id', user.id)
+      .single();
+
+    if (invoiceError || !invoiceData) {
+      throw new Error('Invoice not found or access denied');
+    }
+
+    // Get business profile
+    const { data: businessProfileData, error: businessProfileError } = await supabase
+      .from('business_profiles')
+      .select('*')
+      .eq('user_id', user.id)
+      .single();
+
+    if (businessProfileError || !businessProfileData) {
+      throw new Error('Business profile not found');
+    }
+
+    // Prepare the invoice data snapshot
+    const invoice = mapSupabaseInvoiceToInvoice(invoiceData, invoiceData.line_items || []);
+    const businessProfile = mapSupabaseBusinessProfileToBusinessProfile(businessProfileData);
+
+    // Create shared invoice record
+    const { data, error } = await supabase
+      .from('shared_invoices')
+      .insert([{
+        original_invoice_id: invoiceId,
+        invoice_data: invoice,
+        template_data: {
+          templateName,
+          businessProfile
+        },
+        expires_at: expiresAt || null,
+        created_by: user.id
+      }])
+      .select()
+      .single();
+
+    if (error) {
+      console.error('Error creating shared invoice:', error);
+      throw error;
+    }
+
+    return mapSupabaseSharedInvoiceToSharedInvoice(data);
+  },
+
+  async getSharedInvoiceByToken(shareToken: string): Promise<{ 
+    invoiceData: Invoice; 
+    templateData: { templateName: string; businessProfile: BusinessProfile }; 
+  } | null> {
+    try {
+      // This needs to be a public function call since it's accessed anonymously
+      const { data, error } = await supabase.rpc('get_shared_invoice_by_token', {
+        token: shareToken
+      });
+
+      if (error) {
+        console.error('Error fetching shared invoice by token:', error);
+        return null;
+      }
+
+      // RPC functions return arrays, so we get the first result
+      const sharedInvoice = data && data.length > 0 ? data[0] : null;
+
+      if (!sharedInvoice || !sharedInvoice.is_active) {
+        return null;
+      }
+
+      // Check expiration
+      if (sharedInvoice.expires_at && new Date(sharedInvoice.expires_at) < new Date()) {
+        return null;
+      }
+
+      // Increment access count
+      await supabase.rpc('increment_shared_invoice_access', {
+        token: shareToken
+      });
+
+      return {
+        invoiceData: sharedInvoice.invoice_data,
+        templateData: sharedInvoice.template_data
+      };
+    } catch (error) {
+      console.error('Error in getSharedInvoiceByToken:', error);
+      return null;
+    }
+  },
+
+  async getSharedInvoices(): Promise<SharedInvoice[]> {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user?.id) {
+      return [];
+    }
+
+    const { data, error } = await supabase
+      .from('shared_invoices')
+      .select('*')
+      .eq('created_by', user.id)
+      .order('created_at', { ascending: false });
+
+    if (error) {
+      console.error('Error fetching shared invoices:', error);
+      throw error;
+    }
+
+    return data.map(mapSupabaseSharedInvoiceToSharedInvoice);
+  },
+
+  async updateSharedInvoice(id: string, updates: { isActive?: boolean; expiresAt?: string | null }): Promise<SharedInvoice> {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user?.id) {
+      throw new Error('No authenticated user');
+    }
+
+    const updateData: any = {};
+    if (updates.isActive !== undefined) updateData.is_active = updates.isActive;
+    if (updates.expiresAt !== undefined) updateData.expires_at = updates.expiresAt;
+
+    const { data, error } = await supabase
+      .from('shared_invoices')
+      .update(updateData)
+      .eq('id', id)
+      .eq('created_by', user.id)
+      .select()
+      .single();
+
+    if (error) {
+      console.error('Error updating shared invoice:', error);
+      throw error;
+    }
+
+    return mapSupabaseSharedInvoiceToSharedInvoice(data);
+  },
+
+  async deleteSharedInvoice(id: string): Promise<void> {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user?.id) {
+      throw new Error('No authenticated user');
+    }
+
+    const { error } = await supabase
+      .from('shared_invoices')
+      .delete()
+      .eq('id', id)
+      .eq('created_by', user.id);
+
+    if (error) {
+      console.error('Error deleting shared invoice:', error);
+      throw error;
     }
   }
 };

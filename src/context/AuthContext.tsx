@@ -8,7 +8,7 @@ import { businessProfileService } from '../services/supabaseService';
 interface AuthContextType {
   user: User | null;
   session: Session | null;
-  signUp: (email: string, password: string, fullName?: string) => Promise<{ error: any }>;
+  signUp: (email: string, password: string, fullName?: string) => Promise<{ error: any; data?: any; needsEmailConfirmation?: boolean }>;
   signIn: (email: string, password: string) => Promise<{ error: any }>;
   signOut: () => Promise<void>;
   loading: boolean;
@@ -106,7 +106,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       }
     });
     setLoading(false);
-    return { error };
+    
+    // Return additional info about the sign-up result
+    return { 
+      error, 
+      data,
+      needsEmailConfirmation: !error && !data.session && data.user && !data.user.email_confirmed_at
+    };
   };
 
   const signIn = async (email: string, password: string) => {

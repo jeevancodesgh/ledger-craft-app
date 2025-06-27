@@ -1,0 +1,66 @@
+# Page snapshot
+
+```yaml
+- button "Toggle theme":
+  - img
+  - img
+  - text: Toggle theme
+- img "LedgerCraft"
+- heading "LedgerCraft" [level=1]
+- paragraph: Professional Business Solutions
+- heading "Streamline Your Business Operations" [level=2]
+- paragraph: Create professional invoices, manage customers, and track expenses with our modern, intuitive platform.
+- heading "Why choose LedgerCraft?" [level=3]
+- img
+- heading "Professional Invoicing" [level=4]
+- paragraph: Create stunning invoices in minutes
+- img
+- heading "Client Management" [level=4]
+- paragraph: Keep track of all your customers
+- img
+- heading "Secure & Reliable" [level=4]
+- paragraph: Bank-level security for your data
+- img
+- heading "Lightning Fast" [level=4]
+- paragraph: Optimized for speed and performance
+- img
+- paragraph: "\"LedgerCraft transformed how we handle invoicing. It's simply amazing!\""
+- text: Sarah Chen Freelance Designer
+- img
+- paragraph: "\"The most intuitive invoicing app I've ever used. Highly recommended!\""
+- text: Michael Rodriguez Small Business Owner
+- heading "Welcome back" [level=2]
+- paragraph: Sign in to your account to continue
+- text: Email address
+- img
+- textbox "Email address": test+1750990143869@example.com
+- text: Password
+- img
+- textbox "Password"
+- button "Show password":
+  - img
+- checkbox "Remember me"
+- text: Remember me
+- link "Forgot password?":
+  - /url: /forgot-password
+- button "Sign in" [disabled]:
+  - text: Sign in
+  - img
+- text: Or continue with
+- button "Google":
+  - img
+  - text: Google
+- button "GitHub":
+  - img
+  - text: GitHub
+- text: Don't have an account?
+- link "Sign up for free":
+  - /url: /signup
+- region "Notifications (F8)":
+  - list:
+    - status:
+      - text: Account Created Account created! Please check your email to confirm your account. If you need help with confirmation, visit the confirmation page.
+      - button:
+        - img
+- status: Notification Account CreatedAccount created! Please check your email to confirm your account. If you need help with confirmation, visit the confirmation page.
+```

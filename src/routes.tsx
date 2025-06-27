@@ -26,11 +26,13 @@ const ModernLogin = lazy(() => import("@/pages/ModernLogin"));
 const ModernSignup = lazy(() => import("@/pages/ModernSignup"));
 const InvoiceViewPage = lazy(() => import("@/pages/InvoiceViewPage"));
 const PublicInvoice = lazy(() => import("@/pages/PublicInvoice"));
+const SharedInvoice = lazy(() => import("@/pages/SharedInvoice"));
 const AccountsPage = lazy(() => import("@/pages/Accounts"));
 const Categories = lazy(() => import("@/pages/Categories"));
 const Expenses = lazy(() => import("@/pages/Expenses"));
 const ExpenseCategories = lazy(() => import("@/pages/ExpenseCategories"));
 const Onboarding = lazy(() => import("@/pages/Onboarding"));
+const EmailConfirmation = lazy(() => import("@/pages/EmailConfirmation"));
 // Loading component
 const LoadingScreen = () => (
   <div className="flex h-screen w-screen items-center justify-center">
@@ -83,6 +85,10 @@ const appRoutes: RouteObject[] = [
         element: <SuspenseWrapper><Signup /></SuspenseWrapper>,
       },
       {
+        path: "/confirm-email",
+        element: <SuspenseWrapper><EmailConfirmation /></SuspenseWrapper>,
+      },
+      {
         path: "/onboarding",
         element: (
           <ProtectedRoute requireOnboarding={false}>
@@ -119,6 +125,10 @@ const appRoutes: RouteObject[] = [
       {
         path: "/public/invoice/:invoiceId",
         element: <SuspenseWrapper><PublicInvoice /></SuspenseWrapper>,
+      },
+      {
+        path: "/shared/invoice/:shareToken",
+        element: <SuspenseWrapper><SharedInvoice /></SuspenseWrapper>,
       },
       {
         path: "*",

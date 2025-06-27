@@ -1,0 +1,51 @@
+# Page snapshot
+
+```yaml
+- button "Toggle theme":
+  - img
+  - img
+  - text: Toggle theme
+- heading "Welcome to Ledger Craft" [level=1]
+- paragraph: Let's set up your business profile to get you started
+- text: 1 Business Info Basic business details 2 Invoice Setup Configure invoicing 3 Branding Customize appearance 4 Complete Ready to go!
+- heading "Tell us about your business" [level=2]
+- paragraph: We need some basic information to get you started
+- img
+- paragraph: Tell us about your business so we can customize your invoice templates and settings.
+- text: Business Name *
+- img
+- textbox "Business Name *"
+- text: Business Email *
+- img
+- textbox "Business Email *": test+1750990143869@example.com
+- paragraph: This will appear on your invoices and be used for notifications.
+- text: Country *
+- img
+- combobox "Country *":
+  - option "Select your country"
+  - option "New Zealand" [selected]
+  - option "Australia"
+  - option "United States"
+  - option "United Kingdom"
+  - option "Canada"
+  - option "Germany"
+  - option "France"
+  - option "Japan"
+  - option "Singapore"
+  - option "India"
+  - option "Other"
+- img
+- heading "Why do we need this information?" [level=3]
+- list:
+  - listitem: Your business name and email will appear on all invoices
+  - listitem: Country helps us set appropriate tax and currency defaults
+  - listitem: This ensures your invoices look professional from day one
+- button "Continue" [disabled]
+- paragraph: You can always update these settings later in your business profile.
+- region "Notifications (F8)":
+  - list:
+    - status:
+      - text: Account Created! Welcome to LedgerCraft! Let's set up your business profile.
+      - button:
+        - img
+```

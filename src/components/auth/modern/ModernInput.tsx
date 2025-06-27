@@ -1,4 +1,4 @@
-import React, { useState, forwardRef } from 'react';
+import React, { useState, forwardRef, useId, useEffect } from 'react';
 import { Eye, EyeOff, LucideIcon } from 'lucide-react';
 import { cn } from '../../../lib/utils';
 
@@ -9,6 +9,7 @@ interface ModernInputProps extends React.InputHTMLAttributes<HTMLInputElement> {
   success?: boolean;
   showPasswordToggle?: boolean;
   helpText?: string;
+  placeholder?: string;
 }
 
 const ModernInput = forwardRef<HTMLInputElement, ModernInputProps>(
@@ -20,12 +21,14 @@ const ModernInput = forwardRef<HTMLInputElement, ModernInputProps>(
     showPasswordToggle, 
     helpText, 
     type, 
-    className, 
+    className,
+    placeholder,
     ...props 
   }, ref) => {
     const [showPassword, setShowPassword] = useState(false);
     const [isFocused, setIsFocused] = useState(false);
     const [hasValue, setHasValue] = useState(false);
+    const inputId = useId();
 
     const inputType = showPasswordToggle ? (showPassword ? 'text' : 'password') : type;
     const hasError = !!error;
@@ -36,11 +39,17 @@ const ModernInput = forwardRef<HTMLInputElement, ModernInputProps>(
       props.onChange?.(e);
     };
 
+    // Check for initial value or value changes from props
+    useEffect(() => {
+      setHasValue((props.value?.toString() || props.defaultValue?.toString() || '').length > 0);
+    }, [props.value, props.defaultValue]);
+
     return (
       <div className="space-y-2">
         <div className="relative">
           {/* Floating Label */}
           <label
+            htmlFor={inputId}
             className={cn(
               "absolute left-3 transition-all duration-300 ease-out pointer-events-none",
               "transform-gpu", // Hardware acceleration
@@ -68,10 +77,12 @@ const ModernInput = forwardRef<HTMLInputElement, ModernInputProps>(
           {/* Input Field */}
           <input
             ref={ref}
+            id={inputId}
             type={inputType}
+            placeholder={!isFocused && !hasValue ? placeholder : ''}
             className={cn(
               "w-full px-3 pt-6 pb-2 border rounded-lg transition-all duration-300 ease-out",
-              "bg-background text-foreground placeholder:text-transparent",
+              "bg-background text-foreground placeholder:text-muted-foreground",
               "focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary",
               "hover:border-primary/50 hover:shadow-sm",
               "transform-gpu", // Hardware acceleration
@@ -82,8 +93,15 @@ const ModernInput = forwardRef<HTMLInputElement, ModernInputProps>(
               hasSuccess && "border-green-500 focus:border-green-500 focus:ring-green-500/20",
               className
             )}
-            onFocus={() => setIsFocused(true)}
-            onBlur={() => setIsFocused(false)}
+            onFocus={(e) => {
+              setIsFocused(true);
+              props.onFocus?.(e);
+            }}
+            onBlur={(e) => {
+              setIsFocused(false);
+              setHasValue(e.target.value.length > 0);
+              props.onBlur?.(e);
+            }}
             onChange={handleInputChange}
             {...props}
           />

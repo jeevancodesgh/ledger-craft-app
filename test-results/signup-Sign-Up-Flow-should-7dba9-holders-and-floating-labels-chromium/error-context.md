@@ -1,0 +1,75 @@
+# Page snapshot
+
+```yaml
+- button "Toggle theme":
+  - img
+  - img
+  - text: Toggle theme
+- img "LedgerCraft"
+- heading "LedgerCraft" [level=1]
+- paragraph: Professional Business Solutions
+- heading "Streamline Your Business Operations" [level=2]
+- paragraph: Create professional invoices, manage customers, and track expenses with our modern, intuitive platform.
+- heading "Why choose LedgerCraft?" [level=3]
+- img
+- heading "Professional Invoicing" [level=4]
+- paragraph: Create stunning invoices in minutes
+- img
+- heading "Client Management" [level=4]
+- paragraph: Keep track of all your customers
+- img
+- heading "Secure & Reliable" [level=4]
+- paragraph: Bank-level security for your data
+- img
+- heading "Lightning Fast" [level=4]
+- paragraph: Optimized for speed and performance
+- img
+- paragraph: "\"LedgerCraft transformed how we handle invoicing. It's simply amazing!\""
+- text: Sarah Chen Freelance Designer
+- img
+- paragraph: "\"The most intuitive invoicing app I've ever used. Highly recommended!\""
+- text: Michael Rodriguez Small Business Owner
+- heading "Create your account" [level=2]
+- paragraph: Join thousands of professionals using LedgerCraft
+- text: Full name
+- img
+- textbox "Full name"
+- text: Email address
+- img
+- textbox "Email address"
+- text: Password
+- img
+- textbox "Password"
+- button "Show password":
+  - img
+- text: Confirm password
+- img
+- textbox "Confirm password"
+- button "Show password":
+  - img
+- checkbox "I agree to the Terms of Service and Privacy Policy"
+- text: I agree to the
+- link "Terms of Service":
+  - /url: /terms
+- text: and
+- link "Privacy Policy":
+  - /url: /privacy
+- img
+- heading "Your data is secure" [level=4]
+- paragraph: We use bank-level encryption to protect your information and never store your password in plain text.
+- button "Create account" [disabled]:
+  - text: Create account
+  - img
+- text: Or continue with
+- button "Google":
+  - img
+  - text: Google
+- button "GitHub":
+  - img
+  - text: GitHub
+- text: Already have an account?
+- link "Sign in instead":
+  - /url: /login
+- region "Notifications (F8)":
+  - list
+```

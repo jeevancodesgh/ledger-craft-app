@@ -46,7 +46,8 @@ const EditInvoicePage = () => {
     subtotal: number,
     taxAmount: number,
     additionalCharges: number,
-    discount: number
+    discount: number,
+    additionalChargesList?: any[]
   ) => {
     if (!invoice) return;
     try {
@@ -60,7 +61,9 @@ const EditInvoicePage = () => {
         taxAmount,
         total,
         additionalCharges,
-        discount
+        discount,
+        additionalChargesList,
+        templateName: values.templateName, // Save selected template
       });
       navigate("/invoices");
     } catch (e: any) {

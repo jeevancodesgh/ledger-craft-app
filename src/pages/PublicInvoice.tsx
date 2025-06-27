@@ -125,7 +125,11 @@ const PublicInvoice = () => {
 
       {/* Invoice preview */}
       <div ref={invoiceRef} className="bg-white rounded-lg shadow-sm border">
-        <InvoicePreview invoice={invoice} selectedTemplate="classic" businessProfile={businessProfile} />
+        <InvoicePreview 
+          invoice={invoice} 
+          selectedTemplate={(invoice.templateName as any) || "classic"} 
+          businessProfile={businessProfile} 
+        />
       </div>
     </div>
   );

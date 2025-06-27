@@ -123,3 +123,4 @@ npm run type-check
 
 ## MCP Server
 - User supabase MCP server for supabase communication
+- Use Playwright MCP server for Testing

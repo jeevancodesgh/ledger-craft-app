@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -28,11 +28,31 @@ const ModernLogin = () => {
   const {
     register,
     handleSubmit,
+    setValue,
     formState: { errors, isValid }
   } = useForm<LoginFormValues>({
     resolver: zodResolver(loginSchema),
     mode: 'onChange'
   });
+
+  // Handle signup confirmation message
+  useEffect(() => {
+    const state = location.state as { message?: string; email?: string };
+    if (state?.message) {
+      toast({
+        title: 'Account Created',
+        description: state.message,
+      });
+      
+      // Pre-fill email if provided
+      if (state.email) {
+        setValue('email', state.email);
+      }
+      
+      // Clear the state to prevent showing the message again
+      navigate(location.pathname, { replace: true, state: {} });
+    }
+  }, [location.state, toast, navigate, setValue]);
 
   const onSubmit = async (values: LoginFormValues) => {
     setIsLoading(true);

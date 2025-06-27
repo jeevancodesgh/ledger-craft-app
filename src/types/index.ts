@@ -186,6 +186,7 @@ export interface Invoice {
   notes?: string | null;
   terms?: string | null;
   currency: string;
+  templateName?: string; // Template used for this invoice
   userId?: string; // Added for Supabase compatibility
   createdAt?: string;
   updatedAt?: string;
@@ -227,6 +228,7 @@ export interface SupabaseInvoice {
   notes: string | null;
   terms: string | null;
   currency: string;
+  template_name: string | null;
   user_id: string;
   created_at: string;
   updated_at: string;
@@ -451,4 +453,50 @@ export interface OnboardingStepProps {
   onNext: () => void;
   onBack?: () => void;
   isLoading?: boolean;
+}
+
+// Shared Invoice types for anonymous sharing feature
+export interface SharedInvoice {
+  id: string;
+  originalInvoiceId: string;
+  invoiceData: Invoice; // Complete invoice data snapshot
+  templateData: {
+    templateName: string;
+    businessProfile: BusinessProfile;
+  };
+  shareToken: string;
+  createdAt: string;
+  expiresAt?: string | null;
+  accessCount: number;
+  isActive: boolean;
+  createdBy: string;
+}
+
+export interface SupabaseSharedInvoice {
+  id: string;
+  original_invoice_id: string;
+  invoice_data: any; // JSONB data
+  template_data: any; // JSONB data
+  share_token: string;
+  created_at: string;
+  expires_at: string | null;
+  access_count: number;
+  is_active: boolean;
+  created_by: string;
+}
+
+// Template types
+export type InvoiceTemplateName = 
+  | 'classic' 
+  | 'modern' 
+  | 'minimal' 
+  | 'executive' 
+  | 'corporate' 
+  | 'modernPro';
+
+export interface InvoiceTemplateConfig {
+  name: InvoiceTemplateName;
+  displayName: string;
+  description: string;
+  preview?: string; // Preview image URL
 }
