@@ -89,43 +89,172 @@ const EmailInvoiceTemplate: React.FC<{
   );
 };
 
+// Create email-compatible HTML for invoice
+export const createEmailCompatibleInvoiceHtml = (
+  invoice: Invoice,
+  businessProfile?: BusinessProfile | null
+): string => {
+  const templateData = createTemplateData(invoice, businessProfile);
+  
+  return `
+    <table width="100%" cellpadding="0" cellspacing="0" style="max-width: 600px; margin: 0 auto; font-family: Arial, sans-serif; background-color: #ffffff;">
+      <!-- Header -->
+      <tr>
+        <td style="background: linear-gradient(135deg, #059669 0%, #10b981 100%); padding: 30px 20px; color: white;">
+          <table width="100%" cellpadding="0" cellspacing="0">
+            <tr>
+              <td>
+                ${businessProfile?.logoUrl ? `<img src="${businessProfile.logoUrl}" alt="${templateData.companyName}" style="height: 40px; margin-bottom: 10px;">` : ''}
+                <h1 style="margin: 0; font-size: 32px; font-weight: bold;">INVOICE</h1>
+                <p style="margin: 5px 0 0 0; font-size: 18px; opacity: 0.9;">#${invoice.invoiceNumber}</p>
+              </td>
+              <td style="text-align: right; vertical-align: top;">
+                <p style="margin: 0; font-size: 14px; opacity: 0.9;">${templateData.companyName}</p>
+              </td>
+            </tr>
+          </table>
+        </td>
+      </tr>
+      
+      <!-- Company and Customer Info -->
+      <tr>
+        <td style="padding: 30px 20px;">
+          <table width="100%" cellpadding="0" cellspacing="0">
+            <tr>
+              <td width="50%" style="vertical-align: top;">
+                <h3 style="margin: 0 0 10px 0; color: #374151; font-size: 16px;">From</h3>
+                <p style="margin: 0; color: #111827; font-weight: bold; font-size: 16px;">${templateData.companyName}</p>
+                ${templateData.companyAddress ? `<p style="margin: 5px 0; color: #6b7280; font-size: 14px;">${templateData.companyAddress}</p>` : ''}
+                ${templateData.companyPhone ? `<p style="margin: 5px 0; color: #6b7280; font-size: 14px;">${templateData.companyPhone}</p>` : ''}
+              </td>
+              <td width="50%" style="vertical-align: top;">
+                <h3 style="margin: 0 0 10px 0; color: #374151; font-size: 16px;">To</h3>
+                <p style="margin: 0; color: #111827; font-weight: bold; font-size: 16px;">${templateData.clientName}</p>
+                ${templateData.clientAddress ? `<p style="margin: 5px 0; color: #6b7280; font-size: 14px;">${templateData.clientAddress}</p>` : ''}
+                ${invoice.customer?.email ? `<p style="margin: 5px 0; color: #059669; font-size: 14px;"><a href="mailto:${invoice.customer.email}" style="color: #059669; text-decoration: none;">${invoice.customer.email}</a></p>` : ''}
+              </td>
+            </tr>
+          </table>
+        </td>
+      </tr>
+      
+      <!-- Invoice Details -->
+      <tr>
+        <td style="padding: 0 20px 30px 20px;">
+          <table width="100%" cellpadding="0" cellspacing="0">
+            <tr>
+              <td width="33%" style="vertical-align: top;">
+                <h4 style="margin: 0 0 5px 0; color: #6b7280; font-size: 14px;">Invoice Number</h4>
+                <p style="margin: 0; color: #111827; font-weight: bold;">${invoice.invoiceNumber}</p>
+              </td>
+              <td width="33%" style="vertical-align: top;">
+                <h4 style="margin: 0 0 5px 0; color: #6b7280; font-size: 14px;">Invoice Date</h4>
+                <p style="margin: 0; color: #111827; font-weight: bold;">${new Date(invoice.date).toLocaleDateString()}</p>
+              </td>
+              <td width="33%" style="vertical-align: top;">
+                <h4 style="margin: 0 0 5px 0; color: #6b7280; font-size: 14px;">Due Date</h4>
+                <p style="margin: 0; color: #111827; font-weight: bold;">${new Date(invoice.dueDate).toLocaleDateString()}</p>
+              </td>
+            </tr>
+          </table>
+        </td>
+      </tr>
+      
+      <!-- Line Items -->
+      <tr>
+        <td style="padding: 0 20px;">
+          <table width="100%" cellpadding="12" cellspacing="0" style="border-collapse: collapse;">
+            <!-- Header -->
+            <tr style="background-color: #059669;">
+              <th style="color: white; text-align: left; padding: 15px 12px; font-size: 14px; font-weight: bold;">Item</th>
+              <th style="color: white; text-align: center; padding: 15px 12px; font-size: 14px; font-weight: bold;">Qty</th>
+              <th style="color: white; text-align: right; padding: 15px 12px; font-size: 14px; font-weight: bold;">Rate</th>
+              <th style="color: white; text-align: right; padding: 15px 12px; font-size: 14px; font-weight: bold;">Amount</th>
+            </tr>
+            <!-- Items -->
+            ${invoice.items.map((item, index) => `
+              <tr style="background-color: ${index % 2 === 0 ? '#f8fafc' : '#ffffff'};">
+                <td style="padding: 12px; border-bottom: 1px solid #e5e7eb; color: #111827;">${item.description}</td>
+                <td style="padding: 12px; border-bottom: 1px solid #e5e7eb; text-align: center; color: #111827;">${item.quantity}</td>
+                <td style="padding: 12px; border-bottom: 1px solid #e5e7eb; text-align: right; color: #111827;">${invoice.currency}${item.rate.toFixed(2)}</td>
+                <td style="padding: 12px; border-bottom: 1px solid #e5e7eb; text-align: right; color: #111827; font-weight: bold;">${invoice.currency}${item.total.toFixed(2)}</td>
+              </tr>
+            `).join('')}
+          </table>
+        </td>
+      </tr>
+      
+      <!-- Totals -->
+      <tr>
+        <td style="padding: 30px 20px;">
+          <table width="100%" cellpadding="0" cellspacing="0">
+            <tr>
+              <td width="60%"></td>
+              <td width="40%">
+                <table width="100%" cellpadding="5" cellspacing="0">
+                  <tr>
+                    <td style="padding: 8px 0; color: #6b7280; font-size: 14px;">Subtotal:</td>
+                    <td style="padding: 8px 0; text-align: right; color: #111827; font-weight: bold;">${invoice.currency}${invoice.subtotal.toFixed(2)}</td>
+                  </tr>
+                  ${invoice.taxAmount > 0 ? `
+                    <tr>
+                      <td style="padding: 8px 0; color: #6b7280; font-size: 14px;">Tax (${templateData.taxRate}%):</td>
+                      <td style="padding: 8px 0; text-align: right; color: #111827; font-weight: bold;">${invoice.currency}${invoice.taxAmount.toFixed(2)}</td>
+                    </tr>
+                  ` : ''}
+                  ${invoice.discount > 0 ? `
+                    <tr>
+                      <td style="padding: 8px 0; color: #6b7280; font-size: 14px;">Discount:</td>
+                      <td style="padding: 8px 0; text-align: right; color: #dc2626; font-weight: bold;">-${invoice.currency}${invoice.discount.toFixed(2)}</td>
+                    </tr>
+                  ` : ''}
+                  ${invoice.additionalChargesTotal > 0 ? `
+                    <tr>
+                      <td style="padding: 8px 0; color: #6b7280; font-size: 14px;">Additional Charges:</td>
+                      <td style="padding: 8px 0; text-align: right; color: #111827; font-weight: bold;">${invoice.currency}${invoice.additionalChargesTotal.toFixed(2)}</td>
+                    </tr>
+                  ` : ''}
+                  <tr style="border-top: 2px solid #059669;">
+                    <td style="padding: 15px 0 8px 0; color: #059669; font-size: 18px; font-weight: bold;">Total:</td>
+                    <td style="padding: 15px 0 8px 0; text-align: right; color: #059669; font-size: 18px; font-weight: bold;">${invoice.currency}${invoice.total.toFixed(2)}</td>
+                  </tr>
+                </table>
+              </td>
+            </tr>
+          </table>
+        </td>
+      </tr>
+      
+      <!-- Notes -->
+      ${invoice.notes ? `
+        <tr>
+          <td style="padding: 30px 20px; background-color: #f8fafc;">
+            <h4 style="margin: 0 0 10px 0; color: #374151; font-size: 16px;">Notes</h4>
+            <p style="margin: 0; color: #6b7280; font-size: 14px; line-height: 1.5;">${invoice.notes}</p>
+          </td>
+        </tr>
+      ` : ''}
+      
+      <!-- Terms -->
+      ${invoice.terms ? `
+        <tr>
+          <td style="padding: 30px 20px; background-color: #f8fafc;">
+            <h4 style="margin: 0 0 10px 0; color: #374151; font-size: 16px;">Terms & Conditions</h4>
+            <p style="margin: 0; color: #6b7280; font-size: 14px; line-height: 1.5;">${invoice.terms}</p>
+          </td>
+        </tr>
+      ` : ''}
+    </table>
+  `;
+};
+
 export const renderTemplateToHtml = async (
   invoice: Invoice,
   selectedTemplate: InvoiceTemplateId,
   businessProfile?: BusinessProfile | null
 ): Promise<string> => {
-  return new Promise((resolve) => {
-    // Create a temporary container
-    const tempContainer = document.createElement('div');
-    tempContainer.style.position = 'absolute';
-    tempContainer.style.top = '-9999px';
-    tempContainer.style.left = '-9999px';
-    tempContainer.style.width = '794px'; // A4 width
-    document.body.appendChild(tempContainer);
-
-    // Create template data
-    const templateData = createTemplateData(invoice, businessProfile);
-
-    // Create root and render component
-    const root = createRoot(tempContainer);
-    root.render(
-      <EmailInvoiceTemplate 
-        selectedTemplate={selectedTemplate} 
-        templateData={templateData} 
-      />
-    );
-
-    // Wait for render to complete
-    setTimeout(() => {
-      const html = tempContainer.innerHTML;
-      
-      // Cleanup
-      root.unmount();
-      document.body.removeChild(tempContainer);
-      
-      resolve(html);
-    }, 100);
-  });
+  // For email, use the email-compatible version
+  return createEmailCompatibleInvoiceHtml(invoice, businessProfile);
 };
 
 export const createTemplateElement = (

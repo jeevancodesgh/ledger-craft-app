@@ -214,17 +214,7 @@ const ShareInvoiceModal: React.FC<ShareInvoiceModalProps> = ({
         customerName: invoice.customer?.name || 'Customer',
         total: invoice.total,
         currency: invoice.currency,
-        invoiceHtml: `
-          <div style="max-width: 600px; margin: 0 auto; font-family: Arial, sans-serif;">
-            ${invoiceHtml}
-            <div style="margin-top: 20px; padding: 15px; background-color: #f8f9fa; border-radius: 5px; text-align: center;">
-              <p style="margin: 0; color: #666;">
-                <strong>View this invoice online:</strong><br/>
-                <a href="${url}" style="color: #007bff;">${url}</a>
-              </p>
-            </div>
-          </div>
-        `,
+        invoiceHtml: invoiceHtml,
         pdfBuffer
       });
 
