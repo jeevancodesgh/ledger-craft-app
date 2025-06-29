@@ -78,7 +78,7 @@ const CreateInvoice = () => {
     if (newlyAddedCustomer) {
       form.setValue('customerId', newlyAddedCustomer.id);
     }
-  }, [newlyAddedCustomer, form]);
+  }, [newlyAddedCustomer]);
 
   // Update form values when business profile loads
   useEffect(() => {
@@ -87,7 +87,7 @@ const CreateInvoice = () => {
       form.setValue('terms', businessProfile.defaultTerms || "");
       form.setValue('currency', businessProfile.currency || "USD");
     }
-  }, [businessProfile, form]);
+  }, [businessProfile]);
 
   const handleSubmit = async (
     values: any,

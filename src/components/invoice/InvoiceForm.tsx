@@ -297,14 +297,14 @@ const InvoiceForm: React.FC<InvoiceFormProps> = ({
     if (newlyAddedCustomer) {
       form.setValue('customerId', newlyAddedCustomer.id);
     }
-  }, [newlyAddedCustomer, form]);
+  }, [newlyAddedCustomer]);
 
 
   useEffect(() => {
     if (generatedInvoiceNumber && !initialValues?.invoiceNumber) {
       form.setValue('invoiceNumber', generatedInvoiceNumber);
     }
-  }, [generatedInvoiceNumber, initialValues?.invoiceNumber, form]);
+  }, [generatedInvoiceNumber, initialValues?.invoiceNumber]);
 
   // Update form values when business profile loads (for create mode)
   useEffect(() => {
@@ -323,11 +323,8 @@ const InvoiceForm: React.FC<InvoiceFormProps> = ({
         form.setValue('currency', businessProfile.currency);
       }
     }
-  }, [businessProfile, mode, initialValues, form]);
+  }, [businessProfile, mode, initialValues]);
 
-  const handleInvoiceNumberChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    form.setValue('invoiceNumber', e.target.value, { shouldDirty: true });
-  };
 
   useEffect(() => {
     if (!isTaxEnabled) setTaxRate(0);
@@ -806,8 +803,6 @@ const InvoiceForm: React.FC<InvoiceFormProps> = ({
                             <FormControl>
                               <Input
                                 {...field}
-                                value={form.watch('invoiceNumber')}
-                                onChange={handleInvoiceNumberChange}
                                 placeholder="Invoice Number"
                                 className="w-full"
                                 autoComplete="off"
