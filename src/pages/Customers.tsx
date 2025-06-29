@@ -1,7 +1,7 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { Card, CardContent, CardFooter, CardHeader } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Plus, Star, Pencil, Trash, Mail, Phone, MapPin, ChevronRight } from 'lucide-react';
+import { Plus, Star, Pencil, Trash, Mail, Phone, MapPin, ChevronRight, Filter, X, Search, ChevronDown, RefreshCw, Loader2 } from 'lucide-react';
 import { customerService } from '@/services/supabaseService';
 import { Customer } from '@/types';
 import { useToast } from '@/hooks/use-toast';
@@ -16,6 +16,15 @@ import {
 } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Badge } from '@/components/ui/badge';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
+import {
+  Select,
+  SelectTrigger,
+  SelectContent,
+  SelectItem,
+  SelectValue
+} from '@/components/ui/select';
 import {
   Form,
   FormControl,
@@ -30,6 +39,28 @@ import * as z from 'zod';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '@/components/ui/table';
 import CustomerFormDrawer from '@/components/customer/CustomerFormDrawer';
+
+const VIP_OPTIONS = [
+  { value: 'all', label: 'All Customers' },
+  { value: 'vip', label: 'VIP Only' },
+  { value: 'regular', label: 'Regular Only' },
+];
+
+const LOCATION_FILTERS = [
+  { value: 'all', label: 'All Locations' },
+  { value: 'with_location', label: 'With Location' },
+  { value: 'no_location', label: 'No Location' },
+];
+
+interface CustomerFilters {
+  search: string;
+  vipStatus: string;
+  location: string;
+  country: string;
+  tags: string;
+  sortBy: 'name' | 'email' | 'city' | 'createdAt';
+  sortOrder: 'asc' | 'desc';
+}
 
 const customerFormSchema = z.object({
   name: z.string().min(2, { message: 'Name must be at least 2 characters' }),
@@ -51,13 +82,50 @@ const Customers = () => {
   const [loading, setLoading] = useState(true);
   const [deleteCustomerId, setDeleteCustomerId] = useState<string | null>(null);
   const isMobile = useIsMobile();
+  const [filtersOpen, setFiltersOpen] = useState(false);
+  const [isRefreshing, setIsRefreshing] = useState(false);
 
   const [isCustomerDrawerOpen, setIsCustomerDrawerOpen] = useState(false);
   const [customerToEdit, setCustomerToEdit] = useState<Customer | null>(null);
+  const [filters, setFilters] = useState<CustomerFilters>({
+    search: '',
+    vipStatus: 'all',
+    location: 'all',
+    country: 'all',
+    tags: '',
+    sortBy: 'name',
+    sortOrder: 'asc',
+  });
 
   useEffect(() => {
     fetchCustomers();
   }, []);
+
+  // Auto-refresh when user returns to the tab/window
+  useEffect(() => {
+    const handleVisibilityChange = () => {
+      if (!document.hidden && !loading) {
+        fetchCustomers();
+      }
+    };
+
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    
+    return () => {
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+    };
+  }, [loading]);
+
+  // Periodic auto-refresh every 30 seconds when tab is active
+  useEffect(() => {
+    const interval = setInterval(() => {
+      if (!document.hidden && !loading && !isRefreshing) {
+        fetchCustomers();
+      }
+    }, 30000);
+
+    return () => clearInterval(interval);
+  }, [loading, isRefreshing]);
 
   const fetchCustomers = async () => {
     try {
@@ -73,6 +141,26 @@ const Customers = () => {
       });
     } finally {
       setLoading(false);
+    }
+  };
+
+  // Manual refresh function
+  const handleManualRefresh = async () => {
+    setIsRefreshing(true);
+    try {
+      await fetchCustomers();
+      toast({
+        title: "Refreshed",
+        description: "Customer list has been updated.",
+      });
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to refresh customers. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsRefreshing(false);
     }
   };
 
@@ -102,7 +190,7 @@ const Customers = () => {
 
       setIsCustomerDrawerOpen(false);
       setCustomerToEdit(null);
-      fetchCustomers();
+      await fetchCustomers();
     } catch (error) {
       console.error('Error creating customer:', error);
       toast({
@@ -138,7 +226,7 @@ const Customers = () => {
 
       setIsCustomerDrawerOpen(false);
       setCustomerToEdit(null);
-      fetchCustomers();
+      await fetchCustomers();
     } catch (error) {
       console.error('Error updating customer:', error);
       toast({
@@ -161,7 +249,7 @@ const Customers = () => {
       });
 
       setDeleteCustomerId(null);
-      fetchCustomers();
+      await fetchCustomers();
     } catch (error) {
       console.error('Error deleting customer:', error);
       toast({
@@ -192,6 +280,124 @@ const Customers = () => {
     }
   };
 
+  // Filter logic
+  const filteredAndSortedCustomers = useMemo(() => {
+    let filtered = customers.filter((customer) => {
+      // Search filter
+      if (filters.search) {
+        const searchTerm = filters.search.toLowerCase();
+        const matchesSearch = 
+          customer.name.toLowerCase().includes(searchTerm) ||
+          customer.email?.toLowerCase().includes(searchTerm) ||
+          customer.phone?.toLowerCase().includes(searchTerm) ||
+          customer.city?.toLowerCase().includes(searchTerm) ||
+          customer.state?.toLowerCase().includes(searchTerm) ||
+          customer.country?.toLowerCase().includes(searchTerm);
+        if (!matchesSearch) return false;
+      }
+
+      // VIP status filter
+      if (filters.vipStatus !== 'all') {
+        if (filters.vipStatus === 'vip' && !customer.isVip) return false;
+        if (filters.vipStatus === 'regular' && customer.isVip) return false;
+      }
+
+      // Location filter
+      if (filters.location !== 'all') {
+        const hasLocation = customer.city || customer.state;
+        if (filters.location === 'with_location' && !hasLocation) return false;
+        if (filters.location === 'no_location' && hasLocation) return false;
+      }
+
+      // Country filter
+      if (filters.country !== 'all') {
+        if (!customer.country?.toLowerCase().includes(filters.country.toLowerCase())) return false;
+      }
+
+      // Tags filter
+      if (filters.tags) {
+        const tagSearch = filters.tags.toLowerCase();
+        const hasTags = customer.tags?.some(tag => 
+          tag.toLowerCase().includes(tagSearch)
+        );
+        if (!hasTags) return false;
+      }
+
+      return true;
+    });
+
+    // Sort filtered results
+    filtered.sort((a, b) => {
+      let aValue: any, bValue: any;
+      
+      switch (filters.sortBy) {
+        case 'name':
+          aValue = a.name;
+          bValue = b.name;
+          break;
+        case 'email':
+          aValue = a.email || '';
+          bValue = b.email || '';
+          break;
+        case 'city':
+          aValue = a.city || '';
+          bValue = b.city || '';
+          break;
+        case 'createdAt':
+          aValue = new Date(a.createdAt || 0);
+          bValue = new Date(b.createdAt || 0);
+          break;
+        default:
+          aValue = a.name;
+          bValue = b.name;
+      }
+
+      if (filters.sortOrder === 'asc') {
+        return aValue > bValue ? 1 : -1;
+      } else {
+        return aValue < bValue ? 1 : -1;
+      }
+    });
+
+    return filtered;
+  }, [customers, filters]);
+
+  const updateFilter = (key: keyof CustomerFilters, value: any) => {
+    setFilters(prev => ({ ...prev, [key]: value }));
+  };
+
+  const clearFilters = () => {
+    setFilters({
+      search: '',
+      vipStatus: 'all',
+      location: 'all',
+      country: 'all',
+      tags: '',
+      sortBy: 'name',
+      sortOrder: 'asc',
+    });
+  };
+
+  const getActiveFiltersCount = () => {
+    let count = 0;
+    if (filters.search) count++;
+    if (filters.vipStatus !== 'all') count++;
+    if (filters.location !== 'all') count++;
+    if (filters.country !== 'all') count++;
+    if (filters.tags) count++;
+    return count;
+  };
+
+  const uniqueCountries = useMemo(() => {
+    const countries = customers.map(c => c.country).filter(Boolean);
+    return [...new Set(countries)].sort();
+  }, [customers]);
+
+  const allTags = useMemo(() => {
+    const tags = customers.flatMap(c => c.tags || []);
+    return [...new Set(tags)].sort();
+  }, [customers]);
+
   if (loading) {
     return (
       <div className="flex justify-center items-center h-64">
@@ -202,25 +408,207 @@ const Customers = () => {
 
   return (
     <div className="space-y-6">
-      <div className="flex justify-between items-center">
-        <h1 className="text-3xl font-bold">Customers</h1>
-        <Button
-          className="flex items-center gap-2 bg-invoice-teal hover:bg-invoice-teal/90"
-          onClick={handleOpenCreateCustomerDrawer}
-        >
-          <Plus size={18} />
-          <span>New Customer</span>
-        </Button>
+      <div className="flex flex-col gap-4 mt-5">
+        <div className="flex justify-between items-center">
+          <h1 className="text-3xl font-bold">Customers</h1>
+          <div className="flex items-center gap-2">
+            <Button
+              variant="outline"
+              onClick={handleManualRefresh}
+              disabled={isRefreshing || loading}
+              className="flex items-center gap-2"
+            >
+              <RefreshCw size={16} className={isRefreshing ? "animate-spin" : ""} />
+              {isMobile ? "" : "Refresh"}
+            </Button>
+            <Button
+              className="flex items-center gap-2 bg-invoice-teal hover:bg-invoice-teal/90"
+              onClick={handleOpenCreateCustomerDrawer}
+            >
+              <Plus size={18} />
+              <span>New Customer</span>
+            </Button>
+          </div>
+        </div>
+
+        {/* Search and Quick Filters */}
+        <div className="flex flex-col gap-3">
+          <div className="flex gap-2 items-center">
+            <div className="relative flex-1">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-4 h-4" />
+              <Input
+                placeholder="Search customers, email, phone, location..."
+                value={filters.search}
+                onChange={(e) => updateFilter('search', e.target.value)}
+                className="pl-10"
+              />
+            </div>
+            <Button
+              variant="outline"
+              onClick={() => setFiltersOpen(!filtersOpen)}
+              className="flex items-center gap-2"
+            >
+              <Filter size={16} />
+              Filters
+              {getActiveFiltersCount() > 0 && (
+                <Badge variant="secondary" className="ml-1">
+                  {getActiveFiltersCount()}
+                </Badge>
+              )}
+              <ChevronDown className={`w-4 h-4 transition-transform ${filtersOpen ? 'rotate-180' : ''}`} />
+            </Button>
+          </div>
+
+          {/* Advanced Filters */}
+          <Collapsible open={filtersOpen} onOpenChange={setFiltersOpen}>
+            <CollapsibleContent className="space-y-4">
+              <Card className="p-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                  {/* VIP Status Filter */}
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium">Customer Type</label>
+                    <Select value={filters.vipStatus} onValueChange={(value) => updateFilter('vipStatus', value)}>
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {VIP_OPTIONS.map((option) => (
+                          <SelectItem key={option.value} value={option.value}>
+                            {option.label}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  {/* Location Filter */}
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium">Location Status</label>
+                    <Select value={filters.location} onValueChange={(value) => updateFilter('location', value)}>
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {LOCATION_FILTERS.map((option) => (
+                          <SelectItem key={option.value} value={option.value}>
+                            {option.label}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  {/* Country Filter */}
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium">Country</label>
+                    <Select value={filters.country} onValueChange={(value) => updateFilter('country', value)}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select country" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="all">All Countries</SelectItem>
+                        {uniqueCountries.map((country) => (
+                          <SelectItem key={country} value={country}>
+                            {country}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  {/* Sort Options */}
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium">Sort By</label>
+                    <div className="flex gap-2">
+                      <Select value={filters.sortBy} onValueChange={(value) => updateFilter('sortBy', value)}>
+                        <SelectTrigger className="flex-1">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="name">Name</SelectItem>
+                          <SelectItem value="email">Email</SelectItem>
+                          <SelectItem value="city">Location</SelectItem>
+                          <SelectItem value="createdAt">Created Date</SelectItem>
+                        </SelectContent>
+                      </Select>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => updateFilter('sortOrder', filters.sortOrder === 'asc' ? 'desc' : 'asc')}
+                        className="px-3"
+                      >
+                        {filters.sortOrder === 'asc' ? '↑' : '↓'}
+                      </Button>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Tags Filter - Full Width */}
+                <div className="mt-4 space-y-2">
+                  <label className="text-sm font-medium">Tags</label>
+                  <Input
+                    placeholder="Search by tags..."
+                    value={filters.tags}
+                    onChange={(e) => updateFilter('tags', e.target.value)}
+                  />
+                  {allTags.length > 0 && (
+                    <div className="flex flex-wrap gap-1 mt-2">
+                      {allTags.slice(0, 10).map((tag) => (
+                        <Button
+                          key={tag}
+                          variant="outline"
+                          size="sm"
+                          className="text-xs h-6"
+                          onClick={() => updateFilter('tags', tag)}
+                        >
+                          {tag}
+                        </Button>
+                      ))}
+                    </div>
+                  )}
+                </div>
+
+                {/* Clear Filters */}
+                {getActiveFiltersCount() > 0 && (
+                  <div className="mt-4 flex justify-end">
+                    <Button variant="ghost" onClick={clearFilters} className="text-sm">
+                      <X size={16} className="mr-2" />
+                      Clear Filters
+                    </Button>
+                  </div>
+                )}
+              </Card>
+            </CollapsibleContent>
+          </Collapsible>
+
+          {/* Results Summary */}
+          <div className="flex items-center justify-between text-sm text-muted-foreground">
+            <span>
+              Showing {filteredAndSortedCustomers.length} of {customers.length} customers
+              {getActiveFiltersCount() > 0 && (
+                <span className="ml-2">
+                  ({getActiveFiltersCount()} filter{getActiveFiltersCount() !== 1 ? 's' : ''} applied)
+                </span>
+              )}
+              {loading && (
+                <span className="ml-2 flex items-center gap-1">
+                  <Loader2 className="w-3 h-3 animate-spin" />
+                  Loading...
+                </span>
+              )}
+            </span>
+          </div>
+        </div>
       </div>
       
       {isMobile ? (
         <div className="grid grid-cols-1 gap-4">
-          {customers.length === 0 ? (
+          {filteredAndSortedCustomers.length === 0 ? (
             <Card className="flex items-center justify-center h-32 text-muted-foreground">
-              No customers found. Create your first customer to get started.
+              {customers.length === 0 ? 'No customers found. Create your first customer to get started.' : 'No customers match your filters.'}
             </Card>
           ) : (
-            customers.map((customer) => (
+            filteredAndSortedCustomers.map((customer) => (
               <Card key={customer.id} className="overflow-hidden">
                 <CardHeader className="pb-2">
                   <div className="flex justify-between items-start">
@@ -306,14 +694,14 @@ const Customers = () => {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {customers.length === 0 ? (
+                {filteredAndSortedCustomers.length === 0 ? (
                   <TableRow>
                     <TableCell colSpan={6} className="text-center text-muted-foreground">
-                      No customers found. Create your first customer to get started.
+                      {customers.length === 0 ? 'No customers found. Create your first customer to get started.' : 'No customers match your filters.'}
                     </TableCell>
                   </TableRow>
                 ) : (
-                  customers.map((customer) => (
+                  filteredAndSortedCustomers.map((customer) => (
                     <TableRow key={customer.id}>
                       <TableCell>
                         <div className="flex items-center">
