@@ -53,7 +53,7 @@ interface InvoiceFilters {
   dateRange: string;
   amountRange: string;
   customer: string;
-  sortBy: 'date' | 'dueDate' | 'amount' | 'customer' | 'status';
+  sortBy: 'date' | 'dueDate' | 'amount' | 'customer' | 'status' | 'createdAt';
   sortOrder: 'asc' | 'desc';
 }
 
@@ -77,7 +77,7 @@ const Invoices = () => {
     dateRange: 'all',
     amountRange: 'all',
     customer: 'all',
-    sortBy: 'date',
+    sortBy: 'createdAt',
     sortOrder: 'desc',
   });
 
@@ -294,9 +294,13 @@ const Invoices = () => {
           aValue = a.status;
           bValue = b.status;
           break;
+        case 'createdAt':
+          aValue = new Date(a.createdAt);
+          bValue = new Date(b.createdAt);
+          break;
         default:
-          aValue = new Date(a.date);
-          bValue = new Date(b.date);
+          aValue = new Date(a.createdAt);
+          bValue = new Date(b.createdAt);
       }
 
       if (filters.sortOrder === 'asc') {
@@ -320,7 +324,7 @@ const Invoices = () => {
       dateRange: 'all',
       amountRange: 'all',
       customer: 'all',
-      sortBy: 'date',
+      sortBy: 'createdAt',
       sortOrder: 'desc',
     });
   };
@@ -469,7 +473,8 @@ const Invoices = () => {
                           <SelectValue />
                         </SelectTrigger>
                         <SelectContent>
-                          <SelectItem value="date">Date</SelectItem>
+                          <SelectItem value="createdAt">Created Date</SelectItem>
+                          <SelectItem value="date">Invoice Date</SelectItem>
                           <SelectItem value="dueDate">Due Date</SelectItem>
                           <SelectItem value="amount">Amount</SelectItem>
                           <SelectItem value="customer">Customer</SelectItem>
