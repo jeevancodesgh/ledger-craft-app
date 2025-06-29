@@ -3,7 +3,7 @@ import { useAppContext } from '@/context/AppContext';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { formatCurrency, getStatusColor, formatDate } from '@/utils/invoiceUtils';
 import { Button } from '@/components/ui/button';
-import { Plus, ChevronRight, Calendar, DollarSign, Edit, Trash2, Copy, Loader2, Share2, Filter, X, Search, ChevronDown, RefreshCw } from 'lucide-react';
+import { Plus, ChevronRight, Calendar, DollarSign, Edit, Trash2, Copy, Loader2, Share2, Filter, X, Search, ChevronDown, RefreshCw, Clock } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '@/components/ui/table';
@@ -21,6 +21,7 @@ import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import ShareInvoiceModal from '@/components/invoice/ShareInvoiceModal';
+import PaymentReminderModal from '@/components/invoice/PaymentReminderModal';
 import { Invoice, InvoiceStatus } from '@/types';
 
 const STATUS_OPTIONS = [
@@ -69,6 +70,8 @@ const Invoices = () => {
   const [statusLoading, setStatusLoading] = useState<{ [id: string]: boolean }>({});
   const [shareModalOpen, setShareModalOpen] = useState(false);
   const [invoiceToShare, setInvoiceToShare] = useState<Invoice | null>(null);
+  const [reminderModalOpen, setReminderModalOpen] = useState(false);
+  const [invoiceToRemind, setInvoiceToRemind] = useState<Invoice | null>(null);
   const [filtersOpen, setFiltersOpen] = useState(false);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [filters, setFilters] = useState<InvoiceFilters>({
@@ -146,6 +149,11 @@ const Invoices = () => {
   const handleShareClick = (invoice: Invoice) => {
     setInvoiceToShare(invoice);
     setShareModalOpen(true);
+  };
+
+  const handleReminderClick = (invoice: Invoice) => {
+    setInvoiceToRemind(invoice);
+    setReminderModalOpen(true);
   };
 
   // Auto-fetch invoices when component mounts and when navigating back to this page
@@ -678,6 +686,18 @@ const Invoices = () => {
                   >
                     <Share2 size={16} />
                   </Button>
+                  {(invoice.status === 'sent' || invoice.status === 'overdue') && (
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-8 w-8 text-orange-600 hover:text-orange-700 hover:bg-orange-50"
+                      aria-label="Send payment reminder"
+                      onClick={() => handleReminderClick(invoice)}
+                      title="Send Payment Reminder"
+                    >
+                      <Clock size={16} />
+                    </Button>
+                  )}
                 </CardFooter>
               </Card>
             ))
@@ -774,6 +794,18 @@ const Invoices = () => {
                         >
                           <Share2 size={16} />
                         </Button>
+                        {(invoice.status === 'sent' || invoice.status === 'overdue') && (
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-8 w-8 text-orange-600 hover:text-orange-700 hover:bg-orange-50"
+                            aria-label="Send payment reminder"
+                            onClick={() => handleReminderClick(invoice)}
+                            title="Send Payment Reminder"
+                          >
+                            <Clock size={16} />
+                          </Button>
+                        )}
                       </TableCell>
                     </TableRow>
                   ))
@@ -822,6 +854,15 @@ const Invoices = () => {
           onOpenChange={setShareModalOpen}
           invoice={invoiceToShare}
           businessName={businessProfile?.name}
+        />
+      )}
+
+      {/* Payment Reminder Modal */}
+      {invoiceToRemind && (
+        <PaymentReminderModal
+          open={reminderModalOpen}
+          onOpenChange={setReminderModalOpen}
+          invoice={invoiceToRemind}
         />
       )}
     </div>
