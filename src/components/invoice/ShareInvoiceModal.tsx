@@ -1,5 +1,5 @@
 import React, { useState, useRef } from 'react';
-import { Copy, Calendar, Share2, Link2, Check } from 'lucide-react';
+import { Copy, Calendar, Share2, Link2, Check, Mail } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
   Dialog,
@@ -21,6 +21,9 @@ import { Switch } from '@/components/ui/switch';
 import { useToast } from '@/hooks/use-toast';
 import { sharedInvoiceService } from '@/services/supabaseService';
 import { Invoice, InvoiceTemplateName } from '@/types';
+import EmailInputModal from './EmailInputModal';
+import { emailService } from '@/services/emailService';
+import { pdfService } from '@/services/pdfService';
 
 interface ShareInvoiceModalProps {
   open: boolean;
@@ -47,6 +50,8 @@ const ShareInvoiceModal: React.FC<ShareInvoiceModalProps> = ({
   const { toast } = useToast();
   const [isCreating, setIsCreating] = useState(false);
   const [shareUrl, setShareUrl] = useState('');
+  const [showEmailModal, setShowEmailModal] = useState(false);
+  const [isSendingEmail, setIsSendingEmail] = useState(false);
   
   
   const [selectedTemplate, setSelectedTemplate] = useState<InvoiceTemplateName>(
@@ -147,9 +152,124 @@ const ShareInvoiceModal: React.FC<ShareInvoiceModalProps> = ({
     }
   };
 
+  const handleSendEmail = () => {
+    setShowEmailModal(true);
+  };
+
+  const handleEmailConfirmed = async (email: string) => {
+    setIsSendingEmail(true);
+    try {
+      // Create a share link first if it doesn't exist
+      let url = shareUrl;
+      if (!url) {
+        const expiresAt = enableExpiration 
+          ? new Date(Date.now() + expirationDays * 24 * 60 * 60 * 1000).toISOString()
+          : undefined;
+
+        const sharedInvoice = await sharedInvoiceService.createSharedInvoice(
+          invoice.id,
+          selectedTemplate,
+          expiresAt
+        );
+        url = `${window.location.origin}/shared/invoice/${sharedInvoice.shareToken}`;
+        setShareUrl(url);
+      }
+
+      // Create a temporary element to render the invoice for PDF generation
+      const tempDiv = document.createElement('div');
+      tempDiv.innerHTML = `
+        <div style="padding: 40px; font-family: Arial, sans-serif;">
+          <h2>Invoice ${invoice.invoiceNumber}</h2>
+          <p><strong>Date:</strong> ${new Date(invoice.date).toLocaleDateString()}</p>
+          <p><strong>Due Date:</strong> ${new Date(invoice.dueDate).toLocaleDateString()}</p>
+          <p><strong>Customer:</strong> ${invoice.customer?.name}</p>
+          ${invoice.customer?.email ? `<p><strong>Email:</strong> ${invoice.customer.email}</p>` : ''}
+          
+          <table style="width: 100%; border-collapse: collapse; margin-top: 20px;">
+            <thead>
+              <tr style="background-color: #f5f5f5;">
+                <th style="border: 1px solid #ddd; padding: 8px; text-align: left;">Description</th>
+                <th style="border: 1px solid #ddd; padding: 8px; text-align: right;">Quantity</th>
+                <th style="border: 1px solid #ddd; padding: 8px; text-align: right;">Rate</th>
+                <th style="border: 1px solid #ddd; padding: 8px; text-align: right;">Total</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${invoice.items.map(item => `
+                <tr>
+                  <td style="border: 1px solid #ddd; padding: 8px;">${item.description}</td>
+                  <td style="border: 1px solid #ddd; padding: 8px; text-align: right;">${item.quantity}</td>
+                  <td style="border: 1px solid #ddd; padding: 8px; text-align: right;">${invoice.currency} ${item.rate.toFixed(2)}</td>
+                  <td style="border: 1px solid #ddd; padding: 8px; text-align: right;">${invoice.currency} ${item.total.toFixed(2)}</td>
+                </tr>
+              `).join('')}
+            </tbody>
+          </table>
+          
+          <div style="margin-top: 20px; text-align: right;">
+            <p><strong>Subtotal: ${invoice.currency} ${invoice.subtotal.toFixed(2)}</strong></p>
+            ${invoice.taxAmount > 0 ? `<p><strong>Tax: ${invoice.currency} ${invoice.taxAmount.toFixed(2)}</strong></p>` : ''}
+            ${invoice.discount > 0 ? `<p><strong>Discount: -${invoice.currency} ${invoice.discount.toFixed(2)}</strong></p>` : ''}
+            ${invoice.additionalChargesTotal > 0 ? `<p><strong>Additional Charges: ${invoice.currency} ${invoice.additionalChargesTotal.toFixed(2)}</strong></p>` : ''}
+            <p style="font-size: 18px;"><strong>Total: ${invoice.currency} ${invoice.total.toFixed(2)}</strong></p>
+          </div>
+          
+          ${invoice.notes ? `<div style="margin-top: 20px;"><p><strong>Notes:</strong> ${invoice.notes}</p></div>` : ''}
+          <div style="margin-top: 20px;">
+            <p><strong>View online:</strong> <a href="${url}">${url}</a></p>
+          </div>
+        </div>
+      `;
+      document.body.appendChild(tempDiv);
+
+      // Generate PDF
+      let pdfBuffer;
+      try {
+        pdfBuffer = await pdfService.generateInvoicePDF(tempDiv, invoice.invoiceNumber);
+      } catch (pdfError) {
+        console.warn('PDF generation failed:', pdfError);
+        // Continue without PDF attachment
+      } finally {
+        document.body.removeChild(tempDiv);
+      }
+
+      // Send email
+      const result = await emailService.sendInvoiceEmail({
+        to: email,
+        invoiceNumber: invoice.invoiceNumber,
+        businessName: businessName || 'Your Business',
+        customerName: invoice.customer?.name || 'Customer',
+        total: invoice.total,
+        currency: invoice.currency,
+        invoiceHtml: tempDiv.innerHTML,
+        pdfBuffer
+      });
+
+      if (result.success) {
+        toast({
+          title: 'Email sent successfully!',
+          description: `Invoice has been sent to ${email}`,
+        });
+      } else {
+        throw new Error(result.error || 'Failed to send email');
+      }
+    } catch (error) {
+      console.error('Error sending email:', error);
+      toast({
+        title: 'Failed to send email',
+        description: error instanceof Error ? error.message : 'An error occurred while sending the email',
+        variant: 'destructive',
+      });
+    } finally {
+      setIsSendingEmail(false);
+    }
+  };
+
   const handleClose = () => {
     setShareUrl('');
     setCopied(false);
+    setShowEmailModal(false);
+    setIsSendingEmail(false);
     onOpenChange(false);
   };
 
@@ -237,25 +357,48 @@ const ShareInvoiceModal: React.FC<ShareInvoiceModalProps> = ({
             )}
           </div>
 
-          {/* Generate/Display Share Link */}
+          {/* Generate/Display Share Link or Send Email */}
           {!shareUrl ? (
-            <Button 
-              onClick={handleCreateShareLink} 
-              disabled={isCreating}
-              className="w-full"
-            >
-              {isCreating ? (
-                <>
-                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2" />
-                  Creating link...
-                </>
-              ) : (
-                <>
-                  <Link2 className="h-4 w-4 mr-2" />
-                  Generate Share Link
-                </>
-              )}
-            </Button>
+            <div className="space-y-2">
+              <Button 
+                onClick={handleCreateShareLink} 
+                disabled={isCreating || isSendingEmail}
+                className="w-full"
+              >
+                {isCreating ? (
+                  <>
+                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2" />
+                    Creating link...
+                  </>
+                ) : (
+                  <>
+                    <Link2 className="h-4 w-4 mr-2" />
+                    Generate Share Link
+                  </>
+                )}
+              </Button>
+              
+              <div className="text-center text-sm text-muted-foreground">or</div>
+              
+              <Button 
+                onClick={handleSendEmail} 
+                disabled={isCreating || isSendingEmail}
+                variant="outline"
+                className="w-full"
+              >
+                {isSendingEmail ? (
+                  <>
+                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-current mr-2" />
+                    Sending email...
+                  </>
+                ) : (
+                  <>
+                    <Mail className="h-4 w-4 mr-2" />
+                    Send via Email
+                  </>
+                )}
+              </Button>
+            </div>
           ) : (
             <div className="space-y-3">
               <div className="space-y-2">
@@ -283,24 +426,45 @@ const ShareInvoiceModal: React.FC<ShareInvoiceModalProps> = ({
                 </div>
               </div>
 
-              <div className="flex gap-2">
-                <Button
-                  variant="outline"
-                  onClick={handleCopyLink}
-                  className="flex-1"
-                >
-                  <Copy className="h-4 w-4 mr-2" />
-                  Copy Link
-                </Button>
-                {navigator.share && (
+              <div className="space-y-2">
+                <div className="flex gap-2">
                   <Button
-                    onClick={handleNativeShare}
+                    variant="outline"
+                    onClick={handleCopyLink}
                     className="flex-1"
                   >
-                    <Share2 className="h-4 w-4 mr-2" />
-                    Share
+                    <Copy className="h-4 w-4 mr-2" />
+                    Copy Link
                   </Button>
-                )}
+                  {navigator.share && (
+                    <Button
+                      onClick={handleNativeShare}
+                      className="flex-1"
+                    >
+                      <Share2 className="h-4 w-4 mr-2" />
+                      Share
+                    </Button>
+                  )}
+                </div>
+                
+                <Button 
+                  onClick={handleSendEmail} 
+                  disabled={isSendingEmail}
+                  variant="outline"
+                  className="w-full"
+                >
+                  {isSendingEmail ? (
+                    <>
+                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-current mr-2" />
+                      Sending email...
+                    </>
+                  ) : (
+                    <>
+                      <Mail className="h-4 w-4 mr-2" />
+                      Send via Email
+                    </>
+                  )}
+                </Button>
               </div>
 
               {enableExpiration && (
@@ -315,6 +479,14 @@ const ShareInvoiceModal: React.FC<ShareInvoiceModalProps> = ({
           )}
         </div>
       </DialogContent>
+      
+      <EmailInputModal
+        open={showEmailModal}
+        onOpenChange={setShowEmailModal}
+        onEmailConfirmed={handleEmailConfirmed}
+        customerEmail={invoice.customer?.email}
+        invoiceNumber={invoice.invoiceNumber}
+      />
     </Dialog>
   );
 };
