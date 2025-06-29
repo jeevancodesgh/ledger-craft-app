@@ -13,6 +13,7 @@ interface AuthContextType {
   signOut: () => Promise<void>;
   loading: boolean;
   hasCompletedOnboarding: boolean;
+  onboardingChecked: boolean;
   refreshUser: () => Promise<void>;
 }
 
@@ -23,15 +24,18 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
   const [hasCompletedOnboarding, setHasCompletedOnboarding] = useState(false);
+  const [onboardingChecked, setOnboardingChecked] = useState(false);
   const navigate = useNavigate();
 
   const checkOnboardingStatus = async (userId: string) => {
     try {
       const businessProfile = await businessProfileService.getBusinessProfile();
       setHasCompletedOnboarding(!!businessProfile);
+      setOnboardingChecked(true);
     } catch (error) {
       console.error('Error checking onboarding status:', error);
       setHasCompletedOnboarding(false);
+      setOnboardingChecked(true);
     }
   };
 
@@ -57,12 +61,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           checkOnboardingStatus(currentSession.user.id).catch(console.error);
         } else {
           setHasCompletedOnboarding(false);
+          setOnboardingChecked(true);
         }
         
         if (event === 'SIGNED_IN') {
           // Don't navigate immediately - let ProtectedRoute handle onboarding check
         } else if (event === 'SIGNED_OUT') {
           setHasCompletedOnboarding(false);
+          setOnboardingChecked(false);
           navigate('/login');
         }
       }
@@ -137,6 +143,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     signOut,
     loading,
     hasCompletedOnboarding,
+    onboardingChecked,
     refreshUser
   };
 

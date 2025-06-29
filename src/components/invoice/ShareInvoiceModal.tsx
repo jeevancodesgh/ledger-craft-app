@@ -52,6 +52,9 @@ const ShareInvoiceModal: React.FC<ShareInvoiceModalProps> = ({
   const [selectedTemplate, setSelectedTemplate] = useState<InvoiceTemplateName>(
     (invoice.templateName as InvoiceTemplateName) || 'classic'
   );
+  const [showTemplateSelection, setShowTemplateSelection] = useState(
+    !invoice.templateName
+  );
   const [enableExpiration, setEnableExpiration] = useState(false);
   const [expirationDays, setExpirationDays] = useState(30);
   const [copied, setCopied] = useState(false);
@@ -164,22 +167,44 @@ const ShareInvoiceModal: React.FC<ShareInvoiceModalProps> = ({
         </DialogHeader>
 
         <div className="space-y-4">
-          {/* Template Selection */}
-          <div className="space-y-2">
-            <Label htmlFor="template">Template</Label>
-            <Select value={selectedTemplate} onValueChange={(value) => setSelectedTemplate(value as InvoiceTemplateName)}>
-              <SelectTrigger>
-                <SelectValue placeholder="Select template" />
-              </SelectTrigger>
-              <SelectContent>
-                {TEMPLATE_OPTIONS.map((template) => (
-                  <SelectItem key={template.value} value={template.value}>
-                    {template.label}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
+          {/* Template Selection - Only show if no template is saved */}
+          {showTemplateSelection && (
+            <div className="space-y-2">
+              <Label htmlFor="template">Template</Label>
+              <Select value={selectedTemplate} onValueChange={(value) => setSelectedTemplate(value as InvoiceTemplateName)}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Select template" />
+                </SelectTrigger>
+                <SelectContent>
+                  {TEMPLATE_OPTIONS.map((template) => (
+                    <SelectItem key={template.value} value={template.value}>
+                      {template.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          )}
+          
+          {/* Show selected template info when template is pre-saved */}
+          {!showTemplateSelection && (
+            <div className="space-y-2">
+              <Label>Template</Label>
+              <div className="flex items-center justify-between p-3 border rounded-md bg-muted/50">
+                <span className="font-medium">
+                  {TEMPLATE_OPTIONS.find(t => t.value === selectedTemplate)?.label || selectedTemplate}
+                </span>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setShowTemplateSelection(true)}
+                  className="text-muted-foreground hover:text-foreground"
+                >
+                  Change
+                </Button>
+              </div>
+            </div>
+          )}
 
           {/* Expiration Settings */}
           <div className="space-y-3">
