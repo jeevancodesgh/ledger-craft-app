@@ -745,6 +745,13 @@ const InvoiceForm: React.FC<InvoiceFormProps> = ({
           invoice={invoicePreview}
           selectedTemplate={selectedTemplate}
           onBackToEdit={() => setActiveTab("edit")}
+          onSave={async () => {
+            const values = form.getValues();
+            await localOnSubmit(values);
+          }}
+          saveButtonText={mode === "create" ? "Save Invoice" : "Save Changes"}
+          isSaving={isSubmitting}
+          hasUnsavedChanges={hasUnsavedChanges}
         />
       </div>
     );
