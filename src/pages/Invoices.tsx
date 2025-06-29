@@ -3,12 +3,12 @@ import { useAppContext } from '@/context/AppContext';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { formatCurrency, getStatusColor, formatDate } from '@/utils/invoiceUtils';
 import { Button } from '@/components/ui/button';
-import { Plus, ChevronRight, Calendar, DollarSign, Edit, Trash2, Copy, Loader2, Share2, Filter, X, Search, ChevronDown } from 'lucide-react';
+import { Plus, ChevronRight, Calendar, DollarSign, Edit, Trash2, Copy, Loader2, Share2, Filter, X, Search, ChevronDown, RefreshCw } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '@/components/ui/table';
 import { Dialog, DialogContent, DialogHeader, DialogFooter, DialogTitle, DialogDescription, DialogClose, DialogTrigger } from '@/components/ui/dialog';
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import {
   Select,
@@ -70,6 +70,7 @@ const Invoices = () => {
   const [shareModalOpen, setShareModalOpen] = useState(false);
   const [invoiceToShare, setInvoiceToShare] = useState<Invoice | null>(null);
   const [filtersOpen, setFiltersOpen] = useState(false);
+  const [isRefreshing, setIsRefreshing] = useState(false);
   const [filters, setFilters] = useState<InvoiceFilters>({
     search: '',
     status: [],
@@ -92,7 +93,12 @@ const Invoices = () => {
       await deleteInvoice(invoiceToDelete);
       setDeleteDialogOpen(false);
       setInvoiceToDelete(null);
+      // Force refresh from database after delete
       await refreshInvoices();
+      toast({
+        title: "Success",
+        description: "Invoice deleted successfully.",
+      });
     } catch (e) {
       // error toast will come from context
     } finally {
@@ -114,6 +120,7 @@ const Invoices = () => {
       };
       const created = await createInvoice(clonedInvoice);
       toast({ title: 'Invoice cloned', description: 'A new invoice has been created.' });
+      // Force refresh from database after clone
       await refreshInvoices();
       navigate(`/invoices/${created.id}/edit`);
     } catch (e) {
@@ -127,6 +134,7 @@ const Invoices = () => {
     try {
       await updateInvoiceStatus(id, newStatus as any);
       toast({ title: 'Status updated', description: `Invoice status changed to ${newStatus}.` });
+      // Force refresh from database after status update
       await refreshInvoices();
     } catch (e) {
       toast({ title: 'Update failed', description: 'Could not update invoice status.', variant: 'destructive' });
@@ -138,6 +146,62 @@ const Invoices = () => {
   const handleShareClick = (invoice: Invoice) => {
     setInvoiceToShare(invoice);
     setShareModalOpen(true);
+  };
+
+  // Auto-fetch invoices when component mounts and when navigating back to this page
+  useEffect(() => {
+    const fetchData = async () => {
+      if (!isLoadingInvoices) {
+        await refreshInvoices();
+      }
+    };
+    fetchData();
+  }, []);
+
+  // Auto-refresh when user returns to the tab/window
+  useEffect(() => {
+    const handleVisibilityChange = () => {
+      if (!document.hidden && !isLoadingInvoices) {
+        refreshInvoices();
+      }
+    };
+
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    
+    return () => {
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+    };
+  }, [isLoadingInvoices, refreshInvoices]);
+
+  // Periodic auto-refresh every 30 seconds when tab is active
+  useEffect(() => {
+    const interval = setInterval(() => {
+      if (!document.hidden && !isLoadingInvoices && !isRefreshing) {
+        refreshInvoices();
+      }
+    }, 30000); // 30 seconds
+
+    return () => clearInterval(interval);
+  }, [isLoadingInvoices, isRefreshing, refreshInvoices]);
+
+  // Manual refresh function
+  const handleManualRefresh = async () => {
+    setIsRefreshing(true);
+    try {
+      await refreshInvoices();
+      toast({
+        title: "Refreshed",
+        description: "Invoice list has been updated.",
+      });
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to refresh invoices. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsRefreshing(false);
+    }
   };
 
   const getDateRangeFilter = (range: string, invoiceDate: string, dueDate: string) => {
@@ -285,12 +349,23 @@ const Invoices = () => {
       <div className="flex flex-col gap-4 mt-5">
         <div className="flex justify-between items-center">
           <h1 className="text-3xl font-bold">Invoices</h1>
-          <Button className="flex items-center gap-2 bg-invoice-teal hover:bg-invoice-teal/90" asChild>
-            <Link to="/invoices/new">
-              <Plus size={18} />
-              <span>New Invoice</span>
-            </Link>
-          </Button>
+          <div className="flex items-center gap-2">
+            <Button
+              variant="outline"
+              onClick={handleManualRefresh}
+              disabled={isRefreshing || isLoadingInvoices}
+              className="flex items-center gap-2"
+            >
+              <RefreshCw size={16} className={isRefreshing ? "animate-spin" : ""} />
+              {isMobile ? "" : "Refresh"}
+            </Button>
+            <Button className="flex items-center gap-2 bg-invoice-teal hover:bg-invoice-teal/90" asChild>
+              <Link to="/invoices/new">
+                <Plus size={18} />
+                <span>New Invoice</span>
+              </Link>
+            </Button>
+          </div>
         </div>
 
         {/* Search and Quick Filters */}
@@ -451,6 +526,12 @@ const Invoices = () => {
               {getActiveFiltersCount() > 0 && (
                 <span className="ml-2">
                   ({getActiveFiltersCount()} filter{getActiveFiltersCount() !== 1 ? 's' : ''} applied)
+                </span>
+              )}
+              {isLoadingInvoices && (
+                <span className="ml-2 flex items-center gap-1">
+                  <Loader2 className="w-3 h-3 animate-spin" />
+                  Loading...
                 </span>
               )}
             </span>
