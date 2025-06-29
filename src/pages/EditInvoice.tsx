@@ -3,18 +3,23 @@ import React, { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { useAppContext } from "@/context/AppContext";
 import InvoiceForm from "@/components/invoice/InvoiceForm";
-import { Invoice, Item } from "@/types";
+import { Invoice, Item, Customer } from "@/types";
 import { Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { formatDate } from "@/utils/invoiceUtils";
+import CustomerFormDrawer, { CustomerFormValues } from '@/components/customer/CustomerFormDrawer';
+import { useToast } from '@/hooks/use-toast';
 
 const EditInvoicePage = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const { getInvoice, updateInvoice, customers, isLoadingCustomers, businessProfile, items, isLoadingItems } = useAppContext();
+  const { getInvoice, updateInvoice, customers, isLoadingCustomers, businessProfile, items, isLoadingItems, createCustomer } = useAppContext();
   const [invoice, setInvoice] = useState<Invoice | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [newlyAddedCustomer, setNewlyAddedCustomer] = useState<Customer | null>(null);
+  const [isCustomerDrawerOpen, setIsCustomerDrawerOpen] = useState(false);
+  const { toast } = useToast();
 
   useEffect(() => {
     if (!id) return;
@@ -38,6 +43,13 @@ const EditInvoicePage = () => {
       document.title = "Invoice App"; // Reset title
     };
   }, [id, getInvoice]);
+
+  useEffect(() => {
+    if (newlyAddedCustomer && invoice) {
+      // For edit mode, we need a way to update the customer selection
+      // This will be handled by the InvoiceForm component when newlyAddedCustomer changes
+    }
+  }, [newlyAddedCustomer, invoice]);
 
   const handleSave = async (
     values: any,
@@ -71,6 +83,40 @@ const EditInvoicePage = () => {
     }
   };
 
+  const handleAddCustomer = async (values: CustomerFormValues) => {
+    try {
+      const newCustomerData = {
+        name: values.name,
+        email: values.email || null,
+        phone: values.phone || null,
+        address: values.address || null,
+        city: values.city || null,
+        state: values.state || null,
+        zip: values.zip || null,
+        country: values.country || 'New Zealand',
+        isVip: values.is_vip
+      };
+
+      const newCustomer = await createCustomer(newCustomerData);
+
+      toast({
+        title: 'Customer added successfully',
+        description: `${newCustomer.name} has been added to your customers.`
+      });
+
+      setNewlyAddedCustomer(newCustomer);
+      setIsCustomerDrawerOpen(false);
+
+    } catch (error) {
+      console.error('Error creating customer:', error);
+      toast({
+        title: 'Error',
+        description: 'Failed to add customer. Please try again.',
+        variant: 'destructive'
+      });
+    }
+  };
+
   if (loading || isLoadingItems) {
     return (
       <div className="flex justify-center items-center h-64">
@@ -93,16 +139,27 @@ const EditInvoicePage = () => {
   if (!invoice) return null;
 
   return (
-    <InvoiceForm
-      mode="edit"
-      initialValues={invoice}
-      customers={customers}
-      businessProfile={businessProfile}
-      isLoadingCustomers={isLoadingCustomers}
-      onSubmit={handleSave}
-      onCancel={() => navigate("/invoices")}
-      availableItems={items}
-    />
+    <>
+      <InvoiceForm
+        mode="edit"
+        initialValues={invoice}
+        customers={customers}
+        businessProfile={businessProfile}
+        isLoadingCustomers={isLoadingCustomers}
+        onSubmit={handleSave}
+        onCancel={() => navigate("/invoices")}
+        onAddCustomer={() => setIsCustomerDrawerOpen(true)}
+        newlyAddedCustomer={newlyAddedCustomer}
+        availableItems={items}
+      />
+
+      <CustomerFormDrawer
+        open={isCustomerDrawerOpen}
+        onOpenChange={setIsCustomerDrawerOpen}
+        initialValues={null}
+        onSubmit={handleAddCustomer}
+      />
+    </>
   );
 };
 

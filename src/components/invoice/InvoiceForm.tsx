@@ -15,6 +15,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { CustomerCombobox } from "@/components/ui/customer-combobox";
 import { Textarea } from "@/components/ui/textarea";
 import { CalendarIcon, Plus, Trash2, Download, Save, ArrowLeft, Eye, ChevronsUpDown, Edit, Check, Circle, Weight, UserPlus } from 'lucide-react';
 import { generateInvoicePdf } from "@/utils/pdfUtils";
@@ -43,14 +44,6 @@ import {
 import TemplateSelector from './templates/TemplateSelector';
 import { invoiceTemplates, InvoiceTemplateId } from './templates/InvoiceTemplates';
 import AdditionalChargesManager from './AdditionalChargesManager';
-import {
-  DropdownMenu,
-  DropdownMenuTrigger,
-  DropdownMenuContent,
-  DropdownMenuLabel,
-  DropdownMenuItem,
-  DropdownMenuSeparator,
-} from "@/components/ui/dropdown-menu";
 import { useToast } from "@/hooks/use-toast";
 import InvoicePreview from "./preview/InvoicePreview";
 import ItemSelector from "./ItemSelector";
@@ -202,7 +195,6 @@ const InvoiceForm: React.FC<InvoiceFormProps> = ({
   const [currentItemIndex, setCurrentItemIndex] = useState<number | null>(null);
   const [isLineItemsOpen, setIsLineItemsOpen] = useState(true);
   const [selectedTemplate, setSelectedTemplate] = useState<InvoiceTemplateId>('classic');
-  const [recentCustomers, setRecentCustomers] = useState<Customer[]>([]);
   
   // Item management state
   const [isItemDrawerOpen, setIsItemDrawerOpen] = useState(false);
@@ -253,9 +245,6 @@ const InvoiceForm: React.FC<InvoiceFormProps> = ({
     setRefetchItemsTrigger(prev => prev + 1);
   };
 
-  useEffect(() => {
-    form.setValue("invoiceNumber", form.watch('invoiceNumber'));
-  }, [form.watch('invoiceNumber')]);
 
   useEffect(() => {
     if (initialValues) {
@@ -310,16 +299,6 @@ const InvoiceForm: React.FC<InvoiceFormProps> = ({
     }
   }, [newlyAddedCustomer, form]);
 
-  // Load recent customers (last 5)
-  useEffect(() => {
-    if (customers && customers.length > 0) {
-      // Sort by most recently updated
-      const sorted = [...customers].sort((a, b) => 
-        new Date(b.updatedAt || '').getTime() - new Date(a.updatedAt || '').getTime()
-      );
-      setRecentCustomers(sorted.slice(0, 5));
-    }
-  }, [customers]);
 
   useEffect(() => {
     if (generatedInvoiceNumber && !initialValues?.invoiceNumber) {
@@ -354,7 +333,7 @@ const InvoiceForm: React.FC<InvoiceFormProps> = ({
     if (!isTaxEnabled) setTaxRate(0);
     if (!isAdditionalChargesEnabled) form.setValue("additionalCharges", 0);
     if (!isDiscountEnabled) form.setValue("discount", 0);
-  }, [isTaxEnabled, isAdditionalChargesEnabled, isDiscountEnabled, form]);
+  }, [isTaxEnabled, isAdditionalChargesEnabled, isDiscountEnabled]);
 
   // Calculate additional charges total - memoized to prevent unnecessary recalculations
   const calculateAdditionalChargesTotal = React.useCallback((): number => {
@@ -383,16 +362,25 @@ const InvoiceForm: React.FC<InvoiceFormProps> = ({
     }
     setTaxAmount(newTaxAmount);
     
-    // Use new structured charges or fall back to legacy single charge
-    const addCharges = isAdditionalChargesEnabled 
-      ? (additionalChargesList.length > 0 
-          ? calculateAdditionalChargesTotal() 
-          : Number(additionalChargesFormValue))
-      : 0;
+    // Calculate additional charges inline to avoid circular dependency
+    let addCharges = 0;
+    if (isAdditionalChargesEnabled) {
+      if (additionalChargesList.length > 0) {
+        addCharges = additionalChargesList.reduce((total, charge) => {
+          if (!charge.isActive) return total;
+          if (charge.calculationType === 'percentage') {
+            return total + (newSubtotal * charge.amount) / 100;
+          }
+          return total + charge.amount;
+        }, 0);
+      } else {
+        addCharges = Number(additionalChargesFormValue);
+      }
+    }
     
     const disc = isDiscountEnabled ? Number(discountFormValue) : 0;
     setTotal(newSubtotal + newTaxAmount + addCharges - disc);
-  }, [items, isTaxEnabled, taxRate, isAdditionalChargesEnabled, isDiscountEnabled, additionalChargesList, additionalChargesFormValue, discountFormValue, calculateAdditionalChargesTotal]);
+  }, [items, isTaxEnabled, taxRate, isAdditionalChargesEnabled, isDiscountEnabled, additionalChargesList, additionalChargesFormValue, discountFormValue]);
 
   const updateItem = (idx: number, field: keyof LineItem, value: any) => {
     const updated = [...items];
@@ -498,13 +486,6 @@ const InvoiceForm: React.FC<InvoiceFormProps> = ({
     }
   };
 
-  const handleSelectCustomer = (customerId: string) => {
-    form.setValue('customerId', customerId);
-    toast({
-      title: "Customer selected",
-      description: `Customer has been selected for this invoice.`
-    });
-  };
 
   // Handle selection of an item from the item selector
   const handleItemSelect = (selectedItem: Item, index: number) => {
@@ -845,62 +826,17 @@ const InvoiceForm: React.FC<InvoiceFormProps> = ({
                         render={({ field }) => (
                           <FormItem>
                             <FormLabel>Customer</FormLabel>
-                            <div className="flex gap-2">
-                              <Select
-                                onValueChange={field.onChange}
+                            <FormControl>
+                              <CustomerCombobox
+                                customers={customers}
                                 value={field.value}
-                              >
-                                <FormControl>
-                                  <SelectTrigger>
-                                    <SelectValue placeholder="Select a customer" />
-                                  </SelectTrigger>
-                                </FormControl>
-                                <SelectContent position="popper" className="min-w-[var(--radix-select-trigger-width)]">
-                                  {customers.map((customer) => (
-                                    <SelectItem key={customer.id} value={customer.id}>
-                                      {customer.name}
-                                    </SelectItem>
-                                  ))}
-                                </SelectContent>
-                              </Select>
-                              
-                              <div className="flex items-center">
-                                <DropdownMenu>
-                                  <DropdownMenuTrigger asChild>
-                                    <Button 
-                                      variant="outline" 
-                                      size="icon" 
-                                      className="h-10 w-10"
-                                      title="Customer shortcuts"
-                                    >
-                                      <UserPlus className="h-4 w-4" />
-                                    </Button>
-                                  </DropdownMenuTrigger>
-                                  <DropdownMenuContent align="end" className="w-56">
-                                    <DropdownMenuLabel>Customer Options</DropdownMenuLabel>
-                                    <DropdownMenuSeparator />
-                                    <DropdownMenuItem onClick={onAddCustomer} className="cursor-pointer">
-                                      <UserPlus className="mr-2 h-4 w-4" />
-                                      <span>Add New Customer</span>
-                                    </DropdownMenuItem>
-                                    
-                                    {recentCustomers.length > 0 && (
-                                      <>
-                                        <DropdownMenuSeparator />
-                                        <DropdownMenuLabel>Recent Customers</DropdownMenuLabel>
-                                        {recentCustomers.map(customer => (
-                                          <DropdownMenuItem 
-                                            key={customer.id} 
-                                            onClick={() => handleSelectCustomer(customer.id)}>
-                                            {customer.name}
-                                          </DropdownMenuItem>
-                                        ))}
-                                      </>
-                                    )}
-                                  </DropdownMenuContent>
-                                </DropdownMenu>
-                              </div>
-                            </div>
+                                onValueChange={field.onChange}
+                                placeholder="Search and select a customer..."
+                                disabled={isLoadingCustomers}
+                                isLoading={isLoadingCustomers}
+                                onAddCustomer={onAddCustomer}
+                              />
+                            </FormControl>
                             <FormMessage />
                           </FormItem>
                         )}
