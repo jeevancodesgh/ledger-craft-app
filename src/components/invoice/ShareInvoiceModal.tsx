@@ -24,6 +24,8 @@ import { Invoice, InvoiceTemplateName } from '@/types';
 import EmailInputModal from './EmailInputModal';
 import { emailService } from '@/services/emailService';
 import { pdfService } from '@/services/pdfService';
+import { renderTemplateToHtml, createTemplateElement } from '@/services/invoiceTemplateRenderer';
+import { businessProfileService } from '@/services/supabaseService';
 
 interface ShareInvoiceModalProps {
   open: boolean;
@@ -175,73 +177,54 @@ const ShareInvoiceModal: React.FC<ShareInvoiceModalProps> = ({
         setShareUrl(url);
       }
 
-      // Create a temporary element to render the invoice for PDF generation
-      const tempDiv = document.createElement('div');
-      tempDiv.innerHTML = `
-        <div style="padding: 40px; font-family: Arial, sans-serif;">
-          <h2>Invoice ${invoice.invoiceNumber}</h2>
-          <p><strong>Date:</strong> ${new Date(invoice.date).toLocaleDateString()}</p>
-          <p><strong>Due Date:</strong> ${new Date(invoice.dueDate).toLocaleDateString()}</p>
-          <p><strong>Customer:</strong> ${invoice.customer?.name}</p>
-          ${invoice.customer?.email ? `<p><strong>Email:</strong> ${invoice.customer.email}</p>` : ''}
-          
-          <table style="width: 100%; border-collapse: collapse; margin-top: 20px;">
-            <thead>
-              <tr style="background-color: #f5f5f5;">
-                <th style="border: 1px solid #ddd; padding: 8px; text-align: left;">Description</th>
-                <th style="border: 1px solid #ddd; padding: 8px; text-align: right;">Quantity</th>
-                <th style="border: 1px solid #ddd; padding: 8px; text-align: right;">Rate</th>
-                <th style="border: 1px solid #ddd; padding: 8px; text-align: right;">Total</th>
-              </tr>
-            </thead>
-            <tbody>
-              ${invoice.items.map(item => `
-                <tr>
-                  <td style="border: 1px solid #ddd; padding: 8px;">${item.description}</td>
-                  <td style="border: 1px solid #ddd; padding: 8px; text-align: right;">${item.quantity}</td>
-                  <td style="border: 1px solid #ddd; padding: 8px; text-align: right;">${invoice.currency} ${item.rate.toFixed(2)}</td>
-                  <td style="border: 1px solid #ddd; padding: 8px; text-align: right;">${invoice.currency} ${item.total.toFixed(2)}</td>
-                </tr>
-              `).join('')}
-            </tbody>
-          </table>
-          
-          <div style="margin-top: 20px; text-align: right;">
-            <p><strong>Subtotal: ${invoice.currency} ${invoice.subtotal.toFixed(2)}</strong></p>
-            ${invoice.taxAmount > 0 ? `<p><strong>Tax: ${invoice.currency} ${invoice.taxAmount.toFixed(2)}</strong></p>` : ''}
-            ${invoice.discount > 0 ? `<p><strong>Discount: -${invoice.currency} ${invoice.discount.toFixed(2)}</strong></p>` : ''}
-            ${invoice.additionalChargesTotal > 0 ? `<p><strong>Additional Charges: ${invoice.currency} ${invoice.additionalChargesTotal.toFixed(2)}</strong></p>` : ''}
-            <p style="font-size: 18px;"><strong>Total: ${invoice.currency} ${invoice.total.toFixed(2)}</strong></p>
-          </div>
-          
-          ${invoice.notes ? `<div style="margin-top: 20px;"><p><strong>Notes:</strong> ${invoice.notes}</p></div>` : ''}
-          <div style="margin-top: 20px;">
-            <p><strong>View online:</strong> <a href="${url}">${url}</a></p>
-          </div>
-        </div>
-      `;
-      document.body.appendChild(tempDiv);
+      // Get business profile for template rendering
+      const businessProfile = await businessProfileService.getBusinessProfile();
+
+      // Generate HTML using the actual invoice template
+      const invoiceHtml = await renderTemplateToHtml(invoice, selectedTemplate, businessProfile);
+
+      // Create template element for PDF generation
+      const templateElement = createTemplateElement(invoice, selectedTemplate, businessProfile);
+      document.body.appendChild(templateElement);
+
+      // Wait for fonts and images to load
+      await new Promise(resolve => setTimeout(resolve, 500));
 
       // Generate PDF
       let pdfBuffer;
       try {
-        pdfBuffer = await pdfService.generateInvoicePDF(tempDiv, invoice.invoiceNumber);
+        pdfBuffer = await pdfService.generateInvoicePDF(templateElement, invoice.invoiceNumber);
       } catch (pdfError) {
         console.warn('PDF generation failed:', pdfError);
         // Continue without PDF attachment
       } finally {
-        document.body.removeChild(tempDiv);
+        // Clean up template element
+        if (templateElement.cleanup) {
+          templateElement.cleanup();
+        } else if (templateElement.parentNode) {
+          templateElement.parentNode.removeChild(templateElement);
+        }
       }
 
-      // Send email
+      // Send email with the properly formatted invoice HTML
       const result = await emailService.sendInvoiceEmail({
         to: email,
         invoiceNumber: invoice.invoiceNumber,
-        businessName: businessName || 'Your Business',
+        businessName: businessProfile?.name || businessName || 'Your Business',
         customerName: invoice.customer?.name || 'Customer',
         total: invoice.total,
         currency: invoice.currency,
-        invoiceHtml: tempDiv.innerHTML,
+        invoiceHtml: `
+          <div style="max-width: 600px; margin: 0 auto; font-family: Arial, sans-serif;">
+            ${invoiceHtml}
+            <div style="margin-top: 20px; padding: 15px; background-color: #f8f9fa; border-radius: 5px; text-align: center;">
+              <p style="margin: 0; color: #666;">
+                <strong>View this invoice online:</strong><br/>
+                <a href="${url}" style="color: #007bff;">${url}</a>
+              </p>
+            </div>
+          </div>
+        `,
         pdfBuffer
       });
 
