@@ -18,7 +18,8 @@ const CreateInvoice = () => {
     businessProfile, 
     createCustomer, 
     items, 
-    isLoadingItems
+    isLoadingItems,
+    refreshBusinessProfile
   } = useAppContext();
   const navigate = useNavigate();
   const { toast } = useToast();
@@ -34,9 +35,9 @@ const CreateInvoice = () => {
       customerId: '',
       date: new Date(),
       dueDate: new Date(new Date().setDate(new Date().getDate() + 30)),
-      notes: businessProfile?.defaultNotes || "",
-      terms: businessProfile?.defaultTerms || "",
-      currency: businessProfile?.currency || "USD",
+      notes: "",
+      terms: "",
+      currency: "USD",
       additionalCharges: 0,
       discount: 0,
     },
@@ -61,14 +62,32 @@ const CreateInvoice = () => {
       }
     };
 
+    const refreshBusinessSettings = async () => {
+      try {
+        await refreshBusinessProfile();
+      } catch (error) {
+        console.error('Error refreshing business profile:', error);
+      }
+    };
+
     fetchAndCalculateInvoiceNumber();
-  }, []);
+    refreshBusinessSettings();
+  }, [refreshBusinessProfile]);
 
   useEffect(() => {
     if (newlyAddedCustomer) {
       form.setValue('customerId', newlyAddedCustomer.id);
     }
   }, [newlyAddedCustomer, form]);
+
+  // Update form values when business profile loads
+  useEffect(() => {
+    if (businessProfile) {
+      form.setValue('notes', businessProfile.defaultNotes || "");
+      form.setValue('terms', businessProfile.defaultTerms || "");
+      form.setValue('currency', businessProfile.currency || "USD");
+    }
+  }, [businessProfile, form]);
 
   const handleSubmit = async (
     values: any,

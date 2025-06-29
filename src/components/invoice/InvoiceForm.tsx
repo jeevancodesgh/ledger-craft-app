@@ -327,6 +327,25 @@ const InvoiceForm: React.FC<InvoiceFormProps> = ({
     }
   }, [generatedInvoiceNumber, initialValues?.invoiceNumber, form]);
 
+  // Update form values when business profile loads (for create mode)
+  useEffect(() => {
+    if (businessProfile && mode === 'create' && !initialValues) {
+      // Only update if the current values are empty (initial state)
+      const currentNotes = form.getValues('notes');
+      const currentTerms = form.getValues('terms');
+      
+      if (!currentNotes && businessProfile.defaultNotes) {
+        form.setValue('notes', businessProfile.defaultNotes);
+      }
+      if (!currentTerms && businessProfile.defaultTerms) {
+        form.setValue('terms', businessProfile.defaultTerms);
+      }
+      if (businessProfile.currency) {
+        form.setValue('currency', businessProfile.currency);
+      }
+    }
+  }, [businessProfile, mode, initialValues, form]);
+
   const handleInvoiceNumberChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     form.setValue('invoiceNumber', e.target.value, { shouldDirty: true });
   };

@@ -90,7 +90,7 @@ const ItemSelector: React.FC<ItemSelectorProps> = ({
   const products = filteredItems.filter(item => item.type === 'product');
   const services = filteredItems.filter(item => item.type === 'service');
 
-  const content = (
+  const desktopContent = (
     <>
       <div className="p-4">
         <div className="mb-2">
@@ -194,12 +194,97 @@ const ItemSelector: React.FC<ItemSelectorProps> = ({
           </Button>
         </DrawerTrigger>
         <DrawerContent className="drawer-content">
-          <DrawerFormLayout
-            title="Select an Item"
-            description="Search for an existing item or create a new one."
-            footer={<></>}>
-            {content}
-          </DrawerFormLayout>
+          <div className="flex flex-col h-full max-h-[92vh]">
+            <div className="shrink-0 sticky top-0 bg-background z-10 p-4">
+              <div className="text-lg font-semibold">Select an Item</div>
+              <div className="text-sm text-muted-foreground">
+                Search for an existing item or create a new one.
+              </div>
+            </div>
+            <div className="flex-1 px-4 pb-4">
+              <Command 
+                className="rounded-lg border shadow-md h-full"
+                onTouchStart={(e) => e.stopPropagation()}
+                onTouchMove={(e) => e.stopPropagation()}
+              >
+                <div className="flex items-center border-b px-3">
+                  <SearchIcon className="mr-2 h-4 w-4 shrink-0 opacity-50" />
+                  <CommandInput
+                    autoFocus
+                    placeholder="Search items..."
+                    className="flex h-11 w-full rounded-md bg-transparent py-3 outline-none placeholder:text-muted-foreground"
+                    value={searchTerm}
+                    onValueChange={setSearchTerm}
+                  />
+                </div>
+                <CommandList 
+                  className="flex-1 overflow-auto"
+                  onTouchStart={(e) => e.stopPropagation()}
+                  onTouchMove={(e) => e.stopPropagation()}
+                >
+                  <CommandEmpty>No items found.</CommandEmpty>
+                  {products.length > 0 && (
+                    <CommandGroup heading="Products">
+                      {products.map((item) => (
+                        <CommandItem
+                          key={item.id}
+                          value={`product-${item.id}`}
+                          onSelect={() => handleItemSelect(item)}
+                          className="cursor-pointer"
+                        >
+                          <div className="flex items-center">
+                            <Package2 className="mr-2 h-4 w-4 text-muted-foreground" />
+                            <div>
+                              <div className="font-medium">{item.name}</div>
+                              <div className="text-sm text-muted-foreground flex gap-3">
+                                <span>{item.enableSaleInfo && item.salePrice ? `$${item.salePrice.toFixed(2)}` : ""}</span>
+                                {item.category?.name && <span>{item.category.name}</span>}
+                              </div>
+                            </div>
+                          </div>
+                        </CommandItem>
+                      ))}
+                    </CommandGroup>
+                  )}
+                  {services.length > 0 && (
+                    <CommandGroup heading="Services">
+                      {services.map((item) => (
+                        <CommandItem
+                          key={item.id}
+                          value={`service-${item.id}`}
+                          onSelect={() => handleItemSelect(item)}
+                          className="cursor-pointer"
+                        >
+                          <div className="flex items-center">
+                            <Sparkles className="mr-2 h-4 w-4 text-muted-foreground" />
+                            <div>
+                              <div className="font-medium">{item.name}</div>
+                              <div className="text-sm text-muted-foreground flex gap-3">
+                                <span>{item.enableSaleInfo && item.salePrice ? `$${item.salePrice.toFixed(2)}` : ""}</span>
+                                {item.category?.name && <span>{item.category.name}</span>}
+                              </div>
+                            </div>
+                          </div>
+                        </CommandItem>
+                      ))}
+                    </CommandGroup>
+                  )}
+                </CommandList>
+                {onCreateNewItem && (
+                  <div className="p-4 border-t">
+                    <Button
+                      variant="ghost"
+                      onClick={handleCreateNewItem}
+                      className="w-full justify-start text-primary"
+                    >
+                      <PlusCircle className="mr-2 h-4 w-4" />
+                      Create New Item
+                    </Button>
+                  </div>
+                )}
+              </Command>
+            </div>
+          </div>
         </DrawerContent>
       </Drawer>
     );
@@ -222,7 +307,7 @@ const ItemSelector: React.FC<ItemSelectorProps> = ({
         </Button>
       </DialogTrigger>
       <DialogContent className={`p-0 ${isMobile ? 'w-[95%]' : 'sm:max-w-[700px]'}`}>
-        {content}
+        {desktopContent}
       </DialogContent>
     </Dialog>
   );
