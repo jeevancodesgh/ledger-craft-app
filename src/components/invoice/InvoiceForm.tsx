@@ -296,6 +296,8 @@ const InvoiceForm: React.FC<InvoiceFormProps> = ({
     // When a new customer is added, select it in the form
     if (newlyAddedCustomer) {
       form.setValue('customerId', newlyAddedCustomer.id);
+      // Trigger validation to clear the error immediately
+      form.trigger('customerId');
     }
   }, [newlyAddedCustomer]);
 
@@ -825,7 +827,11 @@ const InvoiceForm: React.FC<InvoiceFormProps> = ({
                               <CustomerCombobox
                                 customers={customers}
                                 value={field.value}
-                                onValueChange={field.onChange}
+                                onValueChange={(value) => {
+                                  field.onChange(value);
+                                  // Trigger validation to clear the error immediately
+                                  form.trigger('customerId');
+                                }}
                                 placeholder="Search and select a customer..."
                                 disabled={isLoadingCustomers}
                                 isLoading={isLoadingCustomers}

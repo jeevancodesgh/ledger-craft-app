@@ -1,0 +1,47 @@
+# Page snapshot
+
+```yaml
+- button "Toggle theme":
+  - img
+  - img
+  - text: Toggle theme
+- img "LedgerCraft"
+- heading "LedgerCraft" [level=1]
+- heading "Welcome back" [level=2]
+- paragraph: Sign in to your account to continue
+- text: Email address
+- img
+- textbox "Email address"
+- text: Password
+- img
+- textbox "Password"
+- button "Show password":
+  - img
+- checkbox "Remember me"
+- text: Remember me
+- link "Forgot password?":
+  - /url: /forgot-password
+- button "Sign in" [disabled]:
+  - text: Sign in
+  - img
+- text: Or continue with
+- button "Google":
+  - img
+  - text: Google
+- button "GitHub":
+  - img
+  - text: GitHub
+- text: Don't have an account?
+- link "Sign up for free":
+  - /url: /signup
+- img
+- text: Secure
+- img
+- text: Fast
+- region "Notifications (F8)":
+  - list
+- img
+- text: Install Ledger Craft To install, tap Share then Add to Home Screen.
+- button "Dismiss add to home screen prompt":
+  - img
+```
