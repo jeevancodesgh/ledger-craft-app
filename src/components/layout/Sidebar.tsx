@@ -2,6 +2,7 @@ import React from 'react';
 import { NavLink } from 'react-router-dom';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/context/AuthContext';
+import { usePermissions, Permission } from '@/hooks/usePermissions';
 import { 
   LayoutDashboard, 
   FileText, 
@@ -16,7 +17,13 @@ import {
   UserCircle,
   ChevronRight,
   Zap,
-  Activity
+  Activity,
+  Wallet,
+  Calculator,
+  BarChart3,
+  DollarSign,
+  FileBarChart,
+  PieChart
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
@@ -29,38 +36,64 @@ interface SidebarProps {
 export function Sidebar({ collapsed, isMobile, onCloseMobileMenu }: SidebarProps) {
   const { user, signOut } = useAuth();
   const navigate = useNavigate();
+  const { hasPermission } = usePermissions();
   
-  const navSections = [
+  const allNavSections = [
     {
       title: 'Overview',
       items: [
-        { name: 'Dashboard', path: '/', icon: LayoutDashboard, badge: null },
+        { name: 'Dashboard', path: '/', icon: LayoutDashboard, badge: null, permission: undefined },
       ]
     },
     {
       title: 'Business',
       items: [
-        { name: 'Invoices', path: '/invoices', icon: Receipt, badge: 'New' },
-        { name: 'Customers', path: '/customers', icon: Users, badge: null },
-        { name: 'Items', path: '/items', icon: FolderOpen, badge: null },
+        { name: 'Invoices', path: '/invoices', icon: Receipt, badge: 'New', permission: 'invoices:read' as Permission },
+        { name: 'Customers', path: '/customers', icon: Users, badge: null, permission: 'customers:read' as Permission },
+        { name: 'Items', path: '/items', icon: FolderOpen, badge: null, permission: undefined },
       ]
     },
     {
       title: 'Financial',
       items: [
-        { name: 'Expenses', path: '/expenses', icon: CreditCard, badge: null },
-        { name: 'Expense Categories', path: '/expense-categories', icon: Tag, badge: null },
-        { name: 'Accounts', path: '/accounts', icon: Activity, badge: null },
-        { name: 'Categories', path: '/categories', icon: Zap, badge: null },
+        { name: 'Expenses', path: '/expenses', icon: CreditCard, badge: null, permission: 'expenses:read' as Permission },
+        { name: 'Expense Categories', path: '/expense-categories', icon: Tag, badge: null, permission: 'expenses:read' as Permission },
+        { name: 'Accounts', path: '/accounts', icon: Activity, badge: null, permission: 'accounts:read' as Permission },
+        { name: 'Categories', path: '/categories', icon: Zap, badge: null, permission: undefined },
+      ]
+    },
+    {
+      title: 'Payments & Accounting',
+      items: [
+        { name: 'Payments', path: '/payments', icon: Wallet, badge: null, permission: 'payments:read' as Permission },
+        { name: 'Receipts', path: '/receipts', icon: Receipt, badge: null, permission: 'receipts:read' as Permission },
+        { name: 'Accounting Dashboard', path: '/accounting', icon: BarChart3, badge: null, permission: undefined },
+        { name: 'Tax Configuration', path: '/tax-config', icon: Calculator, badge: null, permission: 'settings:manage' as Permission },
+      ]
+    },
+    {
+      title: 'Reports & Compliance',
+      items: [
+        { name: 'Financial Reports', path: '/financial-reports', icon: FileBarChart, badge: null, permission: 'reports:view' as Permission },
+        { name: 'IRD Reporting', path: '/ird-reports', icon: PieChart, badge: 'New', permission: 'reports:generate' as Permission },
+        { name: 'Journal Entries', path: '/journal-entries', icon: FileText, badge: null, permission: undefined },
       ]
     },
     {
       title: 'System',
       items: [
-        { name: 'Settings', path: '/settings', icon: Settings, badge: null },
+        { name: 'Settings', path: '/settings', icon: Settings, badge: null, permission: 'settings:manage' as Permission },
       ]
     }
   ];
+
+  // Filter navigation sections based on permissions
+  const navSections = allNavSections.map(section => ({
+    ...section,
+    items: section.items.filter(item => 
+      !item.permission || hasPermission(item.permission)
+    )
+  })).filter(section => section.items.length > 0);
 
   // Mobile sidebar is a bottom sheet menu
   if (isMobile) {

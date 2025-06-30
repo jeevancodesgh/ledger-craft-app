@@ -34,8 +34,10 @@ export default function PaymentsPage() {
   // Fetch unpaid invoices for payment processing
   const fetchUnpaidInvoices = async () => {
     try {
+      console.log('Fetching unpaid invoices...');
       const unpaid = await getInvoicesWithBalance();
       console.log('Fetched unpaid invoices:', unpaid);
+      console.log('Number of unpaid invoices:', unpaid.length);
       setUnpaidInvoices(unpaid);
     } catch (error) {
       console.error('Error fetching unpaid invoices:', error);
@@ -50,6 +52,10 @@ export default function PaymentsPage() {
   useEffect(() => {
     fetchUnpaidInvoices();
   }, []);
+
+  useEffect(() => {
+    console.log('selectedInvoice state changed to:', selectedInvoice);
+  }, [selectedInvoice]);
 
   const handleCreatePayment = async (paymentData: CreatePaymentRequest) => {
     try {
@@ -258,8 +264,10 @@ export default function PaymentsPage() {
                           : 'border-gray-200 hover:border-gray-300'
                       }`}
                       onClick={() => {
-                        console.log('Invoice selected:', invoice);
+                        console.log('Invoice clicked:', invoice);
+                        console.log('Setting selectedInvoice to:', invoice);
                         setSelectedInvoice(invoice);
+                        console.log('selectedInvoice state should now be:', invoice);
                       }}
                     >
                       <div className="flex items-center justify-between">
@@ -286,18 +294,23 @@ export default function PaymentsPage() {
               </div>
 
               {/* Payment Form */}
+              {console.log('PaymentForm conditional check - selectedInvoice:', selectedInvoice)}
+              {console.log('PaymentForm conditional check - !!selectedInvoice:', !!selectedInvoice)}
               {selectedInvoice && (
                 <>
                   {console.log('Rendering PaymentForm with selectedInvoice:', selectedInvoice)}
-                  <PaymentForm
-                    invoice={selectedInvoice}
-                    onSubmit={handleCreatePayment}
-                    onCancel={() => {
-                      setShowQuickPayment(false);
-                      setSelectedInvoice(null);
-                    }}
-                    isLoading={isLoadingPayments}
-                  />
+                  <div className="border-t pt-6">
+                    <h3 className="font-semibold mb-4">Payment Details</h3>
+                    <PaymentForm
+                      invoice={selectedInvoice}
+                      onSubmit={handleCreatePayment}
+                      onCancel={() => {
+                        setShowQuickPayment(false);
+                        setSelectedInvoice(null);
+                      }}
+                      isLoading={isLoadingPayments}
+                    />
+                  </div>
                 </>
               )}
             </div>

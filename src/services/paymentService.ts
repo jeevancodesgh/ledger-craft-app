@@ -332,10 +332,15 @@ export class PaymentService {
         line_items(*)
       `)
       .eq('user_id', user.id)
-      .in('payment_status', ['unpaid', 'partially_paid', 'overdue'])
+      .neq('status', 'cancelled')
       .order('due_date', { ascending: true });
 
-    if (error) throw error;
+    if (error) {
+      console.error('Error fetching invoices with balance:', error);
+      throw error;
+    }
+
+    console.log('Raw invoices from database:', invoices);
 
     // Map to EnhancedInvoice type with payment-specific fields
     const mappedInvoices: EnhancedInvoice[] = (invoices || []).map(invoice => {
@@ -343,19 +348,29 @@ export class PaymentService {
       const total = invoice.total || 0;
       const balanceDue = Math.max(0, total - totalPaid);
       
+      console.log(`Invoice ${invoice.invoice_number}: total=${total}, totalPaid=${totalPaid}, balanceDue=${balanceDue}`);
+      
       return {
         id: invoice.id,
         invoiceNumber: invoice.invoice_number || `INV-${invoice.id?.slice(-8) || 'UNKNOWN'}`,
         customerId: invoice.customer_id,
         customerName: invoice.customers?.name || '',
-        customer: {
-          id: invoice.customers?.id || '',
-          name: invoice.customers?.name || '',
-          email: invoice.customers?.email || '',
-          phone: invoice.customers?.phone || '',
-          address: invoice.customers?.address || '',
-          createdAt: invoice.customers?.created_at || new Date().toISOString(),
-          updatedAt: invoice.customers?.updated_at || new Date().toISOString()
+        customer: invoice.customers ? {
+          id: invoice.customers.id || '',
+          name: invoice.customers.name || 'Unknown Customer',
+          email: invoice.customers.email || '',
+          phone: invoice.customers.phone || '',
+          address: invoice.customers.address || '',
+          createdAt: invoice.customers.created_at || new Date().toISOString(),
+          updatedAt: invoice.customers.updated_at || new Date().toISOString()
+        } : {
+          id: 'unknown',
+          name: 'Unknown Customer',
+          email: '',
+          phone: '',
+          address: '',
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString()
         },
         userId: invoice.user_id,
         issueDate: invoice.issue_date,
@@ -394,8 +409,18 @@ export class PaymentService {
       };
     });
 
-    // Filter out invoices with no balance due
-    return mappedInvoices.filter(invoice => invoice.balanceDue > 0);
+    // Filter out invoices with no balance due and ensure they have required data
+    const filteredInvoices = mappedInvoices.filter(invoice => {
+      const hasBalance = invoice.balanceDue > 0;
+      const hasValidData = invoice.id && invoice.total > 0;
+      console.log(`Invoice ${invoice.invoiceNumber}: hasBalance=${hasBalance}, hasValidData=${hasValidData}`);
+      return hasBalance && hasValidData;
+    });
+    
+    console.log('Mapped invoices:', mappedInvoices);
+    console.log('Filtered invoices with balance:', filteredInvoices);
+    
+    return filteredInvoices;
   }
 
   // Helper method to format payment method display

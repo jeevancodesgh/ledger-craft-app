@@ -1,0 +1,385 @@
+import { 
+  TaxConfiguration, 
+  TaxCalculationRequest, 
+  TaxCalculationResult,
+  TaxBreakdown,
+  IRDReturnData 
+} from '@/types/payment';
+
+export class TaxCalculationService {
+  /**
+   * Calculate tax for invoice items based on tax configuration
+   */
+  calculateTax(request: TaxCalculationRequest, taxConfig: TaxConfiguration | null): TaxCalculationResult {
+    if (!taxConfig) {
+      throw new Error('Tax configuration is required');
+    }
+
+    if (taxConfig.taxRate < 0 || taxConfig.taxRate > 1) {
+      throw new Error('Tax rate must be between 0 and 1');
+    }
+
+    const breakdown: TaxBreakdown['breakdown'] = {
+      lineItems: []
+    };
+
+    let subtotalAmount = 0;
+    let totalTaxAmount = 0;
+
+    // Process each line item
+    request.items.forEach((item) => {
+      const lineTotal = item.quantity * item.unitPrice;
+      let lineTaxAmount = 0;
+      let lineSubtotal = lineTotal;
+
+      if (item.taxable && taxConfig.taxRate > 0) {
+        if (request.taxInclusive) {
+          // Tax-inclusive: extract tax from total
+          lineSubtotal = lineTotal / (1 + taxConfig.taxRate);
+          lineTaxAmount = lineTotal - lineSubtotal;
+        } else {
+          // Tax-exclusive: add tax to subtotal
+          lineSubtotal = lineTotal;
+          lineTaxAmount = lineTotal * taxConfig.taxRate;
+        }
+      }
+
+      // Round to 2 decimal places for currency
+      lineSubtotal = Math.round(lineSubtotal * 100) / 100;
+      lineTaxAmount = Math.round(lineTaxAmount * 100) / 100;
+
+      subtotalAmount += lineSubtotal;
+      totalTaxAmount += lineTaxAmount;
+
+      breakdown.lineItems.push({
+        description: item.description,
+        amount: lineSubtotal,
+        taxable: item.taxable,
+        taxAmount: lineTaxAmount
+      });
+    });
+
+    // Apply additional charges (taxable)
+    if (request.additionalCharges && request.additionalCharges > 0) {
+      let additionalTax = 0;
+      let additionalSubtotal = request.additionalCharges;
+
+      if (taxConfig.taxRate > 0) {
+        if (request.taxInclusive) {
+          additionalSubtotal = request.additionalCharges / (1 + taxConfig.taxRate);
+          additionalTax = request.additionalCharges - additionalSubtotal;
+        } else {
+          additionalTax = request.additionalCharges * taxConfig.taxRate;
+        }
+      }
+
+      additionalSubtotal = Math.round(additionalSubtotal * 100) / 100;
+      additionalTax = Math.round(additionalTax * 100) / 100;
+
+      subtotalAmount += additionalSubtotal;
+      totalTaxAmount += additionalTax;
+
+      breakdown.lineItems.push({
+        description: 'Additional Charges',
+        amount: additionalSubtotal,
+        taxable: true,
+        taxAmount: additionalTax
+      });
+    }
+
+    // Apply discounts (reduce subtotal before tax)
+    if (request.discounts && request.discounts > 0) {
+      if (request.taxInclusive) {
+        // For tax-inclusive, discount includes tax
+        const discountSubtotal = request.discounts / (1 + taxConfig.taxRate);
+        const discountTax = request.discounts - discountSubtotal;
+        
+        subtotalAmount -= Math.round(discountSubtotal * 100) / 100;
+        totalTaxAmount -= Math.round(discountTax * 100) / 100;
+      } else {
+        // For tax-exclusive, recalculate tax on discounted amount
+        subtotalAmount -= request.discounts;
+        totalTaxAmount = subtotalAmount * taxConfig.taxRate;
+        totalTaxAmount = Math.round(totalTaxAmount * 100) / 100;
+      }
+
+      breakdown.lineItems.push({
+        description: 'Discount',
+        amount: -request.discounts,
+        taxable: true,
+        taxAmount: request.taxInclusive ? 
+          -Math.round((request.discounts - (request.discounts / (1 + taxConfig.taxRate))) * 100) / 100 :
+          -Math.round((request.discounts * taxConfig.taxRate) * 100) / 100
+      });
+    }
+
+    // Final rounding
+    subtotalAmount = Math.round(subtotalAmount * 100) / 100;
+    totalTaxAmount = Math.round(totalTaxAmount * 100) / 100;
+    const total = Math.round((subtotalAmount + totalTaxAmount) * 100) / 100;
+
+    return {
+      subtotal: subtotalAmount,
+      taxAmount: totalTaxAmount,
+      total: total,
+      taxRate: taxConfig.taxRate,
+      taxName: taxConfig.taxName,
+      breakdown
+    };
+  }
+
+  /**
+   * Calculate GST for New Zealand IRD returns - Sales
+   */
+  async calculateGSTReturnSales(
+    salesData: Array<{ amount: number; taxInclusive: boolean; taxable: boolean }>,
+    taxConfig: TaxConfiguration
+  ): Promise<{
+    totalSales: number;
+    gstOnSales: number;
+    standardRated: number;
+    zeroRated: number;
+  }> {
+    let totalSales = 0;
+    let gstOnSales = 0;
+    let standardRated = 0;
+    let zeroRated = 0;
+
+    for (const sale of salesData) {
+      if (sale.taxable) {
+        standardRated += sale.amount;
+        
+        if (sale.taxInclusive) {
+          // Extract GST from tax-inclusive amount
+          const gstAmount = sale.amount - (sale.amount / (1 + taxConfig.taxRate));
+          gstOnSales += Math.round(gstAmount * 100) / 100;
+          totalSales += sale.amount;
+        } else {
+          // Add GST to tax-exclusive amount
+          const gstAmount = sale.amount * taxConfig.taxRate;
+          gstOnSales += Math.round(gstAmount * 100) / 100;
+          totalSales += sale.amount + gstAmount;
+        }
+      } else {
+        // Zero-rated or exempt
+        zeroRated += sale.amount;
+        totalSales += sale.amount;
+      }
+    }
+
+    return {
+      totalSales: Math.round(totalSales * 100) / 100,
+      gstOnSales: Math.round(gstOnSales * 100) / 100,
+      standardRated: Math.round(standardRated * 100) / 100,
+      zeroRated: Math.round(zeroRated * 100) / 100
+    };
+  }
+
+  /**
+   * Calculate GST for New Zealand IRD returns - Purchases
+   */
+  async calculateGSTReturnPurchases(
+    purchaseData: Array<{ amount: number; taxInclusive: boolean; taxable: boolean }>,
+    taxConfig: TaxConfiguration
+  ): Promise<{
+    totalPurchases: number;
+    gstOnPurchases: number;
+    standardRated: number;
+  }> {
+    let totalPurchases = 0;
+    let gstOnPurchases = 0;
+    let standardRated = 0;
+
+    for (const purchase of purchaseData) {
+      if (purchase.taxable) {
+        standardRated += purchase.amount;
+        
+        if (purchase.taxInclusive) {
+          // Extract GST from tax-inclusive amount
+          const gstAmount = purchase.amount - (purchase.amount / (1 + taxConfig.taxRate));
+          gstOnPurchases += Math.round(gstAmount * 100) / 100;
+          totalPurchases += purchase.amount;
+        } else {
+          // Add GST to tax-exclusive amount
+          const gstAmount = purchase.amount * taxConfig.taxRate;
+          gstOnPurchases += Math.round(gstAmount * 100) / 100;
+          totalPurchases += purchase.amount + gstAmount;
+        }
+      } else {
+        // Non-claimable GST purchases
+        totalPurchases += purchase.amount;
+      }
+    }
+
+    return {
+      totalPurchases: Math.round(totalPurchases * 100) / 100,
+      gstOnPurchases: Math.round(gstOnPurchases * 100) / 100,
+      standardRated: Math.round(standardRated * 100) / 100
+    };
+  }
+
+  /**
+   * Calculate net GST position for IRD return
+   */
+  calculateNetGST(gstOnSales: number, gstOnPurchases: number): number {
+    return Math.round((gstOnSales - gstOnPurchases) * 100) / 100;
+  }
+
+  /**
+   * Generate comprehensive IRD GST return data
+   */
+  async generateIRDGSTReturn(
+    userId: string,
+    periodStart: string,
+    periodEnd: string
+  ): Promise<IRDReturnData> {
+    // This would typically fetch data from the database
+    // For now, we'll return the structure
+
+    return {
+      gstReturn: {
+        salesDetails: {
+          standardRated: 0,
+          zeroRated: 0,
+          exempt: 0,
+          totalSales: 0,
+          gstOnSales: 0
+        },
+        purchaseDetails: {
+          standardRated: 0,
+          capitalGoods: 0,
+          totalPurchases: 0,
+          gstOnPurchases: 0
+        },
+        adjustments: {
+          badDebts: 0,
+          otherAdjustments: 0
+        }
+      }
+    };
+  }
+
+  /**
+   * Validate tax calculation inputs
+   */
+  validateTaxCalculationRequest(request: TaxCalculationRequest): {
+    isValid: boolean;
+    errors: string[];
+  } {
+    const errors: string[] = [];
+
+    if (!request.items || request.items.length === 0) {
+      errors.push('At least one item is required');
+    }
+
+    request.items?.forEach((item, index) => {
+      if (!item.description || item.description.trim() === '') {
+        errors.push(`Item ${index + 1}: Description is required`);
+      }
+      
+      if (item.quantity <= 0) {
+        errors.push(`Item ${index + 1}: Quantity must be positive`);
+      }
+      
+      if (item.unitPrice < 0) {
+        errors.push(`Item ${index + 1}: Unit price cannot be negative`);
+      }
+    });
+
+    if (request.additionalCharges && request.additionalCharges < 0) {
+      errors.push('Additional charges cannot be negative');
+    }
+
+    if (request.discounts && request.discounts < 0) {
+      errors.push('Discounts cannot be negative');
+    }
+
+    return {
+      isValid: errors.length === 0,
+      errors
+    };
+  }
+
+  /**
+   * Get active tax configuration for user
+   */
+  async getActiveTaxConfiguration(userId: string, countryCode: string = 'NZ'): Promise<TaxConfiguration | null> {
+    // This would fetch from the database
+    // For now, return a default NZ GST configuration
+    
+    return {
+      id: 'default-nz-gst',
+      userId,
+      countryCode: 'NZ',
+      taxType: 'GST',
+      taxRate: 0.15,
+      taxName: 'GST',
+      appliesToServices: true,
+      appliesToGoods: true,
+      effectiveFrom: '2023-01-01',
+      isActive: true,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString()
+    };
+  }
+
+  /**
+   * Calculate tax breakdown for invoice line items
+   */
+  calculateInvoiceTaxBreakdown(
+    lineItems: Array<{
+      description: string;
+      quantity: number;
+      rate: number;
+      tax?: number; // Optional tax rate override
+    }>,
+    additionalCharges: number = 0,
+    discount: number = 0,
+    taxConfig: TaxConfiguration,
+    taxInclusive: boolean = true
+  ): TaxBreakdown {
+    const request: TaxCalculationRequest = {
+      items: lineItems.map(item => ({
+        description: item.description,
+        quantity: item.quantity,
+        unitPrice: item.rate,
+        taxable: true // Assume all invoice items are taxable
+      })),
+      additionalCharges,
+      discounts: discount,
+      taxInclusive
+    };
+
+    const result = this.calculateTax(request, taxConfig);
+
+    return {
+      subtotal: result.subtotal,
+      taxAmount: result.taxAmount,
+      taxRate: result.taxRate,
+      taxName: result.taxName,
+      taxInclusive,
+      total: result.total
+    };
+  }
+
+  /**
+   * Format tax amount for display
+   */
+  formatTaxAmount(amount: number, currency: string = 'NZD'): string {
+    return new Intl.NumberFormat('en-NZ', {
+      style: 'currency',
+      currency: currency,
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2
+    }).format(amount);
+  }
+
+  /**
+   * Get tax rate as percentage string
+   */
+  formatTaxRate(rate: number): string {
+    return `${(rate * 100).toFixed(1)}%`;
+  }
+}
+
+export const taxCalculationService = new TaxCalculationService();

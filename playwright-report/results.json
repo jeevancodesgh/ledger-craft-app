@@ -1,0 +1,244 @@
+{
+  "config": {
+    "configFile": "/Users/jeevan.wijerathna/jeevan/projects/ledger-craft-app/playwright.config.ts",
+    "rootDir": "/Users/jeevan.wijerathna/jeevan/projects/ledger-craft-app/tests/e2e",
+    "forbidOnly": false,
+    "fullyParallel": true,
+    "globalSetup": null,
+    "globalTeardown": null,
+    "globalTimeout": 0,
+    "grep": {},
+    "grepInvert": null,
+    "maxFailures": 0,
+    "metadata": {
+      "actualWorkers": 1
+    },
+    "preserveOutput": "always",
+    "reporter": [
+      [
+        "html",
+        null
+      ],
+      [
+        "json",
+        {
+          "outputFile": "playwright-report/results.json"
+        }
+      ],
+      [
+        "junit",
+        {
+          "outputFile": "playwright-report/results.xml"
+        }
+      ]
+    ],
+    "reportSlowTests": {
+      "max": 5,
+      "threshold": 300000
+    },
+    "quiet": false,
+    "projects": [
+      {
+        "outputDir": "/Users/jeevan.wijerathna/jeevan/projects/ledger-craft-app/test-results",
+        "repeatEach": 1,
+        "retries": 0,
+        "metadata": {
+          "actualWorkers": 1
+        },
+        "id": "chromium",
+        "name": "chromium",
+        "testDir": "/Users/jeevan.wijerathna/jeevan/projects/ledger-craft-app/tests/e2e",
+        "testIgnore": [],
+        "testMatch": [
+          "**/*.@(spec|test).?(c|m)[jt]s?(x)"
+        ],
+        "timeout": 30000
+      },
+      {
+        "outputDir": "/Users/jeevan.wijerathna/jeevan/projects/ledger-craft-app/test-results",
+        "repeatEach": 1,
+        "retries": 0,
+        "metadata": {
+          "actualWorkers": 1
+        },
+        "id": "firefox",
+        "name": "firefox",
+        "testDir": "/Users/jeevan.wijerathna/jeevan/projects/ledger-craft-app/tests/e2e",
+        "testIgnore": [],
+        "testMatch": [
+          "**/*.@(spec|test).?(c|m)[jt]s?(x)"
+        ],
+        "timeout": 30000
+      },
+      {
+        "outputDir": "/Users/jeevan.wijerathna/jeevan/projects/ledger-craft-app/test-results",
+        "repeatEach": 1,
+        "retries": 0,
+        "metadata": {
+          "actualWorkers": 1
+        },
+        "id": "webkit",
+        "name": "webkit",
+        "testDir": "/Users/jeevan.wijerathna/jeevan/projects/ledger-craft-app/tests/e2e",
+        "testIgnore": [],
+        "testMatch": [
+          "**/*.@(spec|test).?(c|m)[jt]s?(x)"
+        ],
+        "timeout": 30000
+      },
+      {
+        "outputDir": "/Users/jeevan.wijerathna/jeevan/projects/ledger-craft-app/test-results",
+        "repeatEach": 1,
+        "retries": 0,
+        "metadata": {
+          "actualWorkers": 1
+        },
+        "id": "Mobile Chrome",
+        "name": "Mobile Chrome",
+        "testDir": "/Users/jeevan.wijerathna/jeevan/projects/ledger-craft-app/tests/e2e",
+        "testIgnore": [],
+        "testMatch": [
+          "**/*.@(spec|test).?(c|m)[jt]s?(x)"
+        ],
+        "timeout": 30000
+      },
+      {
+        "outputDir": "/Users/jeevan.wijerathna/jeevan/projects/ledger-craft-app/test-results",
+        "repeatEach": 1,
+        "retries": 0,
+        "metadata": {
+          "actualWorkers": 1
+        },
+        "id": "Mobile Safari",
+        "name": "Mobile Safari",
+        "testDir": "/Users/jeevan.wijerathna/jeevan/projects/ledger-craft-app/tests/e2e",
+        "testIgnore": [],
+        "testMatch": [
+          "**/*.@(spec|test).?(c|m)[jt]s?(x)"
+        ],
+        "timeout": 30000
+      }
+    ],
+    "shard": null,
+    "updateSnapshots": "missing",
+    "updateSourceMethod": "patch",
+    "version": "1.53.1",
+    "workers": 7,
+    "webServer": {
+      "command": "npm run dev",
+      "url": "http://localhost:8081",
+      "reuseExistingServer": true,
+      "timeout": 120000
+    }
+  },
+  "suites": [
+    {
+      "title": "finance-workflow.spec.ts",
+      "file": "finance-workflow.spec.ts",
+      "column": 0,
+      "line": 0,
+      "specs": [],
+      "suites": [
+        {
+          "title": "Complete Finance Workflow Tests",
+          "file": "finance-workflow.spec.ts",
+          "line": 394,
+          "column": 6,
+          "specs": [
+            {
+              "title": "Complete Invoice-to-Payment-to-Receipt Workflow",
+              "ok": false,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "timedOut",
+                      "duration": 30110,
+                      "error": {
+                        "message": "\u001b[31mTest timeout of 30000ms exceeded while running \"beforeEach\" hook.\u001b[39m",
+                        "stack": "\u001b[31mTest timeout of 30000ms exceeded while running \"beforeEach\" hook.\u001b[39m\n    at /Users/jeevan.wijerathna/jeevan/projects/ledger-craft-app/tests/e2e/finance-workflow.spec.ts:430:8",
+                        "location": {
+                          "file": "/Users/jeevan.wijerathna/jeevan/projects/ledger-craft-app/tests/e2e/finance-workflow.spec.ts",
+                          "column": 8,
+                          "line": 430
+                        },
+                        "snippet": "  428 |   };\n  429 |\n> 430 |   test.beforeEach(async ({ page }) => {\n      |        ^\n  431 |     authMocker = new AuthMocker(page);\n  432 |     financeHelper = new FinanceTestHelper(page);\n  433 |     "
+                      },
+                      "errors": [
+                        {
+                          "location": {
+                            "file": "/Users/jeevan.wijerathna/jeevan/projects/ledger-craft-app/tests/e2e/finance-workflow.spec.ts",
+                            "column": 8,
+                            "line": 430
+                          },
+                          "message": "\u001b[31mTest timeout of 30000ms exceeded while running \"beforeEach\" hook.\u001b[39m\n\n  428 |   };\n  429 |\n> 430 |   test.beforeEach(async ({ page }) => {\n      |        ^\n  431 |     authMocker = new AuthMocker(page);\n  432 |     financeHelper = new FinanceTestHelper(page);\n  433 |     \n    at /Users/jeevan.wijerathna/jeevan/projects/ledger-craft-app/tests/e2e/finance-workflow.spec.ts:430:8"
+                        },
+                        {
+                          "location": {
+                            "file": "/Users/jeevan.wijerathna/jeevan/projects/ledger-craft-app/tests/e2e/finance-workflow.spec.ts",
+                            "column": 16,
+                            "line": 445
+                          },
+                          "message": "Error: page.waitForSelector: Test timeout of 30000ms exceeded.\nCall log:\n\u001b[2m  - waiting for locator('[data-testid=\"dashboard\"]') to be visible\u001b[22m\n\n\n  443 |     // Navigate to dashboard\n  444 |     await page.goto('/');\n> 445 |     await page.waitForSelector('[data-testid=\"dashboard\"]');\n      |                ^\n  446 |   });\n  447 |\n  448 |   test('Complete Invoice-to-Payment-to-Receipt Workflow', async ({ page }) => {\n    at /Users/jeevan.wijerathna/jeevan/projects/ledger-craft-app/tests/e2e/finance-workflow.spec.ts:445:16"
+                        }
+                      ],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2025-06-30T08:04:09.416Z",
+                      "annotations": [],
+                      "attachments": [
+                        {
+                          "name": "screenshot",
+                          "contentType": "image/png",
+                          "path": "/Users/jeevan.wijerathna/jeevan/projects/ledger-craft-app/test-results/finance-workflow-Complete--b3b4a-Payment-to-Receipt-Workflow-chromium/test-failed-1.png"
+                        },
+                        {
+                          "name": "video",
+                          "contentType": "video/webm",
+                          "path": "/Users/jeevan.wijerathna/jeevan/projects/ledger-craft-app/test-results/finance-workflow-Complete--b3b4a-Payment-to-Receipt-Workflow-chromium/video.webm"
+                        },
+                        {
+                          "name": "error-context",
+                          "contentType": "text/markdown",
+                          "path": "/Users/jeevan.wijerathna/jeevan/projects/ledger-craft-app/test-results/finance-workflow-Complete--b3b4a-Payment-to-Receipt-Workflow-chromium/error-context.md"
+                        }
+                      ],
+                      "errorLocation": {
+                        "file": "/Users/jeevan.wijerathna/jeevan/projects/ledger-craft-app/tests/e2e/finance-workflow.spec.ts",
+                        "column": 8,
+                        "line": 430
+                      }
+                    }
+                  ],
+                  "status": "unexpected"
+                }
+              ],
+              "id": "415a079541251495eedd-1e4980930b97e534e41e",
+              "file": "finance-workflow.spec.ts",
+              "line": 448,
+              "column": 3
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "errors": [],
+  "stats": {
+    "startTime": "2025-06-30T08:04:08.994Z",
+    "duration": 30757.712,
+    "expected": 0,
+    "skipped": 0,
+    "unexpected": 1,
+    "flaky": 0
+  }
+}
