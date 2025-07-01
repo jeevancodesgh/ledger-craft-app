@@ -67,15 +67,21 @@ export const ReceiptScanner: React.FC<ReceiptScannerProps> = ({
       
       // If scanning was successful, upload the receipt to storage
       if (!error) {
+        console.log('Scanning successful, starting upload...');
         setIsUploading(true);
         try {
+          console.log('Uploading file:', selectedFile.name, selectedFile.size);
           const uploadResult = await storageService.uploadReceipt(selectedFile);
+          console.log('Upload result:', uploadResult);
           if (uploadResult?.url) {
             setUploadedReceiptUrl(uploadResult.url);
+            console.log('Receipt uploaded successfully to:', uploadResult.url);
             toast({
               title: "Receipt Uploaded",
               description: "Receipt image has been saved and scanned successfully.",
             });
+          } else {
+            console.error('Upload result missing URL:', uploadResult);
           }
         } catch (uploadError) {
           console.error('Receipt upload failed:', uploadError);
@@ -87,6 +93,8 @@ export const ReceiptScanner: React.FC<ReceiptScannerProps> = ({
         } finally {
           setIsUploading(false);
         }
+      } else {
+        console.error('Scanning failed, skipping upload');
       }
     } catch (scanError) {
       console.error('Scanning failed:', scanError);
@@ -95,6 +103,8 @@ export const ReceiptScanner: React.FC<ReceiptScannerProps> = ({
 
   const handleAcceptResult = () => {
     if (scanResult) {
+      console.log('Accepting scan result:', scanResult);
+      console.log('With receipt URL:', uploadedReceiptUrl);
       onScanComplete(scanResult, uploadedReceiptUrl || undefined);
       onClose();
     }

@@ -141,6 +141,9 @@ const ExpenseFormDrawer: React.FC<ExpenseFormDrawerProps> = ({
       ...values,
       receiptUrl: receiptUrl || values.receiptUrl || null
     };
+    console.log('Submitting expense with data:', formData);
+    console.log('Receipt URL from state:', receiptUrl);
+    console.log('Receipt URL from form:', values.receiptUrl);
     onSubmit(formData);
   };
 
@@ -168,10 +171,12 @@ const ExpenseFormDrawer: React.FC<ExpenseFormDrawerProps> = ({
   }, [open, form]);
 
   const handleReceiptChange = (url: string | null, file: File | null) => {
+    console.log('Receipt change in ExpenseFormDrawer:', { url, file });
     setReceiptUrl(url);
     setReceiptFile(file);
     // Update the form field as well
     form.setValue('receiptUrl', url || '');
+    console.log('Form receiptUrl updated to:', url || '');
   };
 
   const handleScanComplete = (scanResult: ReceiptScanResult) => {

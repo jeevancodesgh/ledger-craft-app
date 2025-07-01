@@ -204,6 +204,8 @@ export const ReceiptUpload: React.FC<ReceiptUploadProps> = ({
   };
 
   const handleScanComplete = (scanResult: ReceiptScanResult, receiptUrl?: string) => {
+    console.log('Scan completed with:', { scanResult, receiptUrl });
+    
     setShowScanner(false);
     if (onScanComplete) {
       onScanComplete(scanResult);
@@ -211,13 +213,18 @@ export const ReceiptUpload: React.FC<ReceiptUploadProps> = ({
     
     // If a receipt URL was provided, set it as the receipt attachment
     if (receiptUrl) {
+      console.log('Setting receipt URL:', receiptUrl);
       setReceiptUrl(receiptUrl);
       onReceiptChange(receiptUrl, null);
+    } else {
+      console.warn('No receipt URL provided from scan');
     }
     
     toast({
-      title: "Receipt Scanned & Attached",
-      description: "AI has extracted data from your receipt and attached the image.",
+      title: receiptUrl ? "Receipt Scanned & Attached" : "Receipt Scanned",
+      description: receiptUrl 
+        ? "AI has extracted data from your receipt and attached the image."
+        : "AI has extracted data from your receipt. Image attachment may have failed.",
     });
   };
 
