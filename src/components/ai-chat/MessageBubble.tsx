@@ -1,10 +1,11 @@
 import React from 'react';
-import { Bot, User, Clock, CheckCircle, XCircle, AlertCircle } from 'lucide-react';
+import { Bot, User, Clock, CheckCircle, XCircle, AlertCircle, ExternalLink } from 'lucide-react';
 import { Badge } from '../ui/badge';
 import { Button } from '../ui/button';
 import { Card } from '../ui/card';
 import { ConversationMessage } from '../../types';
 import { cn } from '../../lib/utils';
+import { useNavigate } from 'react-router-dom';
 
 interface MessageBubbleProps {
   message: ConversationMessage;
@@ -14,6 +15,7 @@ interface MessageBubbleProps {
 export function MessageBubble({ message, onRetry }: MessageBubbleProps) {
   const isUser = message.role === 'user';
   const isSystem = message.role === 'system';
+  const navigate = useNavigate();
   
   const formatTime = (timestamp: Date) => {
     return new Date(timestamp).toLocaleTimeString([], { 
@@ -120,9 +122,73 @@ export function MessageBubble({ message, onRetry }: MessageBubbleProps) {
           </div>
         );
       }
+
+      // Render navigation data (for successful invoice creation)
+      if (data.type === 'navigation' && data.editUrl) {
+        return (
+          <div className="space-y-3">
+            <div>{renderClickableContent(message.content)}</div>
+            <Button
+              onClick={() => navigate(data.editUrl)}
+              variant="outline"
+              size="sm"
+              className="w-full flex items-center gap-2"
+            >
+              <ExternalLink className="h-4 w-4" />
+              View & Edit Invoice
+            </Button>
+          </div>
+        );
+      }
     }
 
-    return <p className="whitespace-pre-wrap">{message.content}</p>;
+    return <div>{renderClickableContent(message.content)}</div>;
+  };
+
+  const renderClickableContent = (content: string) => {
+    // Check if there's invoice creation data in metadata for navigation
+    const navigationData = message.metadata?.actions?.find(action => action.type === 'navigate_to_invoice');
+    
+    // Pattern to match invoice numbers in the format **Invoice #INV-YYYY-XXX**
+    const invoicePattern = /\*\*Invoice #(INV-\d{4}-\d{3})\*\*/g;
+    
+    // Create a new regex instance for testing (since test() moves the index)
+    const testPattern = new RegExp(invoicePattern.source, invoicePattern.flags);
+    
+    // If no invoice pattern found, render as normal text
+    if (!testPattern.test(content)) {
+      return <p className="whitespace-pre-wrap">{content}</p>;
+    }
+
+    // Split content by invoice pattern and render with clickable invoice numbers
+    const parts = content.split(invoicePattern);
+    const result: React.ReactNode[] = [];
+    
+    for (let i = 0; i < parts.length; i++) {
+      if (i % 2 === 0) {
+        // Regular text
+        if (parts[i]) {
+          result.push(<span key={i}>{parts[i]}</span>);
+        }
+      } else {
+        // Invoice number - make it clickable
+        const invoiceNumber = parts[i];
+        const editUrl = navigationData?.parameters?.editUrl || `/invoices/edit?number=${invoiceNumber}`;
+        
+        result.push(
+          <button
+            key={i}
+            onClick={() => navigate(editUrl)}
+            className="font-bold text-blue-600 hover:text-blue-800 underline cursor-pointer transition-colors"
+            title="Click to edit invoice"
+          >
+            Invoice #{invoiceNumber}
+          </button>
+        );
+      }
+    }
+
+    return <div className="whitespace-pre-wrap">{result}</div>;
   };
 
   if (isSystem) {

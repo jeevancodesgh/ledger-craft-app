@@ -524,7 +524,7 @@ export type ConversationIntent =
   | 'unknown';
 
 export interface ConversationEntity {
-  type: 'customer' | 'amount' | 'date' | 'product' | 'service' | 'invoice' | 'expense' | 'category';
+  type: 'customer' | 'amount' | 'date' | 'product' | 'service' | 'invoice' | 'expense' | 'category' | 'selection';
   value: string;
   confidence: number;
   resolved?: boolean;
@@ -553,6 +553,18 @@ export interface ConversationMessage {
   };
 }
 
+export interface InvoiceCreationContext {
+  step: 'customer_search' | 'customer_disambiguation' | 'item_selection' | 'additional_charges' | 'template_selection' | 'invoice_creation';
+  searchTerm?: string;
+  customerCandidates?: Customer[];
+  selectedCustomer?: Customer;
+  availableItems?: Item[];
+  selectedItems?: Array<Item & { quantity: number; rate: number }>;
+  additionalCharges?: AdditionalCharge[];
+  selectedTemplate?: string;
+  completedInvoice?: Invoice;
+}
+
 export interface ConversationContext {
   currentTask?: {
     type: ConversationIntent;
@@ -560,6 +572,7 @@ export interface ConversationContext {
     requiredFields: string[];
     completedFields: string[];
   };
+  currentInvoiceCreation?: InvoiceCreationContext;
   recentEntities: {
     customers: Customer[];
     invoices: Invoice[];

@@ -11,6 +11,7 @@ import { conversationService } from '../services/conversationService';
 import { conversationActionHandler } from '../services/conversationActionHandler';
 import { useAuth } from './AuthContext';
 import { useToast } from '../hooks/use-toast';
+import { useNavigate } from 'react-router-dom';
 
 interface ConversationProviderType {
   // Current conversation state
@@ -62,13 +63,13 @@ export const ConversationProvider: React.FC<ConversationProviderProps> = ({ chil
 
   const { user } = useAuth();
   const { toast } = useToast();
+  const navigate = useNavigate();
 
-  // Load recent conversations on mount - DISABLED FOR TESTING
+  // Load recent conversations on mount
   useEffect(() => {
-    // Temporarily disabled for testing - will re-enable after migration
-    // if (user) {
-    //   getRecentConversations();
-    // }
+    if (user) {
+      getRecentConversations();
+    }
   }, [user]);
 
   const createNewConversation = async (): Promise<ConversationSession> => {
@@ -178,12 +179,22 @@ export const ConversationProvider: React.FC<ConversationProviderProps> = ({ chil
         messages: [...prev.messages, userMessage]
       } : null);
 
-      // Generate AI response
-      const aiResponse = await aiService.processMessage(
-        message,
-        currentConversation.context,
-        currentConversation.messages
-      );
+      // Check if this is an invoice creation flow
+      let aiResponse;
+      if (currentConversation.context.currentInvoiceCreation || 
+          message.toLowerCase().includes('create') && message.toLowerCase().includes('invoice')) {
+        aiResponse = await aiService.processInvoiceCreationFlow(
+          message,
+          currentConversation.context,
+          currentConversation.messages
+        );
+      } else {
+        aiResponse = await aiService.processMessage(
+          message,
+          currentConversation.context,
+          currentConversation.messages
+        );
+      }
 
       // Add assistant message
       const assistantMessage = await conversationService.addMessage(
@@ -333,6 +344,13 @@ export const ConversationProvider: React.FC<ConversationProviderProps> = ({ chil
         responseMessage = generateSuccessMessage(action.type, result.data);
         responseData = result.data;
         
+        // Handle navigation action
+        if (action.type === 'navigate_to_invoice' && result.data?.editUrl) {
+          setTimeout(() => {
+            navigate(result.data.editUrl);
+          }, 500);
+        }
+        
         toast({
           title: 'Success',
           description: `${action.type.replace('_', ' ')} completed successfully`,
@@ -372,6 +390,8 @@ export const ConversationProvider: React.FC<ConversationProviderProps> = ({ chil
     switch (actionType) {
       case 'create_invoice':
         return `Great! I've created invoice ${data.invoiceNumber} for ${data.customerName}. Total amount: ${data.currency} ${data.total}`;
+      case 'navigate_to_invoice':
+        return `Invoice created successfully! You can view and edit it now.`;
       case 'create_customer':
         return `Perfect! I've added ${data.name} as a new customer.`;
       case 'create_expense':

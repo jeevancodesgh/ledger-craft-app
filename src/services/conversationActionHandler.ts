@@ -34,6 +34,8 @@ export class ConversationActionHandler {
           return await this.handleFindInvoice(action, context);
         case 'send_invoice':
           return await this.handleSendInvoice(action, context);
+        case 'navigate_to_invoice':
+          return await this.handleNavigateToInvoice(action, context);
         default:
           return {
             success: false,
@@ -591,6 +593,24 @@ export class ConversationActionHandler {
       success: true,
       data: { type: 'email_sent' },
       suggestions: ['Track invoice status', 'Set payment reminder']
+    };
+  }
+
+  private async handleNavigateToInvoice(
+    action: ConversationAction,
+    context: ConversationContext
+  ): Promise<ActionResult> {
+    const { invoiceId, editUrl } = action.parameters;
+    
+    return {
+      success: true,
+      data: {
+        type: 'navigation',
+        invoiceId,
+        editUrl,
+        action: 'navigate'
+      },
+      suggestions: ['Edit invoice details', 'Send invoice', 'Create another invoice']
     };
   }
 

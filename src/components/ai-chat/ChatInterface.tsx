@@ -37,6 +37,21 @@ export function ChatInterface({
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
+  // FAB position and drag state
+  const getInitialFabPosition = () => {
+    if (typeof window !== 'undefined') {
+      return {
+        x: window.innerWidth - 64 - 24, // 24px from right
+        y: window.innerHeight - 64 - 24, // 24px from bottom
+      };
+    }
+    return { x: 24, y: 24 };
+  };
+  const [fabPosition, setFabPosition] = useState(getInitialFabPosition);
+  const [dragging, setDragging] = useState(false);
+  const dragOffset = useRef({ x: 0, y: 0 });
+  const fabRef = useRef<HTMLButtonElement | null>(null);
+
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   };
@@ -50,6 +65,83 @@ export function ChatInterface({
       textareaRef.current.focus();
     }
   }, [isOpen]);
+
+  // Keep FAB within bounds on resize
+  useEffect(() => {
+    function handleResize() {
+      setFabPosition((pos) => {
+        const maxX = window.innerWidth - 72;
+        const maxY = window.innerHeight - 72;
+        return {
+          x: Math.min(pos.x, maxX),
+          y: Math.min(pos.y, maxY),
+        };
+      });
+    }
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
+
+  // On mount, set initial position to bottom right
+  useEffect(() => {
+    setFabPosition(getInitialFabPosition());
+  }, []);
+
+  // Drag handlers
+  const startDrag = (e: React.MouseEvent | React.TouchEvent) => {
+    setDragging(true);
+    let clientX: number, clientY: number;
+    if ('touches' in e) {
+      clientX = e.touches[0].clientX;
+      clientY = e.touches[0].clientY;
+    } else {
+      clientX = e.clientX;
+      clientY = e.clientY;
+    }
+    dragOffset.current = {
+      x: clientX - fabPosition.x,
+      y: clientY - fabPosition.y,
+    };
+    e.stopPropagation();
+  };
+
+  const onDrag = (e: MouseEvent | TouchEvent) => {
+    if (!dragging) return;
+    let clientX: number, clientY: number;
+    if ('touches' in e && e.touches.length > 0) {
+      clientX = e.touches[0].clientX;
+      clientY = e.touches[0].clientY;
+    } else if ('clientX' in e) {
+      clientX = e.clientX;
+      clientY = e.clientY;
+    } else {
+      return;
+    }
+    const minX = 8, minY = 8;
+    const maxX = window.innerWidth - 64 - 8;
+    const maxY = window.innerHeight - 64 - 8;
+    const x = Math.max(minX, Math.min(clientX - dragOffset.current.x, maxX));
+    const y = Math.max(minY, Math.min(clientY - dragOffset.current.y, maxY));
+    setFabPosition({ x, y });
+  };
+
+  const stopDrag = () => setDragging(false);
+
+  useEffect(() => {
+    if (!dragging) return;
+    const move = (e: MouseEvent | TouchEvent) => onDrag(e);
+    const up = () => stopDrag();
+    window.addEventListener('mousemove', move);
+    window.addEventListener('mouseup', up);
+    window.addEventListener('touchmove', move);
+    window.addEventListener('touchend', up);
+    return () => {
+      window.removeEventListener('mousemove', move);
+      window.removeEventListener('mouseup', up);
+      window.removeEventListener('touchmove', move);
+      window.removeEventListener('touchend', up);
+    };
+  }, [dragging]);
 
   const handleSendMessage = async () => {
     if (!message.trim() || isProcessing) return;
@@ -92,24 +184,45 @@ export function ChatInterface({
     }
     
     const lastMessage = conversation.messages[conversation.messages.length - 1];
-    return lastMessage.metadata?.suggestedActions || [];
+    const meta = lastMessage.metadata as any;
+    return Array.isArray(meta?.suggestedActions) ? meta.suggestedActions : [];
   };
 
   const quickActions = getQuickActions();
 
   if (!isOpen) {
     return (
-      <Button
-        onClick={onToggle}
-        className={cn(
-          "fixed bottom-4 right-4 h-14 w-14 rounded-full shadow-lg z-50",
-          "bg-primary hover:bg-primary/90 text-primary-foreground",
-          className
-        )}
-        size="icon"
+      <div
+        style={{
+          position: 'fixed',
+          left: fabPosition.x,
+          top: fabPosition.y,
+          zIndex: 50,
+          width: 64,
+          height: 64,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          transition: dragging ? 'none' : 'left 0.25s cubic-bezier(0.4,0,0.2,1), top 0.25s cubic-bezier(0.4,0,0.2,1), box-shadow 0.2s',
+          touchAction: 'none',
+        }}
       >
-        <MessageCircle className="h-6 w-6" />
-      </Button>
+        <Button
+          ref={fabRef}
+          onClick={onToggle}
+          onMouseDown={startDrag}
+          onTouchStart={startDrag}
+          className={cn(
+            "w-16 h-16 aspect-square rounded-full shadow-2xl border-2 border-white bg-blue-500 hover:bg-blue-600 text-white flex items-center justify-center z-50 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-blue-400",
+            className
+          )}
+          style={{ minWidth: 64, minHeight: 64, maxWidth: 64, maxHeight: 64, padding: 0, userSelect: 'none', cursor: dragging ? 'grabbing' : 'grab' }}
+          aria-label="Open AI Assistant"
+          tabIndex={0}
+        >
+          <MessageCircle className="w-7 h-7" />
+        </Button>
+      </div>
     );
   }
 
