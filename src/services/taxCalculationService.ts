@@ -5,6 +5,7 @@ import {
   TaxBreakdown,
   IRDReturnData 
 } from '@/types/payment';
+import { supabaseDataService } from './supabaseDataService';
 
 export class TaxCalculationService {
   /**
@@ -226,37 +227,78 @@ export class TaxCalculationService {
   }
 
   /**
-   * Generate comprehensive IRD GST return data
+   * Generate comprehensive IRD GST return data from real Supabase data
    */
   async generateIRDGSTReturn(
     userId: string,
     periodStart: string,
     periodEnd: string
   ): Promise<IRDReturnData> {
-    // This would typically fetch data from the database
-    // For now, we'll return the structure
-
-    return {
-      gstReturn: {
-        salesDetails: {
-          standardRated: 0,
-          zeroRated: 0,
-          exempt: 0,
-          totalSales: 0,
-          gstOnSales: 0
-        },
-        purchaseDetails: {
-          standardRated: 0,
-          capitalGoods: 0,
-          totalPurchases: 0,
-          gstOnPurchases: 0
-        },
-        adjustments: {
-          badDebts: 0,
-          otherAdjustments: 0
-        }
+    try {
+      const taxConfig = await this.getActiveTaxConfiguration(userId);
+      if (!taxConfig) {
+        throw new Error('No active tax configuration found');
       }
-    };
+
+      // Fetch real data from Supabase
+      const [invoices, expenses] = await Promise.all([
+        supabaseDataService.getInvoicesByPeriod(userId, periodStart, periodEnd),
+        supabaseDataService.getExpensesByPeriod(userId, periodStart, periodEnd)
+      ]);
+
+      // Calculate sales data using real invoice data
+      const salesData = invoices.map(invoice => ({
+        amount: invoice.total,
+        taxInclusive: invoice.taxInclusive || true,
+        taxable: invoice.total > 0
+      }));
+
+      const salesCalculation = await this.calculateGSTReturnSales(salesData, taxConfig);
+
+      // Calculate purchase data using real expense data
+      const purchaseData = expenses.map(expense => ({
+        amount: expense.amount,
+        taxInclusive: expense.tax_inclusive,
+        taxable: expense.is_claimable
+      }));
+
+      const purchaseCalculation = await this.calculateGSTReturnPurchases(purchaseData, taxConfig);
+
+      // Calculate capital goods from expenses
+      const capitalGoods = expenses
+        .filter(expense => expense.is_capital_expense)
+        .reduce((sum, expense) => sum + expense.amount, 0);
+
+      // Calculate bad debts from written-off invoices
+      const badDebts = invoices
+        .filter(invoice => invoice.paymentStatus === 'written_off')
+        .reduce((sum, invoice) => sum + (invoice.tax_amount || 0), 0);
+
+      return {
+        gstReturn: {
+          salesDetails: {
+            standardRated: salesCalculation.standardRated,
+            zeroRated: salesCalculation.zeroRated,
+            exempt: 0, // Calculate if needed
+            totalSales: salesCalculation.totalSales,
+            gstOnSales: salesCalculation.gstOnSales
+          },
+          purchaseDetails: {
+            standardRated: purchaseCalculation.standardRated,
+            capitalGoods: capitalGoods,
+            totalPurchases: purchaseCalculation.totalPurchases,
+            gstOnPurchases: purchaseCalculation.gstOnPurchases
+          },
+          adjustments: {
+            badDebts: badDebts,
+            otherAdjustments: 0
+          }
+        }
+      };
+    } catch (error) {
+      console.error('Error generating IRD GST return:', error);
+      throw error;
+    }
   }
 
   /**
@@ -301,26 +343,22 @@ export class TaxCalculationService {
   }
 
   /**
-   * Get active tax configuration for user
+   * Get active tax configuration for user from Supabase
    */
   async getActiveTaxConfiguration(userId: string, countryCode: string = 'NZ'): Promise<TaxConfiguration | null> {
-    // This would fetch from the database
-    // For now, return a default NZ GST configuration
-    
-    return {
-      id: 'default-nz-gst',
-      userId,
-      countryCode: 'NZ',
-      taxType: 'GST',
-      taxRate: 0.15,
-      taxName: 'GST',
-      appliesToServices: true,
-      appliesToGoods: true,
-      effectiveFrom: '2023-01-01',
-      isActive: true,
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString()
-    };
+    try {
+      let config = await supabaseDataService.getTaxConfiguration(userId, countryCode);
+      
+      // If no configuration exists, create a default one
+      if (!config) {
+        config = await supabaseDataService.createDefaultTaxConfiguration(userId);
+      }
+      
+      return config;
+    } catch (error) {
+      console.error('Error getting tax configuration:', error);
+      return null;
+    }
   }
 
   /**
@@ -379,6 +417,101 @@ export class TaxCalculationService {
    */
   formatTaxRate(rate: number): string {
     return `${(rate * 100).toFixed(1)}%`;
+  }
+
+  /**
+   * Calculate GST summary for a period - needed for Tax Overview
+   */
+  async calculateGSTSummary(
+    userId: string,
+    periodStart: string,
+    periodEnd: string
+  ): Promise<{
+    totalSales: number;
+    totalPurchases: number;
+    gstOnSales: number;
+    gstOnPurchases: number;
+    netGstPosition: number;
+  }> {
+    try {
+      // Get tax configuration
+      const taxConfig = await this.getActiveTaxConfiguration(userId);
+      if (!taxConfig) {
+        return {
+          totalSales: 0,
+          totalPurchases: 0,
+          gstOnSales: 0,
+          gstOnPurchases: 0,
+          netGstPosition: 0
+        };
+      }
+
+      // Fetch real data from Supabase
+      const [invoices, expenses] = await Promise.all([
+        supabaseDataService.getInvoicesByPeriod(userId, periodStart, periodEnd),
+        supabaseDataService.getExpensesByPeriod(userId, periodStart, periodEnd)
+      ]);
+
+      // Calculate sales totals
+      let totalSales = 0;
+      let gstOnSales = 0;
+
+      for (const invoice of invoices) {
+        totalSales += invoice.total || 0;
+        
+        // Calculate GST from invoice
+        if (invoice.tax_amount) {
+          gstOnSales += invoice.tax_amount;
+        } else {
+          // Estimate GST if not stored (assuming tax-inclusive)
+          const estimatedGST = (invoice.total * taxConfig.taxRate) / (1 + taxConfig.taxRate);
+          gstOnSales += estimatedGST;
+        }
+      }
+
+      // Calculate purchase totals
+      let totalPurchases = 0;
+      let gstOnPurchases = 0;
+
+      for (const expense of expenses) {
+        totalPurchases += expense.amount || 0;
+        
+        // Calculate claimable GST from expenses
+        if (expense.tax_amount) {
+          gstOnPurchases += expense.tax_amount;
+        } else {
+          // Estimate GST if not stored (assuming tax-inclusive)
+          const estimatedGST = (expense.amount * taxConfig.taxRate) / (1 + taxConfig.taxRate);
+          gstOnPurchases += estimatedGST;
+        }
+      }
+
+      // Round values
+      totalSales = Math.round(totalSales * 100) / 100;
+      totalPurchases = Math.round(totalPurchases * 100) / 100;
+      gstOnSales = Math.round(gstOnSales * 100) / 100;
+      gstOnPurchases = Math.round(gstOnPurchases * 100) / 100;
+
+      const netGstPosition = Math.round((gstOnSales - gstOnPurchases) * 100) / 100;
+
+      return {
+        totalSales,
+        totalPurchases,
+        gstOnSales,
+        gstOnPurchases,
+        netGstPosition
+      };
+
+    } catch (error) {
+      console.error('Error calculating GST summary:', error);
+      return {
+        totalSales: 0,
+        totalPurchases: 0,
+        gstOnSales: 0,
+        gstOnPurchases: 0,
+        netGstPosition: 0
+      };
+    }
   }
 }
 

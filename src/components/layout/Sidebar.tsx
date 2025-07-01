@@ -68,6 +68,7 @@ export function Sidebar({ collapsed, isMobile, onCloseMobileMenu }: SidebarProps
         { name: 'Payments', path: '/payments', icon: Wallet, badge: null, permission: 'payments:read' as Permission },
         { name: 'Receipts', path: '/receipts', icon: Receipt, badge: null, permission: 'receipts:read' as Permission },
         { name: 'Accounting Dashboard', path: '/accounting', icon: BarChart3, badge: null, permission: undefined },
+        { name: 'Tax Overview', path: '/tax-overview', icon: DollarSign, badge: 'New', permission: 'reports:view' as Permission },
         { name: 'Tax Configuration', path: '/tax-config', icon: Calculator, badge: null, permission: 'settings:manage' as Permission },
       ]
     },

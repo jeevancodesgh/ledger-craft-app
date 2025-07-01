@@ -11,7 +11,9 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useToast } from '@/hooks/use-toast';
 import { JournalEntry } from '@/types/payment';
-import { format } from 'date-fns';
+import { format, startOfMonth, endOfMonth, startOfQuarter, endOfQuarter, startOfYear, endOfYear, subMonths, subQuarters } from 'date-fns';
+import { useAuth } from '@/context/AuthContext';
+import { supabaseDataService } from '@/services/supabaseDataService';
 
 interface JournalEntryFormData {
   description: string;
@@ -26,6 +28,7 @@ interface JournalEntryFormData {
 export default function JournalEntriesPage() {
   const [journalEntries, setJournalEntries] = useState<JournalEntry[]>([]);
   const [filteredEntries, setFilteredEntries] = useState<JournalEntry[]>([]);
+  const [accounts, setAccounts] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
@@ -35,108 +38,60 @@ export default function JournalEntriesPage() {
   const [showViewDialog, setShowViewDialog] = useState(false);
   
   const { toast } = useToast();
+  const { user } = useAuth();
 
-  // Mock accounts for the form
-  const accounts = [
-    { id: 'acc-1', name: 'Business Checking', number: '1110', type: 'Asset' },
-    { id: 'acc-2', name: 'Accounts Receivable', number: '1200', type: 'Asset' },
-    { id: 'acc-3', name: 'Office Equipment', number: '1500', type: 'Asset' },
-    { id: 'acc-4', name: 'Accounts Payable', number: '2100', type: 'Liability' },
-    { id: 'acc-5', name: 'GST Payable', number: '2200', type: 'Liability' },
-    { id: 'acc-6', name: 'Service Revenue', number: '4000', type: 'Revenue' },
-    { id: 'acc-7', name: 'Office Rent', number: '6000', type: 'Expense' },
-    { id: 'acc-8', name: 'Marketing Expenses', number: '6400', type: 'Expense' }
-  ];
+  const getDateRangeForPeriod = (period: string) => {
+    const now = new Date();
+    switch (period) {
+      case 'current_month':
+        return {
+          startDate: startOfMonth(now).toISOString().split('T')[0],
+          endDate: endOfMonth(now).toISOString().split('T')[0]
+        };
+      case 'last_month':
+        const lastMonth = subMonths(now, 1);
+        return {
+          startDate: startOfMonth(lastMonth).toISOString().split('T')[0],
+          endDate: endOfMonth(lastMonth).toISOString().split('T')[0]
+        };
+      case 'current_quarter':
+        return {
+          startDate: startOfQuarter(now).toISOString().split('T')[0],
+          endDate: endOfQuarter(now).toISOString().split('T')[0]
+        };
+      case 'current_year':
+        return {
+          startDate: startOfYear(now).toISOString().split('T')[0],
+          endDate: endOfYear(now).toISOString().split('T')[0]
+        };
+      default:
+        return {
+          startDate: startOfMonth(now).toISOString().split('T')[0],
+          endDate: endOfMonth(now).toISOString().split('T')[0]
+        };
+    }
+  };
 
   const fetchJournalEntries = async () => {
+    if (!user?.id) return;
+    
     setIsLoading(true);
     try {
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      const dateRange = getDateRangeForPeriod(periodFilter);
       
-      // Mock journal entries data
-      const mockEntries: JournalEntry[] = [
-        {
-          id: 'je-1',
-          userId: 'user-1',
-          entryNumber: 'JE-2024-001',
-          entryDate: '2024-01-15',
-          description: 'Payment received from Acme Corporation',
-          referenceNumber: 'INV-2024-001',
-          debitAccountId: 'acc-1',
-          debitAccountName: 'Business Checking',
-          debitAmount: 1500.00,
-          creditAccountId: 'acc-2',
-          creditAccountName: 'Accounts Receivable',
-          creditAmount: 1500.00,
-          status: 'posted',
-          notes: 'Payment for invoice INV-2024-001',
-          createdAt: '2024-01-15T10:30:00Z',
-          updatedAt: '2024-01-15T10:30:00Z',
-          createdBy: 'user-1'
-        },
-        {
-          id: 'je-2',
-          userId: 'user-1',
-          entryNumber: 'JE-2024-002',
-          entryDate: '2024-01-14',
-          description: 'Office rent payment',
-          referenceNumber: 'RENT-JAN-2024',
-          debitAccountId: 'acc-7',
-          debitAccountName: 'Office Rent',
-          debitAmount: 2000.00,
-          creditAccountId: 'acc-1',
-          creditAccountName: 'Business Checking',
-          creditAmount: 2000.00,
-          status: 'posted',
-          notes: 'Monthly office rent payment',
-          createdAt: '2024-01-14T09:15:00Z',
-          updatedAt: '2024-01-14T09:15:00Z',
-          createdBy: 'user-1'
-        },
-        {
-          id: 'je-3',
-          userId: 'user-1',
-          entryNumber: 'JE-2024-003',
-          entryDate: '2024-01-12',
-          description: 'Equipment purchase',
-          referenceNumber: 'PO-2024-005',
-          debitAccountId: 'acc-3',
-          debitAccountName: 'Office Equipment',
-          debitAmount: 5000.00,
-          creditAccountId: 'acc-4',
-          creditAccountName: 'Accounts Payable',
-          creditAmount: 5000.00,
-          status: 'draft',
-          notes: 'New computer equipment for office',
-          createdAt: '2024-01-12T14:20:00Z',
-          updatedAt: '2024-01-12T14:20:00Z',
-          createdBy: 'user-1'
-        },
-        {
-          id: 'je-4',
-          userId: 'user-1',
-          entryNumber: 'JE-2024-004',
-          entryDate: '2024-01-10',
-          description: 'Service revenue booking',
-          referenceNumber: 'INV-2024-002',
-          debitAccountId: 'acc-2',
-          debitAccountName: 'Accounts Receivable',
-          debitAmount: 2250.00,
-          creditAccountId: 'acc-6',
-          creditAccountName: 'Service Revenue',
-          creditAmount: 2250.00,
-          status: 'posted',
-          notes: 'Revenue recognition for consulting services',
-          createdAt: '2024-01-10T11:45:00Z',
-          updatedAt: '2024-01-10T11:45:00Z',
-          createdBy: 'user-1'
-        }
-      ];
+      // Fetch real journal entries from Supabase
+      const entries = await supabaseDataService.getJournalEntries(
+        user.id,
+        100, // limit
+        0, // offset
+        statusFilter === 'all' ? undefined : statusFilter,
+        dateRange.startDate,
+        dateRange.endDate
+      );
 
-      setJournalEntries(mockEntries);
-      setFilteredEntries(mockEntries);
+      setJournalEntries(entries);
     } catch (error) {
+      console.error('Error fetching journal entries:', error);
       toast({
         title: "Error",
         description: "Failed to load journal entries",
@@ -147,11 +102,30 @@ export default function JournalEntriesPage() {
     }
   };
 
-  useEffect(() => {
-    fetchJournalEntries();
-  }, []);
+  const fetchAccounts = async () => {
+    if (!user?.id) return;
+    
+    try {
+      const accountsData = await supabaseDataService.getAccounts(user.id);
+      setAccounts(accountsData);
+    } catch (error) {
+      console.error('Error fetching accounts:', error);
+      toast({
+        title: "Error",
+        description: "Failed to load accounts",
+        variant: "destructive"
+      });
+    }
+  };
 
-  // Filter entries based on search and filters
+  useEffect(() => {
+    if (user?.id) {
+      fetchJournalEntries();
+      fetchAccounts();
+    }
+  }, [user?.id, periodFilter, statusFilter]);
+
+  // Filter entries based on search (status and period filtering is done in the API call)
   useEffect(() => {
     let filtered = journalEntries;
 
@@ -165,40 +139,22 @@ export default function JournalEntriesPage() {
       );
     }
 
-    if (statusFilter !== 'all') {
-      filtered = filtered.filter(entry => entry.status === statusFilter);
-    }
-
     setFilteredEntries(filtered);
-  }, [journalEntries, searchTerm, statusFilter]);
+  }, [journalEntries, searchTerm]);
 
   const handleCreateEntry = async (formData: JournalEntryFormData) => {
+    if (!user?.id) return;
+    
     try {
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
-      const debitAccount = accounts.find(acc => acc.id === formData.debitAccountId);
-      const creditAccount = accounts.find(acc => acc.id === formData.creditAccountId);
-
-      const newEntry: JournalEntry = {
-        id: `je-${Date.now()}`,
-        userId: 'user-1',
-        entryNumber: `JE-${new Date().getFullYear()}-${String(journalEntries.length + 1).padStart(3, '0')}`,
-        entryDate: formData.entryDate,
+      const newEntry = await supabaseDataService.createJournalEntry(user.id, {
         description: formData.description,
-        referenceNumber: formData.referenceNumber,
+        entryDate: formData.entryDate,
         debitAccountId: formData.debitAccountId,
-        debitAccountName: debitAccount?.name || '',
-        debitAmount: formData.amount,
         creditAccountId: formData.creditAccountId,
-        creditAccountName: creditAccount?.name || '',
-        creditAmount: formData.amount,
-        status: 'draft',
-        notes: formData.notes,
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
-        createdBy: 'user-1'
-      };
+        amount: formData.amount,
+        referenceNumber: formData.referenceNumber,
+        notes: formData.notes
+      });
 
       setJournalEntries(prev => [newEntry, ...prev]);
       setShowCreateDialog(false);
@@ -208,6 +164,7 @@ export default function JournalEntriesPage() {
         description: "Journal entry created successfully"
       });
     } catch (error) {
+      console.error('Error creating journal entry:', error);
       toast({
         title: "Error",
         description: "Failed to create journal entry",
@@ -218,8 +175,7 @@ export default function JournalEntriesPage() {
 
   const handlePostEntry = async (entryId: string) => {
     try {
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 500));
+      await supabaseDataService.updateJournalEntryStatus(entryId, 'posted');
       
       setJournalEntries(prev => 
         prev.map(entry => 
@@ -234,6 +190,7 @@ export default function JournalEntriesPage() {
         description: "Journal entry posted successfully"
       });
     } catch (error) {
+      console.error('Error posting journal entry:', error);
       toast({
         title: "Error",
         description: "Failed to post journal entry",
@@ -244,8 +201,7 @@ export default function JournalEntriesPage() {
 
   const handleDeleteEntry = async (entryId: string) => {
     try {
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 500));
+      await supabaseDataService.deleteJournalEntry(entryId);
       
       setJournalEntries(prev => prev.filter(entry => entry.id !== entryId));
       
@@ -254,6 +210,7 @@ export default function JournalEntriesPage() {
         description: "Journal entry deleted successfully"
       });
     } catch (error) {
+      console.error('Error deleting journal entry:', error);
       toast({
         title: "Error",
         description: "Failed to delete journal entry",
@@ -321,10 +278,10 @@ export default function JournalEntriesPage() {
     );
   }
 
-  const totalEntries = journalEntries.length;
-  const draftEntries = journalEntries.filter(e => e.status === 'draft').length;
-  const postedEntries = journalEntries.filter(e => e.status === 'posted').length;
-  const totalAmount = journalEntries.reduce((sum, e) => sum + e.debitAmount, 0);
+  const totalEntries = filteredEntries.length;
+  const draftEntries = filteredEntries.filter(e => e.status === 'draft').length;
+  const postedEntries = filteredEntries.filter(e => e.status === 'posted').length;
+  const totalAmount = filteredEntries.reduce((sum, e) => sum + e.debitAmount, 0);
 
   return (
     <div className="space-y-6">
@@ -568,7 +525,7 @@ export default function JournalEntriesPage() {
           {filteredEntries.length === 0 && (
             <div className="text-center py-8">
               <p className="text-muted-foreground">
-                {searchTerm || statusFilter !== 'all' 
+                {searchTerm || statusFilter !== 'all' || periodFilter !== 'current_month'
                   ? "No journal entries match your search criteria"
                   : "No journal entries found. Create your first entry using the button above."
                 }
@@ -650,29 +607,158 @@ export default function JournalEntriesPage() {
         </DialogContent>
       </Dialog>
 
-      {/* Create Entry Dialog - Simplified for brevity */}
+      {/* Create Entry Dialog */}
       <Dialog open={showCreateDialog} onOpenChange={setShowCreateDialog}>
         <DialogContent className="max-w-2xl">
           <DialogHeader>
             <DialogTitle>Create Journal Entry</DialogTitle>
           </DialogHeader>
           
-          <Alert>
-            <AlertDescription>
-              Journal entry creation form would be implemented here with form validation and account selection.
-            </AlertDescription>
-          </Alert>
-          
-          <div className="flex justify-end gap-3">
-            <Button variant="outline" onClick={() => setShowCreateDialog(false)}>
-              Cancel
-            </Button>
-            <Button onClick={() => setShowCreateDialog(false)}>
-              Create Entry
-            </Button>
-          </div>
+          <JournalEntryForm
+            accounts={accounts}
+            onSubmit={handleCreateEntry}
+            onCancel={() => setShowCreateDialog(false)}
+          />
         </DialogContent>
       </Dialog>
     </div>
+  );
+}
+
+// Journal Entry Form Component
+function JournalEntryForm({ 
+  accounts, 
+  onSubmit, 
+  onCancel 
+}: {
+  accounts: any[];
+  onSubmit: (data: JournalEntryFormData) => void;
+  onCancel: () => void;
+}) {
+  const [formData, setFormData] = useState<JournalEntryFormData>({
+    description: '',
+    referenceNumber: '',
+    entryDate: new Date().toISOString().split('T')[0],
+    debitAccountId: '',
+    creditAccountId: '',
+    amount: 0,
+    notes: ''
+  });
+
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    if (!formData.description || !formData.debitAccountId || !formData.creditAccountId || formData.amount <= 0) {
+      return;
+    }
+
+    setIsSubmitting(true);
+    try {
+      await onSubmit(formData);
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  return (
+    <form onSubmit={handleSubmit} className="space-y-4">
+      <div className="grid grid-cols-2 gap-4">
+        <div>
+          <label className="text-sm font-medium">Entry Date</label>
+          <Input
+            type="date"
+            value={formData.entryDate}
+            onChange={(e) => setFormData(prev => ({ ...prev, entryDate: e.target.value }))}
+            required
+          />
+        </div>
+        
+        <div>
+          <label className="text-sm font-medium">Reference Number</label>
+          <Input
+            placeholder="Optional reference"
+            value={formData.referenceNumber}
+            onChange={(e) => setFormData(prev => ({ ...prev, referenceNumber: e.target.value }))}
+          />
+        </div>
+      </div>
+
+      <div>
+        <label className="text-sm font-medium">Description</label>
+        <Input
+          placeholder="Enter journal entry description"
+          value={formData.description}
+          onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
+          required
+        />
+      </div>
+
+      <div>
+        <label className="text-sm font-medium">Amount</label>
+        <Input
+          type="number"
+          step="0.01"
+          min="0"
+          placeholder="0.00"
+          value={formData.amount || ''}
+          onChange={(e) => setFormData(prev => ({ ...prev, amount: parseFloat(e.target.value) || 0 }))}
+          required
+        />
+      </div>
+
+      <div className="grid grid-cols-2 gap-4">
+        <div>
+          <label className="text-sm font-medium">Debit Account</label>
+          <Select value={formData.debitAccountId} onValueChange={(value) => setFormData(prev => ({ ...prev, debitAccountId: value }))}>
+            <SelectTrigger>
+              <SelectValue placeholder="Select debit account" />
+            </SelectTrigger>
+            <SelectContent>
+              {accounts.map(account => (
+                <SelectItem key={account.id} value={account.id}>
+                  {account.number} - {account.name} ({account.type})
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+
+        <div>
+          <label className="text-sm font-medium">Credit Account</label>
+          <Select value={formData.creditAccountId} onValueChange={(value) => setFormData(prev => ({ ...prev, creditAccountId: value }))}>
+            <SelectTrigger>
+              <SelectValue placeholder="Select credit account" />
+            </SelectTrigger>
+            <SelectContent>
+              {accounts.map(account => (
+                <SelectItem key={account.id} value={account.id}>
+                  {account.number} - {account.name} ({account.type})
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+      </div>
+
+      <div>
+        <label className="text-sm font-medium">Notes</label>
+        <Input
+          placeholder="Optional notes"
+          value={formData.notes}
+          onChange={(e) => setFormData(prev => ({ ...prev, notes: e.target.value }))}
+        />
+      </div>
+
+      <div className="flex justify-end gap-3">
+        <Button type="button" variant="outline" onClick={onCancel}>
+          Cancel
+        </Button>
+        <Button type="submit" disabled={isSubmitting}>
+          {isSubmitting ? 'Creating...' : 'Create Entry'}
+        </Button>
+      </div>
+    </form>
   );
 }

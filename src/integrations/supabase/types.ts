@@ -150,6 +150,11 @@ export type Database = {
           total: number
           updated_at: string
           user_id: string
+          tax_inclusive: boolean | null
+          tax_rate: number | null
+          payment_status: string | null
+          balance_due: number | null
+          tax_breakdown: any | null
         }
         Insert: {
           created_at?: string
@@ -168,6 +173,11 @@ export type Database = {
           total: number
           updated_at?: string
           user_id: string
+          tax_inclusive?: boolean | null
+          tax_rate?: number | null
+          payment_status?: string | null
+          balance_due?: number | null
+          tax_breakdown?: any | null
         }
         Update: {
           created_at?: string
@@ -186,6 +196,11 @@ export type Database = {
           total?: number
           updated_at?: string
           user_id?: string
+          tax_inclusive?: boolean | null
+          tax_rate?: number | null
+          payment_status?: string | null
+          balance_due?: number | null
+          tax_breakdown?: any | null
         }
         Relationships: [
           {
@@ -292,6 +307,8 @@ export type Database = {
           total: number
           unit: string | null
           updated_at: string
+          tax_inclusive: boolean | null
+          taxable: boolean | null
         }
         Insert: {
           created_at?: string
@@ -304,6 +321,8 @@ export type Database = {
           total: number
           unit?: string | null
           updated_at?: string
+          tax_inclusive?: boolean | null
+          taxable?: boolean | null
         }
         Update: {
           created_at?: string
@@ -316,6 +335,8 @@ export type Database = {
           total?: number
           unit?: string | null
           updated_at?: string
+          tax_inclusive?: boolean | null
+          taxable?: boolean | null
         }
         Relationships: [
           {
@@ -353,6 +374,256 @@ export type Database = {
           updated_at?: string
         }
         Relationships: []
+      }
+      tax_configurations: {
+        Row: {
+          id: string
+          user_id: string
+          country_code: string
+          tax_type: 'GST' | 'VAT' | 'Sales_Tax'
+          tax_rate: number
+          tax_name: string
+          applies_to_services: boolean
+          applies_to_goods: boolean
+          effective_from: string
+          effective_to: string | null
+          is_active: boolean
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          user_id: string
+          country_code?: string
+          tax_type: 'GST' | 'VAT' | 'Sales_Tax'
+          tax_rate: number
+          tax_name: string
+          applies_to_services?: boolean
+          applies_to_goods?: boolean
+          effective_from: string
+          effective_to?: string | null
+          is_active?: boolean
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          user_id?: string
+          country_code?: string
+          tax_type?: 'GST' | 'VAT' | 'Sales_Tax'
+          tax_rate?: number
+          tax_name?: string
+          applies_to_services?: boolean
+          applies_to_goods?: boolean
+          effective_from?: string
+          effective_to?: string | null
+          is_active?: boolean
+          created_at?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      expenses: {
+        Row: {
+          id: string
+          user_id: string
+          date: string
+          description: string
+          amount: number
+          category: string
+          supplier_name: string | null
+          receipt_url: string | null
+          tax_amount: number
+          tax_rate: number
+          tax_inclusive: boolean
+          is_claimable: boolean
+          is_capital_expense: boolean
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          user_id: string
+          date: string
+          description: string
+          amount: number
+          category: string
+          supplier_name?: string | null
+          receipt_url?: string | null
+          tax_amount?: number
+          tax_rate?: number
+          tax_inclusive?: boolean
+          is_claimable?: boolean
+          is_capital_expense?: boolean
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          user_id?: string
+          date?: string
+          description?: string
+          amount?: number
+          category?: string
+          supplier_name?: string | null
+          receipt_url?: string | null
+          tax_amount?: number
+          tax_rate?: number
+          tax_inclusive?: boolean
+          is_claimable?: boolean
+          is_capital_expense?: boolean
+          created_at?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      payments: {
+        Row: {
+          id: string
+          user_id: string
+          invoice_id: string | null
+          amount: number
+          payment_date: string
+          payment_method: string
+          reference_number: string | null
+          status: 'pending' | 'completed' | 'failed' | 'cancelled'
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          user_id: string
+          invoice_id?: string | null
+          amount: number
+          payment_date: string
+          payment_method?: string
+          reference_number?: string | null
+          status?: 'pending' | 'completed' | 'failed' | 'cancelled'
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          user_id?: string
+          invoice_id?: string | null
+          amount?: number
+          payment_date?: string
+          payment_method?: string
+          reference_number?: string | null
+          status?: 'pending' | 'completed' | 'failed' | 'cancelled'
+          created_at?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "payments_invoice_id_fkey"
+            columns: ["invoice_id"]
+            isOneToOne: false
+            referencedRelation: "invoices"
+            referencedColumns: ["id"]
+          }
+        ]
+      }
+      tax_returns: {
+        Row: {
+          id: string
+          user_id: string
+          period_start: string
+          period_end: string
+          return_type: 'GST' | 'Income_Tax' | 'FBT' | 'PAYE'
+          total_sales: number
+          total_purchases: number
+          gst_on_sales: number
+          gst_on_purchases: number
+          net_gst: number
+          status: 'draft' | 'submitted' | 'approved' | 'rejected'
+          ird_reference: string | null
+          submitted_at: string | null
+          return_data: any | null
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          user_id: string
+          period_start: string
+          period_end: string
+          return_type: 'GST' | 'Income_Tax' | 'FBT' | 'PAYE'
+          total_sales?: number
+          total_purchases?: number
+          gst_on_sales?: number
+          gst_on_purchases?: number
+          net_gst?: number
+          status?: 'draft' | 'submitted' | 'approved' | 'rejected'
+          ird_reference?: string | null
+          submitted_at?: string | null
+          return_data?: any | null
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          user_id?: string
+          period_start?: string
+          period_end?: string
+          return_type?: 'GST' | 'Income_Tax' | 'FBT' | 'PAYE'
+          total_sales?: number
+          total_purchases?: number
+          gst_on_sales?: number
+          gst_on_purchases?: number
+          net_gst?: number
+          status?: 'draft' | 'submitted' | 'approved' | 'rejected'
+          ird_reference?: string | null
+          submitted_at?: string | null
+          return_data?: any | null
+          created_at?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      tax_adjustments: {
+        Row: {
+          id: string
+          user_id: string
+          tax_return_id: string | null
+          adjustment_type: 'bad_debt' | 'capital_goods' | 'correction' | 'other'
+          description: string
+          amount: number
+          tax_impact: number
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          user_id: string
+          tax_return_id?: string | null
+          adjustment_type: 'bad_debt' | 'capital_goods' | 'correction' | 'other'
+          description: string
+          amount: number
+          tax_impact?: number
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          user_id?: string
+          tax_return_id?: string | null
+          adjustment_type?: 'bad_debt' | 'capital_goods' | 'correction' | 'other'
+          description?: string
+          amount?: number
+          tax_impact?: number
+          created_at?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "tax_adjustments_tax_return_id_fkey"
+            columns: ["tax_return_id"]
+            isOneToOne: false
+            referencedRelation: "tax_returns"
+            referencedColumns: ["id"]
+          }
+        ]
       }
     }
     Views: {

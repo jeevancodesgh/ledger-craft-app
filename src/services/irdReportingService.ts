@@ -6,8 +6,9 @@ import {
   Payment,
   FinancialSummary 
 } from '@/types/payment';
-import { supabaseService } from './supabaseService';
+import { supabaseDataService } from './supabaseDataService';
 import { taxCalculationService } from './taxCalculationService';
+import { Tables } from '@/integrations/supabase/types';
 
 export class IRDReportingService {
   /**
@@ -48,7 +49,7 @@ export class IRDReportingService {
       returnData
     };
 
-    return await supabaseService.createTaxReturn(taxReturn);
+    return await supabaseDataService.createTaxReturn(taxReturn);
   }
 
   /**
@@ -109,39 +110,44 @@ export class IRDReportingService {
   }
 
   /**
-   * Fetch all relevant data for the reporting period
+   * Fetch all relevant data for the reporting period using real Supabase data
    */
   private async fetchPeriodData(
     userId: string,
     periodStart: string,
     periodEnd: string
   ): Promise<PeriodData> {
-    // Fetch invoices for the period
-    const invoices = await supabaseService.getInvoicesByPeriod(
-      userId,
-      periodStart,
-      periodEnd
-    );
+    try {
+      // Fetch invoices for the period from Supabase
+      const invoices = await supabaseDataService.getInvoicesByPeriod(
+        userId,
+        periodStart,
+        periodEnd
+      );
 
-    // Fetch payments for the period
-    const payments = await supabaseService.getPaymentsByPeriod(
-      userId,
-      periodStart,
-      periodEnd
-    );
+      // Fetch payments for the period from Supabase
+      const payments = await supabaseDataService.getPaymentsByPeriod(
+        userId,
+        periodStart,
+        periodEnd
+      );
 
-    // Fetch expenses for the period
-    const expenses = await supabaseService.getExpensesByPeriod(
-      userId,
-      periodStart,
-      periodEnd
-    );
+      // Fetch expenses for the period from Supabase
+      const expenses = await supabaseDataService.getExpensesByPeriod(
+        userId,
+        periodStart,
+        periodEnd
+      );
 
-    return {
-      invoices,
-      payments,
-      expenses
-    };
+      return {
+        invoices,
+        payments,
+        expenses
+      };
+    } catch (error) {
+      console.error('Error fetching period data:', error);
+      throw new Error(`Failed to fetch data for period ${periodStart} to ${periodEnd}`);
+    }
   }
 
   /**
@@ -241,7 +247,7 @@ export class IRDReportingService {
       returnData
     };
 
-    return await supabaseService.createTaxReturn(taxReturn);
+    return await supabaseDataService.createTaxReturn(taxReturn);
   }
 
   /**
@@ -283,7 +289,7 @@ export class IRDReportingService {
     submissionDate?: string;
     errors?: string[];
   }> {
-    const taxReturn = await supabaseService.getTaxReturnById(taxReturnId);
+    const taxReturn = await supabaseDataService.getTaxReturnById(taxReturnId);
     if (!taxReturn) {
       throw new Error('Tax return not found');
     }
@@ -306,7 +312,7 @@ export class IRDReportingService {
     const submissionDate = new Date().toISOString();
 
     // Update tax return status
-    await supabaseService.updateTaxReturn(taxReturnId, {
+    await supabaseDataService.updateTaxReturn(taxReturnId, {
       status: 'submitted',
       submittedAt: submissionDate,
       irdReference
@@ -516,14 +522,14 @@ export class IRDReportingService {
     limit: number = 50,
     offset: number = 0
   ): Promise<TaxReturn[]> {
-    return await supabaseService.getTaxReturnsByUser(userId, returnType, limit, offset);
+    return await supabaseDataService.getTaxReturnsByUser(userId, returnType, limit, offset);
   }
 
   /**
    * Get tax return by ID
    */
   async getTaxReturnById(taxReturnId: string): Promise<TaxReturn | null> {
-    return await supabaseService.getTaxReturnById(taxReturnId);
+    return await supabaseDataService.getTaxReturnById(taxReturnId);
   }
 
   /**
@@ -533,7 +539,7 @@ export class IRDReportingService {
     taxReturnId: string,
     updates: Partial<TaxReturn>
   ): Promise<TaxReturn> {
-    return await supabaseService.updateTaxReturn(taxReturnId, updates);
+    return await supabaseDataService.updateTaxReturn(taxReturnId, updates);
   }
 
   /**
@@ -549,7 +555,7 @@ export class IRDReportingService {
       throw new Error('Only draft tax returns can be deleted');
     }
 
-    await supabaseService.deleteTaxReturn(taxReturnId);
+    await supabaseDataService.deleteTaxReturn(taxReturnId);
   }
 }
 
@@ -557,7 +563,7 @@ export class IRDReportingService {
 interface PeriodData {
   invoices: EnhancedInvoice[];
   payments: Payment[];
-  expenses: any[]; // Would be defined in expense types
+  expenses: Tables<'expenses'>[];
 }
 
 interface ComplianceReport {

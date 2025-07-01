@@ -1,140 +1,76 @@
 import React, { useState, useEffect } from 'react';
 import { IRDReportingDashboard } from '@/components/reporting/IRDReportingDashboard';
+import { GSTReturnWizard } from '@/components/tax/GSTReturnWizard';
 import { useToast } from '@/hooks/use-toast';
+import { useAuth } from '@/context/AuthContext';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Card, CardContent } from '@/components/ui/card';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { TaxReturn } from '@/types/payment';
+import { supabaseDataService } from '@/services/supabaseDataService';
+import { taxCalculationService } from '@/services/taxCalculationService';
 
 export default function IRDReportingPage() {
   const [taxReturns, setTaxReturns] = useState<TaxReturn[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  
-  const { toast } = useToast();
-
-  // Mock compliance status
-  const complianceStatus = {
+  const [complianceStatus, setComplianceStatus] = useState({
     isCompliant: true,
     issues: [] as string[],
-    warnings: [
-      'Next GST return due in 15 days',
-      'Consider reviewing expense categorization for tax optimization'
-    ]
-  };
-
-  const nextGSTDueDate = '2024-02-28'; // 28th of month following quarter
+    warnings: [] as string[]
+  });
+  const [nextGSTDueDate, setNextGSTDueDate] = useState('');
+  
+  const { toast } = useToast();
+  const { user } = useAuth();
 
   const fetchTaxReturns = async () => {
+    if (!user?.id) return;
+    
     setIsLoading(true);
     try {
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1200));
+      // Fetch real tax returns from Supabase
+      const returns = await supabaseDataService.getTaxReturnsByUser(user.id);
+      setTaxReturns(returns);
       
-      // Mock tax returns data
-      const mockTaxReturns: TaxReturn[] = [
-        {
-          id: 'gst-2024-q1',
-          userId: 'user-1',
-          periodStart: '2024-01-01',
-          periodEnd: '2024-03-31',
-          returnType: 'GST',
-          totalSales: 125000,
-          totalPurchases: 45000,
-          gstOnSales: 18750,
-          gstOnPurchases: 6750,
-          netGst: 12000,
-          status: 'draft',
-          returnData: {
-            gstReturn: {
-              salesDetails: {
-                standardRated: 108700,
-                zeroRated: 16300,
-                exempt: 0,
-                totalSales: 125000,
-                gstOnSales: 18750
-              },
-              purchaseDetails: {
-                standardRated: 40000,
-                capitalGoods: 5000,
-                totalPurchases: 45000,
-                gstOnPurchases: 6750
-              },
-              adjustments: {
-                badDebts: 0,
-                otherAdjustments: 0
-              }
-            }
-          },
-          createdAt: '2024-03-15T10:00:00Z',
-          updatedAt: '2024-03-15T10:00:00Z'
-        },
-        {
-          id: 'gst-2023-q4',
-          userId: 'user-1',
-          periodStart: '2023-10-01',
-          periodEnd: '2023-12-31',
-          returnType: 'GST',
-          totalSales: 110000,
-          totalPurchases: 38000,
-          gstOnSales: 16500,
-          gstOnPurchases: 5700,
-          netGst: 10800,
-          status: 'submitted',
-          submittedAt: '2024-01-25T14:30:00Z',
-          irdReference: 'IRD-GST-2023Q4-12345',
-          returnData: {
-            gstReturn: {
-              salesDetails: {
-                standardRated: 95600,
-                zeroRated: 14400,
-                exempt: 0,
-                totalSales: 110000,
-                gstOnSales: 16500
-              },
-              purchaseDetails: {
-                standardRated: 35000,
-                capitalGoods: 3000,
-                totalPurchases: 38000,
-                gstOnPurchases: 5700
-              },
-              adjustments: {
-                badDebts: 0,
-                otherAdjustments: 0
-              }
-            }
-          },
-          createdAt: '2024-01-10T09:00:00Z',
-          updatedAt: '2024-01-25T14:30:00Z'
-        },
-        {
-          id: 'income-2023',
-          userId: 'user-1',
-          periodStart: '2023-04-01',
-          periodEnd: '2024-03-31',
-          returnType: 'Income_Tax',
-          totalSales: 450000,
-          totalPurchases: 165000,
-          gstOnSales: 0,
-          gstOnPurchases: 0,
-          netGst: 0,
-          status: 'submitted',
-          submittedAt: '2024-06-15T11:00:00Z',
-          irdReference: 'IRD-INC-2023-67890',
-          returnData: {
-            incomeTax: {
-              grossIncome: 450000,
-              allowableDeductions: 165000,
-              taxableIncome: 285000,
-              taxDue: 65800,
-              provisionalTax: 29925
-            }
-          },
-          createdAt: '2024-05-01T10:00:00Z',
-          updatedAt: '2024-06-15T11:00:00Z'
-        }
-      ];
-
-      setTaxReturns(mockTaxReturns);
+      // Calculate compliance status based on real data
+      const now = new Date();
+      const currentQuarter = Math.floor(now.getMonth() / 3);
+      const quarterEnd = new Date(now.getFullYear(), (currentQuarter + 1) * 3, 0);
+      const nextDueDate = new Date(quarterEnd.getFullYear(), quarterEnd.getMonth() + 1, 28);
+      
+      setNextGSTDueDate(nextDueDate.toISOString().split('T')[0]);
+      
+      // Check for overdue returns
+      const overdueReturns = returns.filter(r => 
+        r.status === 'draft' && new Date(nextDueDate) < now
+      );
+      
+      const warnings = [];
+      const issues = [];
+      
+      if (overdueReturns.length > 0) {
+        issues.push(`${overdueReturns.length} overdue tax return(s) require immediate attention`);
+      }
+      
+      const daysUntilDue = Math.ceil((nextDueDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
+      if (daysUntilDue <= 15 && daysUntilDue > 0) {
+        warnings.push(`Next GST return due in ${daysUntilDue} days`);
+      }
+      
+      // Check if user has transactions but no recent returns
+      const lastReturn = returns.find(r => r.returnType === 'GST');
+      if (!lastReturn || new Date(lastReturn.periodEnd) < new Date(now.getFullYear(), now.getMonth() - 6, 1)) {
+        warnings.push('Consider reviewing expense categorization for tax optimization');
+      }
+      
+      setComplianceStatus({
+        isCompliant: issues.length === 0,
+        issues,
+        warnings
+      });
+      
     } catch (error) {
+      console.error('Error fetching tax returns:', error);
       toast({
         title: "Error",
         description: "Failed to load tax returns",
@@ -146,99 +82,116 @@ export default function IRDReportingPage() {
   };
 
   useEffect(() => {
-    fetchTaxReturns();
-  }, []);
+    if (user?.id) {
+      fetchTaxReturns();
+    }
+  }, [user?.id]);
 
   const handleCreateGSTReturn = async (period: { start: string; end: string }) => {
+    if (!user?.id) return;
+    
     try {
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 2000));
-      
-      const newReturn: TaxReturn = {
-        id: `gst-${Date.now()}`,
-        userId: 'user-1',
+      toast({
+        title: "Creating GST Return",
+        description: "Calculating tax amounts from your transaction data..."
+      });
+
+      // Generate IRD return data from real Supabase data
+      const irdReturnData = await taxCalculationService.generateIRDGSTReturn(
+        user.id,
+        period.start,
+        period.end
+      );
+
+      // Create the tax return with calculated data
+      const newReturnData: Omit<TaxReturn, 'id' | 'createdAt' | 'updatedAt'> = {
+        userId: user.id,
         periodStart: period.start,
         periodEnd: period.end,
         returnType: 'GST',
-        totalSales: 0,
-        totalPurchases: 0,
-        gstOnSales: 0,
-        gstOnPurchases: 0,
-        netGst: 0,
+        totalSales: irdReturnData.gstReturn.salesDetails.totalSales,
+        totalPurchases: irdReturnData.gstReturn.purchaseDetails.totalPurchases,
+        gstOnSales: irdReturnData.gstReturn.salesDetails.gstOnSales,
+        gstOnPurchases: irdReturnData.gstReturn.purchaseDetails.gstOnPurchases,
+        netGst: irdReturnData.gstReturn.salesDetails.gstOnSales - irdReturnData.gstReturn.purchaseDetails.gstOnPurchases,
         status: 'draft',
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString()
+        returnData: irdReturnData
       };
 
-      setTaxReturns(prev => [newReturn, ...prev]);
+      const createdReturn = await supabaseDataService.createTaxReturn(newReturnData);
+      setTaxReturns(prev => [createdReturn, ...prev]);
       
       toast({
         title: "Success",
-        description: "GST return created successfully. Calculating tax amounts..."
+        description: `GST return created with $${newReturnData.netGst.toFixed(2)} ${newReturnData.netGst >= 0 ? 'owing' : 'refund'}`
       });
 
-      // Simulate calculation update
-      setTimeout(() => {
-        setTaxReturns(prev => 
-          prev.map(ret => ret.id === newReturn.id 
-            ? {
-                ...ret,
-                totalSales: 85000,
-                totalPurchases: 32000,
-                gstOnSales: 12750,
-                gstOnPurchases: 4800,
-                netGst: 7950,
-                returnData: {
-                  gstReturn: {
-                    salesDetails: {
-                      standardRated: 73900,
-                      zeroRated: 11100,
-                      exempt: 0,
-                      totalSales: 85000,
-                      gstOnSales: 12750
-                    },
-                    purchaseDetails: {
-                      standardRated: 30000,
-                      capitalGoods: 2000,
-                      totalPurchases: 32000,
-                      gstOnPurchases: 4800
-                    },
-                    adjustments: {
-                      badDebts: 0,
-                      otherAdjustments: 0
-                    }
-                  }
-                }
-              }
-            : ret
-          )
-        );
-
-        toast({
-          title: "Calculation Complete",
-          description: "GST return has been calculated based on your transactions"
-        });
-      }, 1000);
-
     } catch (error) {
+      console.error('Error creating GST return:', error);
       toast({
         title: "Error",
-        description: "Failed to create GST return",
+        description: "Failed to create GST return. Please check your transaction data.",
         variant: "destructive"
       });
     }
   };
 
   const handleCreateIncomeReturn = async (period: { start: string; end: string }) => {
+    if (!user?.id) return;
+    
     try {
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1500));
+      toast({
+        title: "Creating Income Tax Return",
+        description: "Calculating annual income and deductions..."
+      });
+
+      // Calculate income tax data from real transactions
+      const [invoices, expenses] = await Promise.all([
+        supabaseDataService.getInvoicesByPeriod(user.id, period.start, period.end),
+        supabaseDataService.getExpensesByPeriod(user.id, period.start, period.end)
+      ]);
+
+      const totalSales = invoices.reduce((sum, invoice) => sum + invoice.total, 0);
+      const totalPurchases = expenses.reduce((sum, expense) => sum + expense.amount, 0);
+      const taxableIncome = Math.max(0, totalSales - totalPurchases);
+      
+      // Simplified NZ tax calculation (actual rates are progressive)
+      const taxDue = taxableIncome > 14000 ? 
+        (taxableIncome - 14000) * 0.175 + // 17.5% for income over $14,000
+        (taxableIncome > 48000 ? (taxableIncome - 48000) * 0.135 : 0) // Additional 13.5% for income over $48,000
+        : 0;
+
+      const newReturnData: Omit<TaxReturn, 'id' | 'createdAt' | 'updatedAt'> = {
+        userId: user.id,
+        periodStart: period.start,
+        periodEnd: period.end,
+        returnType: 'Income_Tax',
+        totalSales,
+        totalPurchases,
+        gstOnSales: 0,
+        gstOnPurchases: 0,
+        netGst: 0,
+        status: 'draft',
+        returnData: {
+          incomeTax: {
+            grossIncome: totalSales,
+            allowableDeductions: totalPurchases,
+            taxableIncome,
+            taxDue: Math.round(taxDue * 100) / 100,
+            provisionalTax: Math.round(taxDue * 0.333 * 100) / 100 // Roughly 1/3 for provisional tax
+          }
+        }
+      };
+
+      const createdReturn = await supabaseDataService.createTaxReturn(newReturnData);
+      setTaxReturns(prev => [createdReturn, ...prev]);
       
       toast({
         title: "Success",
-        description: "Income tax return created successfully"
+        description: `Income tax return created. Tax due: $${newReturnData.returnData?.incomeTax?.taxDue.toFixed(2)}`
       });
     } catch (error) {
+      console.error('Error creating income tax return:', error);
       toast({
         title: "Error",
         description: "Failed to create income tax return",
@@ -249,21 +202,25 @@ export default function IRDReportingPage() {
 
   const handleSubmitReturn = async (returnId: string) => {
     try {
-      // Simulate submission
+      // Simulate IRD submission process
+      toast({
+        title: "Submitting to IRD",
+        description: "Processing your tax return submission..."
+      });
+      
       await new Promise(resolve => setTimeout(resolve, 2000));
       
-      const irdReference = `IRD-${Date.now()}`;
+      const irdReference = `IRD-GST-${new Date().getFullYear()}-${Date.now().toString().slice(-6)}`;
+      
+      // Update the tax return status in Supabase
+      const updatedReturn = await supabaseDataService.updateTaxReturn(returnId, {
+        status: 'submitted',
+        submittedAt: new Date().toISOString(),
+        irdReference
+      });
       
       setTaxReturns(prev => 
-        prev.map(ret => ret.id === returnId 
-          ? {
-              ...ret,
-              status: 'submitted',
-              submittedAt: new Date().toISOString(),
-              irdReference
-            }
-          : ret
-        )
+        prev.map(ret => ret.id === returnId ? updatedReturn : ret)
       );
       
       toast({
@@ -271,9 +228,10 @@ export default function IRDReportingPage() {
         description: `Tax return submitted successfully. IRD Reference: ${irdReference}`
       });
     } catch (error) {
+      console.error('Error submitting tax return:', error);
       toast({
         title: "Error",
-        description: "Failed to submit tax return",
+        description: "Failed to submit tax return to IRD",
         variant: "destructive"
       });
     }

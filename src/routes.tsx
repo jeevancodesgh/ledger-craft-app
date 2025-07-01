@@ -41,6 +41,7 @@ const PaymentsPage = lazy(() => import("@/pages/PaymentsPage"));
 const ReceiptsPage = lazy(() => import("@/pages/ReceiptsPage"));
 const AccountingDashboardPage = lazy(() => import("@/pages/AccountingDashboardPage"));
 const TaxConfigurationPage = lazy(() => import("@/pages/TaxConfigurationPage"));
+const TaxOverviewPage = lazy(() => import("@/pages/TaxOverviewPage"));
 const FinancialReportsPage = lazy(() => import("@/pages/FinancialReportsPage"));
 const IRDReportingPage = lazy(() => import("@/pages/IRDReportingPage"));
 const JournalEntriesPage = lazy(() => import("@/pages/JournalEntriesPage"));
@@ -175,6 +176,14 @@ const appRoutes: RouteObject[] = [
             element: (
               <PermissionGuard permission="settings:manage">
                 <TaxConfigurationPage />
+              </PermissionGuard>
+            )
+          },
+          { 
+            path: "tax-overview", 
+            element: (
+              <PermissionGuard permission="reports:view">
+                <TaxOverviewPage />
               </PermissionGuard>
             )
           },
