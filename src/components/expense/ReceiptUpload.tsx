@@ -1,4 +1,4 @@
-import React, { useState, useRef, useCallback } from 'react';
+import React, { useState, useRef, useCallback, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -52,7 +52,7 @@ export const ReceiptUpload: React.FC<ReceiptUploadProps> = ({
   const [isUploading, setIsUploading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
   const [manualUrl, setManualUrl] = useState(initialReceiptUrl || '');
-  const [activeTab, setActiveTab] = useState(isScanningAvailable ? 'scan' : 'upload');
+  const [activeTab, setActiveTab] = useState('upload'); // Initialize with safe default
   const [showScanner, setShowScanner] = useState(false);
   
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -60,6 +60,13 @@ export const ReceiptUpload: React.FC<ReceiptUploadProps> = ({
   const { toast } = useToast();
 
   const isScanningAvailable = openaiReceiptService.isAvailable();
+
+  // Set default tab after component initialization
+  useEffect(() => {
+    if (isScanningAvailable && activeTab === 'upload') {
+      setActiveTab('scan');
+    }
+  }, [isScanningAvailable, activeTab]);
 
   const validateFile = (file: File): string | null => {
     if (file.size > MAX_FILE_SIZE) {
