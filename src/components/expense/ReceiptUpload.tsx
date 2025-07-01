@@ -19,6 +19,7 @@ import {
   FileImage,
   AlertCircle,
   Check,
+  CheckCircle,
   FileText,
   Scan,
   Sparkles
@@ -51,7 +52,7 @@ export const ReceiptUpload: React.FC<ReceiptUploadProps> = ({
   const [isUploading, setIsUploading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
   const [manualUrl, setManualUrl] = useState(initialReceiptUrl || '');
-  const [activeTab, setActiveTab] = useState('upload');
+  const [activeTab, setActiveTab] = useState(isScanningAvailable ? 'scan' : 'upload');
   const [showScanner, setShowScanner] = useState(false);
   
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -224,9 +225,12 @@ export const ReceiptUpload: React.FC<ReceiptUploadProps> = ({
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
         <TabsList className="grid w-full grid-cols-3">
           <TabsTrigger value="upload">Upload/Camera</TabsTrigger>
-          <TabsTrigger value="scan" className="text-xs">
+          <TabsTrigger value="scan" className="text-xs relative">
             <Sparkles className="h-3 w-3 mr-1" />
             AI Scan
+            <span className="absolute -top-1 -right-1 bg-gradient-to-r from-purple-500 to-pink-500 text-white text-[8px] px-1 py-0.5 rounded-full font-bold animate-pulse">
+              NEW
+            </span>
           </TabsTrigger>
           <TabsTrigger value="url">Manual URL</TabsTrigger>
         </TabsList>
@@ -448,39 +452,77 @@ export const ReceiptUpload: React.FC<ReceiptUploadProps> = ({
             <CardContent>
               {isScanningAvailable ? (
                 <div className="space-y-4">
-                  <div className="text-center py-6">
-                    <div className="bg-gradient-to-br from-purple-100 to-blue-100 rounded-full w-16 h-16 mx-auto mb-4 flex items-center justify-center">
-                      <Scan className="h-8 w-8 text-purple-600" />
-                    </div>
-                    <h3 className="font-medium mb-2">Smart Receipt Scanning</h3>
-                    <p className="text-sm text-muted-foreground mb-4 max-w-sm mx-auto">
-                      Upload or take a photo of your receipt and AI will automatically extract:
-                    </p>
-                    <div className="text-xs text-muted-foreground space-y-1 mb-6">
-                      <div>• Merchant name and date</div>
-                      <div>• Total amount and tax</div>
-                      <div>• Suggested expense category</div>
-                      <div>• Individual items (when visible)</div>
+                  <div className="text-center py-4">
+                    {/* Prominent Header */}
+                    <div className="bg-gradient-to-br from-purple-100 via-blue-100 to-teal-100 rounded-2xl p-6 mb-4 border border-purple-200">
+                      <div className="bg-gradient-to-br from-purple-500 to-blue-500 rounded-full w-20 h-20 mx-auto mb-4 flex items-center justify-center shadow-lg">
+                        <Scan className="h-10 w-10 text-white" />
+                      </div>
+                      <div className="flex items-center justify-center mb-2">
+                        <h3 className="font-bold text-lg">Smart Receipt Scanning</h3>
+                        <span className="ml-2 bg-gradient-to-r from-purple-500 to-pink-500 text-white text-xs px-2 py-1 rounded-full font-bold animate-bounce">
+                          NEW
+                        </span>
+                      </div>
+                      <p className="text-sm text-muted-foreground mb-4">
+                        Just snap a photo and let AI do the work! ✨
+                      </p>
+                      
+                      {/* Large prominent button */}
+                      <Dialog open={showScanner} onOpenChange={setShowScanner}>
+                        <DialogTrigger asChild>
+                          <Button 
+                            onClick={openScanner}
+                            disabled={disabled}
+                            size="lg"
+                            className="bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-lg py-6 px-8 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300"
+                          >
+                            <Scan className="h-5 w-5 mr-3" />
+                            Scan Receipt with AI
+                          </Button>
+                        </DialogTrigger>
+                        <DialogContent className="sm:max-w-md p-0">
+                          <ReceiptScanner
+                            onScanComplete={handleScanComplete}
+                            onClose={() => setShowScanner(false)}
+                          />
+                        </DialogContent>
+                      </Dialog>
                     </div>
                     
-                    <Dialog open={showScanner} onOpenChange={setShowScanner}>
-                      <DialogTrigger asChild>
-                        <Button 
-                          onClick={openScanner}
-                          disabled={disabled}
-                          className="bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700"
-                        >
-                          <Scan className="h-4 w-4 mr-2" />
-                          Start AI Scanning
-                        </Button>
-                      </DialogTrigger>
-                      <DialogContent className="sm:max-w-md p-0">
-                        <ReceiptScanner
-                          onScanComplete={handleScanComplete}
-                          onClose={() => setShowScanner(false)}
-                        />
-                      </DialogContent>
-                    </Dialog>
+                    {/* Features list */}
+                    <div className="bg-gradient-to-r from-green-50 to-blue-50 rounded-lg p-4 mb-4">
+                      <h4 className="text-sm font-semibold mb-3 flex items-center text-green-700">
+                        <CheckCircle className="h-4 w-4 mr-2" />
+                        What AI will extract automatically:
+                      </h4>
+                      <div className="grid grid-cols-2 gap-2 text-xs text-muted-foreground">
+                        <div className="flex items-center">
+                          <div className="w-1.5 h-1.5 bg-green-500 rounded-full mr-2" />
+                          Merchant name
+                        </div>
+                        <div className="flex items-center">
+                          <div className="w-1.5 h-1.5 bg-blue-500 rounded-full mr-2" />
+                          Transaction date
+                        </div>
+                        <div className="flex items-center">
+                          <div className="w-1.5 h-1.5 bg-purple-500 rounded-full mr-2" />
+                          Total amount
+                        </div>
+                        <div className="flex items-center">
+                          <div className="w-1.5 h-1.5 bg-orange-500 rounded-full mr-2" />
+                          Tax amount
+                        </div>
+                        <div className="flex items-center">
+                          <div className="w-1.5 h-1.5 bg-teal-500 rounded-full mr-2" />
+                          Item details
+                        </div>
+                        <div className="flex items-center">
+                          <div className="w-1.5 h-1.5 bg-pink-500 rounded-full mr-2" />
+                          Category suggestion
+                        </div>
+                      </div>
+                    </div>
                   </div>
                   
                   <div className="border-t pt-4">

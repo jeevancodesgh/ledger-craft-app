@@ -29,7 +29,7 @@ import * as z from 'zod';
 import { Expense, ExpenseStatus, PaymentMethod } from '@/types';
 import { DrawerFormLayout } from '@/components/ui/DrawerFormLayout';
 import { useAppContext } from '@/context/AppContext';
-import { CalendarIcon } from 'lucide-react';
+import { CalendarIcon, Sparkles } from 'lucide-react';
 import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { format } from 'date-fns';
@@ -231,7 +231,19 @@ const ExpenseFormDrawer: React.FC<ExpenseFormDrawerProps> = ({
       <DrawerContent className="drawer-content">
         <DrawerFormLayout
           title={initialValues ? 'Edit Expense' : 'Create Expense'}
-          description={initialValues ? 'Update the expense details below.' : 'Fill in the expense details below to create a new expense.'}
+          description={
+            initialValues 
+              ? 'Update the expense details below.' 
+              : (
+                <div className="space-y-1">
+                  <div>Fill in the expense details below to create a new expense.</div>
+                  <div className="flex items-center text-xs text-purple-600 font-medium">
+                    <Sparkles className="h-3 w-3 mr-1" />
+                    Try the new AI Receipt Scanner in the Receipt section! ✨
+                  </div>
+                </div>
+              )
+          }
           footer={
             <>
               <Button type="submit" form="expense-form" className="flex-1 h-12">
