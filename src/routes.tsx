@@ -7,6 +7,7 @@ import { ToastProvider } from "@/hooks/use-toast";
 import { AppProvider } from "./context/AppContext";
 import { TooltipProvider } from "./components/ui/tooltip";
 import { AuthProvider } from "./context/AuthContext";
+import { ConversationProvider } from "./context/ConversationContext";
 import { Toaster } from "./components/ui/toaster";
 import { Toaster as Sonner } from "./components/ui/sonner";
 import ProtectedRoute from "@/components/auth/ProtectedRoute";
@@ -53,9 +54,11 @@ const Root = () => {
         <AppProvider>
           <TooltipProvider>
             <AuthProvider>
-              <Outlet />
-              <Toaster />
-              <Sonner />
+              <ConversationProvider>
+                <Outlet />
+                <Toaster />
+                <Sonner />
+              </ConversationProvider>
             </AuthProvider>
           </TooltipProvider>
         </AppProvider>
