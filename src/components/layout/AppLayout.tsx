@@ -6,6 +6,8 @@ import { useIsMobile } from '@/hooks/use-mobile';
 import { Drawer, DrawerContent, DrawerTrigger } from "@/components/ui/drawer";
 import { Menu } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { ChatInterface } from '@/components/ai-chat/ChatInterface';
+import { useConversation } from '@/context/ConversationContext';
 
 interface AppLayoutProps {
   children: React.ReactNode;
@@ -17,6 +19,16 @@ export function AppLayout({
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const isMobile = useIsMobile();
+  
+  const {
+    currentConversation,
+    isChatOpen,
+    setChatOpen,
+    sendMessage,
+    confirmAction,
+    rejectAction,
+    isProcessing
+  } = useConversation();
   
   const toggleSidebar = () => {
     setSidebarCollapsed(!sidebarCollapsed);
@@ -44,6 +56,18 @@ export function AppLayout({
             {children}
           </div>
         </main>
+        
+        {/* AI Chat Interface */}
+        <ChatInterface
+          conversation={currentConversation}
+          onSendMessage={sendMessage}
+          onConfirmAction={confirmAction}
+          onRejectAction={rejectAction}
+          isProcessing={isProcessing}
+          isOpen={isChatOpen}
+          onToggle={() => setChatOpen(!isChatOpen)}
+          className={isMobile ? "bottom-2 right-2 w-[calc(100vw-1rem)]" : undefined}
+        />
       </div>
     );
   }
@@ -61,6 +85,17 @@ export function AppLayout({
           </div>
         </main>
       </div>
+      
+      {/* AI Chat Interface */}
+      <ChatInterface
+        conversation={currentConversation}
+        onSendMessage={sendMessage}
+        onConfirmAction={confirmAction}
+        onRejectAction={rejectAction}
+        isProcessing={isProcessing}
+        isOpen={isChatOpen}
+        onToggle={() => setChatOpen(!isChatOpen)}
+      />
     </div>
   );
 }
