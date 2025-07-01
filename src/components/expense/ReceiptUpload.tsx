@@ -215,14 +215,12 @@ export const ReceiptUpload: React.FC<ReceiptUploadProps> = ({
       <Label>Receipt</Label>
       
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-        <TabsList className={cn("grid w-full", isScanningAvailable ? "grid-cols-3" : "grid-cols-2")}>
+        <TabsList className="grid w-full grid-cols-3">
           <TabsTrigger value="upload">Upload/Camera</TabsTrigger>
-          {isScanningAvailable && (
-            <TabsTrigger value="scan" className="text-xs">
-              <Sparkles className="h-3 w-3 mr-1" />
-              AI Scan
-            </TabsTrigger>
-          )}
+          <TabsTrigger value="scan" className="text-xs">
+            <Sparkles className="h-3 w-3 mr-1" />
+            AI Scan
+          </TabsTrigger>
           <TabsTrigger value="url">Manual URL</TabsTrigger>
         </TabsList>
         
@@ -429,19 +427,19 @@ export const ReceiptUpload: React.FC<ReceiptUploadProps> = ({
           )}
         </TabsContent>
 
-        {isScanningAvailable && (
-          <TabsContent value="scan" className="space-y-4">
-            <Card>
-              <CardHeader className="pb-2">
-                <CardTitle className="text-sm flex items-center">
-                  <Sparkles className="h-4 w-4 mr-2 text-purple-600" />
-                  AI Receipt Scanner
-                </CardTitle>
-                <CardDescription className="text-xs">
-                  Scan receipt with AI to automatically extract expense data
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
+        <TabsContent value="scan" className="space-y-4">
+          <Card>
+            <CardHeader className="pb-2">
+              <CardTitle className="text-sm flex items-center">
+                <Sparkles className="h-4 w-4 mr-2 text-purple-600" />
+                AI Receipt Scanner
+              </CardTitle>
+              <CardDescription className="text-xs">
+                Scan receipt with AI to automatically extract expense data
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              {isScanningAvailable ? (
                 <div className="space-y-4">
                   <div className="text-center py-6">
                     <div className="bg-gradient-to-br from-purple-100 to-blue-100 rounded-full w-16 h-16 mx-auto mb-4 flex items-center justify-center">
@@ -481,14 +479,55 @@ export const ReceiptUpload: React.FC<ReceiptUploadProps> = ({
                   <div className="border-t pt-4">
                     <div className="flex items-center text-xs text-muted-foreground">
                       <AlertCircle className="h-3 w-3 mr-1" />
-                      <span>Powered by OpenAI Vision • Requires API key configuration</span>
+                      <span>Powered by OpenAI Vision</span>
                     </div>
                   </div>
                 </div>
-              </CardContent>
-            </Card>
-          </TabsContent>
-        )}
+              ) : (
+                <div className="space-y-4">
+                  <div className="text-center py-6">
+                    <div className="bg-gradient-to-br from-red-100 to-orange-100 rounded-full w-16 h-16 mx-auto mb-4 flex items-center justify-center">
+                      <AlertCircle className="h-8 w-8 text-red-600" />
+                    </div>
+                    <h3 className="font-medium mb-2 text-red-600">API Key Required</h3>
+                    <p className="text-sm text-muted-foreground mb-4 max-w-sm mx-auto">
+                      To use AI receipt scanning, you need to configure your OpenAI API key.
+                    </p>
+                    
+                    <div className="bg-muted/50 rounded-lg p-4 text-left mb-4">
+                      <h4 className="text-sm font-medium mb-2">Setup Instructions:</h4>
+                      <ol className="text-xs text-muted-foreground space-y-1 list-decimal list-inside">
+                        <li>Get your API key from <a href="https://platform.openai.com/api-keys" target="_blank" className="text-blue-600 hover:underline">OpenAI Platform</a></li>
+                        <li>Create or edit <code className="bg-muted px-1 rounded">.env.local</code> file in project root</li>
+                        <li>Add: <code className="bg-muted px-1 rounded">VITE_OPENAI_API_KEY=your_key_here</code></li>
+                        <li>Restart the development server</li>
+                      </ol>
+                    </div>
+
+                    <div className="text-xs text-muted-foreground mb-4">
+                      <strong>What AI scanning provides:</strong>
+                      <div className="grid grid-cols-2 gap-1 mt-2">
+                        <div>• Merchant name</div>
+                        <div>• Transaction date</div>
+                        <div>• Total amount</div>
+                        <div>• Tax amount</div>
+                        <div>• Item details</div>
+                        <div>• Category suggestions</div>
+                      </div>
+                    </div>
+                  </div>
+                  
+                  <div className="border-t pt-4">
+                    <div className="flex items-center justify-center text-xs text-muted-foreground">
+                      <AlertCircle className="h-3 w-3 mr-1" />
+                      <span>Powered by OpenAI Vision API</span>
+                    </div>
+                  </div>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </TabsContent>
         
         <TabsContent value="url" className="space-y-4">
           <Card>
