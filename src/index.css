@@ -331,3 +331,56 @@
   pointer-events: none;
   cursor: default;
 }
+
+/* Receipt Scanning Animation Effects */
+@keyframes scan {
+  0% {
+    top: 0;
+    opacity: 1;
+  }
+  50% {
+    opacity: 1;
+  }
+  100% {
+    top: 100%;
+    opacity: 0;
+  }
+}
+
+.scanning-line {
+  animation: scan 2s ease-in-out infinite;
+}
+
+/* Enhanced scanning effects */
+@keyframes scanGlow {
+  0%, 100% {
+    box-shadow: 0 0 5px rgba(59, 130, 246, 0.3);
+  }
+  50% {
+    box-shadow: 0 0 20px rgba(59, 130, 246, 0.8);
+  }
+}
+
+.animate-scan {
+  animation: scan 2s ease-in-out infinite;
+}
+
+.scan-glow {
+  animation: scanGlow 1.5s ease-in-out infinite;
+}
+
+/* Scanning corner indicators animation */
+@keyframes cornerPulse {
+  0%, 100% {
+    opacity: 0.6;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.1);
+  }
+}
+
+.corner-indicator {
+  animation: cornerPulse 2s ease-in-out infinite;
+}

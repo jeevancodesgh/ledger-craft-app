@@ -156,13 +156,51 @@ export const ReceiptScanner: React.FC<ReceiptScannerProps> = ({
         {selectedFile && !scanResult && (
           <div className="space-y-4">
             {previewUrl && (
-              <div className="relative">
+              <div className="relative overflow-hidden rounded-lg border">
                 <img
                   src={previewUrl}
                   alt="Receipt preview"
-                  className="w-full max-h-64 object-contain rounded-lg border"
+                  className="w-full max-h-64 object-contain"
                 />
-                <div className="absolute inset-0 bg-black/5 rounded-lg" />
+                
+                {/* Scanning Overlay */}
+                {isScanning && (
+                  <div className="absolute inset-0 bg-gradient-to-b from-black/10 via-transparent to-black/10">
+                    {/* Animated scanning line */}
+                    <div className="absolute inset-0 overflow-hidden">
+                      <div className="scanning-line absolute w-full h-0.5 bg-gradient-to-r from-transparent via-blue-500 to-transparent opacity-80 animate-scan" />
+                    </div>
+                    
+                    {/* Scanning grid overlay */}
+                    <div className="absolute inset-0 bg-gradient-to-r from-transparent via-blue-500/5 to-transparent animate-pulse" />
+                    
+                    {/* Corner indicators */}
+                    <div className="absolute top-2 left-2 w-5 h-5 border-l-2 border-t-2 border-blue-500 corner-indicator" />
+                    <div className="absolute top-2 right-2 w-5 h-5 border-r-2 border-t-2 border-blue-500 corner-indicator" />
+                    <div className="absolute bottom-2 left-2 w-5 h-5 border-l-2 border-b-2 border-blue-500 corner-indicator" />
+                    <div className="absolute bottom-2 right-2 w-5 h-5 border-r-2 border-b-2 border-blue-500 corner-indicator" />
+                    
+                    {/* Additional scanning elements */}
+                    <div className="absolute top-0 left-1/2 transform -translate-x-1/2 w-1 h-4 bg-blue-500 animate-pulse" />
+                    <div className="absolute bottom-0 left-1/2 transform -translate-x-1/2 w-1 h-4 bg-blue-500 animate-pulse" />
+                    <div className="absolute left-0 top-1/2 transform -translate-y-1/2 w-4 h-1 bg-blue-500 animate-pulse" />
+                    <div className="absolute right-0 top-1/2 transform -translate-y-1/2 w-4 h-1 bg-blue-500 animate-pulse" />
+                    
+                    {/* Center AI indicator */}
+                    <div className="absolute inset-0 flex items-center justify-center">
+                      <div className="relative">
+                        <div className="bg-blue-600/90 backdrop-blur-sm rounded-full p-4 scan-glow">
+                          <Scan className="h-6 w-6 text-white animate-spin" />
+                        </div>
+                        <div className="absolute inset-0 bg-blue-500/20 rounded-full animate-ping" />
+                      </div>
+                    </div>
+                  </div>
+                )}
+                
+                {!isScanning && (
+                  <div className="absolute inset-0 bg-black/5 rounded-lg" />
+                )}
               </div>
             )}
 
@@ -171,10 +209,17 @@ export const ReceiptScanner: React.FC<ReceiptScannerProps> = ({
             </div>
 
             {isScanning && (
-              <div className="space-y-2">
-                <div className="flex items-center justify-center text-sm text-muted-foreground">
-                  <Scan className="h-4 w-4 mr-2 animate-pulse" />
-                  AI is analyzing your receipt...
+              <div className="space-y-3">
+                <div className="flex items-center justify-center text-sm font-medium text-blue-600">
+                  <div className="flex items-center space-x-2">
+                    <div className="w-2 h-2 bg-blue-600 rounded-full animate-bounce" />
+                    <div className="w-2 h-2 bg-blue-600 rounded-full animate-bounce" style={{ animationDelay: '0.1s' }} />
+                    <div className="w-2 h-2 bg-blue-600 rounded-full animate-bounce" style={{ animationDelay: '0.2s' }} />
+                  </div>
+                  <span className="ml-3">AI is analyzing your receipt...</span>
+                </div>
+                <div className="text-xs text-center text-muted-foreground">
+                  Extracting merchant, date, amount, and items...
                 </div>
                 <Progress value={undefined} className="w-full" />
               </div>
