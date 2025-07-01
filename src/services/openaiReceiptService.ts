@@ -12,8 +12,14 @@ class OpenAIReceiptService {
   private initialize() {
     const apiKey = import.meta.env.VITE_OPENAI_API_KEY;
     
-    if (!apiKey) {
-      console.warn('OpenAI API key not found. Receipt scanning will be disabled.');
+    console.log('OpenAI Service initialization:', {
+      hasApiKey: !!apiKey,
+      apiKeyLength: apiKey ? apiKey.length : 0,
+      apiKeyPrefix: apiKey ? apiKey.substring(0, 7) + '...' : 'none'
+    });
+    
+    if (!apiKey || apiKey === 'your_openai_api_key_here') {
+      console.warn('OpenAI API key not found or not configured. Receipt scanning will be disabled.');
       return;
     }
 
@@ -23,6 +29,7 @@ class OpenAIReceiptService {
         dangerouslyAllowBrowser: true // Note: In production, this should be handled server-side
       });
       this.isInitialized = true;
+      console.log('OpenAI client initialized successfully');
     } catch (error) {
       console.error('Failed to initialize OpenAI client:', error);
     }
@@ -69,7 +76,10 @@ IMPORTANT RULES:
     imageData: string, 
     options: ReceiptScanOptions = {}
   ): Promise<ReceiptScanResult> {
+    console.log('Starting receipt scan with options:', options);
+    
     if (!this.isAvailable()) {
+      console.error('OpenAI service not available');
       throw new ReceiptScanError({
         code: 'API_ERROR',
         message: 'OpenAI service is not available. Please check your API key configuration.'
@@ -83,6 +93,13 @@ IMPORTANT RULES:
       const base64Data = imageData.startsWith('data:') 
         ? imageData 
         : `data:image/jpeg;base64,${imageData}`;
+
+      console.log('Making OpenAI API call with:', {
+        model,
+        maxTokens,
+        imageDataLength: base64Data.length,
+        imageFormat: base64Data.substring(0, 30) + '...'
+      });
 
       const response = await this.openai!.chat.completions.create({
         model,
@@ -108,18 +125,38 @@ IMPORTANT RULES:
         response_format: { type: "json_object" }
       });
 
+      console.log('OpenAI API response received:', {
+        hasChoices: !!response.choices,
+        choicesLength: response.choices?.length,
+        hasContent: !!response.choices[0]?.message?.content
+      });
+
       const content = response.choices[0]?.message?.content;
       if (!content) {
         throw new Error('No response content received from OpenAI');
       }
 
+      console.log('Raw OpenAI response content:', content);
+
       const result = JSON.parse(content) as ReceiptScanResult;
       
+      console.log('Parsed result:', result);
+      
       // Validate and sanitize the result
-      return this.validateAndSanitizeResult(result);
+      const validatedResult = this.validateAndSanitizeResult(result);
+      
+      console.log('Validated result:', validatedResult);
+      
+      return validatedResult;
 
     } catch (error) {
-      console.error('Receipt scanning error:', error);
+      console.error('Receipt scanning error details:', {
+        error,
+        message: error instanceof Error ? error.message : 'Unknown error',
+        stack: error instanceof Error ? error.stack : undefined,
+        type: typeof error,
+        name: error instanceof Error ? error.name : undefined
+      });
       
       if (error instanceof SyntaxError) {
         throw new ReceiptScanError({
@@ -129,6 +166,28 @@ IMPORTANT RULES:
       }
 
       if (error instanceof Error) {
+        // Check for specific OpenAI API errors
+        if (error.message.includes('401')) {
+          throw new ReceiptScanError({
+            code: 'API_ERROR',
+            message: 'Invalid OpenAI API key. Please check your API key configuration.'
+          });
+        }
+
+        if (error.message.includes('429')) {
+          throw new ReceiptScanError({
+            code: 'API_ERROR',
+            message: 'Rate limit exceeded. Please try again in a few moments.'
+          });
+        }
+
+        if (error.message.includes('quota')) {
+          throw new ReceiptScanError({
+            code: 'API_ERROR',
+            message: 'OpenAI quota exceeded. Please check your OpenAI account billing.'
+          });
+        }
+
         if (error.message.includes('network') || error.message.includes('fetch')) {
           throw new ReceiptScanError({
             code: 'NETWORK_ERROR',
@@ -136,9 +195,16 @@ IMPORTANT RULES:
           });
         }
 
+        if (error.message.includes('CORS')) {
+          throw new ReceiptScanError({
+            code: 'API_ERROR',
+            message: 'CORS error. OpenAI API calls from browser require proper configuration.'
+          });
+        }
+
         throw new ReceiptScanError({
           code: 'API_ERROR',
-          message: error.message
+          message: `OpenAI API Error: ${error.message}`
         });
       }
 
