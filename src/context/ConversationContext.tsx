@@ -63,11 +63,12 @@ export const ConversationProvider: React.FC<ConversationProviderProps> = ({ chil
   const { user } = useAuth();
   const { toast } = useToast();
 
-  // Load recent conversations on mount
+  // Load recent conversations on mount - DISABLED FOR TESTING
   useEffect(() => {
-    if (user) {
-      getRecentConversations();
-    }
+    // Temporarily disabled for testing - will re-enable after migration
+    // if (user) {
+    //   getRecentConversations();
+    // }
   }, [user]);
 
   const createNewConversation = async (): Promise<ConversationSession> => {
