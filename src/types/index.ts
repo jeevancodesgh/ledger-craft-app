@@ -500,3 +500,129 @@ export interface InvoiceTemplateConfig {
   description: string;
   preview?: string; // Preview image URL
 }
+
+// AI Conversation Types
+export type ConversationRole = 'user' | 'assistant' | 'system';
+
+export type ConversationIntent = 
+  | 'create_invoice' 
+  | 'edit_invoice' 
+  | 'send_invoice' 
+  | 'track_payment'
+  | 'create_customer' 
+  | 'find_customer' 
+  | 'update_customer'
+  | 'add_expense' 
+  | 'categorize_expense' 
+  | 'scan_receipt'
+  | 'generate_report' 
+  | 'show_analytics' 
+  | 'financial_summary'
+  | 'help' 
+  | 'clarification' 
+  | 'greeting'
+  | 'unknown';
+
+export interface ConversationEntity {
+  type: 'customer' | 'amount' | 'date' | 'product' | 'service' | 'invoice' | 'expense' | 'category';
+  value: string;
+  confidence: number;
+  resolved?: boolean;
+  resolvedValue?: any;
+}
+
+export interface ConversationAction {
+  type: string;
+  parameters: Record<string, any>;
+  status: 'pending' | 'in_progress' | 'completed' | 'failed';
+  result?: any;
+  error?: string;
+}
+
+export interface ConversationMessage {
+  id: string;
+  conversationId: string;
+  role: ConversationRole;
+  content: string;
+  timestamp: Date;
+  metadata?: {
+    intent?: ConversationIntent;
+    entities?: ConversationEntity[];
+    actions?: ConversationAction[];
+    confidence?: number;
+  };
+}
+
+export interface ConversationContext {
+  currentTask?: {
+    type: ConversationIntent;
+    progress: Record<string, any>;
+    requiredFields: string[];
+    completedFields: string[];
+  };
+  recentEntities: {
+    customers: Customer[];
+    invoices: Invoice[];
+    expenses: Expense[];
+    items: Item[];
+  };
+  userPreferences: {
+    defaultTemplate: string;
+    currency: string;
+    dateFormat: string;
+    language: string;
+  };
+  businessContext?: {
+    businessProfile?: BusinessProfile;
+    recentActivity: string[];
+  };
+}
+
+export interface ConversationSession {
+  id: string;
+  userId: string;
+  title?: string;
+  messages: ConversationMessage[];
+  context: ConversationContext;
+  status: 'active' | 'completed' | 'paused';
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface AIResponse {
+  message: string;
+  intent: ConversationIntent;
+  entities: ConversationEntity[];
+  actions: ConversationAction[];
+  needsConfirmation: boolean;
+  suggestedActions?: string[];
+  context?: Partial<ConversationContext>;
+}
+
+export interface ActionResult {
+  success: boolean;
+  data?: any;
+  error?: string;
+  needsInfo?: string;
+  suggestions?: string[];
+}
+
+// Supabase types for AI conversation
+export interface SupabaseConversation {
+  id: string;
+  user_id: string;
+  title: string | null;
+  context: any; // JSONB
+  status: 'active' | 'completed' | 'paused';
+  created_at: string;
+  updated_at: string;
+}
+
+export interface SupabaseConversationMessage {
+  id: string;
+  conversation_id: string;
+  role: ConversationRole;
+  content: string;
+  metadata: any | null; // JSONB
+  created_at: string;
+}
