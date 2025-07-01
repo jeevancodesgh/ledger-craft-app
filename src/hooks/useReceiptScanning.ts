@@ -1,5 +1,5 @@
 import { useState, useCallback } from 'react';
-import { openaiReceiptService, ReceiptScanError } from '@/services/openaiReceiptService';
+import { openaiReceiptService, OpenAIReceiptService, ReceiptScanError } from '@/services/openaiReceiptService';
 import { ReceiptScanResult } from '@/types/receipt';
 
 interface UseReceiptScanningResult {
@@ -37,7 +37,7 @@ export const useReceiptScanning = (): UseReceiptScanningResult => {
 
     try {
       // Compress image to reduce API costs and improve performance
-      const compressedImage = await openaiReceiptService.compressImage(file, 1024, 0.8);
+      const compressedImage = await OpenAIReceiptService.compressImage(file, 1024, 0.8);
       
       // Scan the receipt
       const result = await openaiReceiptService.scanReceipt(compressedImage, {

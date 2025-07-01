@@ -316,6 +316,9 @@ IMPORTANT RULES:
   }
 }
 
+// Export the class for static method access
+export { OpenAIReceiptService };
+
 // Create singleton instance
 export const openaiReceiptService = new OpenAIReceiptService();
 
