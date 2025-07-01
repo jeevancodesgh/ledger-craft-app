@@ -12,6 +12,7 @@ import { useToast } from '@/hooks/use-toast';
 import { useAppContext } from '@/context/AppContext';
 import { Payment, EnhancedInvoice, CreatePaymentRequest } from '@/types/payment';
 import { Invoice } from '@/types';
+import { paymentService } from '@/services/paymentService';
 
 export default function PaymentsPage() {
   const [unpaidInvoices, setUnpaidInvoices] = useState<EnhancedInvoice[]>([]);
@@ -72,8 +73,27 @@ export default function PaymentsPage() {
     }
   };
 
-  const handleViewReceipt = (paymentId: string) => {
-    navigate(`/receipts/${paymentId}`);
+  const handleViewReceipt = async (paymentId: string) => {
+    try {
+      // First get the receipt ID for this payment
+      const receipt = await paymentService.getReceiptByPayment(paymentId);
+      if (receipt) {
+        navigate(`/receipts/${receipt.id}`);
+      } else {
+        toast({
+          title: "Receipt not found",
+          description: "No receipt exists for this payment",
+          variant: "destructive"
+        });
+      }
+    } catch (error) {
+      console.error('Error fetching receipt:', error);
+      toast({
+        title: "Error",
+        description: "Failed to load receipt",
+        variant: "destructive"
+      });
+    }
   };
 
   const handleDownloadReceipt = async (paymentId: string) => {

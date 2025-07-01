@@ -11,6 +11,7 @@ import { ReceiptViewer } from '@/components/receipt/ReceiptViewer';
 import { Receipt } from '@/types/payment';
 import { format } from 'date-fns';
 import { BreadcrumbNavigation } from '@/components/common/BreadcrumbNavigation';
+import { paymentService } from '@/services/paymentService';
 
 export default function ReceiptViewPage() {
   const { receiptId } = useParams<{ receiptId: string }>();
@@ -32,94 +33,15 @@ export default function ReceiptViewPage() {
     setError(null);
     
     try {
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 800));
+      // Fetch receipt from service
+      const fetchedReceipt = await paymentService.getReceipt(receiptId);
       
-      // Mock receipt data - in real app, this would fetch from API
-      const mockReceipt: Receipt = {
-        id: receiptId,
-        paymentId: 'pay-1',
-        receiptNumber: 'REC-202401-0001',
-        userId: 'user-1',
-        generatedAt: '2024-01-15T10:30:00Z',
-        emailSentAt: '2024-01-15T10:31:00Z',
-        isEmailed: true,
-        receiptData: {
-          payment: {
-            id: 'pay-1',
-            invoiceId: 'inv-1',
-            userId: 'user-1',
-            paymentMethod: 'bank_transfer',
-            amount: 1500.00,
-            paymentDate: '2024-01-15',
-            referenceNumber: 'TXN-001',
-            status: 'completed',
-            createdAt: '2024-01-15T10:30:00Z',
-            updatedAt: '2024-01-15T10:30:00Z'
-          },
-          invoice: {
-            id: 'inv-1',
-            invoiceNumber: 'INV-2024-001',
-            date: '2024-01-10',
-            dueDate: '2024-01-25',
-            total: 1500.00,
-            totalPaid: 1500.00,
-            balanceDue: 0,
-            paymentStatus: 'paid',
-            taxInclusive: true,
-            currency: '$',
-            items: [
-              {
-                id: 'item-1',
-                description: 'Consulting Services - January 2024',
-                quantity: 20,
-                unitPrice: 75.00,
-                total: 1500.00,
-                taxRate: 0.15
-              }
-            ],
-            subtotal: 1304.35,
-            taxAmount: 195.65,
-            notes: 'Thank you for your business!'
-          } as any,
-          customer: {
-            id: 'cust-1',
-            name: 'Acme Corporation',
-            email: 'billing@acme.com',
-            phone: '+64 9 555 0123',
-            address: '123 Business Street',
-            city: 'Auckland',
-            state: 'Auckland',
-            zip: '1010',
-            country: 'NZ'
-          },
-          business: {
-            name: 'Your Business Ltd',
-            email: 'hello@yourbusiness.co.nz',
-            phone: '+64 9 123 4567',
-            address: '456 Commerce Avenue',
-            city: 'Auckland',
-            state: 'Auckland',
-            zip: '1011',
-            country: 'NZ',
-            taxNumber: 'GST123456789',
-            website: 'www.yourbusiness.co.nz'
-          } as any,
-          receiptNumber: 'REC-202401-0001',
-          paymentDate: '2024-01-15',
-          amountPaid: 1500.00,
-          paymentMethod: 'Bank Transfer',
-          balanceAfterPayment: 0
-        },
-        createdAt: '2024-01-15T10:30:00Z'
-      };
-
-      // Simulate potential error for demo
-      if (receiptId === 'not-found') {
-        throw new Error('Receipt not found');
+      if (!fetchedReceipt) {
+        setError('Receipt not found');
+        return;
       }
 
-      setReceipt(mockReceipt);
+      setReceipt(fetchedReceipt);
     } catch (error) {
       console.error('Error fetching receipt:', error);
       setError(error instanceof Error ? error.message : 'Failed to load receipt');
@@ -157,8 +79,7 @@ export default function ReceiptViewPage() {
     if (!receipt) return;
 
     try {
-      // Simulate email send
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      await paymentService.markReceiptAsEmailed(receipt.id);
       
       // Update receipt state
       setReceipt(prev => prev ? {
@@ -489,7 +410,10 @@ export default function ReceiptViewPage() {
       <div className="print:block print:break-before-page">
         <ReceiptViewer
           receipt={receipt}
-          showActions={false}
+          onDownload={handleDownload}
+          onResendEmail={handleResendEmail}
+          onPrint={handlePrint}
+          isLoading={isLoading}
         />
       </div>
     </div>

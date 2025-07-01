@@ -22,7 +22,10 @@ import { Badge } from '@/components/ui/badge';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import ShareInvoiceModal from '@/components/invoice/ShareInvoiceModal';
 import PaymentReminderModal from '@/components/invoice/PaymentReminderModal';
+import { PaymentCaptureModal } from '@/components/invoice/PaymentCaptureModal';
 import { Invoice, InvoiceStatus } from '@/types';
+import { CreatePaymentRequest } from '@/types/payment';
+import { paymentService } from '@/services/paymentService';
 
 const STATUS_OPTIONS = [
   { value: 'draft', label: 'Draft' },
@@ -72,6 +75,9 @@ const Invoices = () => {
   const [invoiceToShare, setInvoiceToShare] = useState<Invoice | null>(null);
   const [reminderModalOpen, setReminderModalOpen] = useState(false);
   const [invoiceToRemind, setInvoiceToRemind] = useState<Invoice | null>(null);
+  const [paymentCaptureOpen, setPaymentCaptureOpen] = useState(false);
+  const [invoiceForPayment, setInvoiceForPayment] = useState<Invoice | null>(null);
+  const [recordingPayment, setRecordingPayment] = useState(false);
   const [filtersOpen, setFiltersOpen] = useState(false);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [filters, setFilters] = useState<InvoiceFilters>({
@@ -132,6 +138,16 @@ const Invoices = () => {
   };
 
   const handleStatusChange = async (id: string, newStatus: string) => {
+    // If changing to "paid", open payment capture modal instead
+    if (newStatus === 'paid') {
+      const invoice = invoices.find(i => i.id === id);
+      if (invoice) {
+        setInvoiceForPayment(invoice);
+        setPaymentCaptureOpen(true);
+      }
+      return;
+    }
+
     setStatusLoading((prev) => ({ ...prev, [id]: true }));
     const prevInvoice = invoices.find(i => i.id === id);
     try {
@@ -154,6 +170,30 @@ const Invoices = () => {
   const handleReminderClick = (invoice: Invoice) => {
     setInvoiceToRemind(invoice);
     setReminderModalOpen(true);
+  };
+
+  const handlePaymentRecord = async (paymentData: CreatePaymentRequest) => {
+    setRecordingPayment(true);
+    try {
+      await paymentService.createPayment(paymentData);
+      toast({ 
+        title: 'Payment recorded', 
+        description: 'Payment has been successfully recorded and receipt generated.' 
+      });
+      // Force refresh from database after payment recording
+      await refreshInvoices();
+      setPaymentCaptureOpen(false);
+      setInvoiceForPayment(null);
+    } catch (error) {
+      console.error('Error recording payment:', error);
+      toast({ 
+        title: 'Payment failed', 
+        description: 'Could not record payment. Please try again.', 
+        variant: 'destructive' 
+      });
+    } finally {
+      setRecordingPayment(false);
+    }
   };
 
   // Auto-fetch invoices when component mounts and when navigating back to this page
@@ -863,6 +903,17 @@ const Invoices = () => {
           open={reminderModalOpen}
           onOpenChange={setReminderModalOpen}
           invoice={invoiceToRemind}
+        />
+      )}
+
+      {/* Payment Capture Modal */}
+      {invoiceForPayment && (
+        <PaymentCaptureModal
+          open={paymentCaptureOpen}
+          onOpenChange={setPaymentCaptureOpen}
+          invoice={invoiceForPayment}
+          onPaymentRecord={handlePaymentRecord}
+          isLoading={recordingPayment}
         />
       )}
     </div>

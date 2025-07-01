@@ -11,11 +11,14 @@ import { useToast } from '@/hooks/use-toast';
 import { Payment, EnhancedInvoice, Receipt } from '@/types/payment';
 import { format } from 'date-fns';
 import { BreadcrumbNavigation } from '@/components/common/BreadcrumbNavigation';
+import { paymentService } from '@/services/paymentService';
+import { useAppContext } from '@/context/AppContext';
 
 export default function PaymentDetailPage() {
   const { paymentId } = useParams<{ paymentId: string }>();
   const navigate = useNavigate();
   const { toast } = useToast();
+  const { getInvoice } = useAppContext();
   
   const [payment, setPayment] = useState<Payment | null>(null);
   const [invoice, setInvoice] = useState<EnhancedInvoice | null>(null);
@@ -34,83 +37,45 @@ export default function PaymentDetailPage() {
     setError(null);
     
     try {
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 800));
-      
-      // Mock payment data
-      const mockPayment: Payment = {
-        id: paymentId,
-        invoiceId: 'inv-1',
-        userId: 'user-1',
-        paymentMethod: 'bank_transfer',
-        amount: 1500.00,
-        paymentDate: '2024-01-15',
-        referenceNumber: 'TXN-001',
-        status: 'completed',
-        notes: 'Payment received via bank transfer for consulting services',
-        createdAt: '2024-01-15T10:30:00Z',
-        updatedAt: '2024-01-15T10:30:00Z'
-      };
+      // Fetch payment details
+      const fetchedPayment = await paymentService.getPayment(paymentId);
+      if (!fetchedPayment) {
+        setError('Payment not found');
+        return;
+      }
+      setPayment(fetchedPayment);
 
-      // Mock related invoice
-      const mockInvoice: EnhancedInvoice = {
-        id: 'inv-1',
-        invoiceNumber: 'INV-2024-001',
-        date: '2024-01-10',
-        dueDate: '2024-01-25',
-        total: 1500.00,
-        totalPaid: 1500.00,
-        balanceDue: 0,
-        paymentStatus: 'paid',
-        taxInclusive: true,
-        currency: '$',
-        items: [
-          {
-            id: 'item-1',
-            description: 'Consulting Services - January 2024',
-            quantity: 20,
-            unitPrice: 75.00,
-            total: 1500.00,
-            taxRate: 0.15
+      // Fetch related invoice
+      if (fetchedPayment.invoiceId) {
+        try {
+          const fetchedInvoice = await getInvoice(fetchedPayment.invoiceId);
+          if (fetchedInvoice) {
+            // Convert to EnhancedInvoice format
+            const enhancedInvoice: EnhancedInvoice = {
+              ...fetchedInvoice,
+              paymentStatus: fetchedInvoice.paymentStatus || 'unpaid',
+              totalPaid: fetchedInvoice.totalPaid || 0,
+              balanceDue: fetchedInvoice.total - (fetchedInvoice.totalPaid || 0),
+              taxInclusive: fetchedInvoice.taxInclusive || false,
+              currency: fetchedInvoice.currency || '$'
+            };
+            setInvoice(enhancedInvoice);
           }
-        ],
-        subtotal: 1304.35,
-        taxAmount: 195.65,
-        notes: 'Thank you for your business!',
-        customer: {
-          id: 'cust-1',
-          name: 'Acme Corporation',
-          email: 'billing@acme.com',
-          phone: '+64 9 555 0123',
-          address: '123 Business Street',
-          city: 'Auckland',
-          state: 'Auckland',
-          zip: '1010',
-          country: 'NZ'
+        } catch (invoiceError) {
+          console.warn('Could not fetch related invoice:', invoiceError);
         }
-      } as EnhancedInvoice;
-
-      // Mock receipt data
-      const mockReceipt: Receipt = {
-        id: 'rec-1',
-        paymentId: paymentId,
-        receiptNumber: 'REC-202401-0001',
-        userId: 'user-1',
-        generatedAt: '2024-01-15T10:31:00Z',
-        emailSentAt: '2024-01-15T10:32:00Z',
-        isEmailed: true,
-        receiptData: {} as any, // Simplified for brevity
-        createdAt: '2024-01-15T10:31:00Z'
-      };
-
-      // Simulate potential error for demo
-      if (paymentId === 'not-found') {
-        throw new Error('Payment not found');
       }
 
-      setPayment(mockPayment);
-      setInvoice(mockInvoice);
-      setReceipt(mockReceipt);
+      // Fetch receipt for this payment
+      try {
+        const fetchedReceipt = await paymentService.getReceiptByPayment(paymentId);
+        if (fetchedReceipt) {
+          setReceipt(fetchedReceipt);
+        }
+      } catch (receiptError) {
+        console.warn('Could not fetch receipt:', receiptError);
+      }
+
     } catch (error) {
       console.error('Error fetching payment details:', error);
       setError(error instanceof Error ? error.message : 'Failed to load payment details');
@@ -136,12 +101,13 @@ export default function PaymentDetailPage() {
   };
 
   const handleDownloadReceipt = async () => {
+    if (!receipt) return;
+    
     try {
-      // Simulate download
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      // TODO: Implement actual receipt download/PDF generation
       toast({
-        title: "Success",
-        description: "Receipt downloaded successfully"
+        title: "Download started",
+        description: "Receipt download functionality will be implemented soon"
       });
     } catch (error) {
       toast({
@@ -153,17 +119,16 @@ export default function PaymentDetailPage() {
   };
 
   const handleResendReceipt = async () => {
+    if (!receipt) return;
+    
     try {
-      // Simulate email send
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      await paymentService.markReceiptAsEmailed(receipt.id);
       
-      if (receipt) {
-        setReceipt(prev => prev ? {
-          ...prev,
-          isEmailed: true,
-          emailSentAt: new Date().toISOString()
-        } : null);
-      }
+      setReceipt(prev => prev ? {
+        ...prev,
+        isEmailed: true,
+        emailSentAt: new Date().toISOString()
+      } : null);
       
       toast({
         title: "Success",

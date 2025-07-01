@@ -37,8 +37,8 @@ export default function ReceiptsPage() {
     if (searchTerm) {
       filtered = filtered.filter(receipt =>
         receipt.receiptNumber.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        receipt.receiptData?.customer.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        receipt.receiptData?.invoice.invoiceNumber.toLowerCase().includes(searchTerm.toLowerCase())
+        receipt.receiptData?.customer?.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        receipt.receiptData?.invoice?.invoiceNumber?.toLowerCase().includes(searchTerm.toLowerCase())
       );
     }
 
@@ -250,17 +250,17 @@ export default function ReceiptsPage() {
                     </TableCell>
                     <TableCell>
                       <div>
-                        <p className="font-medium">{receipt.receiptData?.customer.name}</p>
+                        <p className="font-medium">{receipt.receiptData?.customer?.name || 'Unknown Customer'}</p>
                         <p className="text-sm text-muted-foreground">
-                          {receipt.receiptData?.customer.email}
+                          {receipt.receiptData?.customer?.email || 'No email'}
                         </p>
                       </div>
                     </TableCell>
                     <TableCell>
-                      #{receipt.receiptData?.invoice.invoiceNumber}
+                      #{receipt.receiptData?.invoice?.invoiceNumber || 'N/A'}
                     </TableCell>
                     <TableCell className="font-medium">
-                      ${receipt.receiptData?.amountPaid.toFixed(2)}
+                      ${receipt.receiptData?.amountPaid?.toFixed(2) || '0.00'}
                     </TableCell>
                     <TableCell>
                       {format(new Date(receipt.generatedAt), 'dd MMM yyyy')}
@@ -297,7 +297,7 @@ export default function ReceiptsPage() {
                           variant="ghost"
                           size="sm"
                           onClick={() => handleResendEmail(receipt.id)}
-                          disabled={!receipt.receiptData?.customer.email}
+                          disabled={!receipt.receiptData?.customer?.email}
                         >
                           <Mail className="h-4 w-4" />
                         </Button>
