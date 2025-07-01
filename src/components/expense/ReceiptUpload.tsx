@@ -10,6 +10,7 @@ import {
   CardTitle,
 } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Dialog, DialogContent, DialogTrigger } from '@/components/ui/dialog';
 import { 
   Upload, 
   Camera, 
@@ -18,14 +19,20 @@ import {
   FileImage,
   AlertCircle,
   Check,
-  FileText
+  FileText,
+  Scan,
+  Sparkles
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { storageService } from '@/services/storageService';
 import { useToast } from '@/hooks/use-toast';
+import { ReceiptScanner } from './ReceiptScanner';
+import { ReceiptScanResult } from '@/types/receipt';
+import { openaiReceiptService } from '@/services/openaiReceiptService';
 
 interface ReceiptUploadProps {
   onReceiptChange: (url: string | null, file: File | null) => void;
+  onScanComplete?: (scanResult: ReceiptScanResult) => void;
   initialReceiptUrl?: string | null;
   disabled?: boolean;
 }
@@ -35,6 +42,7 @@ const ACCEPTED_FORMATS = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp', 
 
 export const ReceiptUpload: React.FC<ReceiptUploadProps> = ({
   onReceiptChange,
+  onScanComplete,
   initialReceiptUrl,
   disabled = false
 }) => {
@@ -44,10 +52,13 @@ export const ReceiptUpload: React.FC<ReceiptUploadProps> = ({
   const [uploadProgress, setUploadProgress] = useState(0);
   const [manualUrl, setManualUrl] = useState(initialReceiptUrl || '');
   const [activeTab, setActiveTab] = useState('upload');
+  const [showScanner, setShowScanner] = useState(false);
   
   const fileInputRef = useRef<HTMLInputElement>(null);
   const cameraInputRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
+
+  const isScanningAvailable = openaiReceiptService.isAvailable();
 
   const validateFile = (file: File): string | null => {
     if (file.size > MAX_FILE_SIZE) {
@@ -184,13 +195,34 @@ export const ReceiptUpload: React.FC<ReceiptUploadProps> = ({
     }
   };
 
+  const handleScanComplete = (scanResult: ReceiptScanResult) => {
+    setShowScanner(false);
+    if (onScanComplete) {
+      onScanComplete(scanResult);
+    }
+    toast({
+      title: "Receipt Scanned",
+      description: "AI has extracted data from your receipt. Review and confirm the details.",
+    });
+  };
+
+  const openScanner = () => {
+    setShowScanner(true);
+  };
+
   return (
     <div className="space-y-4">
       <Label>Receipt</Label>
       
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-        <TabsList className="grid w-full grid-cols-2">
+        <TabsList className={cn("grid w-full", isScanningAvailable ? "grid-cols-3" : "grid-cols-2")}>
           <TabsTrigger value="upload">Upload/Camera</TabsTrigger>
+          {isScanningAvailable && (
+            <TabsTrigger value="scan" className="text-xs">
+              <Sparkles className="h-3 w-3 mr-1" />
+              AI Scan
+            </TabsTrigger>
+          )}
           <TabsTrigger value="url">Manual URL</TabsTrigger>
         </TabsList>
         
@@ -396,6 +428,67 @@ export const ReceiptUpload: React.FC<ReceiptUploadProps> = ({
             </Card>
           )}
         </TabsContent>
+
+        {isScanningAvailable && (
+          <TabsContent value="scan" className="space-y-4">
+            <Card>
+              <CardHeader className="pb-2">
+                <CardTitle className="text-sm flex items-center">
+                  <Sparkles className="h-4 w-4 mr-2 text-purple-600" />
+                  AI Receipt Scanner
+                </CardTitle>
+                <CardDescription className="text-xs">
+                  Scan receipt with AI to automatically extract expense data
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-4">
+                  <div className="text-center py-6">
+                    <div className="bg-gradient-to-br from-purple-100 to-blue-100 rounded-full w-16 h-16 mx-auto mb-4 flex items-center justify-center">
+                      <Scan className="h-8 w-8 text-purple-600" />
+                    </div>
+                    <h3 className="font-medium mb-2">Smart Receipt Scanning</h3>
+                    <p className="text-sm text-muted-foreground mb-4 max-w-sm mx-auto">
+                      Upload or take a photo of your receipt and AI will automatically extract:
+                    </p>
+                    <div className="text-xs text-muted-foreground space-y-1 mb-6">
+                      <div>• Merchant name and date</div>
+                      <div>• Total amount and tax</div>
+                      <div>• Suggested expense category</div>
+                      <div>• Individual items (when visible)</div>
+                    </div>
+                    
+                    <Dialog open={showScanner} onOpenChange={setShowScanner}>
+                      <DialogTrigger asChild>
+                        <Button 
+                          onClick={openScanner}
+                          disabled={disabled}
+                          className="bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700"
+                        >
+                          <Scan className="h-4 w-4 mr-2" />
+                          Start AI Scanning
+                        </Button>
+                      </DialogTrigger>
+                      <DialogContent className="sm:max-w-md p-0">
+                        <ReceiptScanner
+                          onScanComplete={handleScanComplete}
+                          onClose={() => setShowScanner(false)}
+                        />
+                      </DialogContent>
+                    </Dialog>
+                  </div>
+                  
+                  <div className="border-t pt-4">
+                    <div className="flex items-center text-xs text-muted-foreground">
+                      <AlertCircle className="h-3 w-3 mr-1" />
+                      <span>Powered by OpenAI Vision • Requires API key configuration</span>
+                    </div>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
+        )}
         
         <TabsContent value="url" className="space-y-4">
           <Card>

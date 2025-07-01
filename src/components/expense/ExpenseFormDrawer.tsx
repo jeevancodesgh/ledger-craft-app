@@ -35,6 +35,7 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
 import ReceiptUpload from './ReceiptUpload';
+import { ReceiptScanResult } from '@/types/receipt';
 
 const expenseFormSchema = z.object({
   description: z.string().min(1, { message: 'Description is required' }),
@@ -171,6 +172,58 @@ const ExpenseFormDrawer: React.FC<ExpenseFormDrawerProps> = ({
     setReceiptFile(file);
     // Update the form field as well
     form.setValue('receiptUrl', url || '');
+  };
+
+  const handleScanComplete = (scanResult: ReceiptScanResult) => {
+    // Populate form fields with scanned data
+    if (scanResult.merchantName) {
+      form.setValue('vendorName', scanResult.merchantName);
+    }
+    
+    if (scanResult.date) {
+      form.setValue('expenseDate', scanResult.date);
+    }
+    
+    if (scanResult.total) {
+      form.setValue('amount', scanResult.total);
+    }
+    
+    if (scanResult.tax) {
+      form.setValue('taxAmount', scanResult.tax);
+    }
+    
+    if (scanResult.paymentMethod) {
+      // Map the payment method to form values
+      const paymentMethodMap: Record<string, PaymentMethod> = {
+        'cash': 'cash',
+        'card': 'card',
+        'other': 'other'
+      };
+      const mappedMethod = paymentMethodMap[scanResult.paymentMethod];
+      if (mappedMethod) {
+        form.setValue('paymentMethod', mappedMethod);
+      }
+    }
+    
+    if (scanResult.suggestedCategory) {
+      // Try to find a matching category
+      const matchingCategory = expenseCategories.find(cat => 
+        cat.name.toLowerCase().includes(scanResult.suggestedCategory!.toLowerCase()) ||
+        scanResult.suggestedCategory!.toLowerCase().includes(cat.name.toLowerCase())
+      );
+      if (matchingCategory) {
+        form.setValue('categoryId', matchingCategory.id);
+      }
+    }
+    
+    if (scanResult.notes) {
+      form.setValue('notes', scanResult.notes);
+    }
+    
+    // If we have a good description from merchant name, use it
+    if (scanResult.merchantName && !form.getValues('description')) {
+      form.setValue('description', `Expense at ${scanResult.merchantName}`);
+    }
   };
 
   return (
@@ -430,6 +483,7 @@ const ExpenseFormDrawer: React.FC<ExpenseFormDrawerProps> = ({
 
               <ReceiptUpload
                 onReceiptChange={handleReceiptChange}
+                onScanComplete={handleScanComplete}
                 initialReceiptUrl={receiptUrl}
                 disabled={false}
               />

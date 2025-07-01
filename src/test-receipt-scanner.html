@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Receipt Scanner Test</title>
+</head>
+<body>
+    <h1>Receipt Scanner Feature Test</h1>
+    
+    <h2>To test the Receipt Scanner feature:</h2>
+    <ol>
+        <li>Add your OpenAI API key to .env.local file:
+            <pre>VITE_OPENAI_API_KEY=your_openai_api_key_here</pre>
+        </li>
+        <li>Navigate to the Expenses page in the app</li>
+        <li>Click "Create Expense" button</li>
+        <li>In the Receipt section, you should see three tabs:
+            <ul>
+                <li>Upload/Camera - Original functionality</li>
+                <li>AI Scan - New receipt scanning feature</li>
+                <li>Manual URL - Original functionality</li>
+            </ul>
+        </li>
+        <li>Click on "AI Scan" tab</li>
+        <li>Click "Start AI Scanning" button</li>
+        <li>Upload or take a photo of a receipt</li>
+        <li>AI will process the receipt and extract data</li>
+        <li>Review the extracted data and click "Use This Data"</li>
+        <li>The expense form should be automatically populated with the extracted data</li>
+    </ol>
+
+    <h2>Features Implemented:</h2>
+    <ul>
+        <li>✅ OpenAI Vision API integration with GPT-4o-mini</li>
+        <li>✅ Image compression for cost optimization</li>
+        <li>✅ Smart receipt data extraction (merchant, date, amount, tax, items)</li>
+        <li>✅ Intelligent category suggestions</li>
+        <li>✅ Auto-form population with extracted data</li>
+        <li>✅ Modern UI with progress indicators and animations</li>
+        <li>✅ Mobile-optimized camera capture</li>
+        <li>✅ Error handling and validation</li>
+        <li>✅ TypeScript type safety throughout</li>
+    </ul>
+
+    <h2>Expected Data Extraction:</h2>
+    <p>The AI will attempt to extract:</p>
+    <ul>
+        <li>Merchant/Business name</li>
+        <li>Transaction date</li>
+        <li>Total amount</li>
+        <li>Tax amount</li>
+        <li>Individual items (when visible)</li>
+        <li>Payment method (cash/card/other)</li>
+        <li>Suggested expense category</li>
+        <li>Additional notes</li>
+    </ul>
+
+    <p><strong>Note:</strong> Make sure to configure your OpenAI API key in the .env.local file for the scanning feature to work.</p>
+</body>
+</html>
