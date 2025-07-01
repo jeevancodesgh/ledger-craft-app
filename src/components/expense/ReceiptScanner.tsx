@@ -6,9 +6,11 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Progress } from '@/components/ui/progress';
 import { useReceiptScanning } from '@/hooks/useReceiptScanning';
 import { ReceiptScanResult } from '@/types/receipt';
+import { storageService } from '@/services/storageService';
+import { useToast } from '@/hooks/use-toast';
 
 interface ReceiptScannerProps {
-  onScanComplete: (result: ReceiptScanResult) => void;
+  onScanComplete: (result: ReceiptScanResult, receiptUrl?: string) => void;
   onClose: () => void;
   className?: string;
 }
@@ -21,6 +23,10 @@ export const ReceiptScanner: React.FC<ReceiptScannerProps> = ({
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+  const [uploadedReceiptUrl, setUploadedReceiptUrl] = useState<string | null>(null);
+  const [isUploading, setIsUploading] = useState(false);
+
+  const { toast } = useToast();
 
   const {
     isScanning,
@@ -54,12 +60,42 @@ export const ReceiptScanner: React.FC<ReceiptScannerProps> = ({
     if (!selectedFile) return;
     
     clearError();
-    await scanReceipt(selectedFile);
+    
+    try {
+      // First, scan the receipt with AI
+      await scanReceipt(selectedFile);
+      
+      // If scanning was successful, upload the receipt to storage
+      if (!error) {
+        setIsUploading(true);
+        try {
+          const uploadResult = await storageService.uploadReceipt(selectedFile);
+          if (uploadResult?.url) {
+            setUploadedReceiptUrl(uploadResult.url);
+            toast({
+              title: "Receipt Uploaded",
+              description: "Receipt image has been saved and scanned successfully.",
+            });
+          }
+        } catch (uploadError) {
+          console.error('Receipt upload failed:', uploadError);
+          toast({
+            title: "Upload Warning",
+            description: "Receipt was scanned but image upload failed. You can manually attach it later.",
+            variant: "destructive",
+          });
+        } finally {
+          setIsUploading(false);
+        }
+      }
+    } catch (scanError) {
+      console.error('Scanning failed:', scanError);
+    }
   };
 
   const handleAcceptResult = () => {
     if (scanResult) {
-      onScanComplete(scanResult);
+      onScanComplete(scanResult, uploadedReceiptUrl || undefined);
       onClose();
     }
   };
@@ -69,6 +105,8 @@ export const ReceiptScanner: React.FC<ReceiptScannerProps> = ({
     clearError();
     setSelectedFile(null);
     setPreviewUrl(null);
+    setUploadedReceiptUrl(null);
+    setIsUploading(false);
   };
 
   // Camera capture (mobile-optimized)
@@ -164,7 +202,7 @@ export const ReceiptScanner: React.FC<ReceiptScannerProps> = ({
                 />
                 
                 {/* Scanning Overlay */}
-                {isScanning && (
+                {(isScanning || isUploading) && (
                   <div className="absolute inset-0 bg-gradient-to-b from-black/10 via-transparent to-black/10">
                     {/* Animated scanning line */}
                     <div className="absolute inset-0 overflow-hidden">
@@ -198,7 +236,7 @@ export const ReceiptScanner: React.FC<ReceiptScannerProps> = ({
                   </div>
                 )}
                 
-                {!isScanning && (
+                {!isScanning && !isUploading && (
                   <div className="absolute inset-0 bg-black/5 rounded-lg" />
                 )}
               </div>
@@ -208,7 +246,7 @@ export const ReceiptScanner: React.FC<ReceiptScannerProps> = ({
               {selectedFile.name} ({Math.round(selectedFile.size / 1024)}KB)
             </div>
 
-            {isScanning && (
+            {(isScanning || isUploading) && (
               <div className="space-y-3">
                 <div className="flex items-center justify-center text-sm font-medium text-blue-600">
                   <div className="flex items-center space-x-2">
@@ -216,10 +254,15 @@ export const ReceiptScanner: React.FC<ReceiptScannerProps> = ({
                     <div className="w-2 h-2 bg-blue-600 rounded-full animate-bounce" style={{ animationDelay: '0.1s' }} />
                     <div className="w-2 h-2 bg-blue-600 rounded-full animate-bounce" style={{ animationDelay: '0.2s' }} />
                   </div>
-                  <span className="ml-3">AI is analyzing your receipt...</span>
+                  <span className="ml-3">
+                    {isScanning && !isUploading && "AI is analyzing your receipt..."}
+                    {isUploading && "Uploading receipt image..."}
+                    {!isScanning && !isUploading && "Processing complete!"}
+                  </span>
                 </div>
                 <div className="text-xs text-center text-muted-foreground">
-                  Extracting merchant, date, amount, and items...
+                  {isScanning && !isUploading && "Extracting merchant, date, amount, and items..."}
+                  {isUploading && "Saving receipt image to your account..."}
                 </div>
                 <Progress value={undefined} className="w-full" />
               </div>
@@ -230,19 +273,19 @@ export const ReceiptScanner: React.FC<ReceiptScannerProps> = ({
                 onClick={handleRetry}
                 variant="outline"
                 className="flex-1"
-                disabled={isScanning}
+                disabled={isScanning || isUploading}
               >
                 Cancel
               </Button>
               <Button
                 onClick={handleScan}
                 className="flex-1"
-                disabled={isScanning}
+                disabled={isScanning || isUploading}
               >
-                {isScanning ? (
+                {isScanning || isUploading ? (
                   <>
                     <Scan className="h-4 w-4 mr-2 animate-pulse" />
-                    Scanning...
+                    {isScanning ? 'Scanning...' : 'Uploading...'}
                   </>
                 ) : (
                   'Scan Receipt'
