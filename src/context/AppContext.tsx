@@ -1,6 +1,8 @@
 import React, { createContext, useContext, useState, useEffect } from "react";
 import { customerService, invoiceService, businessProfileService, itemService, itemCategoryService, accountService, expenseService, expenseCategoryService } from "@/services/supabaseService";
+import { paymentService } from "@/services/paymentService";
 import { Customer, Invoice, BusinessProfile, Item, ItemCategory, Account, Expense, ExpenseCategory } from "@/types";
+import { Payment, Receipt, CreatePaymentRequest } from "@/types/payment";
 import { useToast } from "@/hooks/use-toast";
 
 interface AppContextType {
@@ -59,6 +61,20 @@ interface AppContextType {
   deleteExpenseCategory: (id: string) => Promise<void>;
   refreshExpenseCategories: () => Promise<void>;
   units: string[];
+  // Payment system
+  payments: Payment[];
+  isLoadingPayments: boolean;
+  receipts: Receipt[];
+  isLoadingReceipts: boolean;
+  createPayment: (payment: CreatePaymentRequest) => Promise<Payment>;
+  getPayment: (id: string) => Promise<Payment | null>;
+  getPaymentsByInvoice: (invoiceId: string) => Promise<Payment[]>;
+  getReceipt: (id: string) => Promise<Receipt | null>;
+  getReceiptByPayment: (paymentId: string) => Promise<Receipt | null>;
+  markReceiptAsEmailed: (receiptId: string) => Promise<void>;
+  refreshPayments: () => Promise<void>;
+  refreshReceipts: () => Promise<void>;
+  getInvoicesWithBalance: () => Promise<EnhancedInvoice[]>;
 }
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
@@ -80,6 +96,10 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const [isLoadingExpenses, setIsLoadingExpenses] = useState(true);
   const [expenseCategories, setExpenseCategories] = useState<ExpenseCategory[]>([]);
   const [isLoadingExpenseCategories, setIsLoadingExpenseCategories] = useState(true);
+  const [payments, setPayments] = useState<Payment[]>([]);
+  const [isLoadingPayments, setIsLoadingPayments] = useState(true);
+  const [receipts, setReceipts] = useState<Receipt[]>([]);
+  const [isLoadingReceipts, setIsLoadingReceipts] = useState(true);
   const defaultUnits = ['each', 'hour', 'kg', 'g', 'mg', 'liter', 'ml', 'meter', 'cm', 'mm', 'sq meter', 'sq foot', 'cubic meter', 'cubic foot', 'gallon', 'quart', 'pint', 'ounce', 'lb', 'box', 'pack', 'pair', 'roll', 'set', 'sheet', 'unit'];
   const [units, setUnits] = useState<string[]>(defaultUnits);
   const { toast } = useToast();
@@ -93,6 +113,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     fetchAccounts();
     fetchExpenses();
     fetchExpenseCategories();
+    fetchPayments();
+    fetchReceipts();
   }, []);
 
   const fetchCustomers = async () => {
@@ -795,6 +817,174 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     await fetchExpenses();
   };
 
+  // Payment functions
+  const fetchPayments = async () => {
+    try {
+      setIsLoadingPayments(true);
+      const data = await paymentService.getPayments();
+      setPayments(data);
+    } catch (error) {
+      console.error("Error loading payments:", error);
+      toast({
+        title: "Error",
+        description: "Failed to load payments. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoadingPayments(false);
+    }
+  };
+
+  const fetchReceipts = async () => {
+    try {
+      setIsLoadingReceipts(true);
+      const data = await paymentService.getReceipts();
+      setReceipts(data);
+    } catch (error) {
+      console.error("Error loading receipts:", error);
+      toast({
+        title: "Error",
+        description: "Failed to load receipts. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoadingReceipts(false);
+    }
+  };
+
+  const createPayment = async (payment: CreatePaymentRequest) => {
+    try {
+      const newPayment = await paymentService.createPayment(payment);
+      setPayments([newPayment, ...payments]);
+      
+      // Refresh invoices to update payment status
+      await refreshInvoices();
+      
+      // Refresh receipts to include new receipt
+      await fetchReceipts();
+      
+      toast({
+        title: "Success",
+        description: "Payment recorded successfully and receipt generated.",
+      });
+      return newPayment;
+    } catch (error) {
+      console.error("Error creating payment:", error);
+      toast({
+        title: "Error",
+        description: "Failed to record payment. Please try again.",
+        variant: "destructive",
+      });
+      throw error;
+    }
+  };
+
+  const getPayment = async (id: string) => {
+    try {
+      return await paymentService.getPayment(id);
+    } catch (error) {
+      console.error("Error loading payment:", error);
+      toast({
+        title: "Error",
+        description: "Failed to load payment details. Please try again.",
+        variant: "destructive",
+      });
+      return null;
+    }
+  };
+
+  const getPaymentsByInvoice = async (invoiceId: string) => {
+    try {
+      return await paymentService.getPaymentsByInvoice(invoiceId);
+    } catch (error) {
+      console.error("Error loading payments for invoice:", error);
+      toast({
+        title: "Error",
+        description: "Failed to load invoice payments. Please try again.",
+        variant: "destructive",
+      });
+      return [];
+    }
+  };
+
+  const getReceipt = async (id: string) => {
+    try {
+      return await paymentService.getReceipt(id);
+    } catch (error) {
+      console.error("Error loading receipt:", error);
+      toast({
+        title: "Error",
+        description: "Failed to load receipt details. Please try again.",
+        variant: "destructive",
+      });
+      return null;
+    }
+  };
+
+  const getReceiptByPayment = async (paymentId: string) => {
+    try {
+      return await paymentService.getReceiptByPayment(paymentId);
+    } catch (error) {
+      console.error("Error loading receipt for payment:", error);
+      toast({
+        title: "Error",
+        description: "Failed to load receipt. Please try again.",
+        variant: "destructive",
+      });
+      return null;
+    }
+  };
+
+  const markReceiptAsEmailed = async (receiptId: string) => {
+    try {
+      await paymentService.markReceiptAsEmailed(receiptId);
+      
+      // Update receipts in state
+      setReceipts(prev => 
+        prev.map(receipt => 
+          receipt.id === receiptId 
+            ? { ...receipt, isEmailed: true, emailSentAt: new Date().toISOString() }
+            : receipt
+        )
+      );
+      
+      toast({
+        title: "Success",
+        description: "Receipt marked as emailed successfully.",
+      });
+    } catch (error) {
+      console.error("Error marking receipt as emailed:", error);
+      toast({
+        title: "Error",
+        description: "Failed to update receipt status. Please try again.",
+        variant: "destructive",
+      });
+      throw error;
+    }
+  };
+
+  const refreshPayments = async () => {
+    await fetchPayments();
+  };
+
+  const refreshReceipts = async () => {
+    await fetchReceipts();
+  };
+
+  const getInvoicesWithBalance = async () => {
+    try {
+      return await paymentService.getInvoicesWithBalance();
+    } catch (error) {
+      console.error("Error loading invoices with balance:", error);
+      toast({
+        title: "Error",
+        description: "Failed to load unpaid invoices. Please try again.",
+        variant: "destructive",
+      });
+      return [];
+    }
+  };
+
   return (
     <AppContext.Provider value={{
       customers,
@@ -851,7 +1041,21 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       updateExpenseCategory,
       deleteExpenseCategory,
       refreshExpenseCategories,
-      units
+      units,
+      // Payment system
+      payments,
+      isLoadingPayments,
+      receipts,
+      isLoadingReceipts,
+      createPayment,
+      getPayment,
+      getPaymentsByInvoice,
+      getReceipt,
+      getReceiptByPayment,
+      markReceiptAsEmailed,
+      refreshPayments,
+      refreshReceipts,
+      getInvoicesWithBalance
     }}>
       {children}
     </AppContext.Provider>

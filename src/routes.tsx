@@ -10,6 +10,7 @@ import { AuthProvider } from "./context/AuthContext";
 import { Toaster } from "./components/ui/toaster";
 import { Toaster as Sonner } from "./components/ui/sonner";
 import ProtectedRoute from "@/components/auth/ProtectedRoute";
+import { PermissionGuard } from "@/components/auth/PermissionGuard";
 //import AccountsPage from './pages/Accounts';
 
 const Dashboard = lazy(() => import("@/pages/Dashboard"));
@@ -33,6 +34,17 @@ const Expenses = lazy(() => import("@/pages/Expenses"));
 const ExpenseCategories = lazy(() => import("@/pages/ExpenseCategories"));
 const Onboarding = lazy(() => import("@/pages/Onboarding"));
 const EmailConfirmation = lazy(() => import("@/pages/EmailConfirmation"));
+
+// Payment & Accounting Pages
+const PaymentsPage = lazy(() => import("@/pages/PaymentsPage"));
+const ReceiptsPage = lazy(() => import("@/pages/ReceiptsPage"));
+const AccountingDashboardPage = lazy(() => import("@/pages/AccountingDashboardPage"));
+const TaxConfigurationPage = lazy(() => import("@/pages/TaxConfigurationPage"));
+const FinancialReportsPage = lazy(() => import("@/pages/FinancialReportsPage"));
+const IRDReportingPage = lazy(() => import("@/pages/IRDReportingPage"));
+const JournalEntriesPage = lazy(() => import("@/pages/JournalEntriesPage"));
+const ReceiptViewPage = lazy(() => import("@/pages/ReceiptViewPage"));
+const PaymentDetailPage = lazy(() => import("@/pages/PaymentDetailPage"));
 // Loading component
 const LoadingScreen = () => (
   <div className="flex h-screen w-screen items-center justify-center">
@@ -120,6 +132,68 @@ const appRoutes: RouteObject[] = [
           { path: "categories", element: <Categories /> },
           { path: "expenses", element: <Expenses /> },
           { path: "expense-categories", element: <ExpenseCategories /> },
+          
+          // Payment & Accounting Routes
+          { 
+            path: "payments", 
+            element: (
+              <PermissionGuard permission="payments:read">
+                <PaymentsPage />
+              </PermissionGuard>
+            )
+          },
+          { 
+            path: "payments/:id", 
+            element: (
+              <PermissionGuard permission="payments:read">
+                <PaymentDetailPage />
+              </PermissionGuard>
+            )
+          },
+          { 
+            path: "receipts", 
+            element: (
+              <PermissionGuard permission="receipts:read">
+                <ReceiptsPage />
+              </PermissionGuard>
+            )
+          },
+          { 
+            path: "receipts/:id", 
+            element: (
+              <PermissionGuard permission="receipts:read">
+                <ReceiptViewPage />
+              </PermissionGuard>
+            )
+          },
+          { path: "accounting", element: <AccountingDashboardPage /> },
+          { 
+            path: "tax-config", 
+            element: (
+              <PermissionGuard permission="settings:manage">
+                <TaxConfigurationPage />
+              </PermissionGuard>
+            )
+          },
+          
+          // Reports & Compliance Routes
+          { 
+            path: "reports", 
+            element: (
+              <PermissionGuard permission="reports:view">
+                <FinancialReportsPage />
+              </PermissionGuard>
+            )
+          },
+          { 
+            path: "ird-reports", 
+            element: (
+              <PermissionGuard permission="reports:generate">
+                <IRDReportingPage />
+              </PermissionGuard>
+            )
+          },
+          { path: "journal-entries", element: <JournalEntriesPage /> },
         ],
       },
       {
