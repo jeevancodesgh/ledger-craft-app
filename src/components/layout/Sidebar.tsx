@@ -23,7 +23,9 @@ import {
   BarChart3,
   DollarSign,
   FileBarChart,
-  PieChart
+  PieChart,
+  Building2,
+  Upload
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
@@ -59,6 +61,8 @@ export function Sidebar({ collapsed, isMobile, onCloseMobileMenu }: SidebarProps
         { name: 'Expenses', path: '/expenses', icon: CreditCard, badge: null, permission: 'expenses:read' as Permission },
         { name: 'Expense Categories', path: '/expense-categories', icon: Tag, badge: null, permission: 'expenses:read' as Permission },
         { name: 'Accounts', path: '/accounts', icon: Activity, badge: null, permission: 'accounts:read' as Permission },
+        { name: 'Bank Accounts', path: '/bank-accounts', icon: Building2, badge: null, permission: undefined },
+        { name: 'Import Transactions', path: '/transaction-import', icon: Upload, badge: 'New', permission: undefined },
         { name: 'Categories', path: '/categories', icon: Zap, badge: null, permission: undefined },
       ]
     },

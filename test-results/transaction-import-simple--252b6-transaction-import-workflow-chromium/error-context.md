@@ -1,0 +1,152 @@
+# Page snapshot
+
+```yaml
+- complementary:
+  - img "LedgerCraft"
+  - heading "LedgerCraft" [level=1]
+  - img "LedgerCraft"
+  - navigation:
+    - heading "Overview" [level=3]
+    - list:
+      - listitem:
+        - link "Dashboard":
+          - /url: /
+          - img
+          - text: Dashboard
+    - heading "Business" [level=3]
+    - list:
+      - listitem:
+        - link "Invoices New":
+          - /url: /invoices
+          - img
+          - text: Invoices New
+      - listitem:
+        - link "Customers":
+          - /url: /customers
+          - img
+          - text: Customers
+      - listitem:
+        - link "Items":
+          - /url: /items
+          - img
+          - text: Items
+    - heading "Financial" [level=3]
+    - list:
+      - listitem:
+        - link "Expenses":
+          - /url: /expenses
+          - img
+          - text: Expenses
+      - listitem:
+        - link "Expense Categories":
+          - /url: /expense-categories
+          - img
+          - text: Expense Categories
+      - listitem:
+        - link "Accounts":
+          - /url: /accounts
+          - img
+          - text: Accounts
+      - listitem:
+        - link "Bank Accounts":
+          - /url: /bank-accounts
+          - img
+          - text: Bank Accounts
+      - listitem:
+        - link "Import Transactions New":
+          - /url: /transaction-import
+          - img
+          - text: Import Transactions New
+      - listitem:
+        - link "Categories":
+          - /url: /categories
+          - img
+          - text: Categories
+    - heading "Payments & Accounting" [level=3]
+    - list:
+      - listitem:
+        - link "Payments":
+          - /url: /payments
+          - img
+          - text: Payments
+      - listitem:
+        - link "Receipts":
+          - /url: /receipts
+          - img
+          - text: Receipts
+      - listitem:
+        - link "Accounting Dashboard":
+          - /url: /accounting
+          - img
+          - text: Accounting Dashboard
+      - listitem:
+        - link "Tax Overview New":
+          - /url: /tax-overview
+          - img
+          - text: Tax Overview New
+      - listitem:
+        - link "Tax Configuration":
+          - /url: /tax-config
+          - img
+          - text: Tax Configuration
+    - heading "Reports & Compliance" [level=3]
+    - list:
+      - listitem:
+        - link "Financial Reports":
+          - /url: /financial-reports
+          - img
+          - text: Financial Reports
+      - listitem:
+        - link "IRD Reporting New":
+          - /url: /ird-reports
+          - img
+          - text: IRD Reporting New
+      - listitem:
+        - link "Journal Entries":
+          - /url: /journal-entries
+          - img
+          - text: Journal Entries
+    - heading "System" [level=3]
+    - list:
+      - listitem:
+        - link "Settings":
+          - /url: /settings
+          - img
+          - text: Settings
+  - text: J
+  - paragraph: jeevan
+  - paragraph: jeevancodes@gmail.com
+- banner:
+  - button "Toggle sidebar":
+    - img
+  - img
+  - searchbox "Search..."
+  - button "Toggle theme":
+    - img
+    - img
+    - text: Toggle theme
+  - button:
+    - img
+  - text: jeevancodes@gmail.com
+  - button "Sign Out":
+    - img
+- main:
+  - heading "Bank Accounts" [level=1]
+  - paragraph: Manage your bank accounts for transaction imports and reconciliation
+  - button "Import Transactions" [disabled]:
+    - img
+    - text: Import Transactions
+  - button "Add Bank Account":
+    - img
+    - text: Add Bank Account
+  - img
+  - heading "No bank accounts found" [level=3]
+  - paragraph: Add your first bank account to start importing transactions
+  - button "Add Bank Account":
+    - img
+    - text: Add Bank Account
+- button "Open AI Assistant":
+  - img
+- region "Notifications (F8)":
+  - list
+```

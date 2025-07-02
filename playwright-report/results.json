@@ -52,7 +52,7 @@
         "testMatch": [
           "**/*.@(spec|test).?(c|m)[jt]s?(x)"
         ],
-        "timeout": 30000
+        "timeout": 120000
       },
       {
         "outputDir": "/Users/jeevan.wijerathna/jeevan/projects/ledger-craft-app/test-results",
@@ -68,7 +68,7 @@
         "testMatch": [
           "**/*.@(spec|test).?(c|m)[jt]s?(x)"
         ],
-        "timeout": 30000
+        "timeout": 120000
       },
       {
         "outputDir": "/Users/jeevan.wijerathna/jeevan/projects/ledger-craft-app/test-results",
@@ -84,7 +84,7 @@
         "testMatch": [
           "**/*.@(spec|test).?(c|m)[jt]s?(x)"
         ],
-        "timeout": 30000
+        "timeout": 120000
       },
       {
         "outputDir": "/Users/jeevan.wijerathna/jeevan/projects/ledger-craft-app/test-results",
@@ -100,7 +100,7 @@
         "testMatch": [
           "**/*.@(spec|test).?(c|m)[jt]s?(x)"
         ],
-        "timeout": 30000
+        "timeout": 120000
       },
       {
         "outputDir": "/Users/jeevan.wijerathna/jeevan/projects/ledger-craft-app/test-results",
@@ -116,14 +116,14 @@
         "testMatch": [
           "**/*.@(spec|test).?(c|m)[jt]s?(x)"
         ],
-        "timeout": 30000
+        "timeout": 120000
       }
     ],
     "shard": null,
     "updateSnapshots": "missing",
     "updateSourceMethod": "patch",
     "version": "1.53.1",
-    "workers": 7,
+    "workers": 1,
     "webServer": {
       "command": "npm run dev",
       "url": "http://localhost:8081",
@@ -133,25 +133,25 @@
   },
   "suites": [
     {
-      "title": "finance-workflow.spec.ts",
-      "file": "finance-workflow.spec.ts",
+      "title": "transaction-import-simple.spec.ts",
+      "file": "transaction-import-simple.spec.ts",
       "column": 0,
       "line": 0,
       "specs": [],
       "suites": [
         {
-          "title": "Complete Finance Workflow Tests",
-          "file": "finance-workflow.spec.ts",
-          "line": 394,
+          "title": "Transaction Import E2E",
+          "file": "transaction-import-simple.spec.ts",
+          "line": 23,
           "column": 6,
           "specs": [
             {
-              "title": "Complete Invoice-to-Payment-to-Receipt Workflow",
+              "title": "Complete transaction import workflow",
               "ok": false,
               "tags": [],
               "tests": [
                 {
-                  "timeout": 30000,
+                  "timeout": 120000,
                   "annotations": [],
                   "expectedStatus": "passed",
                   "projectId": "chromium",
@@ -160,71 +160,63 @@
                     {
                       "workerIndex": 0,
                       "parallelIndex": 0,
-                      "status": "timedOut",
-                      "duration": 30110,
+                      "status": "failed",
+                      "duration": 6173,
                       "error": {
-                        "message": "\u001b[31mTest timeout of 30000ms exceeded while running \"beforeEach\" hook.\u001b[39m",
-                        "stack": "\u001b[31mTest timeout of 30000ms exceeded while running \"beforeEach\" hook.\u001b[39m\n    at /Users/jeevan.wijerathna/jeevan/projects/ledger-craft-app/tests/e2e/finance-workflow.spec.ts:430:8",
+                        "message": "Error: locator.click: Error: strict mode violation: locator('button:has-text(\"Add Bank Account\")') resolved to 2 elements:\n    1) <button data-lov-name=\"Button\" data-component-line=\"110\" data-component-name=\"Button\" data-component-file=\"BankAccounts.tsx\" data-lov-id=\"src/pages/BankAccounts.tsx:110:10\" data-component-path=\"src/pages/BankAccounts.tsx\" data-component-content=\"%7B%22text%22%3A%22Add%20Bank%20Account%22%2C%22className%22%3A%22gap-2%22%7D\" class=\"inline-flex items-center justify-center whitespace-nowrap rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:rin…>…</button> aka getByRole('button', { name: 'Add Bank Account' }).first()\n    2) <button data-lov-name=\"Button\" data-component-line=\"126\" data-component-name=\"Button\" data-component-file=\"BankAccounts.tsx\" data-lov-id=\"src/pages/BankAccounts.tsx:126:14\" data-component-path=\"src/pages/BankAccounts.tsx\" data-component-content=\"%7B%22text%22%3A%22Add%20Bank%20Account%22%2C%22className%22%3A%22gap-2%22%7D\" class=\"inline-flex items-center justify-center whitespace-nowrap rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:rin…>…</button> aka getByRole('button', { name: 'Add Bank Account' }).nth(1)\n\nCall log:\n\u001b[2m  - waiting for locator('button:has-text(\"Add Bank Account\")')\u001b[22m\n",
+                        "stack": "Error: locator.click: Error: strict mode violation: locator('button:has-text(\"Add Bank Account\")') resolved to 2 elements:\n    1) <button data-lov-name=\"Button\" data-component-line=\"110\" data-component-name=\"Button\" data-component-file=\"BankAccounts.tsx\" data-lov-id=\"src/pages/BankAccounts.tsx:110:10\" data-component-path=\"src/pages/BankAccounts.tsx\" data-component-content=\"%7B%22text%22%3A%22Add%20Bank%20Account%22%2C%22className%22%3A%22gap-2%22%7D\" class=\"inline-flex items-center justify-center whitespace-nowrap rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:rin…>…</button> aka getByRole('button', { name: 'Add Bank Account' }).first()\n    2) <button data-lov-name=\"Button\" data-component-line=\"126\" data-component-name=\"Button\" data-component-file=\"BankAccounts.tsx\" data-lov-id=\"src/pages/BankAccounts.tsx:126:14\" data-component-path=\"src/pages/BankAccounts.tsx\" data-component-content=\"%7B%22text%22%3A%22Add%20Bank%20Account%22%2C%22className%22%3A%22gap-2%22%7D\" class=\"inline-flex items-center justify-center whitespace-nowrap rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:rin…>…</button> aka getByRole('button', { name: 'Add Bank Account' }).nth(1)\n\nCall log:\n\u001b[2m  - waiting for locator('button:has-text(\"Add Bank Account\")')\u001b[22m\n\n    at /Users/jeevan.wijerathna/jeevan/projects/ledger-craft-app/tests/e2e/transaction-import-simple.spec.ts:40:28",
                         "location": {
-                          "file": "/Users/jeevan.wijerathna/jeevan/projects/ledger-craft-app/tests/e2e/finance-workflow.spec.ts",
-                          "column": 8,
-                          "line": 430
+                          "file": "/Users/jeevan.wijerathna/jeevan/projects/ledger-craft-app/tests/e2e/transaction-import-simple.spec.ts",
+                          "column": 28,
+                          "line": 40
                         },
-                        "snippet": "  428 |   };\n  429 |\n> 430 |   test.beforeEach(async ({ page }) => {\n      |        ^\n  431 |     authMocker = new AuthMocker(page);\n  432 |     financeHelper = new FinanceTestHelper(page);\n  433 |     "
+                        "snippet": "  38 |     // Step 3: Create a bank account if none exists\n  39 |     const addAccountButton = page.locator('button:has-text(\"Add Bank Account\")');\n> 40 |     await addAccountButton.click();\n     |                            ^\n  41 |     \n  42 |     // Fill bank account form\n  43 |     await page.fill('input[placeholder*=\"My Checking Account\"]', 'E2E Test Account');"
                       },
                       "errors": [
                         {
                           "location": {
-                            "file": "/Users/jeevan.wijerathna/jeevan/projects/ledger-craft-app/tests/e2e/finance-workflow.spec.ts",
-                            "column": 8,
-                            "line": 430
+                            "file": "/Users/jeevan.wijerathna/jeevan/projects/ledger-craft-app/tests/e2e/transaction-import-simple.spec.ts",
+                            "column": 28,
+                            "line": 40
                           },
-                          "message": "\u001b[31mTest timeout of 30000ms exceeded while running \"beforeEach\" hook.\u001b[39m\n\n  428 |   };\n  429 |\n> 430 |   test.beforeEach(async ({ page }) => {\n      |        ^\n  431 |     authMocker = new AuthMocker(page);\n  432 |     financeHelper = new FinanceTestHelper(page);\n  433 |     \n    at /Users/jeevan.wijerathna/jeevan/projects/ledger-craft-app/tests/e2e/finance-workflow.spec.ts:430:8"
-                        },
-                        {
-                          "location": {
-                            "file": "/Users/jeevan.wijerathna/jeevan/projects/ledger-craft-app/tests/e2e/finance-workflow.spec.ts",
-                            "column": 16,
-                            "line": 445
-                          },
-                          "message": "Error: page.waitForSelector: Test timeout of 30000ms exceeded.\nCall log:\n\u001b[2m  - waiting for locator('[data-testid=\"dashboard\"]') to be visible\u001b[22m\n\n\n  443 |     // Navigate to dashboard\n  444 |     await page.goto('/');\n> 445 |     await page.waitForSelector('[data-testid=\"dashboard\"]');\n      |                ^\n  446 |   });\n  447 |\n  448 |   test('Complete Invoice-to-Payment-to-Receipt Workflow', async ({ page }) => {\n    at /Users/jeevan.wijerathna/jeevan/projects/ledger-craft-app/tests/e2e/finance-workflow.spec.ts:445:16"
+                          "message": "Error: locator.click: Error: strict mode violation: locator('button:has-text(\"Add Bank Account\")') resolved to 2 elements:\n    1) <button data-lov-name=\"Button\" data-component-line=\"110\" data-component-name=\"Button\" data-component-file=\"BankAccounts.tsx\" data-lov-id=\"src/pages/BankAccounts.tsx:110:10\" data-component-path=\"src/pages/BankAccounts.tsx\" data-component-content=\"%7B%22text%22%3A%22Add%20Bank%20Account%22%2C%22className%22%3A%22gap-2%22%7D\" class=\"inline-flex items-center justify-center whitespace-nowrap rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:rin…>…</button> aka getByRole('button', { name: 'Add Bank Account' }).first()\n    2) <button data-lov-name=\"Button\" data-component-line=\"126\" data-component-name=\"Button\" data-component-file=\"BankAccounts.tsx\" data-lov-id=\"src/pages/BankAccounts.tsx:126:14\" data-component-path=\"src/pages/BankAccounts.tsx\" data-component-content=\"%7B%22text%22%3A%22Add%20Bank%20Account%22%2C%22className%22%3A%22gap-2%22%7D\" class=\"inline-flex items-center justify-center whitespace-nowrap rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:rin…>…</button> aka getByRole('button', { name: 'Add Bank Account' }).nth(1)\n\nCall log:\n\u001b[2m  - waiting for locator('button:has-text(\"Add Bank Account\")')\u001b[22m\n\n\n  38 |     // Step 3: Create a bank account if none exists\n  39 |     const addAccountButton = page.locator('button:has-text(\"Add Bank Account\")');\n> 40 |     await addAccountButton.click();\n     |                            ^\n  41 |     \n  42 |     // Fill bank account form\n  43 |     await page.fill('input[placeholder*=\"My Checking Account\"]', 'E2E Test Account');\n    at /Users/jeevan.wijerathna/jeevan/projects/ledger-craft-app/tests/e2e/transaction-import-simple.spec.ts:40:28"
                         }
                       ],
                       "stdout": [],
                       "stderr": [],
                       "retry": 0,
-                      "startTime": "2025-06-30T08:04:09.416Z",
+                      "startTime": "2025-07-02T04:22:51.158Z",
                       "annotations": [],
                       "attachments": [
                         {
                           "name": "screenshot",
                           "contentType": "image/png",
-                          "path": "/Users/jeevan.wijerathna/jeevan/projects/ledger-craft-app/test-results/finance-workflow-Complete--b3b4a-Payment-to-Receipt-Workflow-chromium/test-failed-1.png"
+                          "path": "/Users/jeevan.wijerathna/jeevan/projects/ledger-craft-app/test-results/transaction-import-simple--252b6-transaction-import-workflow-chromium/test-failed-1.png"
                         },
                         {
                           "name": "video",
                           "contentType": "video/webm",
-                          "path": "/Users/jeevan.wijerathna/jeevan/projects/ledger-craft-app/test-results/finance-workflow-Complete--b3b4a-Payment-to-Receipt-Workflow-chromium/video.webm"
+                          "path": "/Users/jeevan.wijerathna/jeevan/projects/ledger-craft-app/test-results/transaction-import-simple--252b6-transaction-import-workflow-chromium/video.webm"
                         },
                         {
                           "name": "error-context",
                           "contentType": "text/markdown",
-                          "path": "/Users/jeevan.wijerathna/jeevan/projects/ledger-craft-app/test-results/finance-workflow-Complete--b3b4a-Payment-to-Receipt-Workflow-chromium/error-context.md"
+                          "path": "/Users/jeevan.wijerathna/jeevan/projects/ledger-craft-app/test-results/transaction-import-simple--252b6-transaction-import-workflow-chromium/error-context.md"
                         }
                       ],
                       "errorLocation": {
-                        "file": "/Users/jeevan.wijerathna/jeevan/projects/ledger-craft-app/tests/e2e/finance-workflow.spec.ts",
-                        "column": 8,
-                        "line": 430
+                        "file": "/Users/jeevan.wijerathna/jeevan/projects/ledger-craft-app/tests/e2e/transaction-import-simple.spec.ts",
+                        "column": 28,
+                        "line": 40
                       }
                     }
                   ],
                   "status": "unexpected"
                 }
               ],
-              "id": "415a079541251495eedd-1e4980930b97e534e41e",
-              "file": "finance-workflow.spec.ts",
-              "line": 448,
+              "id": "8f928a346ae23ea3a97f-5bbb5ef1ac91ba3e139e",
+              "file": "transaction-import-simple.spec.ts",
+              "line": 24,
               "column": 3
             }
           ]
@@ -234,8 +226,8 @@
   ],
   "errors": [],
   "stats": {
-    "startTime": "2025-06-30T08:04:08.994Z",
-    "duration": 30757.712,
+    "startTime": "2025-07-02T04:22:50.634Z",
+    "duration": 6915.115000000001,
     "expected": 0,
     "skipped": 0,
     "unexpected": 1,

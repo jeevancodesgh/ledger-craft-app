@@ -1,52 +1,44 @@
-<testsuites id="" name="" tests="1" failures="1" skipped="0" errors="0" time="30.757711999999998">
-<testsuite name="finance-workflow.spec.ts" timestamp="2025-06-30T08:04:09.022Z" hostname="chromium" tests="1" failures="1" skipped="0" time="30.11" errors="0">
-<testcase name="Complete Finance Workflow Tests › Complete Invoice-to-Payment-to-Receipt Workflow" classname="finance-workflow.spec.ts" time="30.11">
-<failure message="finance-workflow.spec.ts:448:3 Complete Invoice-to-Payment-to-Receipt Workflow" type="FAILURE">
-<![CDATA[  [chromium] › finance-workflow.spec.ts:448:3 › Complete Finance Workflow Tests › Complete Invoice-to-Payment-to-Receipt Workflow 
+<testsuites id="" name="" tests="1" failures="1" skipped="0" errors="0" time="6.915115000000001">
+<testsuite name="transaction-import-simple.spec.ts" timestamp="2025-07-02T04:22:50.742Z" hostname="chromium" tests="1" failures="1" skipped="0" time="6.173" errors="0">
+<testcase name="Transaction Import E2E › Complete transaction import workflow" classname="transaction-import-simple.spec.ts" time="6.173">
+<failure message="transaction-import-simple.spec.ts:24:3 Complete transaction import workflow" type="FAILURE">
+<![CDATA[  [chromium] › transaction-import-simple.spec.ts:24:3 › Transaction Import E2E › Complete transaction import workflow 
 
-    Test timeout of 30000ms exceeded while running "beforeEach" hook.
+    Error: locator.click: Error: strict mode violation: locator('button:has-text("Add Bank Account")') resolved to 2 elements:
+        1) <button data-lov-name="Button" data-component-line="110" data-component-name="Button" data-component-file="BankAccounts.tsx" data-lov-id="src/pages/BankAccounts.tsx:110:10" data-component-path="src/pages/BankAccounts.tsx" data-component-content="%7B%22text%22%3A%22Add%20Bank%20Account%22%2C%22className%22%3A%22gap-2%22%7D" class="inline-flex items-center justify-center whitespace-nowrap rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:rin…>…</button> aka getByRole('button', { name: 'Add Bank Account' }).first()
+        2) <button data-lov-name="Button" data-component-line="126" data-component-name="Button" data-component-file="BankAccounts.tsx" data-lov-id="src/pages/BankAccounts.tsx:126:14" data-component-path="src/pages/BankAccounts.tsx" data-component-content="%7B%22text%22%3A%22Add%20Bank%20Account%22%2C%22className%22%3A%22gap-2%22%7D" class="inline-flex items-center justify-center whitespace-nowrap rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:rin…>…</button> aka getByRole('button', { name: 'Add Bank Account' }).nth(1)
 
-      428 |   };
-      429 |
-    > 430 |   test.beforeEach(async ({ page }) => {
-          |        ^
-      431 |     authMocker = new AuthMocker(page);
-      432 |     financeHelper = new FinanceTestHelper(page);
-      433 |     
-        at /Users/jeevan.wijerathna/jeevan/projects/ledger-craft-app/tests/e2e/finance-workflow.spec.ts:430:8
-
-    Error: page.waitForSelector: Test timeout of 30000ms exceeded.
     Call log:
-      - waiting for locator('[data-testid="dashboard"]') to be visible
+      - waiting for locator('button:has-text("Add Bank Account")')
 
 
-      443 |     // Navigate to dashboard
-      444 |     await page.goto('/');
-    > 445 |     await page.waitForSelector('[data-testid="dashboard"]');
-          |                ^
-      446 |   });
-      447 |
-      448 |   test('Complete Invoice-to-Payment-to-Receipt Workflow', async ({ page }) => {
-        at /Users/jeevan.wijerathna/jeevan/projects/ledger-craft-app/tests/e2e/finance-workflow.spec.ts:445:16
+      38 |     // Step 3: Create a bank account if none exists
+      39 |     const addAccountButton = page.locator('button:has-text("Add Bank Account")');
+    > 40 |     await addAccountButton.click();
+         |                            ^
+      41 |     
+      42 |     // Fill bank account form
+      43 |     await page.fill('input[placeholder*="My Checking Account"]', 'E2E Test Account');
+        at /Users/jeevan.wijerathna/jeevan/projects/ledger-craft-app/tests/e2e/transaction-import-simple.spec.ts:40:28
 
     attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
-    test-results/finance-workflow-Complete--b3b4a-Payment-to-Receipt-Workflow-chromium/test-failed-1.png
+    test-results/transaction-import-simple--252b6-transaction-import-workflow-chromium/test-failed-1.png
     ────────────────────────────────────────────────────────────────────────────────────────────────
 
     attachment #2: video (video/webm) ──────────────────────────────────────────────────────────────
-    test-results/finance-workflow-Complete--b3b4a-Payment-to-Receipt-Workflow-chromium/video.webm
+    test-results/transaction-import-simple--252b6-transaction-import-workflow-chromium/video.webm
     ────────────────────────────────────────────────────────────────────────────────────────────────
 
-    Error Context: ../../test-results/finance-workflow-Complete--b3b4a-Payment-to-Receipt-Workflow-chromium/error-context.md
+    Error Context: ../../test-results/transaction-import-simple--252b6-transaction-import-workflow-chromium/error-context.md
 ]]>
 </failure>
 <system-out>
 <![CDATA[
-[[ATTACHMENT|../test-results/finance-workflow-Complete--b3b4a-Payment-to-Receipt-Workflow-chromium/test-failed-1.png]]
+[[ATTACHMENT|../test-results/transaction-import-simple--252b6-transaction-import-workflow-chromium/test-failed-1.png]]
 
-[[ATTACHMENT|../test-results/finance-workflow-Complete--b3b4a-Payment-to-Receipt-Workflow-chromium/video.webm]]
+[[ATTACHMENT|../test-results/transaction-import-simple--252b6-transaction-import-workflow-chromium/video.webm]]
 
-[[ATTACHMENT|../test-results/finance-workflow-Complete--b3b4a-Payment-to-Receipt-Workflow-chromium/error-context.md]]
+[[ATTACHMENT|../test-results/transaction-import-simple--252b6-transaction-import-workflow-chromium/error-context.md]]
 ]]>
 </system-out>
 </testcase>
