@@ -134,8 +134,21 @@ E2E tests are built with **Playwright** and test the complete user workflows wit
 #### Prerequisites for E2E Tests
 
 1. **Running Development Server**: Ensure the app is running on `http://localhost:8081`
-2. **User Credentials**: Tests use real authentication with provided credentials
-3. **Supabase Access**: Tests interact with the actual Supabase database
+2. **Environment Variables**: Set up required environment variables for test authentication
+3. **User Credentials**: Tests use real authentication with provided credentials
+4. **Supabase Access**: Tests interact with the actual Supabase database
+
+#### Environment Setup for E2E Tests
+
+Create a `.env.local` file with the following variables:
+
+```bash
+# E2E Testing Configuration
+E2E_TEST_EMAIL=your_test_user_email@example.com
+E2E_TEST_PASSWORD=your_test_user_password
+```
+
+**Note**: Use a dedicated test user account. Do not use production user credentials.
 
 #### Running E2E Tests
 

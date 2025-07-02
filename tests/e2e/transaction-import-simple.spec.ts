@@ -3,8 +3,8 @@ import { writeFileSync, mkdirSync } from 'fs';
 import path from 'path';
 
 const TEST_USER = {
-  email: 'jeevancodes@gmail.com',
-  password: 'Jeeva@900'
+  email: process.env.E2E_TEST_EMAIL || '',
+  password: process.env.E2E_TEST_PASSWORD || ''
 };
 
 const SAMPLE_CSV_DATA = `Date,Description,Amount,Balance

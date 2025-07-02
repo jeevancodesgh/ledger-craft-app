@@ -43,9 +43,30 @@ import { Progress } from '@/components/ui/progress';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { FinancialSummary, AccountBalanceSummary } from '@/types/payment';
 
+interface RevenueExpenseData {
+  month: string;
+  revenue: number;
+  expenses: number;
+}
+
+interface CashFlowData {
+  day: string;
+  inflow: number;
+  outflow: number;
+}
+
+interface ExpenseBreakdownData {
+  category: string;
+  amount: number;
+  percentage: number;
+}
+
 interface AccountingDashboardProps {
   financialSummary: FinancialSummary;
   accountBalances: AccountBalanceSummary[];
+  revenueExpenseData?: RevenueExpenseData[];
+  cashFlowData?: CashFlowData[];
+  expenseBreakdownData?: ExpenseBreakdownData[];
   isLoading?: boolean;
   onRefresh: () => void;
   onExportReport: (type: string) => void;
@@ -54,6 +75,9 @@ interface AccountingDashboardProps {
 export function AccountingDashboard({
   financialSummary,
   accountBalances,
+  revenueExpenseData = [],
+  cashFlowData = [],
+  expenseBreakdownData = [],
   isLoading = false,
   onRefresh,
   onExportReport
@@ -69,8 +93,8 @@ export function AccountingDashboard({
     ? financialSummary.cashPosition / financialSummary.totalReceivables
     : 0;
 
-  // Sample data for charts (would come from API)
-  const revenueData = [
+  // Use real data from props, fallback to sample data if empty
+  const revenueData = revenueExpenseData.length > 0 ? revenueExpenseData : [
     { month: 'Jan', revenue: 45000, expenses: 32000 },
     { month: 'Feb', revenue: 52000, expenses: 35000 },
     { month: 'Mar', revenue: 48000, expenses: 33000 },
@@ -79,7 +103,7 @@ export function AccountingDashboard({
     { month: 'Jun', revenue: 67000, expenses: 42000 }
   ];
 
-  const cashFlowData = [
+  const cashFlowChartData = cashFlowData.length > 0 ? cashFlowData : [
     { day: '1', inflow: 2500, outflow: 1800 },
     { day: '7', inflow: 3200, outflow: 2100 },
     { day: '14', inflow: 2800, outflow: 1900 },
@@ -93,7 +117,7 @@ export function AccountingDashboard({
     { name: 'Equity', value: 90000, color: '#3B82F6' }
   ];
 
-  const expenseBreakdown = [
+  const expenseBreakdown = expenseBreakdownData.length > 0 ? expenseBreakdownData : [
     { category: 'Office Expenses', amount: 12500, percentage: 35 },
     { category: 'Marketing', amount: 8900, percentage: 25 },
     { category: 'Equipment', amount: 6200, percentage: 17 },
@@ -258,7 +282,7 @@ export function AccountingDashboard({
             </CardHeader>
             <CardContent>
               <ResponsiveContainer width="100%" height={400}>
-                <LineChart data={cashFlowData}>
+                <LineChart data={cashFlowChartData}>
                   <CartesianGrid strokeDasharray="3 3" />
                   <XAxis dataKey="day" />
                   <YAxis />

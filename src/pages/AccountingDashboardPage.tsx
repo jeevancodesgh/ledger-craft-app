@@ -4,10 +4,33 @@ import { useToast } from '@/hooks/use-toast';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Card, CardContent } from '@/components/ui/card';
 import { FinancialSummary, AccountBalanceSummary } from '@/types/payment';
+import { accountingService } from '@/services/accountingService';
+// import { testSupabaseConnection } from '@/services/accountingServiceTest';
+
+interface RevenueExpenseData {
+  month: string;
+  revenue: number;
+  expenses: number;
+}
+
+interface CashFlowData {
+  day: string;
+  inflow: number;
+  outflow: number;
+}
+
+interface ExpenseBreakdownData {
+  category: string;
+  amount: number;
+  percentage: number;
+}
 
 export default function AccountingDashboardPage() {
   const [financialSummary, setFinancialSummary] = useState<FinancialSummary | null>(null);
   const [accountBalances, setAccountBalances] = useState<AccountBalanceSummary[]>([]);
+  const [revenueExpenseData, setRevenueExpenseData] = useState<RevenueExpenseData[]>([]);
+  const [cashFlowData, setCashFlowData] = useState<CashFlowData[]>([]);
+  const [expenseBreakdownData, setExpenseBreakdownData] = useState<ExpenseBreakdownData[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   
   const { toast } = useToast();
@@ -15,115 +38,35 @@ export default function AccountingDashboardPage() {
   const fetchAccountingData = async () => {
     setIsLoading(true);
     try {
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1500));
+      console.log('Fetching accounting data from Supabase...');
       
-      // Mock financial summary data
-      const mockFinancialSummary: FinancialSummary = {
-        totalRevenue: 125000,
-        totalExpenses: 87500,
-        netIncome: 37500,
-        totalReceivables: 45000,
-        totalPayables: 22000,
-        cashPosition: 68000,
-        gstLiability: 15750,
-        outstandingInvoices: 12,
-        period: {
-          startDate: '2024-01-01',
-          endDate: '2024-01-31'
-        }
-      };
+      // Fetch all real data from Supabase
+      const [
+        financialData, 
+        accountData, 
+        revenueData, 
+        cashData, 
+        expenseData
+      ] = await Promise.all([
+        accountingService.getFinancialSummary(),
+        accountingService.getAccountBalances(),
+        accountingService.getRevenueExpenseData(6),
+        accountingService.getCashFlowData(28),
+        accountingService.getExpenseBreakdown()
+      ]);
 
-      // Mock account balances
-      const mockAccountBalances: AccountBalanceSummary[] = [
-        {
-          accountId: 'acc-1',
-          accountName: 'Business Checking',
-          accountNumber: '1110',
-          accountClass: 'Asset',
-          openingBalance: 45000,
-          totalDebits: 85000,
-          totalCredits: 62000,
-          closingBalance: 68000
-        },
-        {
-          accountId: 'acc-2',
-          accountName: 'Accounts Receivable',
-          accountNumber: '1200',
-          accountClass: 'Asset',
-          openingBalance: 38000,
-          totalDebits: 95000,
-          totalCredits: 88000,
-          closingBalance: 45000
-        },
-        {
-          accountId: 'acc-3',
-          accountName: 'Office Equipment',
-          accountNumber: '1500',
-          accountClass: 'Asset',
-          openingBalance: 25000,
-          totalDebits: 5000,
-          totalCredits: 2000,
-          closingBalance: 28000
-        },
-        {
-          accountId: 'acc-4',
-          accountName: 'Accounts Payable',
-          accountNumber: '2100',
-          accountClass: 'Liability',
-          openingBalance: 18000,
-          totalDebits: 45000,
-          totalCredits: 49000,
-          closingBalance: 22000
-        },
-        {
-          accountId: 'acc-5',
-          accountName: 'GST Payable',
-          accountNumber: '2200',
-          accountClass: 'Liability',
-          openingBalance: 12000,
-          totalDebits: 8500,
-          totalCredits: 12250,
-          closingBalance: 15750
-        },
-        {
-          accountId: 'acc-6',
-          accountName: 'Service Revenue',
-          accountNumber: '4000',
-          accountClass: 'Revenue',
-          openingBalance: 0,
-          totalDebits: 0,
-          totalCredits: 125000,
-          closingBalance: 125000
-        },
-        {
-          accountId: 'acc-7',
-          accountName: 'Office Rent',
-          accountNumber: '6000',
-          accountClass: 'Expense',
-          openingBalance: 0,
-          totalDebits: 24000,
-          totalCredits: 0,
-          closingBalance: 24000
-        },
-        {
-          accountId: 'acc-8',
-          accountName: 'Marketing Expenses',
-          accountNumber: '6400',
-          accountClass: 'Expense',
-          openingBalance: 0,
-          totalDebits: 15500,
-          totalCredits: 0,
-          closingBalance: 15500
-        }
-      ];
-
-      setFinancialSummary(mockFinancialSummary);
-      setAccountBalances(mockAccountBalances);
+      setFinancialSummary(financialData);
+      setAccountBalances(accountData);
+      setRevenueExpenseData(revenueData);
+      setCashFlowData(cashData);
+      setExpenseBreakdownData(expenseData);
+      
+      console.log('All accounting data loaded successfully');
     } catch (error) {
+      console.error('Failed to load accounting data:', error);
       toast({
         title: "Error",
-        description: "Failed to load accounting data",
+        description: `Failed to load accounting data: ${error instanceof Error ? error.message : 'Unknown error'}`,
         variant: "destructive"
       });
     } finally {
@@ -235,6 +178,9 @@ export default function AccountingDashboardPage() {
     <AccountingDashboard
       financialSummary={financialSummary}
       accountBalances={accountBalances}
+      revenueExpenseData={revenueExpenseData}
+      cashFlowData={cashFlowData}
+      expenseBreakdownData={expenseBreakdownData}
       isLoading={isLoading}
       onRefresh={handleRefresh}
       onExportReport={handleExportReport}

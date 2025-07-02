@@ -1,8 +1,8 @@
 import { test, expect } from '@playwright/test';
 
 const TEST_USER = {
-  email: 'jeevancodes@gmail.com',
-  password: 'Jeeva@900'
+  email: process.env.E2E_TEST_EMAIL || '',
+  password: process.env.E2E_TEST_PASSWORD || ''
 };
 
 test('Debug login flow', async ({ page }) => {

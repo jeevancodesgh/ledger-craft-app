@@ -2,10 +2,10 @@ import { test, expect, Page } from '@playwright/test';
 import { writeFileSync, mkdirSync } from 'fs';
 import path from 'path';
 
-// Test credentials
+// Test credentials from environment variables
 const TEST_USER = {
-  email: 'jeevancodes@gmail.com',
-  password: 'Jeeva@900'
+  email: process.env.E2E_TEST_EMAIL || '',
+  password: process.env.E2E_TEST_PASSWORD || ''
 };
 
 // Sample CSV data for testing
