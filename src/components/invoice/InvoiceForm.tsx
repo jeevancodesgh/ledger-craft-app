@@ -758,32 +758,42 @@ const InvoiceForm: React.FC<InvoiceFormProps> = ({
   };
 
   return (
-    <div className="space-y-4 pb-28 px-0 -mx-4 sm:mx-0 sm:px-0">
+    <div className="space-y-6 pb-28 px-0 -mx-4 sm:mx-0 sm:px-0">
       <div className="flex justify-between items-center px-4 sm:px-0">
-        <div className="flex items-center gap-2">
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={onCancel}
-            className="mr-0"
+        <div className="flex items-center gap-3">
+          <motion.div
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
           >
-            <ArrowLeft size={16} />
-          </Button>
-          <h1 className="text-lg md:text-3xl font-bold truncate">
-            {mode === "edit" ? "Edit Invoice" : "Create Invoice"}
-          </h1>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={onCancel}
+              className="mr-0 h-10 w-10 p-0 rounded-full hover:bg-muted/50"
+            >
+              <ArrowLeft size={18} />
+            </Button>
+          </motion.div>
+          <div>
+            <h1 className="text-xl md:text-3xl font-bold truncate bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
+              {mode === "edit" ? "Edit Invoice" : "Create Invoice"}
+            </h1>
+            <p className="text-sm text-muted-foreground hidden sm:block">
+              {mode === "edit" ? "Update your invoice details" : "Create a new invoice for your client"}
+            </p>
+          </div>
         </div>
       </div>
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-        <TabsList className="grid w-full grid-cols-2 mb-4 mx-4 sm:mx-0 sticky top-0 z-40 bg-background border-b sm:static sm:border-0 sm:bg-transparent">
-          <TabsTrigger value="edit" className="flex items-center gap-2 h-12">
+        <TabsList className="grid w-full grid-cols-2 mb-6 mx-4 sm:mx-0 sticky top-0 z-40 bg-background/95 backdrop-blur-sm border-b sm:static sm:border-0 sm:bg-transparent rounded-lg h-12">
+          <TabsTrigger value="edit" className="flex items-center gap-2 h-10 rounded-md font-medium transition-all">
             <Edit size={16} />
             <span>Edit</span>
           </TabsTrigger>
           <TabsTrigger
             value="preview"
-            className="flex items-center gap-2 h-12"
+            className="flex items-center gap-2 h-10 rounded-md font-medium transition-all"
             onClick={generatePreview}
           >
             <Eye size={16} />
@@ -798,22 +808,27 @@ const InvoiceForm: React.FC<InvoiceFormProps> = ({
             exit="exit"
             variants={tabVariants}
           >
-            <Card>
-              <CardContent className="pt-4 pb-2 px-3 sm:p-6 sm:pt-6">
+            <Card className="border-0 shadow-lg bg-gradient-to-br from-card to-card/50 backdrop-blur-sm">
+              <CardContent className="pt-6 pb-4 px-4 sm:p-8 sm:pt-8">
                 <Form {...form}>
-                  <form onSubmit={form.handleSubmit(localOnSubmit)} className="space-y-4">
-                    <div className="mb-3">
+                  <form onSubmit={form.handleSubmit(localOnSubmit)} className="space-y-6">
+                    <motion.div 
+                      initial={{ opacity: 0, y: 20 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ duration: 0.3 }}
+                      className="mb-6"
+                    >
                       <FormField
                         control={form.control}
                         name="invoiceNumber"
                         render={({ field }) => (
                           <FormItem>
-                            <FormLabel>Invoice Number</FormLabel>
+                            <FormLabel className="text-base font-semibold text-foreground/90">Invoice Number</FormLabel>
                             <FormControl>
                               <Input
                                 {...field}
-                                placeholder="Invoice Number"
-                                className="w-full"
+                                placeholder="INV-001"
+                                className="w-full h-12 border-2 border-border/50 rounded-xl bg-background/50 backdrop-blur-sm transition-all duration-200 focus:border-primary focus:ring-2 focus:ring-primary/20 focus:bg-background"
                                 autoComplete="off"
                                 disabled={isLoadingInvoiceNumber}
                               />
@@ -822,28 +837,35 @@ const InvoiceForm: React.FC<InvoiceFormProps> = ({
                           </FormItem>
                         )}
                       />
-                    </div>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    </motion.div>
+                    <motion.div 
+                      initial={{ opacity: 0, y: 20 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ duration: 0.3, delay: 0.1 }}
+                      className="grid grid-cols-1 md:grid-cols-2 gap-6"
+                    >
                       <FormField
                         control={form.control}
                         name="customerId"
                         render={({ field }) => (
                           <FormItem>
-                            <FormLabel>Customer</FormLabel>
+                            <FormLabel className="text-base font-semibold text-foreground/90">Customer</FormLabel>
                             <FormControl>
-                              <CustomerCombobox
-                                customers={customers}
-                                value={field.value}
-                                onValueChange={(value) => {
-                                  field.onChange(value);
-                                  // Trigger validation to clear the error immediately
-                                  form.trigger('customerId');
-                                }}
-                                placeholder="Search and select a customer..."
-                                disabled={isLoadingCustomers}
-                                isLoading={isLoadingCustomers}
-                                onAddCustomer={onAddCustomer}
-                              />
+                              <div className="relative">
+                                <CustomerCombobox
+                                  customers={customers}
+                                  value={field.value}
+                                  onValueChange={(value) => {
+                                    field.onChange(value);
+                                    // Trigger validation to clear the error immediately
+                                    form.trigger('customerId');
+                                  }}
+                                  placeholder="Search and select a customer..."
+                                  disabled={isLoadingCustomers}
+                                  isLoading={isLoadingCustomers}
+                                  onAddCustomer={onAddCustomer}
+                                />
+                              </div>
                             </FormControl>
                             <FormMessage />
                           </FormItem>
@@ -851,10 +873,18 @@ const InvoiceForm: React.FC<InvoiceFormProps> = ({
                       />
                       {/* Customer Info Card */}
                       {selectedCustomer && (
-                        <Card className="col-span-1 md:col-span-2 bg-muted/50 border border-muted-foreground/10 mt-2">
-                          <CardContent className="py-3 flex flex-col gap-1">
-                            <div className="font-semibold text-base flex items-center gap-2">
-                              <UserPlus className="w-4 h-4 text-primary" />
+                        <motion.div
+                          initial={{ opacity: 0, scale: 0.95 }}
+                          animate={{ opacity: 1, scale: 1 }}
+                          transition={{ duration: 0.2 }}
+                          className="col-span-1 md:col-span-2 mt-4"
+                        >
+                        <Card className="bg-gradient-to-r from-primary/5 to-accent/5 border border-primary/20 backdrop-blur-sm">
+                          <CardContent className="py-4 px-6 flex flex-col gap-2">
+                            <div className="font-semibold text-lg flex items-center gap-3">
+                              <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center">
+                                <UserPlus className="w-4 h-4 text-primary" />
+                              </div>
                               {selectedCustomer.name}
                             </div>
                             <div className="text-sm text-muted-foreground flex items-center gap-2">
@@ -879,19 +909,20 @@ const InvoiceForm: React.FC<InvoiceFormProps> = ({
                             )}
                           </CardContent>
                         </Card>
+                        </motion.div>
                       )}
                       <FormField
                         control={form.control}
                         name="currency"
                         render={({ field }) => (
                           <FormItem>
-                            <FormLabel>Currency</FormLabel>
+                            <FormLabel className="text-base font-semibold text-foreground/90">Currency</FormLabel>
                             <Select
                               onValueChange={field.onChange}
                               defaultValue={field.value}
                             >
                               <FormControl>
-                                <SelectTrigger>
+                                <SelectTrigger className="h-12 border-2 border-border/50 rounded-xl bg-background/50 backdrop-blur-sm transition-all duration-200 focus:border-primary focus:ring-2 focus:ring-primary/20">
                                   <SelectValue placeholder="Select currency" />
                                 </SelectTrigger>
                               </FormControl>
@@ -912,14 +943,14 @@ const InvoiceForm: React.FC<InvoiceFormProps> = ({
                         name="date"
                         render={({ field }) => (
                           <FormItem className="flex flex-col">
-                            <FormLabel>Invoice Date</FormLabel>
+                            <FormLabel className="text-base font-semibold text-foreground/90">Invoice Date</FormLabel>
                             <Popover>
                               <PopoverTrigger asChild>
                                 <FormControl>
                                   <Button
                                     variant={"outline"}
                                     className={cn(
-                                      "w-full pl-3 text-left font-normal justify-between",
+                                      "w-full pl-4 text-left font-normal justify-between h-12 border-2 border-border/50 rounded-xl bg-background/50 backdrop-blur-sm transition-all duration-200 hover:border-primary/50",
                                       !field.value && "text-muted-foreground"
                                     )}
                                   >
@@ -951,14 +982,14 @@ const InvoiceForm: React.FC<InvoiceFormProps> = ({
                         name="dueDate"
                         render={({ field }) => (
                           <FormItem className="flex flex-col">
-                            <FormLabel>Due Date</FormLabel>
+                            <FormLabel className="text-base font-semibold text-foreground/90">Due Date</FormLabel>
                             <Popover>
                               <PopoverTrigger asChild>
                                 <FormControl>
                                   <Button
                                     variant={"outline"}
                                     className={cn(
-                                      "w-full pl-3 text-left font-normal justify-between",
+                                      "w-full pl-4 text-left font-normal justify-between h-12 border-2 border-border/50 rounded-xl bg-background/50 backdrop-blur-sm transition-all duration-200 hover:border-primary/50",
                                       !field.value && "text-muted-foreground"
                                     )}
                                   >
@@ -985,71 +1016,107 @@ const InvoiceForm: React.FC<InvoiceFormProps> = ({
                           </FormItem>
                         )}
                       />
-                    </div>
+                    </motion.div>
                     {/* Additional Charges Manager */}
-                    <AdditionalChargesManager
-                      charges={additionalChargesList}
-                      onChargesChange={setAdditionalChargesList}
-                      subtotal={subtotal}
-                      currency={form.watch('currency') || 'USD'}
-                      enabled={isAdditionalChargesEnabled}
-                      onEnabledChange={setIsAdditionalChargesEnabled}
-                    />
+                    <motion.div
+                      initial={{ opacity: 0, y: 20 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ duration: 0.3, delay: 0.2 }}
+                    >
+                      <AdditionalChargesManager
+                        charges={additionalChargesList}
+                        onChargesChange={setAdditionalChargesList}
+                        subtotal={subtotal}
+                        currency={form.watch('currency') || 'USD'}
+                        enabled={isAdditionalChargesEnabled}
+                        onEnabledChange={setIsAdditionalChargesEnabled}
+                      />
+                    </motion.div>
 
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <div className="flex items-center gap-2 mt-2">
-                        <Switch
-                          checked={isDiscountEnabled}
-                          onCheckedChange={setIsDiscountEnabled}
-                          id="discount-toggle"
-                        />
-                        <label htmlFor="discount-toggle" className="text-sm font-medium">Enable Discount</label>
+                    <motion.div 
+                      initial={{ opacity: 0, y: 20 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ duration: 0.3, delay: 0.3 }}
+                      className="grid grid-cols-1 md:grid-cols-2 gap-6"
+                    >
+                      <div className="p-4 rounded-xl bg-gradient-to-r from-muted/30 to-muted/10 border border-border/50">
+                        <div className="flex items-center gap-3 mb-3">
+                          <Switch
+                            checked={isDiscountEnabled}
+                            onCheckedChange={setIsDiscountEnabled}
+                            id="discount-toggle"
+                            className="data-[state=checked]:bg-primary"
+                          />
+                          <label htmlFor="discount-toggle" className="text-sm font-semibold text-foreground/90">Enable Discount</label>
+                        </div>
                         {isDiscountEnabled && (
-                          <Input
-                            type="number"
-                            min={0}
-                            step="0.01"
-                            value={form.watch('discount')}
-                            onChange={handleDiscountChange}
-                            placeholder="Any deduction"
-                            className="w-32 ml-2"
-                          />
+                          <motion.div
+                            initial={{ opacity: 0, height: 0 }}
+                            animate={{ opacity: 1, height: "auto" }}
+                            exit={{ opacity: 0, height: 0 }}
+                            transition={{ duration: 0.2 }}
+                          >
+                            <Input
+                              type="number"
+                              min={0}
+                              step="0.01"
+                              value={form.watch('discount')}
+                              onChange={handleDiscountChange}
+                              placeholder="Discount amount"
+                              className="w-full h-11 border-2 border-border/50 rounded-lg bg-background/50 backdrop-blur-sm transition-all duration-200 focus:border-primary focus:ring-2 focus:ring-primary/20"
+                            />
+                          </motion.div>
                         )}
                       </div>
-                      <div className="flex items-center gap-2 mt-2">
-                        <Switch
-                          checked={isTaxEnabled}
-                          onCheckedChange={setIsTaxEnabled}
-                          id="tax-toggle"
-                        />
-                        <label htmlFor="tax-toggle" className="text-sm font-medium">Enable Tax</label>
+                      <div className="p-4 rounded-xl bg-gradient-to-r from-accent/10 to-accent/5 border border-accent/30">
+                        <div className="flex items-center gap-3 mb-3">
+                          <Switch
+                            checked={isTaxEnabled}
+                            onCheckedChange={setIsTaxEnabled}
+                            id="tax-toggle"
+                            className="data-[state=checked]:bg-accent"
+                          />
+                          <label htmlFor="tax-toggle" className="text-sm font-semibold text-foreground/90">Enable Tax</label>
+                        </div>
                         {isTaxEnabled && (
-                          <Input
-                            type="number"
-                            min={0}
-                            max={100}
-                            step={0.01}
-                            value={taxRate}
-                            onChange={e => setTaxRate(Number(e.target.value))}
-                            placeholder="Tax %"
-                            className="w-24 ml-2"
-                          />
+                          <motion.div
+                            initial={{ opacity: 0, height: 0 }}
+                            animate={{ opacity: 1, height: "auto" }}
+                            exit={{ opacity: 0, height: 0 }}
+                            transition={{ duration: 0.2 }}
+                          >
+                            <Input
+                              type="number"
+                              min={0}
+                              max={100}
+                              step={0.01}
+                              value={taxRate}
+                              onChange={e => setTaxRate(Number(e.target.value))}
+                              placeholder="Tax percentage"
+                              className="w-full h-11 border-2 border-border/50 rounded-lg bg-background/50 backdrop-blur-sm transition-all duration-200 focus:border-accent focus:ring-2 focus:ring-accent/20"
+                            />
+                          </motion.div>
                         )}
                       </div>
-                    </div>
-                    <div className="space-y-4 pb-4">
+                    </motion.div>
+                    <motion.div 
+                      initial={{ opacity: 0, y: 20 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ duration: 0.3, delay: 0.4 }}
+                      className="space-y-6 pb-4"
+                    >
                       <Collapsible
                         open={isLineItemsOpen}
                         onOpenChange={setIsLineItemsOpen}
-                        className="border rounded-md p-2"
+                        className="border-2 border-border/50 rounded-xl p-4 bg-gradient-to-br from-card/50 to-card/30 backdrop-blur-sm shadow-sm"
                       >
                         <motion.div
                           initial={false}
                           animate={{ backgroundColor: isLineItemsOpen ? "transparent" : "rgba(0,0,0,0.02)" }}
                           transition={{ duration: 0.2 }}
                         >
-                          <CollapsibleTrigger className="flex w-full justify-between items-center p-2">
-                            <h3 className="text-lg font-medium">Line Items</h3>
+                          <CollapsibleTrigger className="flex w-full justify-between items-center p-3 rounded-lg hover:bg-muted/30 transition-colors">
+                            <h3 className="text-lg font-semibold text-foreground/90">Line Items</h3>
                             <motion.div
                               animate={{ rotate: isLineItemsOpen ? 180 : 0 }}
                               transition={{ duration: 0.2 }}
@@ -1276,17 +1343,17 @@ const InvoiceForm: React.FC<InvoiceFormProps> = ({
                           )}
                         </AnimatePresence>
                       </Collapsible>
-                    </div>
+                    </motion.div>
 
-                    <div className="fixed bottom-0 left-0 w-full z-50 bg-background border-t p-4 flex gap-2 sm:static sm:p-0 sm:border-0 sm:bg-transparent">
-                      <motion.div className="flex gap-2 w-full">
+                    <div className="fixed bottom-0 left-0 w-full z-50 bg-background/95 backdrop-blur-sm border-t border-border/50 p-4 flex gap-3 sm:static sm:p-0 sm:border-0 sm:bg-transparent">
+                      <motion.div className="flex gap-3 w-full">
                         <motion.div
                           whileHover="hover"
                           whileTap="tap"
                           variants={buttonVariants}
                           className="flex-1"
                         >
-                          <Button type="button" variant="outline" onClick={onCancel} className="w-full">
+                          <Button type="button" variant="outline" onClick={onCancel} className="w-full h-12 rounded-xl border-2 border-border/50 hover:border-primary/50 transition-all duration-200">
                             Cancel
                           </Button>
                         </motion.div>
@@ -1301,7 +1368,7 @@ const InvoiceForm: React.FC<InvoiceFormProps> = ({
                             type="button" 
                             variant="outline" 
                             onClick={generatePreview}
-                            className="w-full gap-2"
+                            className="w-full gap-2 h-12 rounded-xl border-2 border-border/50 hover:border-accent/50 transition-all duration-200"
                           >
                             <Eye size={16} />
                             <span>Preview</span>
@@ -1314,7 +1381,7 @@ const InvoiceForm: React.FC<InvoiceFormProps> = ({
                           variants={buttonVariants}
                           className="flex-1"
                         >
-                          <Button type="submit" className="gap-2 w-full">
+                          <Button type="submit" className="gap-2 w-full h-12 rounded-xl bg-gradient-to-r from-primary to-accent hover:from-primary/90 hover:to-accent/90 transition-all duration-200 shadow-lg">
                             <Save size={16} />
                             <span>{mode === "create" ? "Save Invoice" : "Save Changes"}</span>
                           </Button>

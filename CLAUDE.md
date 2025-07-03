@@ -124,3 +124,6 @@ npm run type-check
 ## MCP Server
 - User supabase MCP server for supabase communication
 - Use Playwright MCP server for Testing
+
+## UI inspirations
+ - You may refer to images under screens folder for UI inspirations. make it clean and follow simillar standards. 
