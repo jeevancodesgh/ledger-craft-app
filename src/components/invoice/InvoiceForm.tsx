@@ -1364,8 +1364,8 @@ const InvoiceForm: React.FC<InvoiceFormProps> = ({
         </TabsContent>
       </Tabs>
 
-      {/* Mobile Fixed Action Buttons - Only visible on mobile and Edit tab */}
-      {activeTab === "edit" && (
+      {/* Mobile Fixed Action Buttons - Only visible on mobile and Edit tab, hidden when drawers are open */}
+      {activeTab === "edit" && !openLineItemDrawer && !isItemDrawerOpen && (
         <div className="fixed bottom-0 left-0 right-0 z-[100] bg-background/95 backdrop-blur-sm border-t border-border/50 p-4 flex gap-3 sm:hidden">
         <motion.div className="flex gap-3 w-full">
           <motion.div
@@ -1417,8 +1417,8 @@ const InvoiceForm: React.FC<InvoiceFormProps> = ({
         </div>
       )}
 
-      {/* Desktop Action Buttons - Only visible on desktop and Edit tab */}
-      {activeTab === "edit" && (
+      {/* Desktop Action Buttons - Only visible on desktop and Edit tab, hidden when drawers are open */}
+      {activeTab === "edit" && !openLineItemDrawer && !isItemDrawerOpen && (
         <div className="hidden sm:block mt-6">
         <motion.div className="flex gap-3 justify-end">
           <motion.div
