@@ -758,7 +758,7 @@ const InvoiceForm: React.FC<InvoiceFormProps> = ({
   };
 
   return (
-    <div className="space-y-6 pb-28 px-0 -mx-4 sm:mx-0 sm:px-0">
+    <div className="space-y-6 pb-32 px-0 -mx-4 sm:mx-0 sm:px-0 sm:pb-6">
       <div className="flex justify-between items-center px-4 sm:px-0">
         <div className="flex items-center gap-3">
           <motion.div
@@ -811,7 +811,7 @@ const InvoiceForm: React.FC<InvoiceFormProps> = ({
             <Card className="border-0 shadow-lg bg-gradient-to-br from-card to-card/50 backdrop-blur-sm">
               <CardContent className="pt-6 pb-4 px-4 sm:p-8 sm:pt-8">
                 <Form {...form}>
-                  <form onSubmit={form.handleSubmit(localOnSubmit)} className="space-y-6">
+                  <form onSubmit={form.handleSubmit(localOnSubmit)} className="space-y-6" data-invoice-form>
                     <motion.div 
                       initial={{ opacity: 0, y: 20 }}
                       animate={{ opacity: 1, y: 0 }}
@@ -1345,49 +1345,6 @@ const InvoiceForm: React.FC<InvoiceFormProps> = ({
                       </Collapsible>
                     </motion.div>
 
-                    <div className="fixed bottom-0 left-0 w-full z-50 bg-background/95 backdrop-blur-sm border-t border-border/50 p-4 flex gap-3 sm:static sm:p-0 sm:border-0 sm:bg-transparent">
-                      <motion.div className="flex gap-3 w-full">
-                        <motion.div
-                          whileHover="hover"
-                          whileTap="tap"
-                          variants={buttonVariants}
-                          className="flex-1"
-                        >
-                          <Button type="button" variant="outline" onClick={onCancel} className="w-full h-12 rounded-xl border-2 border-border/50 hover:border-primary/50 transition-all duration-200">
-                            Cancel
-                          </Button>
-                        </motion.div>
-                        
-                        <motion.div
-                          whileHover="hover"
-                          whileTap="tap"
-                          variants={buttonVariants}
-                          className="flex-1"
-                        >
-                          <Button 
-                            type="button" 
-                            variant="outline" 
-                            onClick={generatePreview}
-                            className="w-full gap-2 h-12 rounded-xl border-2 border-border/50 hover:border-accent/50 transition-all duration-200"
-                          >
-                            <Eye size={16} />
-                            <span>Preview</span>
-                          </Button>
-                        </motion.div>
-                        
-                        <motion.div
-                          whileHover="hover"
-                          whileTap="tap"
-                          variants={buttonVariants}
-                          className="flex-1"
-                        >
-                          <Button type="submit" className="gap-2 w-full h-12 rounded-xl bg-gradient-to-r from-primary to-accent hover:from-primary/90 hover:to-accent/90 transition-all duration-200 shadow-lg">
-                            <Save size={16} />
-                            <span>{mode === "create" ? "Save Invoice" : "Save Changes"}</span>
-                          </Button>
-                        </motion.div>
-                      </motion.div>
-                    </div>
                   </form>
                 </Form>
               </CardContent>
@@ -1406,6 +1363,109 @@ const InvoiceForm: React.FC<InvoiceFormProps> = ({
           </motion.div>
         </TabsContent>
       </Tabs>
+
+      {/* Mobile Fixed Action Buttons - Only visible on mobile and Edit tab */}
+      {activeTab === "edit" && (
+        <div className="fixed bottom-0 left-0 right-0 z-[100] bg-background/95 backdrop-blur-sm border-t border-border/50 p-4 flex gap-3 sm:hidden">
+        <motion.div className="flex gap-3 w-full">
+          <motion.div
+            whileHover="hover"
+            whileTap="tap"
+            variants={buttonVariants}
+            className="flex-1"
+          >
+            <Button type="button" variant="outline" onClick={onCancel} className="w-full h-12 rounded-xl border-2 border-border/50 hover:border-primary/50 transition-all duration-200">
+              Cancel
+            </Button>
+          </motion.div>
+          
+          <motion.div
+            whileHover="hover"
+            whileTap="tap"
+            variants={buttonVariants}
+            className="flex-1"
+          >
+            <Button 
+              type="button" 
+              variant="outline" 
+              onClick={generatePreview}
+              className="w-full gap-2 h-12 rounded-xl border-2 border-border/50 hover:border-accent/50 transition-all duration-200"
+            >
+              <Eye size={16} />
+              <span>Preview</span>
+            </Button>
+          </motion.div>
+          
+          <motion.div
+            whileHover="hover"
+            whileTap="tap"
+            variants={buttonVariants}
+            className="flex-1"
+          >
+            <Button 
+              onClick={() => {
+                const form = document.querySelector('form[data-invoice-form]') as HTMLFormElement;
+                if (form) form.requestSubmit();
+              }}
+              className="gap-2 w-full h-12 rounded-xl bg-gradient-to-r from-primary to-accent hover:from-primary/90 hover:to-accent/90 transition-all duration-200 shadow-lg"
+            >
+              <Save size={16} />
+              <span>{mode === "create" ? "Save Invoice" : "Save Changes"}</span>
+            </Button>
+          </motion.div>
+        </motion.div>
+        </div>
+      )}
+
+      {/* Desktop Action Buttons - Only visible on desktop and Edit tab */}
+      {activeTab === "edit" && (
+        <div className="hidden sm:block mt-6">
+        <motion.div className="flex gap-3 justify-end">
+          <motion.div
+            whileHover="hover"
+            whileTap="tap"
+            variants={buttonVariants}
+          >
+            <Button type="button" variant="outline" onClick={onCancel} className="h-12 px-6 rounded-xl border-2 border-border/50 hover:border-primary/50 transition-all duration-200">
+              Cancel
+            </Button>
+          </motion.div>
+          
+          <motion.div
+            whileHover="hover"
+            whileTap="tap"
+            variants={buttonVariants}
+          >
+            <Button 
+              type="button" 
+              variant="outline" 
+              onClick={generatePreview}
+              className="gap-2 h-12 px-6 rounded-xl border-2 border-border/50 hover:border-accent/50 transition-all duration-200"
+            >
+              <Eye size={16} />
+              <span>Preview</span>
+            </Button>
+          </motion.div>
+          
+          <motion.div
+            whileHover="hover"
+            whileTap="tap"
+            variants={buttonVariants}
+          >
+            <Button 
+              onClick={() => {
+                const form = document.querySelector('form[data-invoice-form]') as HTMLFormElement;
+                if (form) form.requestSubmit();
+              }}
+              className="gap-2 h-12 px-6 rounded-xl bg-gradient-to-r from-primary to-accent hover:from-primary/90 hover:to-accent/90 transition-all duration-200 shadow-lg"
+            >
+              <Save size={16} />
+              <span>{mode === "create" ? "Save Invoice" : "Save Changes"}</span>
+            </Button>
+          </motion.div>
+        </motion.div>
+        </div>
+      )}
 
       {/* Item Management Modal */}
       <ItemDrawer 
