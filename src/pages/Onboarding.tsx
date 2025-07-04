@@ -48,12 +48,36 @@ export default function Onboarding() {
 
   const uploadLogo = async (logoFile: File): Promise<string | null> => {
     try {
-      // This would typically upload to Supabase storage
-      // For now, we'll return null and handle logo upload in a future iteration
-      console.log('Logo upload would happen here:', logoFile.name);
+      const { supabase } = await import('../services/supabaseService');
+      
+      const fileExt = logoFile.name.split('.').pop();
+      const fileName = `business-logo-${Date.now()}.${fileExt}`;
+      const filePath = `business-logos/${fileName}`;
+
+      const { data: uploadData, error: uploadError } = await supabase.storage
+        .from('business-assets')
+        .upload(filePath, logoFile);
+
+      if (uploadError) {
+        throw new Error(uploadError.message || "Failed to upload logo");
+      }
+
+      if (uploadData) {
+        const { data: publicUrlData } = supabase.storage
+          .from('business-assets')
+          .getPublicUrl(filePath);
+          
+        return publicUrlData.publicUrl;
+      }
+      
       return null;
     } catch (error) {
       console.error('Error uploading logo:', error);
+      toast({
+        title: 'Logo Upload Failed',
+        description: 'Failed to upload logo. Please try again.',
+        variant: 'destructive'
+      });
       return null;
     }
   };

@@ -45,6 +45,7 @@ import TemplateSelector from './templates/TemplateSelector';
 import { invoiceTemplates, InvoiceTemplateId } from './templates/InvoiceTemplates';
 import AdditionalChargesManager from './AdditionalChargesManager';
 import { useToast } from "@/hooks/use-toast";
+import { useAutoSave, AutoSaveData } from "@/hooks/use-auto-save";
 import InvoicePreview from "./preview/InvoicePreview";
 import ItemSelector from "./ItemSelector";
 import ItemDrawer from "../item/ItemDrawer";
@@ -93,15 +94,15 @@ interface InvoiceFormProps {
 }
 
 const invoiceFormSchema = z.object({
-  invoiceNumber: z.string().min(1, 'Invoice number is required'),
-  customerId: z.string().min(1, 'Customer is required'),
-  date: z.date({ required_error: "Invoice date is required" }),
-  dueDate: z.date({ required_error: "Due date is required" }),
+  invoiceNumber: z.string().min(1, 'Invoice number is required for IRD compliance and proper business records'),
+  customerId: z.string().min(1, 'Please select a customer to ensure accurate billing and maintain business relationships'),
+  date: z.date({ required_error: "Invoice date is required for accurate tax period assignment and reporting" }),
+  dueDate: z.date({ required_error: "Due date is required for cash flow management and payment terms clarity" }),
   notes: z.string().optional(),
   terms: z.string().optional(),
-  currency: z.string().default('USD'),
-  additionalCharges: z.coerce.number().nonnegative("Must be a positive amount").default(0),
-  discount: z.coerce.number().nonnegative("Must be a positive amount").default(0),
+  currency: z.string().default('NZD'),
+  additionalCharges: z.coerce.number().nonnegative("Additional charges must be a positive amount. Enter 0 if no additional charges apply").default(0),
+  discount: z.coerce.number().nonnegative("Discount must be a positive amount. Enter 0 if no discount applies").default(0),
 });
 
 type InvoiceFormValues = z.infer<typeof invoiceFormSchema>;
@@ -240,6 +241,50 @@ const InvoiceForm: React.FC<InvoiceFormProps> = ({
   const hasUnsavedChanges = !isSubmitting && (isDirty || itemsChanged);
 
   const blocker = useBlocker(hasUnsavedChanges);
+
+  // Auto-save functionality for professional data protection
+  const formData = form.watch();
+  const autoSaveKey = mode === 'edit' && initialValues?.id ? `edit-${initialValues.id}` : 'create-new';
+  
+  const { clearSavedData } = useAutoSave({
+    key: autoSaveKey,
+    data: {
+      formData,
+      items,
+      timestamp: Date.now(),
+      invoiceId: initialValues?.id,
+      mode
+    },
+    enabled: hasUnsavedChanges && !isSubmitting,
+    interval: 30000, // Auto-save every 30 seconds
+    onSave: (data) => {
+      // Optional: Show subtle save indicator
+      console.log('📄 Invoice draft auto-saved');
+    },
+    onRestore: (savedData) => {
+      try {
+        // Restore form data
+        if (savedData.formData) {
+          form.reset({
+            ...savedData.formData,
+            date: savedData.formData.date ? new Date(savedData.formData.date) : new Date(),
+            dueDate: savedData.formData.dueDate ? new Date(savedData.formData.dueDate) : new Date()
+          });
+        }
+        
+        // Restore line items
+        if (savedData.items && savedData.items.length > 0) {
+          setItems(savedData.items);
+          setInitialItemsJSON(JSON.stringify(savedData.items));
+        }
+        
+        return true; // Successfully restored
+      } catch (error) {
+        console.error('Failed to restore auto-saved data:', error);
+        return false;
+      }
+    }
+  });
 
   const triggerItemsRefetch = () => {
     setRefetchItemsTrigger(prev => prev + 1);
@@ -431,8 +476,8 @@ const InvoiceForm: React.FC<InvoiceFormProps> = ({
     const isValid = form.trigger();
     if (!isValid) {
       toast({
-        title: "Cannot generate preview",
-        description: "Please fix the errors in the form to proceed.",
+        title: "Preview Unavailable",
+        description: "Please complete all required fields (customer, invoice number, and line items) before generating preview. This ensures accurate invoice presentation.",
         variant: "destructive",
       });
       return;
@@ -477,8 +522,8 @@ const InvoiceForm: React.FC<InvoiceFormProps> = ({
       } catch (error) {
         console.error('Error generating PDF:', error);
         toast({
-          title: "Error",
-          description: "Could not generate PDF. Please try again.",
+          title: "PDF Generation Failed",
+          description: "Unable to create PDF document. Please check your browser's download settings and try again. If the issue persists, contact support.",
           variant: "destructive"
         });
       }
@@ -523,8 +568,8 @@ const InvoiceForm: React.FC<InvoiceFormProps> = ({
     if (indexCreatingNewItem === null) {
         console.error("Index for new item creation not set.");
         toast({
-            title: "Error",
-            description: "Failed to determine where to add the new item.",
+            title: "Item Creation Issue",
+            description: "Unable to add new item to invoice. Please try adding the line item again or refresh the page if the problem persists.",
             variant: "destructive",
         });
         return;
@@ -544,8 +589,8 @@ const InvoiceForm: React.FC<InvoiceFormProps> = ({
     } catch (error) {
       console.error('Error creating item:', error);
       toast({
-        title: "Error",
-        description: "Failed to create item. Please try again.",
+        title: "Item Creation Failed",
+        description: "Unable to save new item to your inventory. Please check your connection and try again. The item information has been preserved on this invoice.",
         variant: "destructive",
       });
       setIsItemDrawerOpen(false); // Close drawer on error too
@@ -668,6 +713,34 @@ const InvoiceForm: React.FC<InvoiceFormProps> = ({
   const localOnSubmit = async (values: InvoiceFormValues) => {
     setIsSubmitting(true);
     try {
+      // Professional validation: Check for meaningful line items
+      const validItems = items.filter(item => 
+        item.description?.trim() && 
+        item.quantity > 0 && 
+        item.rate >= 0
+      );
+      
+      if (validItems.length === 0) {
+        toast({
+          title: "Invoice Incomplete",
+          description: "Please add at least one line item with description, quantity, and rate. Professional invoices require detailed service or product information.",
+          variant: "destructive",
+        });
+        setIsSubmitting(false);
+        return;
+      }
+      
+      // Professional validation: Check for future due date
+      if (values.dueDate <= values.date) {
+        toast({
+          title: "Due Date Issue", 
+          description: "Due date should be after the invoice date to allow reasonable payment time. Please adjust the due date to maintain professional payment terms.",
+          variant: "destructive",
+        });
+        setIsSubmitting(false);
+        return;
+      }
+      
       // Calculate additional charges total from structured charges
       const structuredChargesTotal = calculateAdditionalChargesTotal();
       const finalAdditionalCharges = additionalChargesList.length > 0 
@@ -690,6 +763,10 @@ const InvoiceForm: React.FC<InvoiceFormProps> = ({
         Number(values.discount),
         additionalChargesList // Pass the structured charges list
       );
+      
+      // Clear auto-saved data on successful submission
+      clearSavedData();
+      
       // Reset form and items in sync
       form.reset(values);
       setItems([...items]);
@@ -831,6 +908,7 @@ const InvoiceForm: React.FC<InvoiceFormProps> = ({
                                 className="w-full h-12 border-2 border-border/50 rounded-xl bg-background/50 backdrop-blur-sm transition-all duration-200 focus:border-primary focus:ring-2 focus:ring-primary/20 focus:bg-background"
                                 autoComplete="off"
                                 disabled={isLoadingInvoiceNumber}
+                                data-testid="invoice-number"
                               />
                             </FormControl>
                             <FormMessage />
@@ -1167,6 +1245,7 @@ const InvoiceForm: React.FC<InvoiceFormProps> = ({
                                       variant="outline"
                                       size="sm"
                                       className="w-full flex items-center justify-center gap-2"
+                                      data-testid="add-item-button"
                                     >
                                       <Plus size={16} />
                                       <span>Add Item</span>
@@ -1207,6 +1286,7 @@ const InvoiceForm: React.FC<InvoiceFormProps> = ({
                                                     onChange={e => updateItem(index, "description", e.target.value)}
                                                     placeholder="Item description"
                                                     className="w-full"
+                                                    data-testid={`item-description-${index}`}
                                                   />
                                                   <div className="absolute right-2 top-1/2 -translate-y-1/2">
                                                     <ItemSelector
@@ -1227,6 +1307,7 @@ const InvoiceForm: React.FC<InvoiceFormProps> = ({
                                                 value={item.quantity}
                                                 onChange={e => updateItem(index, "quantity", Number(e.target.value))}
                                                 className="w-full text-right"
+                                                data-testid={`item-quantity-${index}`}
                                               />
                                             </td>
                                             <td className="py-2 px-2">
@@ -1263,9 +1344,10 @@ const InvoiceForm: React.FC<InvoiceFormProps> = ({
                                                 value={item.rate}
                                                 onChange={e => updateItem(index, "rate", Number(e.target.value))}
                                                 className="w-full text-right"
+                                                data-testid={`item-rate-${index}`}
                                               />
                                             </td>
-                                            <td className="py-2 px-2 text-right">
+                                            <td className="py-2 px-2 text-right" data-testid={`item-amount-${index}`}>
                                               {formatCurrency(item.total, form.getValues('currency'))}
                                             </td>
                                             <td className="py-2 pl-2">
@@ -1292,6 +1374,7 @@ const InvoiceForm: React.FC<InvoiceFormProps> = ({
                                               variant="outline"
                                               size="sm"
                                               className="flex items-center gap-1"
+                                              data-testid="add-item-button"
                                             >
                                               <Plus size={16} />
                                               <span>Add Item</span>
@@ -1308,12 +1391,12 @@ const InvoiceForm: React.FC<InvoiceFormProps> = ({
                                 )}>
                                   <div className="flex justify-between">
                                     <span className="font-medium">Subtotal</span>
-                                    <span>{formatCurrency(subtotal, form.getValues('currency'))}</span>
+                                    <span data-testid="invoice-subtotal">{formatCurrency(subtotal, form.getValues('currency'))}</span>
                                   </div>
                                   {isTaxEnabled && (
                                     <div className="flex justify-between">
                                       <span className="font-medium">Tax ({taxRate}%)</span>
-                                      <span>{formatCurrency(taxAmount, form.getValues('currency'))}</span>
+                                      <span data-testid="invoice-gst">{formatCurrency(taxAmount, form.getValues('currency'))}</span>
                                     </div>
                                   )}
                                   {isAdditionalChargesEnabled && (
@@ -1335,7 +1418,7 @@ const InvoiceForm: React.FC<InvoiceFormProps> = ({
                                   )}
                                   <div className="flex justify-between border-t pt-1">
                                     <span className="font-bold">Total</span>
-                                    <span className="font-bold">{formatCurrency(total, form.getValues('currency'))}</span>
+                                    <span className="font-bold" data-testid="invoice-total">{formatCurrency(total, form.getValues('currency'))}</span>
                                   </div>
                                 </div>
                               </CollapsibleContent>
@@ -1408,6 +1491,7 @@ const InvoiceForm: React.FC<InvoiceFormProps> = ({
                 if (form) form.requestSubmit();
               }}
               className="gap-2 w-full h-12 rounded-xl bg-gradient-to-r from-primary to-accent hover:from-primary/90 hover:to-accent/90 transition-all duration-200 shadow-lg"
+              data-testid="save-invoice-button"
             >
               <Save size={16} />
               <span>{mode === "create" ? "Save Invoice" : "Save Changes"}</span>
@@ -1458,6 +1542,7 @@ const InvoiceForm: React.FC<InvoiceFormProps> = ({
                 if (form) form.requestSubmit();
               }}
               className="gap-2 h-12 px-6 rounded-xl bg-gradient-to-r from-primary to-accent hover:from-primary/90 hover:to-accent/90 transition-all duration-200 shadow-lg"
+              data-testid="save-invoice-button"
             >
               <Save size={16} />
               <span>{mode === "create" ? "Save Invoice" : "Save Changes"}</span>
@@ -1480,19 +1565,112 @@ const InvoiceForm: React.FC<InvoiceFormProps> = ({
 
       {blocker && blocker.state === "blocked" && (
         <AlertDialog open={blocker.state === "blocked"}>
-          <AlertDialogContent>
+          <AlertDialogContent className="max-w-md">
             <AlertDialogHeader>
-              <AlertDialogTitle>Are you sure you want to leave?</AlertDialogTitle>
-              <AlertDialogDescription>
-                You have unsaved changes. If you leave, your changes will be lost.
-              </AlertDialogDescription>
+              <div className="flex items-center gap-3 mb-2">
+                <div className="flex-shrink-0 w-10 h-10 bg-amber-100 rounded-full flex items-center justify-center">
+                  <Save className="w-5 h-5 text-amber-600" />
+                </div>
+                <div>
+                  <AlertDialogTitle className="text-lg font-semibold text-foreground">
+                    Save Your Invoice Before Leaving?
+                  </AlertDialogTitle>
+                  <p className="text-sm text-muted-foreground mt-1">
+                    {mode === 'create' ? 'Draft invoice' : 'Invoice changes'} will be lost
+                  </p>
+                </div>
+              </div>
             </AlertDialogHeader>
-            <AlertDialogFooter>
-              <AlertDialogCancel onClick={() => blocker.reset?.()}>
-                Stay
+            
+            <AlertDialogDescription className="text-sm space-y-3">
+              <div className="bg-muted/50 p-3 rounded-lg">
+                <h4 className="font-medium text-foreground mb-2">Unsaved Changes:</h4>
+                <ul className="space-y-1 text-sm">
+                  {formData.invoiceNumber && (
+                    <li className="flex items-center gap-2">
+                      <div className="w-1.5 h-1.5 bg-blue-500 rounded-full"></div>
+                      Invoice #{formData.invoiceNumber}
+                    </li>
+                  )}
+                  {items.some(item => item.description || item.quantity > 0) && (
+                    <li className="flex items-center gap-2">
+                      <div className="w-1.5 h-1.5 bg-green-500 rounded-full"></div>
+                      {items.filter(item => item.description || item.quantity > 0).length} line item(s)
+                    </li>
+                  )}
+                  {formData.customerId && (
+                    <li className="flex items-center gap-2">
+                      <div className="w-1.5 h-1.5 bg-purple-500 rounded-full"></div>
+                      Customer selection
+                    </li>
+                  )}
+                  {(formData.notes || formData.terms) && (
+                    <li className="flex items-center gap-2">
+                      <div className="w-1.5 h-1.5 bg-orange-500 rounded-full"></div>
+                      Notes and terms
+                    </li>
+                  )}
+                </ul>
+              </div>
+              
+              <p className="text-xs text-muted-foreground">
+                💡 Your work is automatically saved as a draft every 30 seconds, but manual saving ensures immediate protection.
+              </p>
+            </AlertDialogDescription>
+            
+            <AlertDialogFooter className="flex flex-col sm:flex-row gap-2 sm:gap-3">
+              <AlertDialogCancel 
+                onClick={() => blocker.reset?.()}
+                className="order-3 sm:order-1"
+              >
+                Continue Editing
               </AlertDialogCancel>
-              <AlertDialogAction onClick={() => blocker.proceed?.()}>
-                Leave
+              
+              <Button
+                variant="outline"
+                onClick={async () => {
+                  try {
+                    // Attempt to save current state
+                    const values = form.getValues();
+                    if (formData.invoiceNumber || formData.customerId || items.some(item => item.description)) {
+                      await localOnSubmit(values);
+                      toast({
+                        title: "Invoice Saved",
+                        description: "Your invoice has been saved before navigation.",
+                      });
+                    }
+                  } catch (error) {
+                    console.error('Save before navigation failed:', error);
+                    toast({
+                      title: "Save Failed", 
+                      description: "Unable to save invoice before navigation. Please check your connection and try saving manually, or your auto-saved draft will be preserved.",
+                      variant: "destructive"
+                    });
+                  }
+                  blocker.proceed?.();
+                }}
+                className="order-2"
+                disabled={isSubmitting}
+              >
+                {isSubmitting ? (
+                  <>
+                    <div className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin mr-2"></div>
+                    Saving...
+                  </>
+                ) : (
+                  <>
+                    <Save className="w-4 h-4 mr-2" />
+                    Save & Leave
+                  </>
+                )}
+              </Button>
+              
+              <AlertDialogAction 
+                onClick={() => blocker.proceed?.()}
+                variant="destructive"
+                className="order-1 sm:order-3"
+              >
+                Leave Without Saving
               </AlertDialogAction>
             </AlertDialogFooter>
           </AlertDialogContent>

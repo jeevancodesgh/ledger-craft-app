@@ -64,6 +64,7 @@ export function CustomerCombobox({
             aria-expanded={open}
             className="flex-1 justify-between"
             disabled={disabled || isLoading}
+            data-testid="customer-select"
           >
             {selectedCustomer ? (
               <div className="flex flex-col items-start text-left">
