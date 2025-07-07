@@ -100,11 +100,11 @@ export class AccountingService {
       // Calculate cash position from payments
       const cashPosition = payments?.reduce((sum, payment) => sum + (payment.amount || 0), 0) || 0;
 
-      // Calculate GST liability (15% for NZ)
-      const gstLiability = Math.round(totalRevenue * 0.15);
+      // Calculate GST liability using real tax calculation service
+      const gstLiability = await this.calculateRealGSTLiability(startDate, endDate);
 
-      // Mock payables for now (would need a bills/payables table)
-      const totalPayables = Math.round(totalExpenses * 0.3);
+      // Calculate real payables from pending expenses
+      const totalPayables = await this.calculateRealPayables();
 
       const result = {
         totalRevenue,
@@ -365,6 +365,67 @@ export class AccountingService {
     } catch (error) {
       console.error('Error in getExpenseBreakdown:', error);
       return [];
+    }
+  }
+
+  private async calculateRealGSTLiability(startDate: string, endDate: string): Promise<number> {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return 0;
+
+      // Get GST collected from sales (invoices)
+      const { data: invoices } = await supabase
+        .from('invoices')
+        .select('tax_amount, total_amount')
+        .eq('user_id', user.id)
+        .eq('status', 'paid')
+        .gte('created_at', startDate)
+        .lte('created_at', endDate);
+
+      // Get GST paid on purchases (expenses)
+      const { data: expenses } = await supabase
+        .from('expenses')
+        .select('amount')
+        .eq('user_id', user.id)
+        .gte('expense_date', startDate)
+        .lte('expense_date', endDate);
+
+      const gstCollected = invoices?.reduce((sum, invoice) => {
+        // Use tax_amount if available, otherwise calculate 15% of total
+        const gst = invoice.tax_amount || (invoice.total_amount * 0.15);
+        return sum + gst;
+      }, 0) || 0;
+
+      // Assume 15% GST on expenses (simplified)
+      const gstPaid = expenses?.reduce((sum, expense) => {
+        const gst = (expense.amount || 0) * 0.15;
+        return sum + gst;
+      }, 0) || 0;
+
+      // Net GST liability
+      return Math.max(0, gstCollected - gstPaid);
+    } catch (error) {
+      console.error('Error calculating GST liability:', error);
+      return 0;
+    }
+  }
+
+  private async calculateRealPayables(): Promise<number> {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return 0;
+
+      // Get pending/unpaid expenses
+      const { data: pendingExpenses } = await supabase
+        .from('expenses')
+        .select('amount')
+        .eq('user_id', user.id)
+        .eq('status', 'pending');
+
+      return pendingExpenses?.reduce((sum, expense) => sum + (expense.amount || 0), 0) || 0;
+    } catch (error) {
+      console.error('Error calculating payables:', error);
+      return 0;
     }
   }
 }

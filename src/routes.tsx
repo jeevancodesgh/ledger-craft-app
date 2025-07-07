@@ -66,17 +66,17 @@ const Root = () => {
   return (
     <QueryClientProvider client={queryClient}>
       <ToastProvider>
-        <AppProvider>
-          <TooltipProvider>
-            <AuthProvider>
+        <TooltipProvider>
+          <AuthProvider>
+            <AppProvider>
               <ConversationProvider>
                 <Outlet />
                 <Toaster />
                 <Sonner />
               </ConversationProvider>
-            </AuthProvider>
-          </TooltipProvider>
-        </AppProvider>
+            </AppProvider>
+          </AuthProvider>
+        </TooltipProvider>
       </ToastProvider>
     </QueryClientProvider>
   );
@@ -195,6 +195,14 @@ const appRoutes: RouteObject[] = [
           // Reports & Compliance Routes
           { 
             path: "reports", 
+            element: (
+              <PermissionGuard permission="reports:view">
+                <FinancialReportsPage />
+              </PermissionGuard>
+            )
+          },
+          { 
+            path: "financial-reports", 
             element: (
               <PermissionGuard permission="reports:view">
                 <FinancialReportsPage />

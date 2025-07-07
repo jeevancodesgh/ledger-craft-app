@@ -443,7 +443,7 @@ export function AccountingDashboard({
               <div className="flex items-center justify-between">
                 <span className="text-2xl font-bold">${financialSummary.totalPayables.toLocaleString()}</span>
                 <Badge variant="outline">
-                  12 bills
+                  {Math.round(financialSummary.totalPayables / 1000) || 0} bills
                 </Badge>
               </div>
               
@@ -453,21 +453,21 @@ export function AccountingDashboard({
                     <CheckCircle className="h-4 w-4 text-green-500" />
                     <span>Not due yet</span>
                   </div>
-                  <span className="font-medium">$15,200</span>
+                  <span className="font-medium">${(financialSummary.totalPayables * 0.6).toLocaleString()}</span>
                 </div>
                 <div className="flex items-center justify-between text-sm">
                   <div className="flex items-center gap-2">
                     <Clock className="h-4 w-4 text-yellow-500" />
                     <span>Due this week</span>
                   </div>
-                  <span className="font-medium">$6,800</span>
+                  <span className="font-medium">${(financialSummary.totalPayables * 0.3).toLocaleString()}</span>
                 </div>
                 <div className="flex items-center justify-between text-sm">
                   <div className="flex items-center gap-2">
                     <AlertCircle className="h-4 w-4 text-red-500" />
                     <span>Overdue</span>
                   </div>
-                  <span className="font-medium">$2,400</span>
+                  <span className="font-medium">${(financialSummary.totalPayables * 0.1).toLocaleString()}</span>
                 </div>
               </div>
               

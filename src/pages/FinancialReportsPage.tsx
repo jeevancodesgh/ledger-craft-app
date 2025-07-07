@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { FileBarChart, Download, RefreshCw, Filter, Calendar, TrendingUp, DollarSign, Receipt, Target } from 'lucide-react';
+import { FileBarChart, Download, RefreshCw, Filter, Calendar, TrendingUp, DollarSign, Receipt, Target, Eye, ChevronDown, ChevronRight, BarChart3, PieChart } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -10,29 +10,452 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { useToast } from '@/hooks/use-toast';
 import { format } from 'date-fns';
 import { BreadcrumbNavigation } from '@/components/common/BreadcrumbNavigation';
+import { 
+  financialReportsService, 
+  FinancialReport, 
+  ReportSummary, 
+  ProfitLossData, 
+  BalanceSheetData, 
+  CashFlowData, 
+  TrialBalanceData 
+} from '@/services/financialReportsService';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 
-interface FinancialReport {
-  id: string;
-  name: string;
-  type: 'profit_loss' | 'balance_sheet' | 'cash_flow' | 'trial_balance' | 'accounts_receivable' | 'accounts_payable';
-  period: {
-    startDate: string;
-    endDate: string;
-  };
-  data: any;
-  generatedAt: string;
-}
 
-interface ReportSummary {
-  totalRevenue: number;
-  totalExpenses: number;
-  netIncome: number;
-  grossMargin: number;
-  totalAssets: number;
-  totalLiabilities: number;
-  cashFlow: number;
-  periodsCompared: number;
-}
+// Report detail components
+const ProfitLossReportDetail: React.FC<{ data: ProfitLossData }> = ({ data }) => (
+  <div className="space-y-6">
+    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+      <Card>
+        <CardContent className="p-4">
+          <div className="text-center">
+            <p className="text-sm text-muted-foreground">Total Revenue</p>
+            <p className="text-2xl font-bold text-green-600">${data.totalRevenue.toLocaleString()}</p>
+          </div>
+        </CardContent>
+      </Card>
+      <Card>
+        <CardContent className="p-4">
+          <div className="text-center">
+            <p className="text-sm text-muted-foreground">Total Expenses</p>
+            <p className="text-2xl font-bold text-red-600">${(data.costOfGoodsSold + data.operatingExpenses).toLocaleString()}</p>
+          </div>
+        </CardContent>
+      </Card>
+      <Card>
+        <CardContent className="p-4">
+          <div className="text-center">
+            <p className="text-sm text-muted-foreground">Net Income</p>
+            <p className={`text-2xl font-bold ${data.netIncome >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+              ${data.netIncome.toLocaleString()}
+            </p>
+          </div>
+        </CardContent>
+      </Card>
+    </div>
+
+    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <PieChart className="h-5 w-5" />
+            Revenue Breakdown
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Category</TableHead>
+                <TableHead className="text-right">Amount</TableHead>
+                <TableHead className="text-right">%</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {data.revenueBreakdown.map((item, index) => (
+                <TableRow key={index}>
+                  <TableCell>{item.category}</TableCell>
+                  <TableCell className="text-right">${item.amount.toLocaleString()}</TableCell>
+                  <TableCell className="text-right">{item.percentage.toFixed(1)}%</TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <BarChart3 className="h-5 w-5" />
+            Expense Breakdown
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Category</TableHead>
+                <TableHead className="text-right">Amount</TableHead>
+                <TableHead className="text-right">%</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {data.expenseBreakdown.map((item, index) => (
+                <TableRow key={index}>
+                  <TableCell>{item.category}</TableCell>
+                  <TableCell className="text-right">${item.amount.toLocaleString()}</TableCell>
+                  <TableCell className="text-right">{item.percentage.toFixed(1)}%</TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </CardContent>
+      </Card>
+    </div>
+
+    <Card>
+      <CardHeader>
+        <CardTitle>Profit & Loss Statement</CardTitle>
+      </CardHeader>
+      <CardContent>
+        <Table>
+          <TableBody>
+            <TableRow>
+              <TableCell className="font-semibold">Revenue</TableCell>
+              <TableCell className="text-right font-semibold">${data.totalRevenue.toLocaleString()}</TableCell>
+            </TableRow>
+            <TableRow>
+              <TableCell className="pl-6">Cost of Goods Sold</TableCell>
+              <TableCell className="text-right">(${data.costOfGoodsSold.toLocaleString()})</TableCell>
+            </TableRow>
+            <TableRow className="border-b-2">
+              <TableCell className="font-semibold">Gross Profit</TableCell>
+              <TableCell className="text-right font-semibold">${data.grossProfit.toLocaleString()}</TableCell>
+            </TableRow>
+            <TableRow>
+              <TableCell className="pl-6">Operating Expenses</TableCell>
+              <TableCell className="text-right">(${data.operatingExpenses.toLocaleString()})</TableCell>
+            </TableRow>
+            <TableRow className="border-b-2 font-bold">
+              <TableCell>Net Income</TableCell>
+              <TableCell className={`text-right ${data.netIncome >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                ${data.netIncome.toLocaleString()}
+              </TableCell>
+            </TableRow>
+          </TableBody>
+        </Table>
+      </CardContent>
+    </Card>
+  </div>
+);
+
+const BalanceSheetReportDetail: React.FC<{ data: BalanceSheetData }> = ({ data }) => (
+  <div className="space-y-6">
+    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+      <Card>
+        <CardContent className="p-4">
+          <div className="text-center">
+            <p className="text-sm text-muted-foreground">Total Assets</p>
+            <p className="text-2xl font-bold text-blue-600">${data.totalAssets.toLocaleString()}</p>
+          </div>
+        </CardContent>
+      </Card>
+      <Card>
+        <CardContent className="p-4">
+          <div className="text-center">
+            <p className="text-sm text-muted-foreground">Total Liabilities</p>
+            <p className="text-2xl font-bold text-red-600">${data.totalLiabilities.toLocaleString()}</p>
+          </div>
+        </CardContent>
+      </Card>
+      <Card>
+        <CardContent className="p-4">
+          <div className="text-center">
+            <p className="text-sm text-muted-foreground">Equity</p>
+            <p className="text-2xl font-bold text-green-600">${data.equity.toLocaleString()}</p>
+          </div>
+        </CardContent>
+      </Card>
+    </div>
+
+    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      <Card>
+        <CardHeader>
+          <CardTitle>Assets</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Category</TableHead>
+                <TableHead className="text-right">Amount</TableHead>
+                <TableHead className="text-right">%</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {data.assetBreakdown.map((item, index) => (
+                <TableRow key={index}>
+                  <TableCell>{item.category}</TableCell>
+                  <TableCell className="text-right">${item.amount.toLocaleString()}</TableCell>
+                  <TableCell className="text-right">{item.percentage.toFixed(1)}%</TableCell>
+                </TableRow>
+              ))}
+              <TableRow className="border-t-2 font-bold">
+                <TableCell>Total Assets</TableCell>
+                <TableCell className="text-right">${data.totalAssets.toLocaleString()}</TableCell>
+                <TableCell className="text-right">100.0%</TableCell>
+              </TableRow>
+            </TableBody>
+          </Table>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Liabilities & Equity</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Category</TableHead>
+                <TableHead className="text-right">Amount</TableHead>
+                <TableHead className="text-right">%</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {data.liabilityBreakdown.map((item, index) => (
+                <TableRow key={index}>
+                  <TableCell>{item.category}</TableCell>
+                  <TableCell className="text-right">${item.amount.toLocaleString()}</TableCell>
+                  <TableCell className="text-right">{item.percentage.toFixed(1)}%</TableCell>
+                </TableRow>
+              ))}
+              <TableRow className="border-t">
+                <TableCell className="font-semibold">Total Liabilities</TableCell>
+                <TableCell className="text-right font-semibold">${data.totalLiabilities.toLocaleString()}</TableCell>
+                <TableCell className="text-right font-semibold">{data.totalLiabilities > 0 ? ((data.totalLiabilities / data.totalAssets) * 100).toFixed(1) : '0.0'}%</TableCell>
+              </TableRow>
+              <TableRow>
+                <TableCell className="font-semibold">Equity</TableCell>
+                <TableCell className="text-right font-semibold">${data.equity.toLocaleString()}</TableCell>
+                <TableCell className="text-right font-semibold">{data.totalAssets > 0 ? ((data.equity / data.totalAssets) * 100).toFixed(1) : '0.0'}%</TableCell>
+              </TableRow>
+              <TableRow className="border-t-2 font-bold">
+                <TableCell>Total Liabilities & Equity</TableCell>
+                <TableCell className="text-right">${(data.totalLiabilities + data.equity).toLocaleString()}</TableCell>
+                <TableCell className="text-right">100.0%</TableCell>
+              </TableRow>
+            </TableBody>
+          </Table>
+        </CardContent>
+      </Card>
+    </div>
+  </div>
+);
+
+const CashFlowReportDetail: React.FC<{ data: CashFlowData }> = ({ data }) => (
+  <div className="space-y-6">
+    <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+      <Card>
+        <CardContent className="p-4">
+          <div className="text-center">
+            <p className="text-sm text-muted-foreground">Operating</p>
+            <p className={`text-xl font-bold ${data.operatingCashFlow >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+              ${data.operatingCashFlow.toLocaleString()}
+            </p>
+          </div>
+        </CardContent>
+      </Card>
+      <Card>
+        <CardContent className="p-4">
+          <div className="text-center">
+            <p className="text-sm text-muted-foreground">Investing</p>
+            <p className={`text-xl font-bold ${data.investingCashFlow >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+              ${data.investingCashFlow.toLocaleString()}
+            </p>
+          </div>
+        </CardContent>
+      </Card>
+      <Card>
+        <CardContent className="p-4">
+          <div className="text-center">
+            <p className="text-sm text-muted-foreground">Financing</p>
+            <p className={`text-xl font-bold ${data.financingCashFlow >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+              ${data.financingCashFlow.toLocaleString()}
+            </p>
+          </div>
+        </CardContent>
+      </Card>
+      <Card>
+        <CardContent className="p-4">
+          <div className="text-center">
+            <p className="text-sm text-muted-foreground">Net Cash Flow</p>
+            <p className={`text-xl font-bold ${data.netCashFlow >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+              ${data.netCashFlow.toLocaleString()}
+            </p>
+          </div>
+        </CardContent>
+      </Card>
+    </div>
+
+    <Card>
+      <CardHeader>
+        <CardTitle>Cash Flow Statement</CardTitle>
+      </CardHeader>
+      <CardContent>
+        <Table>
+          <TableBody>
+            <TableRow>
+              <TableCell className="font-semibold text-lg">Operating Activities</TableCell>
+              <TableCell></TableCell>
+            </TableRow>
+            {data.operatingActivities.map((activity, index) => (
+              <TableRow key={index}>
+                <TableCell className="pl-6">{activity.description}</TableCell>
+                <TableCell className={`text-right ${activity.amount >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                  ${activity.amount.toLocaleString()}
+                </TableCell>
+              </TableRow>
+            ))}
+            <TableRow className="border-b">
+              <TableCell className="font-semibold pl-6">Net Cash from Operating Activities</TableCell>
+              <TableCell className={`text-right font-semibold ${data.operatingCashFlow >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                ${data.operatingCashFlow.toLocaleString()}
+              </TableCell>
+            </TableRow>
+
+            <TableRow>
+              <TableCell className="font-semibold text-lg pt-4">Investing Activities</TableCell>
+              <TableCell></TableCell>
+            </TableRow>
+            {data.investingActivities.map((activity, index) => (
+              <TableRow key={index}>
+                <TableCell className="pl-6">{activity.description}</TableCell>
+                <TableCell className={`text-right ${activity.amount >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                  ${activity.amount.toLocaleString()}
+                </TableCell>
+              </TableRow>
+            ))}
+            <TableRow className="border-b">
+              <TableCell className="font-semibold pl-6">Net Cash from Investing Activities</TableCell>
+              <TableCell className={`text-right font-semibold ${data.investingCashFlow >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                ${data.investingCashFlow.toLocaleString()}
+              </TableCell>
+            </TableRow>
+
+            <TableRow>
+              <TableCell className="font-semibold text-lg pt-4">Financing Activities</TableCell>
+              <TableCell></TableCell>
+            </TableRow>
+            {data.financingActivities.map((activity, index) => (
+              <TableRow key={index}>
+                <TableCell className="pl-6">{activity.description}</TableCell>
+                <TableCell className={`text-right ${activity.amount >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                  ${activity.amount.toLocaleString()}
+                </TableCell>
+              </TableRow>
+            ))}
+            <TableRow className="border-b">
+              <TableCell className="font-semibold pl-6">Net Cash from Financing Activities</TableCell>
+              <TableCell className={`text-right font-semibold ${data.financingCashFlow >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                ${data.financingCashFlow.toLocaleString()}
+              </TableCell>
+            </TableRow>
+
+            <TableRow className="border-t-2">
+              <TableCell className="font-bold">Net Change in Cash</TableCell>
+              <TableCell className={`text-right font-bold ${data.netCashFlow >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                ${data.netCashFlow.toLocaleString()}
+              </TableCell>
+            </TableRow>
+            <TableRow>
+              <TableCell>Cash at Beginning of Period</TableCell>
+              <TableCell className="text-right">${data.beginningCash.toLocaleString()}</TableCell>
+            </TableRow>
+            <TableRow className="border-b-2 font-bold">
+              <TableCell>Cash at End of Period</TableCell>
+              <TableCell className="text-right">${data.endingCash.toLocaleString()}</TableCell>
+            </TableRow>
+          </TableBody>
+        </Table>
+      </CardContent>
+    </Card>
+  </div>
+);
+
+const TrialBalanceReportDetail: React.FC<{ data: TrialBalanceData }> = ({ data }) => (
+  <div className="space-y-6">
+    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+      <Card>
+        <CardContent className="p-4">
+          <div className="text-center">
+            <p className="text-sm text-muted-foreground">Total Debits</p>
+            <p className="text-2xl font-bold text-blue-600">${data.totalDebits.toLocaleString()}</p>
+          </div>
+        </CardContent>
+      </Card>
+      <Card>
+        <CardContent className="p-4">
+          <div className="text-center">
+            <p className="text-sm text-muted-foreground">Total Credits</p>
+            <p className="text-2xl font-bold text-green-600">${data.totalCredits.toLocaleString()}</p>
+          </div>
+        </CardContent>
+      </Card>
+      <Card>
+        <CardContent className="p-4">
+          <div className="text-center">
+            <p className="text-sm text-muted-foreground">Balance Status</p>
+            <Badge variant={data.balanceStatus === 'balanced' ? 'default' : 'destructive'} className="text-sm">
+              {data.balanceStatus === 'balanced' ? 'Balanced' : 'Unbalanced'}
+            </Badge>
+          </div>
+        </CardContent>
+      </Card>
+    </div>
+
+    <Card>
+      <CardHeader>
+        <CardTitle>Trial Balance</CardTitle>
+      </CardHeader>
+      <CardContent>
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead>Account Name</TableHead>
+              <TableHead>Account Type</TableHead>
+              <TableHead className="text-right">Debit</TableHead>
+              <TableHead className="text-right">Credit</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {data.accounts.map((account, index) => (
+              <TableRow key={index}>
+                <TableCell>{account.accountName}</TableCell>
+                <TableCell>
+                  <Badge variant="outline">{account.accountType}</Badge>
+                </TableCell>
+                <TableCell className="text-right">
+                  {account.debitBalance > 0 ? `$${account.debitBalance.toLocaleString()}` : '-'}
+                </TableCell>
+                <TableCell className="text-right">
+                  {account.creditBalance > 0 ? `$${account.creditBalance.toLocaleString()}` : '-'}
+                </TableCell>
+              </TableRow>
+            ))}
+            <TableRow className="border-t-2 font-bold">
+              <TableCell colSpan={2}>Totals</TableCell>
+              <TableCell className="text-right">${data.totalDebits.toLocaleString()}</TableCell>
+              <TableCell className="text-right">${data.totalCredits.toLocaleString()}</TableCell>
+            </TableRow>
+          </TableBody>
+        </Table>
+      </CardContent>
+    </Card>
+  </div>
+);
 
 export default function FinancialReportsPage() {
   const [reports, setReports] = useState<FinancialReport[]>([]);
@@ -42,6 +465,7 @@ export default function FinancialReportsPage() {
   const [selectedPeriod, setSelectedPeriod] = useState<string>('current_month');
   const [startDate, setStartDate] = useState<Date | undefined>();
   const [endDate, setEndDate] = useState<Date | undefined>();
+  const [expandedReports, setExpandedReports] = useState<Set<string>>(new Set());
   
   const { toast } = useToast();
 
@@ -68,98 +492,92 @@ export default function FinancialReportsPage() {
   const fetchReports = async () => {
     setIsLoading(true);
     try {
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1200));
+      // Generate current period reports
+      const currentPeriod = selectedPeriod;
+      const customStart = startDate;
+      const customEnd = endDate;
       
-      // Mock financial reports data
-      const mockReports: FinancialReport[] = [
-        {
-          id: 'report-1',
-          name: 'January 2024 Profit & Loss',
-          type: 'profit_loss',
-          period: {
-            startDate: '2024-01-01',
-            endDate: '2024-01-31'
-          },
-          data: {
-            totalRevenue: 125000,
-            costOfGoodsSold: 45000,
-            grossProfit: 80000,
-            operatingExpenses: 42500,
-            netIncome: 37500
-          },
-          generatedAt: '2024-02-01T09:00:00Z'
-        },
-        {
-          id: 'report-2',
-          name: 'January 2024 Balance Sheet',
-          type: 'balance_sheet',
-          period: {
-            startDate: '2024-01-31',
-            endDate: '2024-01-31'
-          },
-          data: {
-            totalAssets: 285000,
-            currentAssets: 113000,
-            fixedAssets: 172000,
-            totalLiabilities: 87000,
-            currentLiabilities: 37000,
-            longTermLiabilities: 50000,
-            equity: 198000
-          },
-          generatedAt: '2024-02-01T09:15:00Z'
-        },
-        {
-          id: 'report-3',
-          name: 'Q4 2023 Cash Flow Statement',
-          type: 'cash_flow',
-          period: {
-            startDate: '2023-10-01',
-            endDate: '2023-12-31'
-          },
-          data: {
-            operatingCashFlow: 89500,
-            investingCashFlow: -25000,
-            financingCashFlow: -15000,
-            netCashFlow: 49500,
-            beginningCash: 18500,
-            endingCash: 68000
-          },
-          generatedAt: '2024-01-05T14:30:00Z'
-        },
-        {
-          id: 'report-4',
-          name: 'January 2024 Trial Balance',
-          type: 'trial_balance',
-          period: {
-            startDate: '2024-01-31',
-            endDate: '2024-01-31'
-          },
-          data: {
-            totalDebits: 472000,
-            totalCredits: 472000,
-            accountCount: 45,
-            balanceStatus: 'balanced'
-          },
-          generatedAt: '2024-02-01T10:00:00Z'
-        }
-      ];
-
-      // Mock report summary
-      const mockSummary: ReportSummary = {
-        totalRevenue: 125000,
-        totalExpenses: 87500,
-        netIncome: 37500,
-        grossMargin: 64.0,
-        totalAssets: 285000,
-        totalLiabilities: 87000,
-        cashFlow: 49500,
-        periodsCompared: 3
-      };
-
-      setReports(mockReports);
-      setReportSummary(mockSummary);
+      // Generate sample reports for the current period
+      const generatedReports: FinancialReport[] = [];
+      
+      // Generate Profit & Loss report
+      try {
+        const profitLossReport = await financialReportsService.generateReport(
+          'profit_loss', 
+          currentPeriod, 
+          customStart, 
+          customEnd
+        );
+        generatedReports.push(profitLossReport);
+      } catch (error) {
+        console.error('Error generating P&L report:', error);
+      }
+      
+      // Generate Balance Sheet report
+      try {
+        const balanceSheetReport = await financialReportsService.generateReport(
+          'balance_sheet', 
+          currentPeriod, 
+          customStart, 
+          customEnd
+        );
+        generatedReports.push(balanceSheetReport);
+      } catch (error) {
+        console.error('Error generating Balance Sheet report:', error);
+      }
+      
+      // Generate Cash Flow report
+      try {
+        const cashFlowReport = await financialReportsService.generateReport(
+          'cash_flow', 
+          currentPeriod, 
+          customStart, 
+          customEnd
+        );
+        generatedReports.push(cashFlowReport);
+      } catch (error) {
+        console.error('Error generating Cash Flow report:', error);
+      }
+      
+      // Generate Trial Balance report
+      try {
+        const trialBalanceReport = await financialReportsService.generateReport(
+          'trial_balance', 
+          currentPeriod, 
+          customStart, 
+          customEnd
+        );
+        generatedReports.push(trialBalanceReport);
+      } catch (error) {
+        console.error('Error generating Trial Balance report:', error);
+      }
+      
+      setReports(generatedReports);
+      
+      // Generate report summary
+      try {
+        const summary = await financialReportsService.generateReportSummary(
+          currentPeriod, 
+          customStart, 
+          customEnd
+        );
+        setReportSummary(summary);
+      } catch (error) {
+        console.error('Error generating report summary:', error);
+        // Fallback summary if generation fails
+        setReportSummary({
+          totalRevenue: 0,
+          totalExpenses: 0,
+          netIncome: 0,
+          grossMargin: 0,
+          totalAssets: 0,
+          totalLiabilities: 0,
+          cashFlow: 0,
+          periodsCompared: 1
+        });
+      }
     } catch (error) {
+      console.error('Error fetching reports:', error);
       toast({
         title: "Error",
         description: "Failed to load financial reports",
@@ -172,24 +590,21 @@ export default function FinancialReportsPage() {
 
   useEffect(() => {
     fetchReports();
-  }, []);
+  }, [selectedPeriod, startDate, endDate]);
 
   const handleGenerateReport = async (reportType: string) => {
     try {
-      // Simulate report generation
-      await new Promise(resolve => setTimeout(resolve, 2000));
+      const validReportTypes = ['profit_loss', 'balance_sheet', 'cash_flow', 'trial_balance'];
+      if (!validReportTypes.includes(reportType)) {
+        throw new Error(`Invalid report type: ${reportType}`);
+      }
       
-      const newReport: FinancialReport = {
-        id: `report-${Date.now()}`,
-        name: `${format(new Date(), 'MMMM yyyy')} ${reportTypes.find(r => r.value === reportType)?.label}`,
-        type: reportType as any,
-        period: {
-          startDate: startDate?.toISOString().split('T')[0] || '2024-01-01',
-          endDate: endDate?.toISOString().split('T')[0] || '2024-01-31'
-        },
-        data: {},
-        generatedAt: new Date().toISOString()
-      };
+      const newReport = await financialReportsService.generateReport(
+        reportType as 'profit_loss' | 'balance_sheet' | 'cash_flow' | 'trial_balance',
+        selectedPeriod,
+        startDate,
+        endDate
+      );
 
       setReports(prev => [newReport, ...prev]);
       
@@ -198,6 +613,7 @@ export default function FinancialReportsPage() {
         description: `${reportTypes.find(r => r.value === reportType)?.label} report generated successfully`
       });
     } catch (error) {
+      console.error('Error generating report:', error);
       toast({
         title: "Error",
         description: "Failed to generate report",
@@ -470,84 +886,112 @@ export default function FinancialReportsPage() {
         </CardContent>
       </Card>
 
-      {/* Reports Table */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center justify-between">
-            <span>Generated Reports</span>
-            <Badge variant="outline">{filteredReports.length} reports</Badge>
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="rounded-md border">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Report Name</TableHead>
-                  <TableHead>Type</TableHead>
-                  <TableHead>Period</TableHead>
-                  <TableHead>Generated</TableHead>
-                  <TableHead className="text-right">Actions</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {filteredReports.map((report) => (
-                  <TableRow key={report.id}>
-                    <TableCell>
+      {/* Detailed Reports */}
+      <div className="space-y-6">
+        {filteredReports.map((report) => {
+          const isExpanded = expandedReports.has(report.id);
+          
+          return (
+            <Card key={report.id}>
+              <Collapsible
+                open={isExpanded}
+                onOpenChange={(open) => {
+                  const newExpanded = new Set(expandedReports);
+                  if (open) {
+                    newExpanded.add(report.id);
+                  } else {
+                    newExpanded.delete(report.id);
+                  }
+                  setExpandedReports(newExpanded);
+                }}
+              >
+                <CollapsibleTrigger asChild>
+                  <CardHeader className="cursor-pointer hover:bg-muted/50 transition-colors">
+                    <div className="flex items-center justify-between">
                       <div className="flex items-center gap-3">
                         {getReportTypeIcon(report.type)}
-                        <span className="font-medium">{report.name}</span>
+                        <div>
+                          <CardTitle className="text-lg">{report.name}</CardTitle>
+                          <p className="text-sm text-muted-foreground">
+                            {format(new Date(report.period.startDate), 'dd MMM yyyy')} - {format(new Date(report.period.endDate), 'dd MMM yyyy')}
+                          </p>
+                        </div>
                       </div>
-                    </TableCell>
-                    <TableCell>
-                      <Badge className={getReportTypeBadge(report.type)}>
-                        {reportTypes.find(t => t.value === report.type)?.label}
-                      </Badge>
-                    </TableCell>
-                    <TableCell>
-                      <div className="text-sm">
-                        <p>{format(new Date(report.period.startDate), 'dd MMM yyyy')}</p>
-                        <p className="text-muted-foreground">
-                          to {format(new Date(report.period.endDate), 'dd MMM yyyy')}
-                        </p>
+                      <div className="flex items-center gap-3">
+                        <Badge className={getReportTypeBadge(report.type)}>
+                          {reportTypes.find(t => t.value === report.type)?.label}
+                        </Badge>
+                        <div className="flex items-center gap-2">
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleExportReport(report.id, 'pdf');
+                            }}
+                            title="Export as PDF"
+                          >
+                            <Download className="h-4 w-4" />
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleExportReport(report.id, 'excel');
+                            }}
+                            title="Export as Excel"
+                          >
+                            <FileBarChart className="h-4 w-4" />
+                          </Button>
+                          {isExpanded ? (
+                            <ChevronDown className="h-4 w-4" />
+                          ) : (
+                            <ChevronRight className="h-4 w-4" />
+                          )}
+                        </div>
                       </div>
-                    </TableCell>
-                    <TableCell>
-                      {format(new Date(report.generatedAt), 'dd MMM yyyy HH:mm')}
-                    </TableCell>
-                    <TableCell className="text-right">
-                      <div className="flex gap-2 justify-end">
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => handleExportReport(report.id, 'pdf')}
-                        >
-                          <Download className="h-4 w-4" />
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => handleExportReport(report.id, 'excel')}
-                        >
-                          <FileBarChart className="h-4 w-4" />
-                        </Button>
-                      </div>
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </div>
+                    </div>
+                  </CardHeader>
+                </CollapsibleTrigger>
+                
+                <CollapsibleContent>
+                  <CardContent className="pt-0">
+                    {report.type === 'profit_loss' && (
+                      <ProfitLossReportDetail data={report.data as ProfitLossData} />
+                    )}
+                    {report.type === 'balance_sheet' && (
+                      <BalanceSheetReportDetail data={report.data as BalanceSheetData} />
+                    )}
+                    {report.type === 'cash_flow' && (
+                      <CashFlowReportDetail data={report.data as CashFlowData} />
+                    )}
+                    {report.type === 'trial_balance' && (
+                      <TrialBalanceReportDetail data={report.data as TrialBalanceData} />
+                    )}
+                  </CardContent>
+                </CollapsibleContent>
+              </Collapsible>
+            </Card>
+          );
+        })}
 
-          {filteredReports.length === 0 && (
-            <div className="text-center py-8">
-              <p className="text-muted-foreground">
-                No reports found. Generate your first financial report using the button above.
+        {filteredReports.length === 0 && (
+          <Card>
+            <CardContent className="text-center py-12">
+              <FileBarChart className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
+              <h3 className="text-lg font-semibold mb-2">No Reports Generated</h3>
+              <p className="text-muted-foreground mb-4">
+                Generate your first financial report using the dropdown above.
               </p>
-            </div>
-          )}
-        </CardContent>
-      </Card>
+              <Button onClick={() => handleGenerateReport('profit_loss')}>
+                <TrendingUp className="h-4 w-4 mr-2" />
+                Generate Profit & Loss Report
+              </Button>
+            </CardContent>
+          </Card>
+        )}
+      </div>
     </div>
   );
 }

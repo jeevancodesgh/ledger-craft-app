@@ -4,6 +4,7 @@ import { paymentService } from "@/services/paymentService";
 import { Customer, Invoice, BusinessProfile, Item, ItemCategory, Account, Expense, ExpenseCategory } from "@/types";
 import { Payment, Receipt, CreatePaymentRequest } from "@/types/payment";
 import { useToast } from "@/hooks/use-toast";
+import { useAuth } from "@/context/AuthContext";
 
 interface AppContextType {
   customers: Customer[];
@@ -103,19 +104,47 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const defaultUnits = ['each', 'hour', 'kg', 'g', 'mg', 'liter', 'ml', 'meter', 'cm', 'mm', 'sq meter', 'sq foot', 'cubic meter', 'cubic foot', 'gallon', 'quart', 'pint', 'ounce', 'lb', 'box', 'pack', 'pair', 'roll', 'set', 'sheet', 'unit'];
   const [units, setUnits] = useState<string[]>(defaultUnits);
   const { toast } = useToast();
+  const { user, loading } = useAuth();
 
+  // Only fetch data when user is authenticated and auth loading is complete
   useEffect(() => {
-    fetchCustomers();
-    fetchInvoices();
-    fetchBusinessProfile();
-    fetchItems();
-    fetchItemCategories();
-    fetchAccounts();
-    fetchExpenses();
-    fetchExpenseCategories();
-    fetchPayments();
-    fetchReceipts();
-  }, []);
+    if (!loading && user) {
+      fetchCustomers();
+      fetchInvoices();
+      fetchBusinessProfile();
+      fetchItems();
+      fetchItemCategories();
+      fetchAccounts();
+      fetchExpenses();
+      fetchExpenseCategories();
+      fetchPayments();
+      fetchReceipts();
+    } else if (!loading && !user) {
+      // Reset loading states when not authenticated
+      setIsLoadingCustomers(false);
+      setIsLoadingInvoices(false);
+      setIsLoadingBusinessProfile(false);
+      setIsLoadingItems(false);
+      setIsLoadingItemCategories(false);
+      setIsLoadingAccounts(false);
+      setIsLoadingExpenses(false);
+      setIsLoadingExpenseCategories(false);
+      setIsLoadingPayments(false);
+      setIsLoadingReceipts(false);
+      
+      // Clear any existing data
+      setCustomers([]);
+      setInvoices([]);
+      setBusinessProfile(null);
+      setItems([]);
+      setItemCategories([]);
+      setAccounts([]);
+      setExpenses([]);
+      setExpenseCategories([]);
+      setPayments([]);
+      setReceipts([]);
+    }
+  }, [user, loading]);
 
   const fetchCustomers = async () => {
     try {
