@@ -24,7 +24,7 @@ const stepTitles: Record<OnboardingStep, { title: string; subtitle?: string }> =
   },
   complete: {
     title: 'All set!',
-    subtitle: 'Welcome to Ledger Craft'
+    subtitle: 'Welcome to EasyBizInvoice'
   }
 };
 
@@ -123,7 +123,7 @@ export default function Onboarding() {
       await refreshUser();
       
       toast({
-        title: 'Welcome to Ledger Craft!',
+        title: 'Welcome to EasyBizInvoice!',
         description: 'Your business profile has been set up successfully.'
       });
       navigate('/');

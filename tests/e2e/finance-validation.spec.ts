@@ -15,8 +15,8 @@ test.describe('Finance E2E Test Environment Validation', () => {
     // Wait for the page to load
     await page.waitForLoadState('networkidle');
     
-    // Check that we can see the LedgerCraft branding
-    await expect(page.locator('body')).toContainText('LedgerCraft');
+    // Check that we can see the EasyBizInvoice branding
+    await expect(page.locator('body')).toContainText('EasyBizInvoice');
     
     // Take a screenshot for verification
     await page.screenshot({ path: 'test-results/landing-page.png', fullPage: true });

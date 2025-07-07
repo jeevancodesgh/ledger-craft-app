@@ -5,7 +5,7 @@ import { ThemeProvider } from "@/context/ThemeContext";
 
 function App() {
   return (
-    <ThemeProvider defaultTheme="system" storageKey="ledger-craft-theme">
+    <ThemeProvider defaultTheme="system" storageKey="easybizinvoice-theme">
       <RouterProvider router={router} />
       <AddToHomeScreenPrompt />
     </ThemeProvider>

@@ -1,6 +1,6 @@
-# LedgerCraft - Expense Tracking & Invoice Management
+# EasyBizInvoice - Effortless Invoicing & Business Management
 
-A modern PWA expense tracking application built with React, TypeScript, and Supabase.
+A modern PWA for invoicing and business management, built with React, TypeScript, and Supabase.
 
 ## Key Features
 
@@ -32,7 +32,7 @@ npx playwright test
 
 ## Project info
 
-**URL**: https://lovable.dev/projects/7aac0ff4-53ad-4885-a53b-af239ec30b67
+**URL**: https://easybizinvoice.com
 
 ## How can I edit this code?
 

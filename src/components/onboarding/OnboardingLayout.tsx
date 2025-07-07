@@ -30,7 +30,7 @@ export default function OnboardingLayout({ children, currentStep, title, subtitl
           
         {/* Header */}
         <div className="text-center mb-8">
-          <h1 className="text-3xl font-bold text-foreground mb-2">Welcome to Ledger Craft</h1>
+          <h1 className="text-3xl font-bold text-foreground mb-2">Welcome to EasyBizInvoice</h1>
           <p className="text-muted-foreground">Let's set up your business profile to get you started</p>
         </div>
 

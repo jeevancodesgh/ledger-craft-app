@@ -113,10 +113,10 @@ export function Sidebar({ collapsed, isMobile, onCloseMobileMenu }: SidebarProps
         <div className="flex items-center justify-between px-6 pb-6 border-b border-sidebar-border/20 bg-sidebar-accent/10">
           <div className="flex items-center space-x-3">
             <div className="w-10 h-10 rounded-xl bg-white flex items-center justify-center shadow-lg">
-              <img src="/logo.png" alt="LedgerCraft" className="w-8 h-8" />
+              <img src="/logo.png" alt="EasyBizInvoice" className="w-8 h-8" />
             </div>
             <h1 className="font-bold text-xl text-white bg-gradient-to-r from-white to-gray-200 bg-clip-text text-transparent">
-              LedgerCraft
+              EasyBizInvoice
             </h1>
           </div>
           {onCloseMobileMenu && (
@@ -228,17 +228,17 @@ export function Sidebar({ collapsed, isMobile, onCloseMobileMenu }: SidebarProps
           collapsed ? "opacity-0 w-0" : "opacity-100"
         )}>
           <div className="w-8 h-8 rounded-lg bg-white flex items-center justify-center shadow-md">
-            <img src="/logo.png" alt="LedgerCraft" className="w-6 h-6" />
+            <img src="/logo.png" alt="EasyBizInvoice" className="w-6 h-6" />
           </div>
           <h1 className="font-bold text-lg text-white bg-gradient-to-r from-white to-gray-200 bg-clip-text text-transparent">
-            LedgerCraft
+            EasyBizInvoice
           </h1>
         </div>
         <div className={cn(
           "w-8 h-8 rounded-lg bg-white flex items-center justify-center shadow-md transition-all duration-300",
           !collapsed ? "opacity-0 w-0" : "opacity-100"
         )}>
-          <img src="/logo.png" alt="LedgerCraft" className="w-6 h-6" />
+          <img src="/logo.png" alt="EasyBizInvoice" className="w-6 h-6" />
         </div>
       </div>
       

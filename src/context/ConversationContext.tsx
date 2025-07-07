@@ -86,7 +86,7 @@ export const ConversationProvider: React.FC<ConversationProviderProps> = ({ chil
       await conversationService.addMessage(
         conversation.id,
         'assistant',
-        "Hello! I'm your AI assistant for Ledger Craft. I can help you create invoices, manage customers, track expenses, and generate reports. What would you like to do today?",
+        "Hello! I'm your AI assistant for EasyBizInvoice. I can help you create invoices, manage customers, track expenses, and generate reports. What would you like to do today?",
         {
           intent: 'greeting',
           suggestedActions: [

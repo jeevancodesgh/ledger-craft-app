@@ -73,7 +73,7 @@ const ModernSignup = () => {
       } else {
         toast({
           title: 'Account Created!',
-          description: 'Welcome to LedgerCraft! Let\'s set up your business profile.'
+          description: 'Welcome to EasyBizInvoice! Let\'s set up your business profile.'
         });
         // User is immediately authenticated, redirect to onboarding
         navigate('/onboarding', { replace: true });
@@ -92,7 +92,7 @@ const ModernSignup = () => {
   return (
     <ModernAuthLayout
       title="Create your account"
-      subtitle="Join thousands of professionals using LedgerCraft"
+      subtitle="Join thousands of professionals using EasyBizInvoice"
       showFeatures={true}
     >
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">

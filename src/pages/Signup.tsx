@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
@@ -53,7 +52,7 @@ const Signup = () => {
     <div className="min-h-screen flex items-center justify-center bg-secondary/20">
       <div className="w-full max-w-md p-8 space-y-6 bg-white rounded-xl shadow-md">
         <div className="text-center">
-          <h1 className="text-3xl font-bold text-primary mb-2">LedgerCraft</h1>
+          <h1 className="text-3xl font-bold text-primary mb-2">EasyBizInvoice</h1>
           <p className="text-muted-foreground">Create your account</p>
         </div>
         

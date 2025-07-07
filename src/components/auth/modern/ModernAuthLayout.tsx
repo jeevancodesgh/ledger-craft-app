@@ -34,7 +34,7 @@ const features = [
 
 const testimonials = [
   {
-    text: "LedgerCraft transformed how we handle invoicing. It's simply amazing!",
+    text: "EasyBizInvoice transformed how we handle invoicing. It's simply amazing!",
     author: "Sarah Chen",
     role: "Freelance Designer"
   },
@@ -70,11 +70,11 @@ export default function ModernAuthLayout({ children, title, subtitle, showFeatur
             <div className="mb-12">
               <div className="flex items-center mb-6">
                 <div className="w-12 h-12 bg-white rounded-xl flex items-center justify-center mr-4 shadow-lg">
-                  <img src="/logo.png" alt="LedgerCraft" className="w-10 h-10" />
+                  <img src="/logo.png" alt="EasyBizInvoice" className="w-10 h-10" />
                 </div>
                 <div>
                   <h1 className="text-3xl font-bold bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
-                    LedgerCraft
+                    EasyBizInvoice
                   </h1>
                   <p className="text-muted-foreground text-sm">Professional Business Solutions</p>
                 </div>
@@ -96,7 +96,7 @@ export default function ModernAuthLayout({ children, title, subtitle, showFeatur
             {/* Features */}
             {showFeatures && (
               <div className="mb-12 space-y-6">
-                  <h3 className="text-xl font-semibold text-foreground mb-4">Why choose LedgerCraft?</h3>
+                  <h3 className="text-xl font-semibold text-foreground mb-4">Why choose EasyBizInvoice?</h3>
                 <div className="grid grid-cols-1 gap-4">
                   {features.map((feature, index) => (
                       <div key={index} className="flex items-start space-x-3 group hover:transform hover:scale-105 transition-all duration-300">
@@ -142,10 +142,10 @@ export default function ModernAuthLayout({ children, title, subtitle, showFeatur
                 <div className="lg:hidden text-center mb-8">
                   <div className="inline-flex items-center mb-4">
                     <div className="w-10 h-10 bg-white rounded-xl flex items-center justify-center mr-3 shadow-lg">
-                      <img src="/logo.png" alt="LedgerCraft" className="w-8 h-8" />
+                      <img src="/logo.png" alt="EasyBizInvoice" className="w-8 h-8" />
                     </div>
                     <h1 className="text-2xl font-bold bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
-                      LedgerCraft
+                      EasyBizInvoice
                     </h1>
                   </div>
                 </div>

@@ -125,7 +125,7 @@ export class AIConversationService {
   }
 
   private buildAnalysisPrompt(context: ConversationContext): string {
-    return `You are a business assistant AI for Ledger Craft, an expense tracking and invoice management application.
+    return `You are a business assistant AI for EasyBizInvoice, an expense tracking and invoice management application.
 
 Your job is to analyze user messages and extract:
 1. Intent - what the user wants to do
@@ -522,7 +522,7 @@ Return your analysis as JSON:
 
       const { data, error } = await supabase
         .from('items')
-        .select('id, name, description, sale_price, unit, type')
+        .select('id, name, description, salePrice, unit, type')
         .eq('enable_sale_info', true)
         .limit(20);
 
@@ -766,7 +766,7 @@ Return your analysis as JSON:
       const items = await this.getAvailableItems();
       
       return {
-        message: `Great! I found ${customer.name}. Now let's add some items to the invoice. Here are some available items:\n\n${items.slice(0, 5).map((item, index) => `${index + 1}. ${item.name} - $${item.sale_price} ${item.description ? `(${item.description})` : ''}`).join('\n')}\n\nYou can select items by number or tell me specific items you'd like to add.`,
+        message: `Great! I found ${customer.name}. Now let's add some items to the invoice. Here are some available items:\n\n${items.slice(0, 5).map((item, index) => `${index + 1}. ${item.name} - $${item.salePrice} ${item.description ? `(${item.description})` : ''}`).join('\n')}\n\nYou can select items by number or tell me specific items you'd like to add.`,
         intent: 'create_invoice',
         entities: [{ type: 'customer', value: customer.name, confidence: 1.0 }],
         actions: [],
@@ -834,7 +834,7 @@ Return your analysis as JSON:
     const items = await this.getAvailableItems();
     
     return {
-      message: `Perfect! I've selected ${customer.name}. Now let's add items to the invoice. Here are some available items:\n\n${items.slice(0, 5).map((item, index) => `${index + 1}. ${item.name} - $${item.sale_price} ${item.description ? `(${item.description})` : ''}`).join('\n')}\n\nYou can select items by number, or say "create invoice" when you're ready to finish.`,
+      message: `Perfect! I've selected ${customer.name}. Now let's add items to the invoice. Here are some available items:\n\n${items.slice(0, 5).map((item, index) => `${index + 1}. ${item.name} - $${item.salePrice} ${item.description ? `(${item.description})` : ''}`).join('\n')}\n\nYou can select items by number, or say "create invoice" when you're ready to finish.`,
       intent: 'create_invoice',
       entities: [{ type: 'customer', value: customer.name, confidence: 1.0 }],
       actions: [],
@@ -897,7 +897,7 @@ Return your analysis as JSON:
             selectedItems.push({
               ...item,
               quantity: 1,
-              rate: item.sale_price
+              rate: item.salePrice
             });
           }
         }
@@ -943,8 +943,8 @@ Return your analysis as JSON:
       line_items: currentCreation.selectedItems.map(item => ({
         description: item.name,
         quantity: item.quantity || 1,
-        rate: item.rate || item.sale_price,
-        total: (item.quantity || 1) * (item.rate || item.sale_price)
+        rate: item.rate || item.salePrice,
+        total: (item.quantity || 1) * (item.rate || item.salePrice)
       })),
       due_date: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0] // 30 days from now
     };

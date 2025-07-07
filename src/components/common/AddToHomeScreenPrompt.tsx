@@ -86,7 +86,7 @@ const AddToHomeScreenPrompt: React.FC = () => {
           <Card>
             <AppIcon />
             <div className="flex-1">
-              <div className="font-semibold text-base">Install Ledger Craft</div>
+              <div className="font-semibold text-base">Install EasyBizInvoice</div>
               <div className="text-xs text-white/90 mt-0.5">Add this app to your home screen for a better experience.</div>
             </div>
             <button
@@ -108,7 +108,7 @@ const AddToHomeScreenPrompt: React.FC = () => {
           <Card>
             <AppIcon />
             <div className="flex-1">
-              <div className="font-semibold text-base">Install Ledger Craft</div>
+              <div className="font-semibold text-base">Install EasyBizInvoice</div>
               <div className="text-xs text-white/90 mt-0.5">To install, tap <span className="font-bold">Share</span> then <span className="font-bold">Add to Home Screen</span>.</div>
             </div>
           </Card>

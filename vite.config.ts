@@ -17,9 +17,9 @@ export default defineConfig(({ mode }) => ({
     VitePWA({
       registerType: 'autoUpdate',
       manifest: {
-        name: 'Ledger Craft',
-        short_name: 'LedgerCraft',
-        description: 'A modern ledger and invoicing app',
+        name: 'EasyBizInvoice',
+        short_name: 'EasyBizInvoice',
+        description: 'EasyBizInvoice: Effortless invoicing and business management for modern entrepreneurs. Visit easybizinvoice.com',
         theme_color: '#2563eb',
         background_color: '#ffffff',
         display: 'standalone',

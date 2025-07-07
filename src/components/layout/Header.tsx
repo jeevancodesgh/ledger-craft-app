@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Bell, Menu, Search, LogOut, UserPlus, Download, Plus } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
@@ -68,8 +67,8 @@ export function Header({ toggleSidebar, isMobile }: HeaderProps) {
             <h1 className="text-lg font-medium">Invoice</h1>
           ) : (
             <div className="flex items-center">
-              <img src="/logo.png" alt="LedgerCraft" className="w-6 h-6 mr-2" />
-              <span className="text-lg font-medium">LedgerCraft</span>
+              <img src="/logo.png" alt="EasyBizInvoice" className="w-6 h-6 mr-2" />
+              <span className="text-lg font-medium">EasyBizInvoice</span>
             </div>
           )}
         </div>
