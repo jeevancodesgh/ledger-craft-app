@@ -8,6 +8,9 @@ import { Calendar, DollarSign, Users, TrendingUp, TrendingDown, Clock, Plus, Edi
 import { Button } from '@/components/ui/button';
 import { Link } from 'react-router-dom';
 import { useIsMobile } from '@/hooks/use-mobile';
+import MobileBalanceCard from '@/components/mobile/MobileBalanceCard';
+import MobileQuickActions from '@/components/mobile/MobileQuickActions';
+import MobileChartCard from '@/components/mobile/MobileChartCard';
 
 const Dashboard = () => {
   const { 
@@ -301,14 +304,205 @@ const Dashboard = () => {
   return (
     <div className="space-y-6">
       {isMobile ? (
-        <div className="space-y-4">
-          <h1 className="text-2xl font-bold">Dashboard</h1>
-          <Button className="w-full bg-invoice-teal hover:bg-invoice-teal/90 py-6 text-base flex items-center justify-center gap-2" asChild>
-            <Link to="/invoices/new">
-              <Plus size={20} />
-              Create Invoice
-            </Link>
-          </Button>
+        <div className="space-y-6">
+          <div className="flex items-center justify-between">
+            <h1 className="text-2xl font-bold">Dashboard</h1>
+            <div className="text-sm text-muted-foreground">
+              {new Date().toLocaleDateString('en-US', { 
+                weekday: 'short', 
+                month: 'short', 
+                day: 'numeric' 
+              })}
+            </div>
+          </div>
+
+          {/* Mobile Balance Overview */}
+          <div className="space-y-4">
+            <MobileBalanceCard
+              title="Net Income"
+              amount={netIncome}
+              subtitle={`Revenue: ${formatCurrency(totalEarnings)} | Expenses: ${formatCurrency(totalExpenses)}`}
+              variant={netIncome >= 0 ? 'success' : 'danger'}
+              icon={<DollarSign className="h-5 w-5" />}
+              trend={{
+                value: profitMargin,
+                isPositive: profitMargin > 0
+              }}
+            />
+            
+            <div className="grid grid-cols-2 gap-3">
+              <Card className="gradient-overlay-blue mobile-card-hover">
+                <CardContent className="p-4">
+                  <div className="flex items-center justify-between mb-2">
+                    <h3 className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
+                      Profit Margin
+                    </h3>
+                    <Target className="h-4 w-4 text-muted-foreground" />
+                  </div>
+                  <div className={`text-2xl font-bold ${getHealthColor(profitMargin)}`}>
+                    {profitMargin.toFixed(1)}%
+                  </div>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    {profitMargin >= 10 ? 'Healthy' : profitMargin >= 5 ? 'Fair' : 'Needs Attention'}
+                  </p>
+                </CardContent>
+              </Card>
+              
+              <MobileBalanceCard
+                title="Monthly Burn"
+                amount={burnRate}
+                subtitle="Current month"
+                variant="warning"
+                icon={<CreditCard className="h-4 w-4" />}
+              />
+            </div>
+          </div>
+
+          {/* Mobile Quick Actions */}
+          <div className="space-y-3">
+            <h2 className="text-lg font-semibold">Quick Actions</h2>
+            <MobileQuickActions layout="grid" />
+          </div>
+
+          {/* Mobile Charts */}
+          <MobileChartCard
+            charts={[
+              {
+                id: 'cash-flow',
+                title: 'Cash Flow',
+                description: 'Monthly revenue vs expenses',
+                content: (
+                  <div className="h-[280px]">
+                    {cashFlowData.length > 0 ? (
+                      <ResponsiveContainer width="100%" height="100%">
+                        <ComposedChart
+                          data={cashFlowData}
+                          margin={{ top: 20, right: 30, left: 20, bottom: 5 }}
+                        >
+                          <CartesianGrid strokeDasharray="3 3" />
+                          <XAxis dataKey="name" />
+                          <YAxis tickFormatter={(value) => formatCurrency(value)} />
+                          <Tooltip content={<CashFlowTooltip />} />
+                          <Bar dataKey="revenue" fill="#10B981" name="Revenue" />
+                          <Bar dataKey="expenses" fill="#EF4444" name="Expenses" />
+                          <Line dataKey="netIncome" stroke="#3B82F6" strokeWidth={3} name="Net Income" type="monotone" />
+                        </ComposedChart>
+                      </ResponsiveContainer>
+                    ) : (
+                      <div className="flex items-center justify-center h-full">
+                        <p className="text-muted-foreground">No financial data available</p>
+                      </div>
+                    )}
+                  </div>
+                )
+              },
+              {
+                id: 'expenses',
+                title: 'Expense Categories',
+                description: 'Top spending categories',
+                content: (
+                  <div className="h-[280px]">
+                    {expenseCategoryData.length > 0 ? (
+                      <ResponsiveContainer width="100%" height="100%">
+                        <PieChart>
+                          <Pie
+                            data={expenseCategoryData}
+                            cx="50%"
+                            cy="50%"
+                            outerRadius={80}
+                            fill="#8884d8"
+                            dataKey="amount"
+                            nameKey="name"
+                            label={({name, percent}) => `${name}: ${(percent * 100).toFixed(0)}%`}
+                          >
+                            {expenseCategoryData.map((entry, index) => (
+                              <Cell key={`cell-${index}`} fill={entry.color} />
+                            ))}
+                          </Pie>
+                          <Tooltip formatter={(value) => formatCurrency(value as number)} />
+                        </PieChart>
+                      </ResponsiveContainer>
+                    ) : (
+                      <div className="flex items-center justify-center h-full">
+                        <p className="text-muted-foreground">No expense data available</p>
+                      </div>
+                    )}
+                  </div>
+                )
+              },
+              {
+                id: 'invoice-status',
+                title: 'Invoice Status',
+                description: 'Current invoice distribution',
+                content: (
+                  <div className="h-[280px]">
+                    {totalStatusInvoices ? (
+                      <ResponsiveContainer width="100%" height="100%">
+                        <PieChart>
+                          <Pie
+                            data={invoiceStatusData}
+                            cx="50%"
+                            cy="50%"
+                            labelLine={false}
+                            outerRadius={80}
+                            fill="#8884d8"
+                            dataKey="value"
+                            nameKey="name"
+                            label={({name, percent}) => `${name}: ${(percent * 100).toFixed(0)}%`}
+                          >
+                            {invoiceStatusData.map((entry, index) => (
+                              <Cell key={`cell-${index}`} fill={entry.color} />
+                            ))}
+                          </Pie>
+                          <Tooltip />
+                        </PieChart>
+                      </ResponsiveContainer>
+                    ) : (
+                      <div className="flex items-center justify-center h-full">
+                        <p className="text-muted-foreground">No invoice data available</p>
+                      </div>
+                    )}
+                  </div>
+                )
+              }
+            ]}
+          />
+
+          {/* Mobile Recent Activity */}
+          <div className="space-y-4">
+            <h2 className="text-lg font-semibold">Recent Activity</h2>
+            
+            {recentInvoices.length > 0 && (
+              <Card className="mobile-card-hover">
+                <CardHeader className="pb-3">
+                  <CardTitle className="text-base">Recent Invoices</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-3">
+                  {recentInvoices.slice(0, 3).map(invoice => (
+                    <div key={invoice.id} className="flex items-center justify-between p-3 bg-muted/50 rounded-lg">
+                      <div className="flex-1 min-w-0">
+                        <p className="font-medium truncate">{invoice.invoiceNumber}</p>
+                        <p className="text-sm text-muted-foreground truncate">{invoice.customer?.name || invoice.customerId}</p>
+                      </div>
+                      <div className="flex flex-col items-end gap-1">
+                        <p className="font-medium text-sm">{formatCurrency(invoice.total)}</p>
+                        <span className={`text-xs px-2 py-1 rounded-full ${
+                          invoice.status === 'paid' ? 'bg-green-100 text-green-800' :
+                          invoice.status === 'sent' ? 'bg-amber-100 text-amber-800' :
+                          'bg-red-100 text-red-800'
+                        }`}>
+                          {invoice.status.charAt(0).toUpperCase() + invoice.status.slice(1)}
+                        </span>
+                      </div>
+                    </div>
+                  ))}
+                  <Button variant="outline" className="w-full" asChild>
+                    <Link to="/invoices">View All Invoices</Link>
+                  </Button>
+                </CardContent>
+              </Card>
+            )}
+          </div>
         </div>
       ) : (
         <div className="flex justify-between items-center mt-4">

@@ -1,11 +1,19 @@
 import React from 'react';
-import { Bell, Menu, Search, LogOut, UserPlus, Download, Plus } from 'lucide-react';
+import { Bell, Menu, Search, LogOut, UserPlus, Download, Plus, User, Settings, ChevronDown } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { ThemeToggle } from '@/components/ui/theme-toggle';
+import { 
+  DropdownMenu, 
+  DropdownMenuContent, 
+  DropdownMenuItem, 
+  DropdownMenuSeparator, 
+  DropdownMenuTrigger,
+  DropdownMenuLabel 
+} from '@/components/ui/dropdown-menu';
 
 interface HeaderProps {
   toggleSidebar: () => void;
@@ -77,22 +85,57 @@ export function Header({ toggleSidebar, isMobile }: HeaderProps) {
       <div className="flex items-center justify-end space-x-2">
         <ThemeToggle />
         
-        <button className="p-2 rounded-md text-muted-foreground hover:bg-secondary transition-colors relative">
+        <button 
+          className="p-2 rounded-md text-muted-foreground hover:bg-secondary transition-colors relative"
+          title="Notifications"
+        >
           <Bell className="h-5 w-5" />
           <span className="absolute top-1 right-1 w-2 h-2 bg-invoice-coral rounded-full"></span>
         </button>
         
         {user && (
-          <div className="flex items-center gap-2">
-            {!isMobile && (
-              <span className="text-sm hidden md:block">
-                {user.email}
-              </span>
-            )}
-            <Button variant="ghost" size="icon" onClick={handleSignOut} title="Sign Out">
-              <LogOut className="h-5 w-5" />
-            </Button>
-          </div>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="ghost" className="flex items-center gap-2 h-10 px-3">
+                <div className="w-8 h-8 rounded-full bg-gradient-to-br from-invoice-teal to-blue-500 text-white flex items-center justify-center text-sm font-medium">
+                  {user?.email ? user.email.charAt(0).toUpperCase() : <User className="h-4 w-4" />}
+                </div>
+                {!isMobile && (
+                  <>
+                    <span className="text-sm hidden md:block truncate max-w-[120px]">
+                      {user?.user_metadata?.full_name || user?.email?.split('@')[0] || 'User'}
+                    </span>
+                    <ChevronDown className="h-4 w-4 text-muted-foreground" />
+                  </>
+                )}
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-56">
+              <DropdownMenuLabel className="font-normal">
+                <div className="flex flex-col space-y-1">
+                  <p className="text-sm font-medium leading-none">
+                    {user?.user_metadata?.full_name || 'User'}
+                  </p>
+                  <p className="text-xs leading-none text-muted-foreground">
+                    {user?.email}
+                  </p>
+                </div>
+              </DropdownMenuLabel>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem onClick={() => navigate('/settings')}>
+                <Settings className="mr-2 h-4 w-4" />
+                <span>Settings</span>
+              </DropdownMenuItem>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem 
+                onClick={handleSignOut}
+                className="text-red-600 focus:text-red-600 focus:bg-red-50"
+              >
+                <LogOut className="mr-2 h-4 w-4" />
+                <span>Sign out</span>
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
         )}
       </div>
     </header>

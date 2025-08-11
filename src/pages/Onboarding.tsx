@@ -126,7 +126,11 @@ export default function Onboarding() {
         title: 'Welcome to EasyBizInvoice!',
         description: 'Your business profile has been set up successfully.'
       });
-      navigate('/');
+      
+      // Small delay to ensure state is updated before navigation
+      setTimeout(() => {
+        navigate('/');
+      }, 100);
     } catch (error) {
       console.error('Error completing onboarding:', error);
       toast({

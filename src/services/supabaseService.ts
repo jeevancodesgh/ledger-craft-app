@@ -1121,10 +1121,11 @@ export const businessProfileService = {
   async getBusinessProfile(): Promise<BusinessProfile | null> {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user?.id) {
-      console.error('No authenticated user found');
+      console.error('No authenticated user found when checking business profile');
       return null;
     }
     
+    console.log('Fetching business profile for user:', user.id);
     const { data, error } = await supabase
       .from('business_profiles')
       .select('*')
@@ -1137,6 +1138,7 @@ export const businessProfileService = {
       throw error;
     }
     
+    console.log('Business profile query result:', data ? 'Profile found' : 'No profile found');
     return data ? mapSupabaseBusinessProfileToBusinessProfile(data as SupabaseBusinessProfile) : null;
   },
 

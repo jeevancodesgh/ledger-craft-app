@@ -21,18 +21,25 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { Switch } from "@/components/ui/switch";
 import { formatDate } from '@/utils/invoiceUtils';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useForm } from 'react-hook-form';
 import * as z from 'zod';
-import { Expense, ExpenseStatus, PaymentMethod } from '@/types';
+import { Expense, PaymentMethod } from '@/types';
 import { DrawerFormLayout } from '@/components/ui/DrawerFormLayout';
 import { useAppContext } from '@/context/AppContext';
-import { CalendarIcon, Sparkles } from 'lucide-react';
-import { Calendar } from '@/components/ui/calendar';
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { format } from 'date-fns';
+import { 
+  Sparkles, 
+  FileText, 
+  DollarSign, 
+  CreditCard, 
+  Receipt, 
+  ChevronDown, 
+  ChevronUp,
+  Tag,
+  Building,
+  User
+} from 'lucide-react';
 import { cn } from '@/lib/utils';
 import ReceiptUpload from './ReceiptUpload';
 import { ReceiptScanResult } from '@/types/receipt';
@@ -70,8 +77,11 @@ const ExpenseFormDrawer: React.FC<ExpenseFormDrawerProps> = ({
   onSubmit,
 }) => {
   const { expenseCategories, accounts, customers } = useAppContext();
-  const [receiptFile, setReceiptFile] = useState<File | null>(null);
+  const [, setReceiptFile] = useState<File | null>(null);
   const [receiptUrl, setReceiptUrl] = useState<string | null>(initialValues?.receiptUrl || null);
+  const [showPaymentDetails, setShowPaymentDetails] = useState(false);
+  const [showTaxDetails, setShowTaxDetails] = useState(false);
+  const [showBillingDetails, setShowBillingDetails] = useState(false);
 
   const form = useForm<ExpenseFormValues>({
     resolver: zodResolver(expenseFormSchema),
@@ -95,6 +105,10 @@ const ExpenseFormDrawer: React.FC<ExpenseFormDrawerProps> = ({
 
   useEffect(() => {
     if (initialValues) {
+      const hasPaymentMethod = initialValues.paymentMethod !== undefined;
+      const hasTaxAmount = initialValues.taxAmount !== undefined && initialValues.taxAmount > 0;
+      const isBillable = initialValues.isBillable || false;
+      
       form.reset({
         description: initialValues.description || '',
         amount: initialValues.amount || 0,
@@ -104,7 +118,7 @@ const ExpenseFormDrawer: React.FC<ExpenseFormDrawerProps> = ({
         receiptUrl: initialValues.receiptUrl || '',
         expenseDate: initialValues.expenseDate || formatDate(new Date()),
         status: initialValues.status || 'pending',
-        isBillable: initialValues.isBillable || false,
+        isBillable: isBillable,
         customerId: initialValues.customerId || 'no-customer',
         taxAmount: initialValues.taxAmount || 0,
         currency: initialValues.currency || 'USD',
@@ -113,6 +127,9 @@ const ExpenseFormDrawer: React.FC<ExpenseFormDrawerProps> = ({
       });
       setReceiptUrl(initialValues.receiptUrl || null);
       setReceiptFile(null);
+      setShowPaymentDetails(hasPaymentMethod);
+      setShowTaxDetails(hasTaxAmount);
+      setShowBillingDetails(isBillable);
     } else {
       form.reset({
         description: '',
@@ -132,6 +149,9 @@ const ExpenseFormDrawer: React.FC<ExpenseFormDrawerProps> = ({
       });
       setReceiptUrl(null);
       setReceiptFile(null);
+      setShowPaymentDetails(false);
+      setShowTaxDetails(false);
+      setShowBillingDetails(false);
     }
   }, [initialValues, form]);
 
@@ -167,6 +187,9 @@ const ExpenseFormDrawer: React.FC<ExpenseFormDrawerProps> = ({
       });
       setReceiptUrl(null);
       setReceiptFile(null);
+      setShowPaymentDetails(false);
+      setShowTaxDetails(false);
+      setShowBillingDetails(false);
     }
   }, [open, form]);
 
@@ -239,15 +262,7 @@ const ExpenseFormDrawer: React.FC<ExpenseFormDrawerProps> = ({
           description={
             initialValues 
               ? 'Update the expense details below.' 
-              : (
-                <div className="space-y-1">
-                  <div>Fill in the expense details below to create a new expense.</div>
-                  <div className="flex items-center text-xs text-purple-600 font-medium">
-                    <Sparkles className="h-3 w-3 mr-1" />
-                    Try the new AI Receipt Scanner in the Receipt section! ✨
-                  </div>
-                </div>
-              )
+              : 'Fill in the expense details below to create a new expense.'
           }
           footer={
             <>
@@ -261,233 +276,157 @@ const ExpenseFormDrawer: React.FC<ExpenseFormDrawerProps> = ({
           }
         >
           <Form {...form}>
-            <form id="expense-form" onSubmit={form.handleSubmit(handleSubmit)} className="space-y-4">
-              <FormField
-                control={form.control}
-                name="description"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Description *</FormLabel>
-                    <FormControl>
-                      <Input {...field} placeholder="Enter expense description" />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              <FormField
-                control={form.control}
-                name="amount"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Amount *</FormLabel>
-                    <FormControl>
-                      <Input 
-                        type="number" 
-                        step="0.01" 
-                        {...field} 
-                        onChange={(e) => field.onChange(parseFloat(e.target.value) || 0)}
-                        placeholder="0.00"
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              <FormField
-                control={form.control}
-                name="expenseDate"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Expense Date *</FormLabel>
-                    <FormControl>
-                      <Input type="date" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              <FormField
-                control={form.control}
-                name="categoryId"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Category</FormLabel>
-                    <Select onValueChange={field.onChange} value={field.value}>
-                      <FormControl>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Select a category" />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        <SelectItem value="no-category">No category</SelectItem>
-                        {expenseCategories.map((category) => (
-                          <SelectItem key={category.id} value={category.id}>
-                            <div className="flex items-center gap-2">
-                              {category.color && (
-                                <div 
-                                  className="w-3 h-3 rounded-full" 
-                                  style={{ backgroundColor: category.color }}
-                                />
-                              )}
-                              {category.name}
-                            </div>
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              <FormField
-                control={form.control}
-                name="accountId"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Account</FormLabel>
-                    <Select onValueChange={field.onChange} value={field.value}>
-                      <FormControl>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Select an account" />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        <SelectItem value="no-account">No account</SelectItem>
-                        {accounts.map((account) => (
-                          <SelectItem key={account.id} value={account.id}>
-                            {account.name} ({account.type})
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              <FormField
-                control={form.control}
-                name="vendorName"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Vendor/Merchant</FormLabel>
-                    <FormControl>
-                      <Input {...field} placeholder="Enter vendor name" />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              <FormField
-                control={form.control}
-                name="paymentMethod"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Payment Method</FormLabel>
-                    <Select onValueChange={field.onChange} value={field.value}>
-                      <FormControl>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Select payment method" />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        <SelectItem value="cash">Cash</SelectItem>
-                        <SelectItem value="card">Card</SelectItem>
-                        <SelectItem value="bank_transfer">Bank Transfer</SelectItem>
-                        <SelectItem value="check">Check</SelectItem>
-                        <SelectItem value="other">Other</SelectItem>
-                      </SelectContent>
-                    </Select>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              <FormField
-                control={form.control}
-                name="status"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Status</FormLabel>
-                    <Select onValueChange={field.onChange} value={field.value}>
-                      <FormControl>
-                        <SelectTrigger>
-                          <SelectValue />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        <SelectItem value="pending">Pending</SelectItem>
-                        <SelectItem value="approved">Approved</SelectItem>
-                        <SelectItem value="rejected">Rejected</SelectItem>
-                      </SelectContent>
-                    </Select>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              <FormField
-                control={form.control}
-                name="taxAmount"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Tax Amount</FormLabel>
-                    <FormControl>
-                      <Input 
-                        type="number" 
-                        step="0.01" 
-                        {...field} 
-                        onChange={(e) => field.onChange(parseFloat(e.target.value) || 0)}
-                        placeholder="0.00"
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              <FormField
-                control={form.control}
-                name="isBillable"
-                render={({ field }) => (
-                  <FormItem className="flex flex-row items-center justify-between rounded-lg border p-3 shadow-sm">
-                    <div className="space-y-0.5">
-                      <FormLabel>Billable to Customer</FormLabel>
-                    </div>
-                    <FormControl>
-                      <Switch
-                        checked={field.value}
-                        onCheckedChange={field.onChange}
-                      />
-                    </FormControl>
-                  </FormItem>
-                )}
-              />
-
-              {form.watch('isBillable') && (
+            <form id="expense-form" onSubmit={form.handleSubmit(handleSubmit)} className="space-y-6">
+              
+              {/* Basic Expense Information Section */}
+              <div className="space-y-4">
+                <div className="flex items-center gap-2 mb-4">
+                  <FileText className="h-4 w-4 text-primary" />
+                  <h3 className="text-sm font-medium text-foreground">Basic Information</h3>
+                </div>
+                
                 <FormField
                   control={form.control}
-                  name="customerId"
+                  name="description"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Customer</FormLabel>
+                      <FormLabel className="text-sm font-medium">Description *</FormLabel>
+                      <FormControl>
+                        <Input 
+                          {...field} 
+                          placeholder="What was this expense for?"
+                          className="h-11"
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <div className="grid grid-cols-2 gap-4">
+                  <FormField
+                    control={form.control}
+                    name="amount"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel className="text-sm font-medium flex items-center gap-1">
+                          <DollarSign className="h-3 w-3" />
+                          Amount *
+                        </FormLabel>
+                        <FormControl>
+                          <div className="relative">
+                            <DollarSign className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                            <Input 
+                              type="number" 
+                              step="0.01" 
+                              {...field} 
+                              onChange={(e) => field.onChange(parseFloat(e.target.value) || 0)}
+                              placeholder="0.00"
+                              className="h-11 pl-10"
+                            />
+                          </div>
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={form.control}
+                    name="expenseDate"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel className="text-sm font-medium">Date *</FormLabel>
+                        <FormControl>
+                          <Input 
+                            type="date" 
+                            {...field}
+                            className="h-11"
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
+
+                <div className="grid grid-cols-1 gap-4">
+                  <FormField
+                    control={form.control}
+                    name="categoryId"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel className="text-sm font-medium flex items-center gap-1">
+                          <Tag className="h-3 w-3" />
+                          Category
+                        </FormLabel>
+                        <Select onValueChange={field.onChange} value={field.value}>
+                          <FormControl>
+                            <SelectTrigger className="h-11">
+                              <SelectValue placeholder="Select a category" />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            <SelectItem value="no-category">No category</SelectItem>
+                            {expenseCategories.map((category) => (
+                              <SelectItem key={category.id} value={category.id}>
+                                <div className="flex items-center gap-2">
+                                  {category.color && (
+                                    <div 
+                                      className="w-3 h-3 rounded-full" 
+                                      style={{ backgroundColor: category.color } as React.CSSProperties}
+                                    />
+                                  )}
+                                  {category.name}
+                                </div>
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={form.control}
+                    name="vendorName"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel className="text-sm font-medium flex items-center gap-1">
+                          <Building className="h-3 w-3" />
+                          Vendor/Merchant
+                        </FormLabel>
+                        <FormControl>
+                          <Input 
+                            {...field} 
+                            placeholder="Where did you make this purchase?"
+                            className="h-11"
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
+
+                <FormField
+                  control={form.control}
+                  name="accountId"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel className="text-sm font-medium">Account</FormLabel>
                       <Select onValueChange={field.onChange} value={field.value}>
                         <FormControl>
-                          <SelectTrigger>
-                            <SelectValue placeholder="Select a customer" />
+                          <SelectTrigger className="h-11">
+                            <SelectValue placeholder="Select an account" />
                           </SelectTrigger>
                         </FormControl>
                         <SelectContent>
-                          <SelectItem value="no-customer">No customer</SelectItem>
-                          {customers.map((customer) => (
-                            <SelectItem key={customer.id} value={customer.id}>
-                              {customer.name}
+                          <SelectItem value="no-account">No account</SelectItem>
+                          {accounts.map((account) => (
+                            <SelectItem key={account.id} value={account.id}>
+                              {account.name} ({account.type})
                             </SelectItem>
                           ))}
                         </SelectContent>
@@ -496,28 +435,227 @@ const ExpenseFormDrawer: React.FC<ExpenseFormDrawerProps> = ({
                     </FormItem>
                   )}
                 />
-              )}
+              </div>
 
-              <ReceiptUpload
-                onReceiptChange={handleReceiptChange}
-                onScanComplete={handleScanComplete}
-                initialReceiptUrl={receiptUrl}
-                disabled={false}
-              />
+              {/* Receipt Section */}
+              <div className="space-y-4">
+                <div className="flex items-center gap-2 mb-4">
+                  <Receipt className="h-4 w-4 text-primary" />
+                  <h3 className="text-sm font-medium text-foreground">Receipt & Documents</h3>
+                  <div className="flex items-center text-xs text-purple-600 font-medium">
+                    <Sparkles className="h-3 w-3 mr-1" />
+                    AI Scanner Available!
+                  </div>
+                </div>
+                
+                <ReceiptUpload
+                  onReceiptChange={handleReceiptChange}
+                  onScanComplete={handleScanComplete}
+                  initialReceiptUrl={receiptUrl}
+                  disabled={false}
+                />
+              </div>
 
-              <FormField
-                control={form.control}
-                name="notes"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Notes</FormLabel>
-                    <FormControl>
-                      <Textarea {...field} placeholder="Enter any additional notes" />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
+              {/* Payment Details Section - Collapsible */}
+              <div className="space-y-4">
+                <button
+                  type="button"
+                  onClick={() => setShowPaymentDetails(!showPaymentDetails)}
+                  className="flex items-center justify-between w-full p-3 bg-muted/50 rounded-lg hover:bg-muted transition-colors"
+                >
+                  <div className="flex items-center gap-2">
+                    <CreditCard className="h-4 w-4 text-primary" />
+                    <span className="text-sm font-medium">Payment Details</span>
+                    <span className="text-xs text-muted-foreground">(Optional)</span>
+                  </div>
+                  {showPaymentDetails ? (
+                    <ChevronUp className="h-4 w-4 text-muted-foreground" />
+                  ) : (
+                    <ChevronDown className="h-4 w-4 text-muted-foreground" />
+                  )}
+                </button>
+                
+                <div className={cn(
+                  "space-y-4 overflow-hidden transition-all duration-300 ease-in-out",
+                  showPaymentDetails ? "max-h-[300px] opacity-100" : "max-h-0 opacity-0"
+                )}>
+                  <div className="grid grid-cols-2 gap-4">
+                    <FormField
+                      control={form.control}
+                      name="paymentMethod"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel className="text-sm font-medium">Payment Method</FormLabel>
+                          <Select onValueChange={field.onChange} value={field.value}>
+                            <FormControl>
+                              <SelectTrigger className="h-11">
+                                <SelectValue placeholder="How was this paid?" />
+                              </SelectTrigger>
+                            </FormControl>
+                            <SelectContent>
+                              <SelectItem value="cash">Cash</SelectItem>
+                              <SelectItem value="card">Card</SelectItem>
+                              <SelectItem value="bank_transfer">Bank Transfer</SelectItem>
+                              <SelectItem value="check">Check</SelectItem>
+                              <SelectItem value="other">Other</SelectItem>
+                            </SelectContent>
+                          </Select>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+
+                    <FormField
+                      control={form.control}
+                      name="status"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel className="text-sm font-medium">Status</FormLabel>
+                          <Select onValueChange={field.onChange} value={field.value}>
+                            <FormControl>
+                              <SelectTrigger className="h-11">
+                                <SelectValue />
+                              </SelectTrigger>
+                            </FormControl>
+                            <SelectContent>
+                              <SelectItem value="pending">Pending</SelectItem>
+                              <SelectItem value="approved">Approved</SelectItem>
+                              <SelectItem value="rejected">Rejected</SelectItem>
+                            </SelectContent>
+                          </Select>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* Tax Details Section - Collapsible */}
+              <div className="space-y-4">
+                <button
+                  type="button"
+                  onClick={() => setShowTaxDetails(!showTaxDetails)}
+                  className="flex items-center justify-between w-full p-3 bg-muted/50 rounded-lg hover:bg-muted transition-colors"
+                >
+                  <div className="flex items-center gap-2">
+                    <DollarSign className="h-4 w-4 text-primary" />
+                    <span className="text-sm font-medium">Tax Information</span>
+                    <span className="text-xs text-muted-foreground">(Optional)</span>
+                  </div>
+                  {showTaxDetails ? (
+                    <ChevronUp className="h-4 w-4 text-muted-foreground" />
+                  ) : (
+                    <ChevronDown className="h-4 w-4 text-muted-foreground" />
+                  )}
+                </button>
+                
+                <div className={cn(
+                  "space-y-4 overflow-hidden transition-all duration-300 ease-in-out",
+                  showTaxDetails ? "max-h-[200px] opacity-100" : "max-h-0 opacity-0"
+                )}>
+                  <FormField
+                    control={form.control}
+                    name="taxAmount"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel className="text-sm font-medium">Tax Amount (GST/VAT)</FormLabel>
+                        <FormControl>
+                          <div className="relative">
+                            <DollarSign className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                            <Input 
+                              type="number" 
+                              step="0.01" 
+                              {...field} 
+                              onChange={(e) => field.onChange(parseFloat(e.target.value) || 0)}
+                              placeholder="0.00"
+                              className="h-11 pl-10"
+                            />
+                          </div>
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
+              </div>
+
+              {/* Billing Details Section - Collapsible */}
+              <div className="space-y-4">
+                <button
+                  type="button"
+                  onClick={() => {
+                    const newValue = !showBillingDetails;
+                    setShowBillingDetails(newValue);
+                    form.setValue('isBillable', newValue);
+                  }}
+                  className="flex items-center justify-between w-full p-3 bg-muted/50 rounded-lg hover:bg-muted transition-colors"
+                >
+                  <div className="flex items-center gap-2">
+                    <User className="h-4 w-4 text-primary" />
+                    <span className="text-sm font-medium">Client Billing</span>
+                    <span className="text-xs text-muted-foreground">(Bill to customer)</span>
+                  </div>
+                  {showBillingDetails ? (
+                    <ChevronUp className="h-4 w-4 text-muted-foreground" />
+                  ) : (
+                    <ChevronDown className="h-4 w-4 text-muted-foreground" />
+                  )}
+                </button>
+                
+                <div className={cn(
+                  "space-y-4 overflow-hidden transition-all duration-300 ease-in-out",
+                  showBillingDetails ? "max-h-[200px] opacity-100" : "max-h-0 opacity-0"
+                )}>
+                  <FormField
+                    control={form.control}
+                    name="customerId"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel className="text-sm font-medium">Customer *</FormLabel>
+                        <Select onValueChange={field.onChange} value={field.value}>
+                          <FormControl>
+                            <SelectTrigger className="h-11">
+                              <SelectValue placeholder="Select a customer to bill" />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            <SelectItem value="no-customer">No customer</SelectItem>
+                            {customers.map((customer) => (
+                              <SelectItem key={customer.id} value={customer.id}>
+                                {customer.name}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
+              </div>
+
+              {/* Notes Section */}
+              <div className="space-y-4">
+                <FormField
+                  control={form.control}
+                  name="notes"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel className="text-sm font-medium">Additional Notes</FormLabel>
+                      <FormControl>
+                        <Textarea 
+                          {...field} 
+                          placeholder="Any additional information about this expense..."
+                          className="resize-none"
+                          rows={3}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
             </form>
           </Form>
         </DrawerFormLayout>

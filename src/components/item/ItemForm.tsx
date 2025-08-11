@@ -15,7 +15,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Plus } from 'lucide-react';
+import { Plus, Package, ShoppingCart, DollarSign, ChevronDown, ChevronUp, Tag, FileText } from 'lucide-react';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -28,6 +28,7 @@ import {
   FormLabel,
   FormMessage,
 } from '@/components/ui/form';
+import { cn } from '@/lib/utils';
 
 interface ItemFormProps {
   initialData?: Item | null;
@@ -57,6 +58,8 @@ export function ItemForm({ initialData, onSubmit, isLoading = false, categories,
   const { toast } = useToast();
   const [newCategoryName, setNewCategoryName] = useState("");
   const [isAddingCategory, setIsAddingCategory] = useState(false);
+  const [showSaleInfo, setShowSaleInfo] = useState(false);
+  const [showPurchaseInfo, setShowPurchaseInfo] = useState(false);
   const formRef = useRef<HTMLFormElement>(null);
   const activeInputRef = useRef<HTMLInputElement | null>(null);
 
@@ -79,6 +82,9 @@ export function ItemForm({ initialData, onSubmit, isLoading = false, categories,
   // Reset form with initial data when it changes
   useEffect(() => {
     if (initialData) {
+      const saleInfoEnabled = initialData?.enableSaleInfo ?? true;
+      const purchaseInfoEnabled = initialData?.enablePurchaseInfo ?? false;
+      
       form.reset({
         name: initialData?.name || '',
         description: initialData?.description || null,
@@ -87,10 +93,13 @@ export function ItemForm({ initialData, onSubmit, isLoading = false, categories,
         salePrice: initialData?.salePrice || null,
         purchasePrice: initialData?.purchasePrice || null,
         taxRate: initialData?.taxRate || null,
-        enableSaleInfo: initialData?.enableSaleInfo ?? true,
-        enablePurchaseInfo: initialData?.enablePurchaseInfo ?? false,
+        enableSaleInfo: saleInfoEnabled,
+        enablePurchaseInfo: purchaseInfoEnabled,
         unit: initialData?.unit || 'each',
       });
+      
+      setShowSaleInfo(saleInfoEnabled);
+      setShowPurchaseInfo(purchaseInfoEnabled);
     } else {
        form.reset({
         name: '',
@@ -104,6 +113,8 @@ export function ItemForm({ initialData, onSubmit, isLoading = false, categories,
         enablePurchaseInfo: false,
         unit: 'each',
       });
+      setShowSaleInfo(true);
+      setShowPurchaseInfo(false);
     }
   }, [initialData, form]);
 
@@ -135,15 +146,14 @@ export function ItemForm({ initialData, onSubmit, isLoading = false, categories,
 
   // Manual validation for fields dependent on toggles (Sale/Purchase Info)
   const validateConditionalFields = () => {
-    const values = form.getValues();
-    if (values.enableSaleInfo && (values.salePrice === null || values.salePrice === undefined)) {
+    if (showSaleInfo && (form.getValues('salePrice') === null || form.getValues('salePrice') === undefined)) {
       form.setError('salePrice', { type: 'manual', message: 'Sale price is required when Sale Information is enabled' });
       return false;
     } else {
       form.clearErrors('salePrice');
     }
 
-    if (values.enablePurchaseInfo && (values.purchasePrice === null || values.purchasePrice === undefined)) {
+    if (showPurchaseInfo && (form.getValues('purchasePrice') === null || form.getValues('purchasePrice') === undefined)) {
        form.setError('purchasePrice', { type: 'manual', message: 'Purchase price is required when Purchase Information is enabled' });
        return false;
     } else {
@@ -165,11 +175,11 @@ export function ItemForm({ initialData, onSubmit, isLoading = false, categories,
       type: values.type,
       description: values.description || null,
       categoryId: values.categoryId || null,
-      salePrice: values.enableSaleInfo ? values.salePrice || null : null,
-      purchasePrice: values.enablePurchaseInfo ? values.purchasePrice || null : null,
+      salePrice: showSaleInfo ? values.salePrice || null : null,
+      purchasePrice: showPurchaseInfo ? values.purchasePrice || null : null,
       taxRate: values.taxRate || null,
-      enableSaleInfo: values.enableSaleInfo,
-      enablePurchaseInfo: values.enablePurchaseInfo,
+      enableSaleInfo: showSaleInfo,
+      enablePurchaseInfo: showPurchaseInfo,
       unit: values.unit,
       createdAt: initialData?.createdAt,
       updatedAt: initialData?.updatedAt,
@@ -223,27 +233,56 @@ export function ItemForm({ initialData, onSubmit, isLoading = false, categories,
         className="space-y-6" 
         id="item-form"
       >
+        {/* Basic Item Information Section */}
         <div className="space-y-4">
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+          <div className="flex items-center gap-2 mb-4">
+            <Package className="h-4 w-4 text-primary" />
+            <h3 className="text-sm font-medium text-foreground">Basic Information</h3>
+          </div>
+          
+          <FormField
+            control={form.control}
+            name="name"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel className="text-sm font-medium">Item Name *</FormLabel>
+                <FormControl>
+                  <Input 
+                    placeholder="Enter item name" 
+                    {...field} 
+                    onFocus={handleInputFocus}
+                    onKeyDown={handleKeyDown}
+                    className="h-11 focus:ring-2 focus:ring-primary focus:border-primary transition-all duration-200"
+                  />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+
+          <div className="grid grid-cols-2 gap-4">
             <FormField
               control={form.control}
               name="type"
               render={({ field }) => (
-                <FormItem className="space-y-2">
-                  <FormLabel htmlFor="type">Item Type</FormLabel>
+                <FormItem>
+                  <FormLabel className="text-sm font-medium flex items-center gap-1">
+                    <Tag className="h-3 w-3" />
+                    Type
+                  </FormLabel>
                   <FormControl>
                     <RadioGroup
                       onValueChange={field.onChange}
                       value={field.value}
-                      className="flex space-x-4"
+                      className="flex space-x-4 pt-2"
                     >
                       <div className="flex items-center space-x-2">
                         <RadioGroupItem value="product" id="product" />
-                        <Label htmlFor="product">Product</Label>
+                        <Label htmlFor="product" className="text-sm">Product</Label>
                       </div>
                       <div className="flex items-center space-x-2">
                         <RadioGroupItem value="service" id="service" />
-                        <Label htmlFor="service">Service</Label>
+                        <Label htmlFor="service" className="text-sm">Service</Label>
                       </div>
                     </RadioGroup>
                   </FormControl>
@@ -252,111 +291,91 @@ export function ItemForm({ initialData, onSubmit, isLoading = false, categories,
               )}
             />
 
-             <FormField
+            <FormField
               control={form.control}
               name="unit"
               render={({ field }) => (
-                <FormItem className="space-y-2">
-                   <FormLabel htmlFor="unit">Unit</FormLabel>
-                   <Select
-                     onValueChange={field.onChange}
-                     value={field.value}
-                   >
-                     <FormControl>
-                       <SelectTrigger id="unit">
-                         <SelectValue placeholder="Select unit" />
-                       </SelectTrigger>
-                     </FormControl>
-                     <SelectContent>
-                       {units.map((unit) => (
-                         <SelectItem key={unit} value={unit}>
-                           {unit}
-                         </SelectItem>
-                       ))}
-                     </SelectContent>
-                   </Select>
-                   <FormMessage />
-                 </FormItem>
-               )}
-             />
+                <FormItem>
+                  <FormLabel className="text-sm font-medium">Unit</FormLabel>
+                  <Select
+                    onValueChange={field.onChange}
+                    value={field.value}
+                  >
+                    <FormControl>
+                      <SelectTrigger className="h-11">
+                        <SelectValue placeholder="Select unit" />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      {units.map((unit) => (
+                        <SelectItem key={unit} value={unit}>
+                          {unit}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
           </div>
-
-          <FormField
-            control={form.control}
-            name="name"
-            render={({ field }) => (
-              <FormItem className="space-y-2">
-                <FormLabel htmlFor="name">Name*</FormLabel>
-                <FormControl>
-                  <Input 
-                    placeholder="Item name" 
-                    {...field} 
-                    onFocus={handleInputFocus}
-                    onKeyDown={handleKeyDown}
-                    className="focus:ring-2 focus:ring-primary focus:border-primary transition-all duration-200"
-                  />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
 
           <FormField
             control={form.control}
             name="categoryId"
             render={({ field }) => (
-              <FormItem className="space-y-2">
-                 <FormLabel htmlFor="category">Category</FormLabel>
-                 <div className="flex space-x-2">
-                   <Select
-                     onValueChange={field.onChange}
-                     value={field.value || ''}
-                   >
-                     <FormControl className="flex-1">
-                       <SelectTrigger>
-                         <SelectValue placeholder="Select a category" />
-                       </SelectTrigger>
-                     </FormControl>
-                     <SelectContent>
-                       {effectiveCategories.map((category) => (
-                         <SelectItem key={category.id} value={category.id}>
-                           {category.name}
-                         </SelectItem>
-                       ))}
-                     </SelectContent>
-                   </Select>
+              <FormItem>
+                <FormLabel className="text-sm font-medium">Category</FormLabel>
+                <div className="flex space-x-2">
+                  <Select
+                    onValueChange={field.onChange}
+                    value={field.value || ''}
+                  >
+                    <FormControl className="flex-1">
+                      <SelectTrigger className="h-11">
+                        <SelectValue placeholder="Select a category" />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      {effectiveCategories.map((category) => (
+                        <SelectItem key={category.id} value={category.id}>
+                          {category.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
 
-                   <Popover>
-                     <PopoverTrigger asChild>
-                       <Button type="button" size="icon" disabled={isAddingCategory || isLoading}>
-                         <Plus className="h-4 w-4" />
-                       </Button>
-                     </PopoverTrigger>
-                     <PopoverContent className="w-80">
-                       <div className="space-y-2">
-                         <Label htmlFor="newCategory">New Category</Label>
-                         <div className="flex space-x-2">
-                           <Input
-                             id="newCategory"
-                             value={newCategoryName}
-                             onChange={(e) => setNewCategoryName(e.target.value)}
-                             placeholder="Category name"
-                             disabled={isAddingCategory || isLoading}
-                           />
-                           <Button
-                             type="button"
-                             onClick={handleCreateCategory}
-                             disabled={isAddingCategory || !newCategoryName.trim() || isLoading}
-                           >
-                             Add
-                           </Button>
-                         </div>
-                       </div>
-                     </PopoverContent>
-                   </Popover>
-                 </div>
-                 <FormMessage />
-               </FormItem>
+                  <Popover>
+                    <PopoverTrigger asChild>
+                      <Button type="button" size="icon" disabled={isAddingCategory || isLoading} className="h-11">
+                        <Plus className="h-4 w-4" />
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-80">
+                      <div className="space-y-2">
+                        <Label htmlFor="newCategory">New Category</Label>
+                        <div className="flex space-x-2">
+                          <Input
+                            id="newCategory"
+                            value={newCategoryName}
+                            onChange={(e) => setNewCategoryName(e.target.value)}
+                            placeholder="Category name"
+                            disabled={isAddingCategory || isLoading}
+                          />
+                          <Button
+                            type="button"
+                            onClick={handleCreateCategory}
+                            disabled={isAddingCategory || !newCategoryName.trim() || isLoading}
+                          >
+                            Add
+                          </Button>
+                        </div>
+                      </div>
+                    </PopoverContent>
+                  </Popover>
+                </div>
+                <FormMessage />
+              </FormItem>
             )}
           />
 
@@ -364,155 +383,170 @@ export function ItemForm({ initialData, onSubmit, isLoading = false, categories,
             control={form.control}
             name="description"
             render={({ field }) => (
-              <FormItem className="space-y-2">
-                <FormLabel htmlFor="description">Description</FormLabel>
+              <FormItem>
+                <FormLabel className="text-sm font-medium flex items-center gap-1">
+                  <FileText className="h-3 w-3" />
+                  Description
+                </FormLabel>
                 <FormControl>
                   <Textarea 
-                    placeholder="Item description" 
+                    placeholder="Describe the item (optional)" 
                     rows={3} 
                     {...field} 
                     value={field.value || ''} 
                     onFocus={handleInputFocus}
                     onKeyDown={handleKeyDown}
-                    className="focus:ring-2 focus:ring-primary focus:border-primary transition-all duration-200"
+                    className="resize-none focus:ring-2 focus:ring-primary focus:border-primary transition-all duration-200"
                   />
                 </FormControl>
                 <FormMessage />
               </FormItem>
             )}
           />
+        </div>
 
-          <div className="space-y-2 pt-3 border-t">
-            <div className="flex items-center justify-between">
-              <Label htmlFor="enableSaleInfo">Sale Information</Label>
-              <FormField
-                control={form.control}
-                name="enableSaleInfo"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormControl>
-                      <Switch
-                        id="enableSaleInfo"
-                        checked={field.value}
-                        onCheckedChange={field.onChange}
-                        aria-label="Toggle Sale Information"
-                      />
-                    </FormControl>
-                  </FormItem>
-                )}
-              />
+        {/* Sale Information Section - Collapsible */}
+        <div className="space-y-4">
+          <button
+            type="button"
+            onClick={() => {
+              const newValue = !showSaleInfo;
+              setShowSaleInfo(newValue);
+              form.setValue('enableSaleInfo', newValue);
+            }}
+            className="flex items-center justify-between w-full p-3 bg-muted/50 rounded-lg hover:bg-muted transition-colors"
+          >
+            <div className="flex items-center gap-2">
+              <ShoppingCart className="h-4 w-4 text-primary" />
+              <span className="text-sm font-medium">Sale Information</span>
+              <span className="text-xs text-muted-foreground">(For selling this item)</span>
             </div>
-
-            {form.watch('enableSaleInfo') && (
-              <div className="space-y-4 pt-2">
-                <FormField
-                  control={form.control}
-                  name="salePrice"
-                  render={({ field }) => (
-                    <FormItem className="space-y-2">
-                      <FormLabel htmlFor="salePrice">Sale Price*</FormLabel>
-                      <FormControl>
-                        <Input
-                          id="salePrice"
-                          type="number"
-                          inputMode="decimal"
-                          pattern="[0-9]*"
-                          step="0.01"
-                          placeholder="0.00"
-                          {...field}
-                          value={field.value === null || field.value === undefined ? '' : field.value}
-                          onChange={e => field.onChange(e.target.value === '' ? undefined : parseFloat(e.target.value))}
-                          onFocus={handleInputFocus}
-                          onKeyDown={handleKeyDown}
-                          className="focus:ring-2 focus:ring-primary focus:border-primary transition-all duration-200"
-                        />
-                      </FormControl>
-                      {form.formState.errors.salePrice && (
-                        <FormMessage>{form.formState.errors.salePrice.message}</FormMessage>
-                      )}
-                    </FormItem>
-                  )}
-                />
-                <FormField
-                  control={form.control}
-                  name="taxRate"
-                  render={({ field }) => (
-                    <FormItem className="space-y-2">
-                      <FormLabel htmlFor="taxRate">Tax Rate (%)</FormLabel>
-                      <FormControl>
-                        <Input
-                          id="taxRate"
-                          type="number"
-                          inputMode="decimal"
-                          pattern="[0-9]*"
-                          step="0.01"
-                          placeholder="0.00"
-                          {...field}
-                          value={field.value === null || field.value === undefined ? '' : field.value}
-                          onChange={e => field.onChange(e.target.value === '' ? undefined : parseFloat(e.target.value))}
-                          onFocus={handleInputFocus}
-                          onKeyDown={handleKeyDown}
-                          className="focus:ring-2 focus:ring-primary focus:border-primary transition-all duration-200"
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-              </div>
+            {showSaleInfo ? (
+              <ChevronUp className="h-4 w-4 text-muted-foreground" />
+            ) : (
+              <ChevronDown className="h-4 w-4 text-muted-foreground" />
             )}
-          </div>
-
-          <div className="space-y-2 pt-3 border-t">
-            <div className="flex items-center justify-between">
-              <Label htmlFor="enablePurchaseInfo">Purchase Information</Label>
-              <FormField
-                control={form.control}
-                name="enablePurchaseInfo"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormControl>
-                      <Switch
-                         id="enablePurchaseInfo"
-                         checked={field.value}
-                         onCheckedChange={field.onChange}
-                         aria-label="Toggle Purchase Information"
+          </button>
+          
+          <div className={cn(
+            "space-y-4 overflow-hidden transition-all duration-300 ease-in-out",
+            showSaleInfo ? "max-h-[400px] opacity-100" : "max-h-0 opacity-0"
+          )}>
+            <FormField
+              control={form.control}
+              name="salePrice"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel className="text-sm font-medium">Sale Price *</FormLabel>
+                  <FormControl>
+                    <div className="relative">
+                      <DollarSign className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                      <Input
+                        type="number"
+                        inputMode="decimal"
+                        step="0.01"
+                        placeholder="0.00"
+                        {...field}
+                        value={field.value === null || field.value === undefined ? '' : field.value}
+                        onChange={e => field.onChange(e.target.value === '' ? undefined : parseFloat(e.target.value))}
+                        onFocus={handleInputFocus}
+                        onKeyDown={handleKeyDown}
+                        className="h-11 pl-10 focus:ring-2 focus:ring-primary focus:border-primary transition-all duration-200"
                       />
-                    </FormControl>
-                  </FormItem>
-                )}
-              />
-            </div>
-
-            {form.watch('enablePurchaseInfo') && (
-              <div className="space-y-2 pt-2">
-                 <FormField
-                  control={form.control}
-                  name="purchasePrice"
-                  render={({ field }) => (
-                    <FormItem className="space-y-2">
-                      <FormLabel htmlFor="purchasePrice">Purchase Price*</FormLabel>
-                      <FormControl>
-                        <Input
-                           id="purchasePrice"
-                           type="number"
-                           step="0.01"
-                           placeholder="0.00"
-                           {...field}
-                           value={field.value === null || field.value === undefined ? '' : field.value}
-                           onChange={e => field.onChange(e.target.value === '' ? undefined : parseFloat(e.target.value))}
-                        />
-                      </FormControl>
-                      {form.formState.errors.purchasePrice && (
-                         <FormMessage>{form.formState.errors.purchasePrice.message}</FormMessage>
-                      )}
-                    </FormItem>
+                    </div>
+                  </FormControl>
+                  {form.formState.errors.salePrice && (
+                    <FormMessage>{form.formState.errors.salePrice.message}</FormMessage>
                   )}
-                />
-              </div>
-            )}
+                </FormItem>
+              )}
+            />
+            
+            <FormField
+              control={form.control}
+              name="taxRate"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel className="text-sm font-medium">Tax Rate (%)</FormLabel>
+                  <FormControl>
+                    <Input
+                      type="number"
+                      inputMode="decimal"
+                      step="0.01"
+                      placeholder="15.00"
+                      {...field}
+                      value={field.value === null || field.value === undefined ? '' : field.value}
+                      onChange={e => field.onChange(e.target.value === '' ? undefined : parseFloat(e.target.value))}
+                      onFocus={handleInputFocus}
+                      onKeyDown={handleKeyDown}
+                      className="h-11 focus:ring-2 focus:ring-primary focus:border-primary transition-all duration-200"
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
           </div>
         </div>
+
+        {/* Purchase Information Section - Collapsible */}
+        <div className="space-y-4">
+          <button
+            type="button"
+            onClick={() => {
+              const newValue = !showPurchaseInfo;
+              setShowPurchaseInfo(newValue);
+              form.setValue('enablePurchaseInfo', newValue);
+            }}
+            className="flex items-center justify-between w-full p-3 bg-muted/50 rounded-lg hover:bg-muted transition-colors"
+          >
+            <div className="flex items-center gap-2">
+              <DollarSign className="h-4 w-4 text-primary" />
+              <span className="text-sm font-medium">Purchase Information</span>
+              <span className="text-xs text-muted-foreground">(For buying this item)</span>
+            </div>
+            {showPurchaseInfo ? (
+              <ChevronUp className="h-4 w-4 text-muted-foreground" />
+            ) : (
+              <ChevronDown className="h-4 w-4 text-muted-foreground" />
+            )}
+          </button>
+          
+          <div className={cn(
+            "space-y-4 overflow-hidden transition-all duration-300 ease-in-out",
+            showPurchaseInfo ? "max-h-[200px] opacity-100" : "max-h-0 opacity-0"
+          )}>
+            <FormField
+              control={form.control}
+              name="purchasePrice"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel className="text-sm font-medium">Purchase Price *</FormLabel>
+                  <FormControl>
+                    <div className="relative">
+                      <DollarSign className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                      <Input
+                        type="number"
+                        step="0.01"
+                        placeholder="0.00"
+                        {...field}
+                        value={field.value === null || field.value === undefined ? '' : field.value}
+                        onChange={e => field.onChange(e.target.value === '' ? undefined : parseFloat(e.target.value))}
+                        onFocus={handleInputFocus}
+                        onKeyDown={handleKeyDown}
+                        className="h-11 pl-10 focus:ring-2 focus:ring-primary focus:border-primary transition-all duration-200"
+                      />
+                    </div>
+                  </FormControl>
+                  {form.formState.errors.purchasePrice && (
+                    <FormMessage>{form.formState.errors.purchasePrice.message}</FormMessage>
+                  )}
+                </FormItem>
+              )}
+            />
+          </div>
+        </div>
+
       </form>
     </Form>
   );

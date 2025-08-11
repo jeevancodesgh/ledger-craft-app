@@ -28,8 +28,16 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const navigate = useNavigate();
 
   const checkOnboardingStatus = async (userId: string) => {
+    // Don't check again if already checked
+    if (onboardingChecked) {
+      console.log('Onboarding status already checked, skipping...');
+      return;
+    }
+    
     try {
+      console.log('Checking onboarding status for user:', userId);
       const businessProfile = await businessProfileService.getBusinessProfile();
+      console.log('Business profile found:', !!businessProfile);
       setHasCompletedOnboarding(!!businessProfile);
       setOnboardingChecked(true);
     } catch (error) {
@@ -45,6 +53,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setUser(currentSession?.user ?? null);
     
     if (currentSession?.user?.id) {
+      // Reset onboarding check to force a fresh check
+      setOnboardingChecked(false);
       await checkOnboardingStatus(currentSession.user.id);
     }
   };
@@ -56,9 +66,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         setSession(currentSession);
         setUser(currentSession?.user ?? null);
         
-        // Check onboarding status asynchronously without blocking
+        // Check onboarding status - wait for completion to avoid race conditions
         if (currentSession?.user?.id) {
-          checkOnboardingStatus(currentSession.user.id).catch(console.error);
+          await checkOnboardingStatus(currentSession.user.id);
         } else {
           setHasCompletedOnboarding(false);
           setOnboardingChecked(true);

@@ -384,3 +384,189 @@
 .corner-indicator {
   animation: cornerPulse 2s ease-in-out infinite;
 }
+
+/* Mobile UI Enhancements */
+@layer utilities {
+  /* Hide scrollbar for carousel components */
+  .scrollbar-hide {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+  
+  .scrollbar-hide::-webkit-scrollbar {
+    display: none;
+  }
+
+  /* Touch-friendly targets */
+  .touch-target {
+    min-height: 44px;
+    min-width: 44px;
+  }
+
+  /* Mobile-optimized animations */
+  .mobile-scale-press {
+    transition: transform 0.1s ease-out;
+  }
+  
+  .mobile-scale-press:active {
+    transform: scale(0.98);
+  }
+
+  /* Safe area support */
+  .safe-area-top {
+    padding-top: env(safe-area-inset-top);
+  }
+  
+  .safe-area-bottom {
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+  
+  .safe-area-left {
+    padding-left: env(safe-area-inset-left);
+  }
+  
+  .safe-area-right {
+    padding-right: env(safe-area-inset-right);
+  }
+
+  /* Mobile typography enhancements */
+  .mobile-balance-lg {
+    font-size: 2.5rem;
+    line-height: 1.1;
+    font-weight: 700;
+    letter-spacing: -0.025em;
+  }
+  
+  .mobile-balance-xl {
+    font-size: 3.5rem;
+    line-height: 1;
+    font-weight: 800;
+    letter-spacing: -0.05em;
+  }
+
+  /* Gradient overlays for cards */
+  .gradient-overlay-blue {
+    background: linear-gradient(135deg, rgba(59, 130, 246, 0.1) 0%, rgba(99, 102, 241, 0.2) 100%);
+  }
+  
+  .gradient-overlay-green {
+    background: linear-gradient(135deg, rgba(16, 185, 129, 0.1) 0%, rgba(5, 150, 105, 0.2) 100%);
+  }
+  
+  .gradient-overlay-amber {
+    background: linear-gradient(135deg, rgba(245, 158, 11, 0.1) 0%, rgba(217, 119, 6, 0.2) 100%);
+  }
+  
+  .gradient-overlay-red {
+    background: linear-gradient(135deg, rgba(239, 68, 68, 0.1) 0%, rgba(220, 38, 38, 0.2) 100%);
+  }
+
+  /* Smooth transitions */
+  .transition-smooth {
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+}
+
+/* Mobile-specific media queries */
+@media (max-width: 767px) {
+  /* Enhanced touch targets on mobile */
+  .mobile-touch button,
+  .mobile-touch a,
+  .mobile-touch [role="button"] {
+    min-height: 48px;
+    padding: 12px;
+  }
+
+  /* Improved spacing on mobile */
+  .mobile-spacing {
+    padding: 1rem;
+    gap: 0.75rem;
+  }
+
+  /* Better text scaling */
+  .mobile-text-scale {
+    font-size: clamp(0.875rem, 4vw, 1rem);
+  }
+}
+
+/* iOS-specific optimizations */
+@supports (-webkit-touch-callout: none) {
+  /* iOS safe area handling */
+  .ios-safe-top {
+    padding-top: max(env(safe-area-inset-top), 1rem);
+  }
+  
+  .ios-safe-bottom {
+    padding-bottom: max(env(safe-area-inset-bottom), 1rem);
+  }
+
+  /* Disable iOS bounce */
+  .no-bounce {
+    overscroll-behavior: none;
+    -webkit-overflow-scrolling: touch;
+  }
+}
+
+/* Pull-to-refresh animation */
+@keyframes pullToRefresh {
+  0% {
+    transform: translateY(-100%) rotate(0deg);
+    opacity: 0;
+  }
+  50% {
+    opacity: 1;
+  }
+  100% {
+    transform: translateY(0) rotate(360deg);
+    opacity: 0;
+  }
+}
+
+.pull-to-refresh {
+  animation: pullToRefresh 1.5s ease-in-out infinite;
+}
+
+/* Swipe gesture indicators */
+.swipe-indicator {
+  position: relative;
+  overflow: hidden;
+}
+
+.swipe-indicator::before {
+  content: '';
+  position: absolute;
+  top: 50%;
+  right: 1rem;
+  transform: translateY(-50%);
+  width: 0;
+  height: 0;
+  border-left: 6px solid currentColor;
+  border-top: 4px solid transparent;
+  border-bottom: 4px solid transparent;
+  opacity: 0.3;
+}
+
+/* Enhanced card hover effects */
+.mobile-card-hover {
+  transition: all 0.2s ease-out;
+}
+
+.mobile-card-hover:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+}
+
+/* Loading skeleton animations for mobile */
+@keyframes skeletonPulse {
+  0%, 100% {
+    opacity: 0.6;
+  }
+  50% {
+    opacity: 0.3;
+  }
+}
+
+.skeleton-pulse {
+  animation: skeletonPulse 2s ease-in-out infinite;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.4), transparent);
+}
