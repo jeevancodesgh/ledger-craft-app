@@ -361,7 +361,7 @@ const Dashboard = () => {
           {/* Mobile Quick Actions */}
           <div className="space-y-3">
             <h2 className="text-lg font-semibold">Quick Actions</h2>
-            <MobileQuickActions layout="grid" />
+            <MobileQuickActions layout="smart" />
           </div>
 
           {/* Mobile Charts */}
