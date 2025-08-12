@@ -129,6 +129,7 @@ const appRoutes: RouteObject[] = [
           { index: true, element: <Dashboard /> },
           { path: "invoices", element: <Invoices /> },
           { path: "invoices/new", element: <CreateInvoice /> },
+          { path: "invoices/create", element: <CreateInvoice /> },
           { path: "invoices/:id/edit", element: <EditInvoice /> },
           { path: "invoices/:id", element: <InvoiceViewPage /> },
           { path: "customers", element: <Customers /> },
