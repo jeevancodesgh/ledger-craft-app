@@ -429,6 +429,25 @@
     padding-right: env(safe-area-inset-right);
   }
 
+  /* Mobile safe area utilities */
+  .pb-safe {
+    padding-bottom: max(env(safe-area-inset-bottom), 1.5rem);
+  }
+
+  .pt-safe {
+    padding-top: max(env(safe-area-inset-top), 1rem);
+  }
+
+  /* Mobile bottom spacing for touch-friendly UI */
+  .mobile-bottom-safe {
+    padding-bottom: max(env(safe-area-inset-bottom), 2rem);
+  }
+
+  /* Extra safe padding for critical UI elements */
+  .pb-safe-xl {
+    padding-bottom: max(env(safe-area-inset-bottom), 2.5rem);
+  }
+
   /* Mobile typography enhancements */
   .mobile-balance-lg {
     font-size: 2.5rem;

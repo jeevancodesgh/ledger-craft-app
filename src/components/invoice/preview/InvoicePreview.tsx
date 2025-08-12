@@ -182,8 +182,8 @@ const InvoicePreview = ({
       className={cn(
         "invoice-preview-container w-full bg-white text-black shadow-sm rounded-lg transition-all duration-300", 
         isMobile && (isFullscreen 
-          ? "fixed inset-0 z-50 pb-24 overflow-auto" 
-          : "mx-auto max-w-full relative pb-20")
+          ? "fixed inset-0 z-50 pt-16 overflow-auto" 
+          : "mx-auto max-w-full relative")
       )}
     >
       <div 
@@ -193,8 +193,8 @@ const InvoicePreview = ({
           isMobile ? "invoice-mobile-view" : "p-6"
         )}
         style={{ 
-          height: isFullscreen ? 'calc(100vh - 120px)' : isMobile ? 'auto' : 'auto',
-          paddingBottom: isMobile ? '70px' : '0'
+          height: isFullscreen ? 'calc(100vh - 180px)' : isMobile ? 'auto' : 'auto',
+          paddingBottom: isMobile ? '180px' : '0'
         }}
       >
         <div 
@@ -218,88 +218,90 @@ const InvoicePreview = ({
       
       {/* Fixed bottom controls on mobile */}
       {isMobile && (
-        <div className="fixed bottom-0 left-0 right-0 bg-background p-3 border-t shadow-lg z-50">
-          <div className="flex gap-2 mb-2">
-            <Button 
-              variant="outline" 
-              size="sm"
-              onClick={zoomOut} 
-              className="flex-1 h-9"
-              aria-label="Zoom out"
-              disabled={zoomLevel <= 0.6 || isPrinting || isSaving}
-            >
-              <ZoomOut className="h-4 w-4 mr-1" />
-            </Button>
-            <Button 
-              variant="outline" 
-              size="sm"
-              onClick={toggleFullscreen} 
-              className="flex-1 h-9"
-              aria-label={isFullscreen ? "Exit fullscreen" : "View fullscreen"}
-              disabled={isPrinting || isSaving}
-            >
-              {isFullscreen ? <Minimize2 className="h-4 w-4 mr-1" /> : <Maximize2 className="h-4 w-4 mr-1" />}
-            </Button>
-            <Button 
-              variant="outline"
-              size="sm"
-              onClick={handlePrint}
-              className="flex-1 h-9"
-              aria-label="Print invoice"
-              disabled={isPrinting || isSaving}
-            >
-              <Printer className="h-4 w-4 mr-1" />
-            </Button>
-            <Button 
-              variant="outline" 
-              size="sm"
-              onClick={zoomIn} 
-              className="flex-1 h-9"
-              aria-label="Zoom in"
-              disabled={zoomLevel >= 1.5 || isPrinting || isSaving}
-            >
-              <ZoomIn className="h-4 w-4 mr-1" />
-            </Button>
-          </div>
-          <div className="flex gap-2">
-            <Button 
-              variant="outline" 
-              size="sm"
-              onClick={onBackToEdit} 
-              className="flex-1 h-9"
-              aria-label="Back to edit"
-              disabled={isPrinting || isGeneratingPdf || isSaving}
-            >
-              <ArrowLeft className="h-4 w-4 mr-1" />
-              <span className="text-xs">Back to Edit</span>
-            </Button>
-            
-            {onSave && (
+        <div className="fixed bottom-0 left-0 right-0 bg-background border-t shadow-lg z-50 pb-safe-xl">
+          <div className="px-4 pt-4 pb-2">
+            <div className="flex gap-2 mb-3">
               <Button 
-                size="sm"
-                onClick={onSave} 
-                className={cn(
-                  "flex-1 h-9",
-                  hasUnsavedChanges && "ring-2 ring-orange-200 bg-orange-500 hover:bg-orange-600"
-                )}
-                disabled={isSaving || isPrinting || isGeneratingPdf}
-                aria-label={isSaving ? "Saving invoice" : saveButtonText}
+                variant="outline" 
+                size="default"
+                onClick={zoomOut} 
+                className="flex-1 h-11 text-sm"
+                aria-label="Zoom out"
+                disabled={zoomLevel <= 0.6 || isPrinting || isSaving}
               >
-                <Save className="h-4 w-4 mr-1" />
-                <span className="text-xs">{isSaving ? "Saving..." : saveButtonText}</span>
+                <ZoomOut className="h-4 w-4" />
               </Button>
-            )}
-           
-            <Button 
-              variant="outline"
-              size="sm"
-              onClick={handleDownloadPdf} 
-              className="flex-1 h-9"
-              disabled={isGeneratingPdf || isPrinting || isSaving}
-            >
-              <Download className="h-4 w-4 mr-1" />
-              <span className="text-xs">{isGeneratingPdf ? "Generating..." : "Download PDF"}</span>
-            </Button>
+              <Button 
+                variant="outline" 
+                size="default"
+                onClick={toggleFullscreen} 
+                className="flex-1 h-11 text-sm"
+                aria-label={isFullscreen ? "Exit fullscreen" : "View fullscreen"}
+                disabled={isPrinting || isSaving}
+              >
+                {isFullscreen ? <Minimize2 className="h-4 w-4" /> : <Maximize2 className="h-4 w-4" />}
+              </Button>
+              <Button 
+                variant="outline"
+                size="default"
+                onClick={handlePrint}
+                className="flex-1 h-11 text-sm"
+                aria-label="Print invoice"
+                disabled={isPrinting || isSaving}
+              >
+                <Printer className="h-4 w-4" />
+              </Button>
+              <Button 
+                variant="outline" 
+                size="default"
+                onClick={zoomIn} 
+                className="flex-1 h-11 text-sm"
+                aria-label="Zoom in"
+                disabled={zoomLevel >= 1.5 || isPrinting || isSaving}
+              >
+                <ZoomIn className="h-4 w-4" />
+              </Button>
+            </div>
+            <div className="flex gap-1">
+              <Button 
+                variant="outline" 
+                size="default"
+                onClick={onBackToEdit} 
+                className="flex-1 h-12 text-sm font-medium"
+                aria-label="Back to edit"
+                disabled={isPrinting || isGeneratingPdf || isSaving}
+              >
+                <ArrowLeft className="h-4 w-4 mr-2" />
+                {/* <span>Back to Edit</span> */}
+              </Button>
+              
+              {onSave && (
+                <Button 
+                  size="default"
+                  onClick={onSave} 
+                  className={cn(
+                    "flex-1 h-12 text-sm font-medium",
+                    hasUnsavedChanges && "ring-2 ring-orange-200 bg-orange-500 hover:bg-orange-600"
+                  )}
+                  disabled={isSaving || isPrinting || isGeneratingPdf}
+                  aria-label={isSaving ? "Saving invoice" : saveButtonText}
+                >
+                  <Save className="h-4 w-4 mr-2" />
+                  <span>{isSaving ? "Saving..." : saveButtonText}</span>
+                </Button>
+              )}
+             
+              <Button 
+                variant="outline"
+                size="default"
+                onClick={handleDownloadPdf} 
+                className="flex-1 h-12 text-sm font-medium"
+                disabled={isGeneratingPdf || isPrinting || isSaving}
+              >
+                <Download className="h-4 w-4 mr-2" />
+                <span>{isGeneratingPdf ? "Generating..." : "Download PDF"}</span>
+              </Button>
+            </div>
           </div>
         </div>
       )}

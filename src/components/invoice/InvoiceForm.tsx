@@ -1449,7 +1449,8 @@ const InvoiceForm: React.FC<InvoiceFormProps> = ({
 
       {/* Mobile Fixed Action Buttons - Only visible on mobile and Edit tab, hidden when drawers are open */}
       {activeTab === "edit" && !openLineItemDrawer && !isItemDrawerOpen && (
-        <div className="fixed bottom-0 left-0 right-0 z-[100] bg-background/95 backdrop-blur-sm border-t border-border/50 p-4 flex gap-3 sm:hidden">
+        <div className="fixed bottom-0 left-0 right-0 z-[100] bg-background/95 backdrop-blur-sm border-t border-border/50 pb-safe sm:hidden">
+          <div className="p-4 flex gap-3">
         <motion.div className="flex gap-3 w-full">
           <motion.div
             whileHover="hover"
@@ -1498,6 +1499,7 @@ const InvoiceForm: React.FC<InvoiceFormProps> = ({
             </Button>
           </motion.div>
         </motion.div>
+          </div>
         </div>
       )}
 
