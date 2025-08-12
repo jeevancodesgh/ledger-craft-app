@@ -36,7 +36,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     
     try {
       console.log('Checking onboarding status for user:', userId);
-      const businessProfile = await businessProfileService.getBusinessProfile();
+      
+      // Add timeout wrapper for the entire operation
+      const checkPromise = businessProfileService.getBusinessProfile();
+      const timeoutPromise = new Promise<null>((_, reject) =>
+        setTimeout(() => reject(new Error('Onboarding check timeout')), 15000)
+      );
+
+      const businessProfile = await Promise.race([checkPromise, timeoutPromise]);
       console.log('Business profile found:', !!businessProfile);
       setHasCompletedOnboarding(!!businessProfile);
       setOnboardingChecked(true);
