@@ -43,7 +43,7 @@ const InvoicePreview = ({
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [isGeneratingPdf, setIsGeneratingPdf] = useState(false);
   const [isPrinting, setIsPrinting] = useState(false);
-  const [zoomLevel, setZoomLevel] = useState(isMobile ? 0.9 : 1); // Slightly smaller default for mobile
+  const [zoomLevel, setZoomLevel] = useState(isMobile ? 0.75 : 1); // Better mobile default for clear preview with borders
   const contextBusinessProfile = useAppContext().businessProfile;
   const effectiveBusinessProfile = businessProfile !== undefined ? businessProfile : contextBusinessProfile;
 
@@ -155,7 +155,7 @@ const InvoicePreview = ({
   };
 
   const resetZoom = () => {
-    setZoomLevel(isMobile ? 0.9 : 1);
+    setZoomLevel(isMobile ? 0.75 : 1);
   };
 
   const renderTemplate = () => {
@@ -189,8 +189,8 @@ const InvoicePreview = ({
       <div 
         ref={contentRef}
         className={cn(
-          "flex justify-center overflow-auto p-2",
-          isMobile ? "invoice-mobile-view" : "p-6"
+          "flex justify-center overflow-auto",
+          isMobile ? "invoice-mobile-view p-4" : "p-6"
         )}
         style={{ 
           height: isFullscreen ? 'calc(100vh - 180px)' : isMobile ? 'auto' : 'auto',
@@ -200,14 +200,14 @@ const InvoicePreview = ({
         <div 
           className={cn(
             "invoice-content bg-white print:p-0 print:shadow-none w-full",
-            isMobile ? "mobile-invoice-scale border rounded-lg shadow-sm" : "border rounded-lg shadow-sm"
+            isMobile ? "mobile-invoice-scale border rounded-lg shadow-md mx-2" : "border rounded-lg shadow-sm"
           )}
           style={{ 
             transform: `scale(${zoomLevel})`,
             transformOrigin: 'top center',
             transition: 'transform 0.2s ease',
             maxWidth: isMobile ? '100%' : '794px', // A4 width at 96 DPI
-            margin: '0 auto'
+            margin: isMobile ? '16px auto' : '0 auto'
           }}
         >
           <div ref={templateRef} className="pdf-template-container print-template-wrapper mb-5">
