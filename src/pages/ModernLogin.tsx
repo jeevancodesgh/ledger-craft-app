@@ -99,6 +99,7 @@ const ModernLogin = () => {
           label="Email address"
           type="email"
           icon={Mail}
+          placeholder="Enter your email"
           error={errors.email?.message}
           autoComplete="email"
           autoFocus
@@ -110,6 +111,7 @@ const ModernLogin = () => {
           label="Password"
           type="password"
           icon={Lock}
+          placeholder="Enter your password"
           showPasswordToggle
           error={errors.password?.message}
           autoComplete="current-password"

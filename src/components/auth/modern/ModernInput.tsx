@@ -79,10 +79,10 @@ const ModernInput = forwardRef<HTMLInputElement, ModernInputProps>(
             ref={ref}
             id={inputId}
             type={inputType}
-            placeholder={!isFocused && !hasValue ? placeholder : ''}
+            placeholder={placeholder}
             className={cn(
               "w-full px-3 pt-6 pb-2 border rounded-lg transition-all duration-300 ease-out",
-              "bg-background text-foreground placeholder:text-muted-foreground",
+              "bg-background text-foreground",
               "focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary",
               "hover:border-primary/50 hover:shadow-sm",
               "transform-gpu", // Hardware acceleration
@@ -91,6 +91,10 @@ const ModernInput = forwardRef<HTMLInputElement, ModernInputProps>(
               showPasswordToggle && "pr-10",
               hasError && "border-destructive focus:border-destructive focus:ring-destructive/20 animate-pulse",
               hasSuccess && "border-green-500 focus:border-green-500 focus:ring-green-500/20",
+              // Dynamic placeholder styling based on focus state
+              isFocused || hasValue 
+                ? "placeholder:text-muted-foreground/40 placeholder:text-xs" 
+                : "placeholder:text-muted-foreground/60 placeholder:text-sm",
               className
             )}
             onFocus={(e) => {
