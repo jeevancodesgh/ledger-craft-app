@@ -9,8 +9,17 @@ interface ProtectedRouteProps {
 }
 
 const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children, requireOnboarding = true }) => {
-  const { user, loading, hasCompletedOnboarding, onboardingChecked } = useAuth();
+  const { user, loading, hasCompletedOnboarding, onboardingChecked, retryOnboardingCheck } = useAuth();
   const location = useLocation();
+
+  console.log('ProtectedRoute:', { 
+    user: !!user, 
+    loading, 
+    hasCompletedOnboarding, 
+    onboardingChecked, 
+    requireOnboarding, 
+    path: location.pathname 
+  });
 
   // If still loading authentication state or onboarding status, show a loading indicator
   if (loading || (user && !onboardingChecked)) {

@@ -28,7 +28,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const navigate = useNavigate();
 
   const checkOnboardingStatus = async (userId: string) => {
-    // Don't check again if already checked
+    // Don't check again if already checked for this user
     if (onboardingChecked) {
       console.log('Onboarding status already checked, skipping...');
       return;
@@ -37,20 +37,31 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     try {
       console.log('Checking onboarding status for user:', userId);
       
-      // Add timeout wrapper for the entire operation
+      // Add timeout wrapper with better error handling
       const checkPromise = businessProfileService.getBusinessProfile();
       const timeoutPromise = new Promise<null>((_, reject) =>
-        setTimeout(() => reject(new Error('Onboarding check timeout')), 15000)
+        setTimeout(() => reject(new Error('Onboarding check timeout')), 10000)
       );
 
       const businessProfile = await Promise.race([checkPromise, timeoutPromise]);
       console.log('Business profile found:', !!businessProfile);
-      setHasCompletedOnboarding(!!businessProfile);
+      
+      // Set onboarding status based on business profile
+      const isOnboarded = !!businessProfile;
+      setHasCompletedOnboarding(isOnboarded);
       setOnboardingChecked(true);
+      
+      console.log('Onboarding status set to:', isOnboarded);
+      
     } catch (error) {
       console.error('Error checking onboarding status:', error);
+      
+      // On error, assume not onboarded to be safe
+      // But don't block the user completely - they can retry
       setHasCompletedOnboarding(false);
       setOnboardingChecked(true);
+      
+      console.log('Onboarding status set to false due to error');
     }
   };
 
@@ -66,24 +77,41 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
+  // Function to retry onboarding check if needed
+  const retryOnboardingCheck = async () => {
+    if (user?.id) {
+      console.log('Retrying onboarding check...');
+      setOnboardingChecked(false);
+      setHasCompletedOnboarding(false);
+      await checkOnboardingStatus(user.id);
+    }
+  };
+
   useEffect(() => {
     // Set up auth state listener
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, currentSession) => {
+        console.log('Auth state change:', event, !!currentSession?.user);
+        
         setSession(currentSession);
         setUser(currentSession?.user ?? null);
         
-        // Check onboarding status - wait for completion to avoid race conditions
         if (currentSession?.user?.id) {
+          console.log('User signed in, checking onboarding status...');
+          // Reset onboarding status for new session
+          setOnboardingChecked(false);
+          setHasCompletedOnboarding(false);
+          
+          // Check onboarding status
           await checkOnboardingStatus(currentSession.user.id);
         } else {
+          console.log('No user session, resetting onboarding status');
           setHasCompletedOnboarding(false);
           setOnboardingChecked(true);
         }
         
-        if (event === 'SIGNED_IN') {
-          // Don't navigate immediately - let ProtectedRoute handle onboarding check
-        } else if (event === 'SIGNED_OUT') {
+        if (event === 'SIGNED_OUT') {
+          console.log('User signed out, redirecting to login');
           setHasCompletedOnboarding(false);
           setOnboardingChecked(false);
           navigate('/login');
@@ -161,7 +189,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     loading,
     hasCompletedOnboarding,
     onboardingChecked,
-    refreshUser
+    refreshUser,
+    retryOnboardingCheck
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
