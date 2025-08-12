@@ -18,7 +18,7 @@ const invalidPasswords = [
 test.describe('Sign Up Flow', () => {
   test.beforeEach(async ({ page }) => {
     await page.goto('/signup');
-    await expect(page).toHaveTitle(/Invoice Generator/);
+    await expect(page).toHaveTitle(/EasyBizInvoice/);
   });
 
   test('should display sign-up form with all required fields', async ({ page }) => {
