@@ -4,6 +4,7 @@ import { useToast } from '@/hooks/use-toast';
 import { OnboardingStep, OnboardingData, DEFAULT_BUSINESS_THEME } from '../types';
 import { useAuth } from '../context/AuthContext';
 import { businessProfileService } from '../services/supabaseService';
+import { supabase } from '@/integrations/supabase/client';
 import OnboardingLayout from '../components/onboarding/OnboardingLayout';
 import WelcomeStep from '../components/onboarding/WelcomeStep';
 import InvoiceSetupStep from '../components/onboarding/InvoiceSetupStep';
@@ -48,8 +49,6 @@ export default function Onboarding() {
 
   const uploadLogo = async (logoFile: File): Promise<string | null> => {
     try {
-      const { supabase } = await import('../services/supabaseService');
-      
       const fileExt = logoFile.name.split('.').pop();
       const fileName = `business-logo-${Date.now()}.${fileExt}`;
       const filePath = `business-logos/${fileName}`;
