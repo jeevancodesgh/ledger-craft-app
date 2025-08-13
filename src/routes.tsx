@@ -48,6 +48,7 @@ const FinancialReportsPage = lazy(() => import("@/pages/FinancialReportsPage"));
 const IRDReportingPage = lazy(() => import("@/pages/IRDReportingPage"));
 const JournalEntriesPage = lazy(() => import("@/pages/JournalEntriesPage"));
 const ReceiptViewPage = lazy(() => import("@/pages/ReceiptViewPage"));
+const AuthCallback = lazy(() => import("@/pages/AuthCallback"));
 const PaymentDetailPage = lazy(() => import("@/pages/PaymentDetailPage"));
 // Loading component
 const LoadingScreen = () => (
@@ -105,6 +106,10 @@ const appRoutes: RouteObject[] = [
       {
         path: "/confirm-email",
         element: <SuspenseWrapper><EmailConfirmation /></SuspenseWrapper>,
+      },
+      {
+        path: "/auth/callback",
+        element: <SuspenseWrapper><AuthCallback /></SuspenseWrapper>,
       },
       {
         path: "/onboarding",

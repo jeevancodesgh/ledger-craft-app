@@ -1128,23 +1128,18 @@ export const businessProfileService = {
     console.log('Fetching business profile for user:', user.id);
     
     try {
-      // Add timeout wrapper to prevent hanging
-      const queryPromise = supabase
+      // Simplified query without timeout wrapper
+      const { data, error } = await supabase
         .from('business_profiles')
         .select('*')
         .eq('user_id', user.id)
         .limit(1)
         .maybeSingle();
 
-      const timeoutPromise = new Promise<never>((_, reject) =>
-        setTimeout(() => reject(new Error('Business profile query timeout')), 10000)
-      );
-
-      const { data, error } = await Promise.race([queryPromise, timeoutPromise]);
-
       if (error) {
         console.error('Error fetching business profile:', error);
-        throw error;
+        // Return null instead of throwing to prevent blocking onboarding check
+        return null;
       }
       
       console.log('Business profile query result:', data ? 'Profile found' : 'No profile found');

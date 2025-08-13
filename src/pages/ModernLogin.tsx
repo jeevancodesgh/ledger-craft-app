@@ -18,11 +18,12 @@ const loginSchema = z.object({
 type LoginFormValues = z.infer<typeof loginSchema>;
 
 const ModernLogin = () => {
-  const { signIn } = useAuth();
+  const { signIn, signInWithGoogle } = useAuth();
   const { toast } = useToast();
   const navigate = useNavigate();
   const location = useLocation();
   const [isLoading, setIsLoading] = useState(false);
+  const [isGoogleLoading, setIsGoogleLoading] = useState(false);
   const [rememberMe, setRememberMe] = useState(false);
 
   const {
@@ -83,6 +84,30 @@ const ModernLogin = () => {
       });
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  const handleGoogleSignIn = async () => {
+    setIsGoogleLoading(true);
+    try {
+      const { error } = await signInWithGoogle();
+      
+      if (error) {
+        toast({
+          title: 'Google Sign In Failed',
+          description: error.message,
+          variant: 'destructive'
+        });
+      }
+      // If successful, the OAuth flow will redirect to the callback page
+    } catch (error) {
+      toast({
+        title: 'Google Sign In Failed', 
+        description: 'An unexpected error occurred. Please try again.',
+        variant: 'destructive'
+      });
+    } finally {
+      setIsGoogleLoading(false);
     }
   };
 
@@ -162,38 +187,34 @@ const ModernLogin = () => {
         </div>
 
         {/* Social Login Buttons */}
-        <div className="grid grid-cols-2 gap-3">
+        <div className="grid gap-3">
           <ModernButton
             type="button"
             variant="outline"
-            size="md"
+            grid-cols-2 
             icon={Chrome}
-            disabled={isLoading}
-            onClick={() => {
-              toast({
-                title: 'Coming Soon',
-                description: 'Social login will be available soon!',
-              });
-            }}
+            disabled={isLoading || isGoogleLoading}
+            loading={isGoogleLoading}
+            onClick={handleGoogleSignIn}
           >
-            Google
+            {isGoogleLoading ? 'Signing in...' : 'Google'}
           </ModernButton>
           
-          <ModernButton
+          {/* <ModernButton
             type="button"
             variant="outline"
             size="md"
             icon={Github}
-            disabled={isLoading}
+            disabled={isLoading || isGoogleLoading}
             onClick={() => {
               toast({
                 title: 'Coming Soon',
-                description: 'Social login will be available soon!',
+                description: 'GitHub login will be available soon!',
               });
             }}
           >
             GitHub
-          </ModernButton>
+          </ModernButton> */}
         </div>
 
         {/* Sign Up Link */}

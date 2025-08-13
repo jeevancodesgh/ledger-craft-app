@@ -10,11 +10,13 @@ interface AuthContextType {
   session: Session | null;
   signUp: (email: string, password: string, fullName?: string) => Promise<{ error: any; data?: any; needsEmailConfirmation?: boolean }>;
   signIn: (email: string, password: string) => Promise<{ error: any }>;
+  signInWithGoogle: () => Promise<{ error: any }>;
   signOut: () => Promise<void>;
   loading: boolean;
   hasCompletedOnboarding: boolean;
   onboardingChecked: boolean;
   refreshUser: () => Promise<void>;
+  retryOnboardingCheck: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -34,20 +36,26 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       return;
     }
     
+    console.log('Checking onboarding status for user:', userId);
+    
     try {
-      console.log('Checking onboarding status for user:', userId);
-      
-      // Add timeout wrapper with better error handling
-      const checkPromise = businessProfileService.getBusinessProfile();
-      const timeoutPromise = new Promise<null>((_, reject) =>
-        setTimeout(() => reject(new Error('Onboarding check timeout')), 10000)
-      );
+      // Simple query with fallback on timeout
+      const { data, error } = await supabase
+        .from('business_profiles')
+        .select('id')
+        .eq('user_id', userId)
+        .limit(1)
+        .maybeSingle();
 
-      const businessProfile = await Promise.race([checkPromise, timeoutPromise]);
-      console.log('Business profile found:', !!businessProfile);
+      if (error && error.code !== 'PGRST116') { // PGRST116 is "not found" which is expected
+        console.warn('Database error checking business profile:', error);
+        // On database errors, assume not onboarded for safety but don't block
+        setHasCompletedOnboarding(false);
+        setOnboardingChecked(true);
+        return;
+      }
       
-      // Set onboarding status based on business profile
-      const isOnboarded = !!businessProfile;
+      const isOnboarded = !!data;
       setHasCompletedOnboarding(isOnboarded);
       setOnboardingChecked(true);
       
@@ -56,8 +64,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     } catch (error) {
       console.error('Error checking onboarding status:', error);
       
-      // On error, assume not onboarded to be safe
-      // But don't block the user completely - they can retry
+      // On any errors, assume not onboarded to be safe
+      // This ensures users can still access the app and complete onboarding
       setHasCompletedOnboarding(false);
       setOnboardingChecked(true);
       
@@ -176,6 +184,18 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     return { error };
   };
 
+  const signInWithGoogle = async () => {
+    setLoading(true);
+    const { error } = await supabase.auth.signInWithOAuth({
+      provider: 'google',
+      options: {
+        redirectTo: `${window.location.origin}/auth/callback`
+      }
+    });
+    setLoading(false);
+    return { error };
+  };
+
   const signOut = async () => {
     await supabase.auth.signOut();
   };
@@ -185,6 +205,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     session,
     signUp,
     signIn,
+    signInWithGoogle,
     signOut,
     loading,
     hasCompletedOnboarding,
