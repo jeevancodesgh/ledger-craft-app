@@ -12,14 +12,19 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children, requireOnboar
   const { user, loading, hasCompletedOnboarding, onboardingChecked, retryOnboardingCheck } = useAuth();
   const location = useLocation();
 
-  console.log('ProtectedRoute:', { 
-    user: !!user, 
-    loading, 
-    hasCompletedOnboarding, 
-    onboardingChecked, 
-    requireOnboarding, 
-    path: location.pathname 
-  });
+  // Debug logging (remove in production)
+  if (process.env.NODE_ENV === 'development') {
+    console.log('ProtectedRoute:', { 
+      user: !!user, 
+      userId: user?.id,
+      loading, 
+      hasCompletedOnboarding, 
+      onboardingChecked, 
+      requireOnboarding, 
+      path: location.pathname,
+      willShowLoading: loading || (user && !onboardingChecked)
+    });
+  }
 
   // If still loading authentication state or onboarding status, show a loading indicator
   if (loading || (user && !onboardingChecked)) {

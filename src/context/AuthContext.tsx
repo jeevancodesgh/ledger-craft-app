@@ -36,26 +36,20 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       return;
     }
     
-    console.log('Checking onboarding status for user:', userId);
-    
     try {
-      // Simple query with fallback on timeout
-      const { data, error } = await supabase
-        .from('business_profiles')
-        .select('id')
-        .eq('user_id', userId)
-        .limit(1)
-        .maybeSingle();
-
-      if (error && error.code !== 'PGRST116') { // PGRST116 is "not found" which is expected
-        console.warn('Database error checking business profile:', error);
-        // On database errors, assume not onboarded for safety but don't block
-        setHasCompletedOnboarding(false);
-        setOnboardingChecked(true);
-        return;
-      }
+      console.log('Checking onboarding status for user:', userId);
       
-      const isOnboarded = !!data;
+      // Add timeout wrapper with better error handling
+      const checkPromise = businessProfileService.getBusinessProfile();
+      const timeoutPromise = new Promise<null>((_, reject) =>
+        setTimeout(() => reject(new Error('Onboarding check timeout')), 10000)
+      );
+
+      const businessProfile = await Promise.race([checkPromise, timeoutPromise]);
+      console.log('Business profile found:', !!businessProfile);
+      
+      // Set onboarding status based on business profile
+      const isOnboarded = !!businessProfile;
       setHasCompletedOnboarding(isOnboarded);
       setOnboardingChecked(true);
       
@@ -64,8 +58,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     } catch (error) {
       console.error('Error checking onboarding status:', error);
       
-      // On any errors, assume not onboarded to be safe
-      // This ensures users can still access the app and complete onboarding
+      // On error, assume not onboarded to be safe
+      // But don't block the user completely - they can retry
       setHasCompletedOnboarding(false);
       setOnboardingChecked(true);
       
@@ -134,12 +128,16 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         setSession(currentSession);
         setUser(currentSession?.user ?? null);
         
-        // Check onboarding status asynchronously without blocking loading
         if (currentSession?.user?.id) {
-          checkOnboardingStatus(currentSession.user.id).catch(console.error);
+          await checkOnboardingStatus(currentSession.user.id);
+        } else {
+          setOnboardingChecked(true);
+          setHasCompletedOnboarding(false);
         }
       } catch (error) {
         console.error('Error checking session:', error);
+        setOnboardingChecked(true);
+        setHasCompletedOnboarding(false);
       } finally {
         setLoading(false);
       }
