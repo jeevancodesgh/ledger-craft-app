@@ -27,43 +27,51 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [loading, setLoading] = useState(true);
   const [hasCompletedOnboarding, setHasCompletedOnboarding] = useState(false);
   const [onboardingChecked, setOnboardingChecked] = useState(false);
+  const [lastCheckedUserId, setLastCheckedUserId] = useState<string | null>(null);
   const navigate = useNavigate();
 
   const checkOnboardingStatus = async (userId: string) => {
-    // Don't check again if already checked for this user
-    if (onboardingChecked) {
-      console.log('Onboarding status already checked, skipping...');
+    // Don't check again if already checked for this specific user
+    if (onboardingChecked && lastCheckedUserId === userId) {
+      console.log('Onboarding status already checked for this user, skipping...');
+      return;
+    }
+    
+    // Prevent multiple simultaneous checks
+    if ((checkOnboardingStatus as any).isChecking) {
+      console.log('Onboarding check already in progress, skipping...');
       return;
     }
     
     try {
+      (checkOnboardingStatus as any).isChecking = true;
       console.log('Checking onboarding status for user:', userId);
       
-      // Add timeout wrapper with better error handling
-      const checkPromise = businessProfileService.getBusinessProfile();
-      const timeoutPromise = new Promise<null>((_, reject) =>
-        setTimeout(() => reject(new Error('Onboarding check timeout')), 10000)
-      );
-
-      const businessProfile = await Promise.race([checkPromise, timeoutPromise]);
+      // Direct call without timeout wrapper since the service handles errors gracefully
+      const businessProfile = await businessProfileService.getBusinessProfile();
       console.log('Business profile found:', !!businessProfile);
       
       // Set onboarding status based on business profile
       const isOnboarded = !!businessProfile;
       setHasCompletedOnboarding(isOnboarded);
       setOnboardingChecked(true);
+      setLastCheckedUserId(userId);
       
       console.log('Onboarding status set to:', isOnboarded);
       
     } catch (error) {
       console.error('Error checking onboarding status:', error);
       
-      // On error, assume not onboarded to be safe
-      // But don't block the user completely - they can retry
-      setHasCompletedOnboarding(false);
+      // On error, don't assume anything - let the user retry
+      // Keep the current onboarding status if we had one before
+      if (!hasCompletedOnboarding) {
+        setHasCompletedOnboarding(false);
+      }
       setOnboardingChecked(true);
       
-      console.log('Onboarding status set to false due to error');
+      console.log('Onboarding status check failed, keeping current status');
+    } finally {
+      (checkOnboardingStatus as any).isChecking = false;
     }
   };
 
@@ -73,8 +81,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setUser(currentSession?.user ?? null);
     
     if (currentSession?.user?.id) {
-      // Reset onboarding check to force a fresh check
-      setOnboardingChecked(false);
+      // Only reset onboarding check if it's a different user
+      if (lastCheckedUserId !== currentSession.user.id) {
+        setOnboardingChecked(false);
+        setLastCheckedUserId(null);
+      }
       await checkOnboardingStatus(currentSession.user.id);
     }
   };
@@ -84,6 +95,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     if (user?.id) {
       console.log('Retrying onboarding check...');
       setOnboardingChecked(false);
+      setLastCheckedUserId(null);
       setHasCompletedOnboarding(false);
       await checkOnboardingStatus(user.id);
     }
@@ -99,13 +111,18 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         setUser(currentSession?.user ?? null);
         
         if (currentSession?.user?.id) {
-          console.log('User signed in, checking onboarding status...');
-          // Reset onboarding status for new session
-          setOnboardingChecked(false);
-          setHasCompletedOnboarding(false);
-          
-          // Check onboarding status
-          await checkOnboardingStatus(currentSession.user.id);
+          // Only handle specific auth events that require onboarding checks
+          if (event === 'SIGNED_IN') {
+            console.log('User signed in, checking onboarding status...');
+            setOnboardingChecked(false);
+            setHasCompletedOnboarding(false);
+            await checkOnboardingStatus(currentSession.user.id);
+          } else if (event === 'TOKEN_REFRESHED') {
+            console.log('Token refreshed - no onboarding check needed');
+            // Don't check onboarding on token refresh - user is already authenticated
+          } else {
+            console.log(`Auth event ${event} - no onboarding check needed`);
+          }
         } else {
           console.log('No user session, resetting onboarding status');
           setHasCompletedOnboarding(false);
@@ -116,6 +133,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           console.log('User signed out, redirecting to login');
           setHasCompletedOnboarding(false);
           setOnboardingChecked(false);
+          setLastCheckedUserId(null);
           navigate('/login');
         }
       }
@@ -145,11 +163,21 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
     checkSession();
 
-    // Cleanup subscription
+    // Handle visibility change to prevent unnecessary auth checks when app regains focus
+    const handleVisibilityChange = () => {
+      if (!document.hidden && user && onboardingChecked) {
+        console.log('App regained focus, but onboarding already checked - no action needed');
+      }
+    };
+
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+
+    // Cleanup subscription and event listeners
     return () => {
       subscription.unsubscribe();
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
     };
-  }, [navigate]);
+  }, [navigate, user, onboardingChecked]);
 
   const signUp = async (email: string, password: string, fullName?: string) => {
     setLoading(true);
