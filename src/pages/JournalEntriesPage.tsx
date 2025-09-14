@@ -12,7 +12,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { useToast } from '@/hooks/use-toast';
 import { JournalEntry } from '@/types/payment';
 import { format, startOfMonth, endOfMonth, startOfQuarter, endOfQuarter, startOfYear, endOfYear, subMonths, subQuarters } from 'date-fns';
-import { useAuth } from '@/context/AuthContext';
+import { useAuth } from "@/context/StableAuthContext";
 import { supabaseDataService } from '@/services/supabaseDataService';
 
 interface JournalEntryFormData {

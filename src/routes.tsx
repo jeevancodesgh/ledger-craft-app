@@ -4,10 +4,10 @@ import { AppLayout } from "@/components/layout/AppLayout";
 import { Spinner } from "@/components/ui/spinner";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { ToastProvider } from "@/hooks/use-toast";
-import { AppProvider } from "./context/AppContext";
+import { AppProvider } from "./context/StableAppContext";
 import { TooltipProvider } from "./components/ui/tooltip";
-import { AuthProvider } from "./context/AuthContext";
-import { ConversationProvider } from "./context/ConversationContext";
+import { AuthProvider } from "./context/StableAuthContext";
+// ConversationProvider removed - now using conversationManager singleton
 import { Toaster } from "./components/ui/toaster";
 import { Toaster as Sonner } from "./components/ui/sonner";
 import ProtectedRoute from "@/components/auth/ProtectedRoute";
@@ -70,11 +70,9 @@ const Root = () => {
         <TooltipProvider>
           <AuthProvider>
             <AppProvider>
-              <ConversationProvider>
-                <Outlet />
-                <Toaster />
-                <Sonner />
-              </ConversationProvider>
+              <Outlet />
+              <Toaster />
+              <Sonner />
             </AppProvider>
           </AuthProvider>
         </TooltipProvider>

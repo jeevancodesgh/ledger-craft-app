@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useToast } from '@/hooks/use-toast';
 import { OnboardingStep, OnboardingData, DEFAULT_BUSINESS_THEME } from '../types';
-import { useAuth } from '../context/AuthContext';
+import { useAuth } from '../context/StableAuthContext';
 import { businessProfileService } from '../services/supabaseService';
 import { supabase } from '@/integrations/supabase/client';
 import OnboardingLayout from '../components/onboarding/OnboardingLayout';

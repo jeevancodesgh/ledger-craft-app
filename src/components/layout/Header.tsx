@@ -1,6 +1,6 @@
 import React from 'react';
 import { Bell, Menu, Search, LogOut, UserPlus, Download, Plus, User, Settings, ChevronDown, Info } from 'lucide-react';
-import { useAuth } from '@/context/AuthContext';
+import { useAuth } from '@/context/StableAuthContext';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
 import { useNavigate, useLocation } from 'react-router-dom';

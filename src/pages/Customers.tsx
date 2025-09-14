@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { Card, CardContent, CardFooter, CardHeader } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Plus, Star, Pencil, Trash, Mail, Phone, MapPin, ChevronRight, Filter, X, Search, ChevronDown, RefreshCw, Loader2 } from 'lucide-react';
@@ -97,37 +97,9 @@ const Customers = () => {
     sortOrder: 'asc',
   });
 
-  useEffect(() => {
-    fetchCustomers();
-  }, []);
+  // No useEffects needed - data manager handles initialization automatically
 
-  // Auto-refresh when user returns to the tab/window
-  useEffect(() => {
-    const handleVisibilityChange = () => {
-      if (!document.hidden && !loading) {
-        fetchCustomers();
-      }
-    };
-
-    document.addEventListener('visibilitychange', handleVisibilityChange);
-    
-    return () => {
-      document.removeEventListener('visibilitychange', handleVisibilityChange);
-    };
-  }, [loading]);
-
-  // Periodic auto-refresh every 30 seconds when tab is active
-  useEffect(() => {
-    const interval = setInterval(() => {
-      if (!document.hidden && !loading && !isRefreshing) {
-        fetchCustomers();
-      }
-    }, 30000);
-
-    return () => clearInterval(interval);
-  }, [loading, isRefreshing]);
-
-  const fetchCustomers = async () => {
+  const fetchCustomers = useCallback(async () => {
     try {
       setLoading(true);
       const data = await customerService.getCustomers();
@@ -142,7 +114,7 @@ const Customers = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [toast]);
 
   // Manual refresh function
   const handleManualRefresh = async () => {

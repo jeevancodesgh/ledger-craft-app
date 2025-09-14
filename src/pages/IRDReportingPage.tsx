@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { IRDReportingDashboard } from '@/components/reporting/IRDReportingDashboard';
 import { GSTReturnWizard } from '@/components/tax/GSTReturnWizard';
 import { useToast } from '@/hooks/use-toast';
-import { useAuth } from '@/context/AuthContext';
+import { useAuth } from "@/context/StableAuthContext";
 import { Skeleton } from '@/components/ui/skeleton';
 import { Card, CardContent } from '@/components/ui/card';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';

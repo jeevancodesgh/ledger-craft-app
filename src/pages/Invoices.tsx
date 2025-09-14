@@ -1,5 +1,5 @@
 import React from 'react';
-import { useAppContext } from '@/context/AppContext';
+import { useAppData } from '@/hooks/useAppData';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { formatCurrency, getStatusColor, formatDate } from '@/utils/invoiceUtils';
 import { Button } from '@/components/ui/button';
@@ -62,7 +62,7 @@ interface InvoiceFilters {
 }
 
 const Invoices = () => {
-  const { invoices, isLoadingInvoices, deleteInvoice, refreshInvoices, createInvoice, businessProfile, getNextInvoiceNumber, updateInvoiceStatus } = useAppContext();
+  const { invoices, isLoadingInvoices, refreshInvoices, businessProfile, deleteInvoice, createInvoice, getNextInvoiceNumber, updateInvoiceStatus } = useAppData();
   const { toast } = useToast();
   const navigate = useNavigate();
   const isMobile = useIsMobile();
@@ -196,41 +196,8 @@ const Invoices = () => {
     }
   };
 
-  // Auto-fetch invoices when component mounts and when navigating back to this page
-  useEffect(() => {
-    const fetchData = async () => {
-      if (!isLoadingInvoices) {
-        await refreshInvoices();
-      }
-    };
-    fetchData();
-  }, []);
-
-  // Auto-refresh when user returns to the tab/window
-  useEffect(() => {
-    const handleVisibilityChange = () => {
-      if (!document.hidden && !isLoadingInvoices) {
-        refreshInvoices();
-      }
-    };
-
-    document.addEventListener('visibilitychange', handleVisibilityChange);
-    
-    return () => {
-      document.removeEventListener('visibilitychange', handleVisibilityChange);
-    };
-  }, [isLoadingInvoices, refreshInvoices]);
-
-  // Periodic auto-refresh every 30 seconds when tab is active
-  useEffect(() => {
-    const interval = setInterval(() => {
-      if (!document.hidden && !isLoadingInvoices && !isRefreshing) {
-        refreshInvoices();
-      }
-    }, 30000); // 30 seconds
-
-    return () => clearInterval(interval);
-  }, [isLoadingInvoices, isRefreshing, refreshInvoices]);
+  // No useEffects needed - data manager handles initialization and updates automatically
+  // Manual refresh is available via the refresh button
 
   // Manual refresh function
   const handleManualRefresh = async () => {

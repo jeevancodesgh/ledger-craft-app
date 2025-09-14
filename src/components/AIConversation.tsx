@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { aiConversationService, ConversationMessage, InvoiceCreationContext } from '../services/aiConversationService';
-import { useAuth } from '../context/AuthContext';
+import { useAuth } from "@/context/StableAuthContext";
 import { useNavigate } from 'react-router-dom';
 
 interface AIConversationProps {

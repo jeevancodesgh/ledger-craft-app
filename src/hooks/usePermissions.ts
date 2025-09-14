@@ -1,4 +1,4 @@
-import { useAuth } from '@/context/AuthContext';
+import { useAuth } from '@/context/StableAuthContext';
 import { useMemo } from 'react';
 
 // Define feature permissions

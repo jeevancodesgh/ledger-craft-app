@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import React, { createContext, useContext, useState, useEffect, ReactNode, useCallback, useRef } from 'react';
 import { 
   ConversationSession, 
   ConversationMessage, 
@@ -64,12 +64,52 @@ export const ConversationProvider: React.FC<ConversationProviderProps> = ({ chil
   const { user } = useAuth();
   const { toast } = useToast();
   const navigate = useNavigate();
+  const conversationsLoadedRef = useRef<string | null>(null);
+  
+  // Use localStorage to persist conversation loading state across HMR reloads
+  const getConversationLoadedKey = (userId: string) => `conversations_loaded_${userId}`;
+  const areConversationsLoaded = (userId: string) => {
+    return localStorage.getItem(getConversationLoadedKey(userId)) === 'true';
+  };
+  const setConversationsLoaded = (userId: string) => {
+    localStorage.setItem(getConversationLoadedKey(userId), 'true');
+  };
+  const clearConversationsLoaded = () => {
+    Object.keys(localStorage).forEach(key => {
+      if (key.startsWith('conversations_loaded_')) {
+        localStorage.removeItem(key);
+      }
+    });
+  };
+
+  const getRecentConversations = async (): Promise<void> => {
+    if (!user) return;
+    
+    try {
+      const conversations = await conversationService.getUserConversations(user.id);
+      setRecentConversations(conversations);
+    } catch (error) {
+      console.error('Error fetching recent conversations:', error);
+    }
+  };
 
   // Load recent conversations on mount
   useEffect(() => {
-    if (user) {
+    const conversationsAlreadyLoaded = user ? areConversationsLoaded(user.id) : false;
+    
+    if (user && conversationsLoadedRef.current !== user.id && !conversationsAlreadyLoaded) {
+      console.log('ConversationContext: Loading conversations for user:', user.id);
+      conversationsLoadedRef.current = user.id;
+      setConversationsLoaded(user.id);
       getRecentConversations();
+    } else if (!user) {
+      conversationsLoadedRef.current = null;
+      clearConversationsLoaded();
+    } else if (user && conversationsAlreadyLoaded) {
+      console.log('ConversationContext: Conversations already loaded for user, skipping');
+      conversationsLoadedRef.current = user.id;
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user]);
 
   const createNewConversation = async (): Promise<ConversationSession> => {
@@ -139,17 +179,6 @@ export const ConversationProvider: React.FC<ConversationProviderProps> = ({ chil
       });
     } finally {
       setIsLoading(false);
-    }
-  };
-
-  const getRecentConversations = async (): Promise<void> => {
-    if (!user) return;
-    
-    try {
-      const conversations = await conversationService.getUserConversations(user.id);
-      setRecentConversations(conversations);
-    } catch (error) {
-      console.error('Error fetching recent conversations:', error);
     }
   };
 

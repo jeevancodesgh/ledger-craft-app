@@ -1,8 +1,8 @@
-import React, { createContext, useContext, useState, useEffect } from "react";
+import React, { createContext, useContext, useState, useEffect, useCallback, useRef } from "react";
 import { customerService, invoiceService, businessProfileService, itemService, itemCategoryService, accountService, expenseService, expenseCategoryService } from "@/services/supabaseService";
 import { paymentService } from "@/services/paymentService";
 import { Customer, Invoice, BusinessProfile, Item, ItemCategory, Account, Expense, ExpenseCategory } from "@/types";
-import { Payment, Receipt, CreatePaymentRequest } from "@/types/payment";
+import { Payment, Receipt, CreatePaymentRequest, EnhancedInvoice } from "@/types/payment";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/context/AuthContext";
 
@@ -105,47 +105,35 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const [units, setUnits] = useState<string[]>(defaultUnits);
   const { toast } = useToast();
   const { user, loading } = useAuth();
+  const initializationRef = useRef(false);
+  
+  // Use localStorage to persist initialization state across HMR reloads
+  const getInitializationKey = (userId: string) => `app_initialized_${userId}`;
+  const isInitialized = (userId: string) => {
+    return localStorage.getItem(getInitializationKey(userId)) === 'true';
+  };
+  const setInitialized = (userId: string) => {
+    localStorage.setItem(getInitializationKey(userId), 'true');
+  };
+  const clearInitialized = () => {
+    // Clear all initialization flags
+    Object.keys(localStorage).forEach(key => {
+      if (key.startsWith('app_initialized_')) {
+        localStorage.removeItem(key);
+      }
+    });
+  };
+  
+  // Expose clear function globally for development
+  if (typeof window !== 'undefined' && process.env.NODE_ENV === 'development') {
+    (window as any).clearAppInitialization = () => {
+      clearInitialized();
+      initializationRef.current = false;
+      console.log('App initialization state cleared. Refresh to reinitialize.');
+    };
+  }
 
-  // Only fetch data when user is authenticated and auth loading is complete
-  useEffect(() => {
-    if (!loading && user) {
-      fetchCustomers();
-      fetchInvoices();
-      fetchBusinessProfile();
-      fetchItems();
-      fetchItemCategories();
-      fetchAccounts();
-      fetchExpenses();
-      fetchExpenseCategories();
-      fetchPayments();
-      fetchReceipts();
-    } else if (!loading && !user) {
-      // Reset loading states when not authenticated
-      setIsLoadingCustomers(false);
-      setIsLoadingInvoices(false);
-      setIsLoadingBusinessProfile(false);
-      setIsLoadingItems(false);
-      setIsLoadingItemCategories(false);
-      setIsLoadingAccounts(false);
-      setIsLoadingExpenses(false);
-      setIsLoadingExpenseCategories(false);
-      setIsLoadingPayments(false);
-      setIsLoadingReceipts(false);
-      
-      // Clear any existing data
-      setCustomers([]);
-      setInvoices([]);
-      setBusinessProfile(null);
-      setItems([]);
-      setItemCategories([]);
-      setAccounts([]);
-      setExpenses([]);
-      setExpenseCategories([]);
-      setPayments([]);
-      setReceipts([]);
-    }
-  }, [user, loading]);
-
+  // Define all fetch functions first (no useCallback needed for internal functions)
   const fetchCustomers = async () => {
     try {
       setIsLoadingCustomers(true);
@@ -153,11 +141,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       setCustomers(data);
     } catch (error) {
       console.error("Error loading customers:", error);
-      toast({
-        title: "Error",
-        description: "Failed to load customers. Please try again.",
-        variant: "destructive",
-      });
+      // Don't use toast in fetch functions to avoid dependency issues
     } finally {
       setIsLoadingCustomers(false);
     }
@@ -245,11 +229,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       setInvoices(sortedData);
     } catch (error) {
       console.error("Error loading invoices:", error);
-      toast({
-        title: "Error",
-        description: "Failed to load invoices. Please try again.",
-        variant: "destructive",
-      });
+      // Don't use toast in fetch functions to avoid dependency issues
     } finally {
       setIsLoadingInvoices(false);
     }
@@ -329,9 +309,9 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     }
   };
 
-  const refreshInvoices = async () => {
+  const refreshInvoices = useCallback(async () => {
     await fetchInvoices();
-  };
+  }, []);
 
   const fetchBusinessProfile = async () => {
     try {
@@ -340,19 +320,15 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       setBusinessProfile(data);
     } catch (error) {
       console.error("Error loading business profile:", error);
-      toast({
-        title: "Error",
-        description: "Failed to load business profile. Please try again.",
-        variant: "destructive",
-      });
+      // Don't use toast in fetch functions to avoid dependency issues
     } finally {
       setIsLoadingBusinessProfile(false);
     }
   };
 
-  const refreshBusinessProfile = async () => {
+  const refreshBusinessProfile = useCallback(async () => {
     await fetchBusinessProfile();
-  };
+  }, []);
 
   const saveBusinessProfile = async (profile: Omit<BusinessProfile, "id" | "createdAt" | "updatedAt">) => {
     try {
@@ -403,11 +379,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       setItems(data);
     } catch (error) {
       console.error("Error loading items:", error);
-      toast({
-        title: "Error",
-        description: "Failed to load items. Please try again.",
-        variant: "destructive",
-      });
+      // Don't use toast in fetch functions to avoid dependency issues
     } finally {
       setIsLoadingItems(false);
     }
@@ -494,11 +466,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       setItemCategories(data);
     } catch (error) {
       console.error("Error loading item categories:", error);
-      toast({
-        title: "Error",
-        description: "Failed to load item categories. Please try again.",
-        variant: "destructive",
-      });
+      // Don't use toast in fetch functions to avoid dependency issues
     } finally {
       setIsLoadingItemCategories(false);
     }
@@ -587,9 +555,9 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     }
   };
 
-  const refreshCustomers = async () => {
+  const refreshCustomers = useCallback(async () => {
     await fetchCustomers();
-  };
+  }, []);
 
   const fetchAccounts = async () => {
     try {
@@ -598,11 +566,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       setAccounts(data);
     } catch (error) {
       console.error("Error loading accounts:", error);
-      toast({
-        title: "Error",
-        description: "Failed to load accounts. Please try again.",
-        variant: "destructive",
-      });
+      // Don't use toast in fetch functions to avoid dependency issues
     } finally {
       setIsLoadingAccounts(false);
     }
@@ -652,9 +616,9 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     }
   };
 
-  const refreshAccounts = async () => {
+  const refreshAccounts = useCallback(async () => {
     await fetchAccounts();
-  };
+  }, []);
 
   // Expense Category functions
   const fetchExpenseCategories = async () => {
@@ -664,11 +628,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       setExpenseCategories(data);
     } catch (error) {
       console.error("Error loading expense categories:", error);
-      toast({
-        title: "Error",
-        description: "Failed to load expense categories. Please try again.",
-        variant: "destructive",
-      });
+      // Don't use toast in fetch functions to avoid dependency issues
     } finally {
       setIsLoadingExpenseCategories(false);
     }
@@ -747,9 +707,9 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     }
   };
 
-  const refreshExpenseCategories = async () => {
+  const refreshExpenseCategories = useCallback(async () => {
     await fetchExpenseCategories();
-  };
+  }, []);
 
   // Expense functions
   const fetchExpenses = async () => {
@@ -759,11 +719,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       setExpenses(data);
     } catch (error) {
       console.error("Error loading expenses:", error);
-      toast({
-        title: "Error",
-        description: "Failed to load expenses. Please try again.",
-        variant: "destructive",
-      });
+      // Don't use toast in fetch functions to avoid dependency issues
     } finally {
       setIsLoadingExpenses(false);
     }
@@ -842,9 +798,9 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     }
   };
 
-  const refreshExpenses = async () => {
+  const refreshExpenses = useCallback(async () => {
     await fetchExpenses();
-  };
+  }, []);
 
   // Payment functions
   const fetchPayments = async () => {
@@ -854,11 +810,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       setPayments(data);
     } catch (error) {
       console.error("Error loading payments:", error);
-      toast({
-        title: "Error",
-        description: "Failed to load payments. Please try again.",
-        variant: "destructive",
-      });
+      // Don't use toast in fetch functions to avoid dependency issues
     } finally {
       setIsLoadingPayments(false);
     }
@@ -871,15 +823,71 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       setReceipts(data);
     } catch (error) {
       console.error("Error loading receipts:", error);
-      toast({
-        title: "Error",
-        description: "Failed to load receipts. Please try again.",
-        variant: "destructive",
-      });
+      // Don't use toast in fetch functions to avoid dependency issues
     } finally {
       setIsLoadingReceipts(false);
     }
   };
+
+  // Only fetch data when user is authenticated and auth loading is complete
+  useEffect(() => {
+    const userInitialized = user ? isInitialized(user.id) : false;
+    console.log('AppContext useEffect triggered:', { 
+      loading, 
+      user: !!user, 
+      refInitialized: initializationRef.current,
+      localStorageInitialized: userInitialized
+    });
+    
+    if (!loading && user && !initializationRef.current && !userInitialized) {
+      console.log('AppContext: Initializing data for user:', user.id);
+      initializationRef.current = true;
+      setInitialized(user.id);
+      
+      // Call fetch functions directly on initial load
+      fetchCustomers();
+      fetchInvoices();
+      fetchBusinessProfile();
+      fetchItems();
+      fetchItemCategories();
+      fetchAccounts();
+      fetchExpenses();
+      fetchExpenseCategories();
+      fetchPayments();
+      fetchReceipts();
+    } else if (!loading && !user) {
+      console.log('AppContext: Resetting data - no user');
+      initializationRef.current = false;
+      clearInitialized();
+      
+      // Reset loading states when not authenticated
+      setIsLoadingCustomers(false);
+      setIsLoadingInvoices(false);
+      setIsLoadingBusinessProfile(false);
+      setIsLoadingItems(false);
+      setIsLoadingItemCategories(false);
+      setIsLoadingAccounts(false);
+      setIsLoadingExpenses(false);
+      setIsLoadingExpenseCategories(false);
+      setIsLoadingPayments(false);
+      setIsLoadingReceipts(false);
+      
+      // Clear any existing data
+      setCustomers([]);
+      setInvoices([]);
+      setBusinessProfile(null);
+      setItems([]);
+      setItemCategories([]);
+      setAccounts([]);
+      setExpenses([]);
+      setExpenseCategories([]);
+      setPayments([]);
+      setReceipts([]);
+    } else if (!loading && user && userInitialized) {
+      console.log('AppContext: User already initialized, skipping data fetch');
+      initializationRef.current = true;
+    }
+  }, [user, loading]);
 
   const createPayment = async (payment: CreatePaymentRequest) => {
     try {
@@ -992,13 +1000,13 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     }
   };
 
-  const refreshPayments = async () => {
+  const refreshPayments = useCallback(async () => {
     await fetchPayments();
-  };
+  }, []);
 
-  const refreshReceipts = async () => {
+  const refreshReceipts = useCallback(async () => {
     await fetchReceipts();
-  };
+  }, []);
 
   const getInvoicesWithBalance = async () => {
     try {

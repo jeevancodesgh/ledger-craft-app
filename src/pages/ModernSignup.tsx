@@ -3,7 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
-import { useAuth } from '@/context/AuthContext';
+import { useAuth } from "@/context/StableAuthContext";
 import { useToast } from '@/hooks/use-toast';
 import { User, Mail, Lock, ArrowRight, Chrome, Github, Shield } from 'lucide-react';
 import ModernAuthLayout from '../components/auth/modern/ModernAuthLayout';

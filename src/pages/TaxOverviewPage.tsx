@@ -5,7 +5,7 @@ import { ComplianceStatus } from '@/components/tax/ComplianceStatus';
 import { QuickActions } from '@/components/tax/QuickActions';
 import { QuarterlyTrends } from '@/components/tax/QuarterlyTrends';
 import { RecentTaxActivity } from '@/components/tax/RecentTaxActivity';
-import { useAuth } from '@/context/AuthContext';
+import { useAuth } from "@/context/StableAuthContext";
 import { supabaseDataService } from '@/services/supabaseDataService';
 import { taxCalculationService } from '@/services/taxCalculationService';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';

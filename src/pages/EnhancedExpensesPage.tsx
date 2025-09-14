@@ -43,7 +43,7 @@ import {
   Trash2
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { useAuth } from '@/context/AuthContext';
+import { useAuth } from "@/context/StableAuthContext";
 import { ExpenseTaxInterface } from '@/components/expense/ExpenseTaxInterface';
 import { ExpenseGSTSummary } from '@/components/expense/ExpenseGSTSummary';
 import { BulkExpenseProcessor } from '@/components/expense/BulkExpenseProcessor';

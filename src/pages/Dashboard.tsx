@@ -1,5 +1,5 @@
 import React, { useEffect } from 'react';
-import { useAppContext } from '@/context/AppContext';
+import { useAppData } from '@/hooks/useAppData';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { formatCurrency } from '@/utils/invoiceUtils';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, TooltipProps, LineChart, Line, ComposedChart } from 'recharts';
@@ -24,13 +24,9 @@ const Dashboard = () => {
     refreshInvoices, 
     refreshCustomers,
     refreshExpenses 
-  } = useAppContext();
+  } = useAppData();
   
-  useEffect(() => {
-    refreshInvoices();
-    refreshCustomers();
-    refreshExpenses();
-  }, []);
+  // No useEffect needed - data manager handles initialization automatically
   
   const isLoadingStats = isLoadingInvoices || isLoadingCustomers || isLoadingExpenses;
   const isMobile = useIsMobile();
