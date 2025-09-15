@@ -9,7 +9,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useToast } from '@/hooks/use-toast';
-import { useAppContext } from '@/context/AppContext';
+import { useAppData } from '@/hooks/useAppData';
 import { Payment, EnhancedInvoice, CreatePaymentRequest } from '@/types/payment';
 import { Invoice } from '@/types';
 import { paymentService } from '@/services/paymentService';
@@ -30,7 +30,7 @@ export default function PaymentsPage() {
     refreshPayments,
     refreshInvoices,
     getInvoicesWithBalance
-  } = useAppContext();
+  } = useAppData();
 
   // Fetch unpaid invoices for payment processing
   const fetchUnpaidInvoices = async () => {

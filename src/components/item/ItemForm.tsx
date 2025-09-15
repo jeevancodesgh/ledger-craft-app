@@ -7,7 +7,7 @@ import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Switch } from '@/components/ui/switch';
 import { useToast } from '@/hooks/use-toast';
 import { Item, ItemCategory } from '@/types';
-import { useAppContext } from '@/context/AppContext';
+import { useAppData } from '@/hooks/useAppData';
 import {
   Select,
   SelectContent,
@@ -54,7 +54,7 @@ const itemFormSchema = z.object({
 });
 
 export function ItemForm({ initialData, onSubmit, isLoading = false, categories, onCreateCategory }: ItemFormProps) {
-  const { itemCategories, createItemCategory, units } = useAppContext();
+  const { itemCategories, createItemCategory, units } = useAppData();
   const { toast } = useToast();
   const [newCategoryName, setNewCategoryName] = useState("");
   const [isAddingCategory, setIsAddingCategory] = useState(false);

@@ -14,7 +14,7 @@ import { Button } from '@/components/ui/button';
 import { PlusCircle, SearchIcon, Package2, Sparkles } from 'lucide-react';
 import { Item } from '@/types';
 import { useIsMobile } from '@/hooks/use-mobile';
-import { useAppContext } from '@/context/AppContext';
+import { useAppData } from '@/hooks/useAppData';
 import { itemService } from '@/services/supabaseService';
 import { DrawerFormLayout } from '@/components/ui/DrawerFormLayout';
 
@@ -36,7 +36,7 @@ const ItemSelector: React.FC<ItemSelectorProps> = ({
   const [searchTerm, setSearchTerm] = useState('');
   const [open, setOpen] = useState(false);
   const isMobile = useIsMobile();
-  const { itemCategories } = useAppContext();
+  const { itemCategories } = useAppData();
   const [items, setItems] = useState<Item[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);

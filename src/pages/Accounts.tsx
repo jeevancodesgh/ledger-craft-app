@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { useAppContext } from '@/context/AppContext';
+import { useAppData } from '@/hooks/useAppData';
 import { Account, AccountType } from '@/types';
 import { Table } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
@@ -33,7 +33,7 @@ export default function AccountsPage() {
     updateAccount,
     deleteAccount,
     refreshAccounts,
-  } = useAppContext();
+  } = useAppData();
 
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editing, setEditing] = useState<Account | null>(null);

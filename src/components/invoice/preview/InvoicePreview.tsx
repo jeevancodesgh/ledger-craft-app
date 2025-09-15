@@ -13,7 +13,7 @@ import { Download, Maximize2, Minimize2, ZoomIn, ZoomOut, Printer, ArrowLeft, Sa
 import { generateInvoicePdf } from '@/utils/pdfUtils';
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
-import { useAppContext } from '@/context/AppContext';
+import { useAppData } from '@/hooks/useAppData';
 
 interface InvoicePreviewProps {
   invoice: Invoice;
@@ -44,7 +44,7 @@ const InvoicePreview = ({
   const [isGeneratingPdf, setIsGeneratingPdf] = useState(false);
   const [isPrinting, setIsPrinting] = useState(false);
   const [zoomLevel, setZoomLevel] = useState(isMobile ? 0.75 : 1); // Better mobile default for clear preview with borders
-  const contextBusinessProfile = useAppContext().businessProfile;
+  const contextBusinessProfile = useAppData().businessProfile;
   const effectiveBusinessProfile = businessProfile !== undefined ? businessProfile : contextBusinessProfile;
 
   // Create template data from invoice

@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useAppContext } from '@/context/AppContext';
+import { useAppData } from '@/hooks/useAppData';
 import InvoiceForm from "@/components/invoice/InvoiceForm";
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
@@ -19,8 +19,8 @@ const CreateInvoice = () => {
     createCustomer, 
     items, 
     isLoadingItems,
-    refreshBusinessProfile
-  } = useAppContext();
+    fetchBusinessProfile
+  } = useAppData();
   const navigate = useNavigate();
   const { toast } = useToast();
   const [newlyAddedCustomer, setNewlyAddedCustomer] = useState<Customer | null>(null);
@@ -64,7 +64,7 @@ const CreateInvoice = () => {
 
     const refreshBusinessSettings = async () => {
       try {
-        await refreshBusinessProfile();
+        await fetchBusinessProfile();
       } catch (error) {
         console.error('Error refreshing business profile:', error);
       }

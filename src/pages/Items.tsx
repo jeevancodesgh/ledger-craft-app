@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useAppContext } from '@/context/AppContext';
+import { useAppData } from '@/hooks/useAppData';
 import { Button } from '@/components/ui/button';
 import { Plus } from 'lucide-react';
 import ItemsTable from '@/components/item/ItemsTable';
@@ -32,7 +32,7 @@ const Items = () => {
     deleteItem,
     itemCategories,
     createItemCategory
-  } = useAppContext();
+  } = useAppData();
   const { toast } = useToast();
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
   const [selectedItem, setSelectedItem] = useState<Item | null>(null);

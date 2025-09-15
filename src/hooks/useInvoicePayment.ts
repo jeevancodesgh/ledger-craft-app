@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useAppContext } from '@/context/AppContext';
+import { useAppData } from '@/hooks/useAppData';
 import { Invoice } from '@/types';
 import { CreatePaymentRequest } from '@/types/payment';
 
@@ -11,7 +11,7 @@ export const useInvoicePayment = () => {
     updateInvoiceStatus,
     getPaymentsByInvoice,
     getReceiptByPayment
-  } = useAppContext();
+  } = useAppData();
 
   const processInvoicePayment = async (
     invoice: Invoice,

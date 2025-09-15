@@ -12,13 +12,13 @@ import { Payment, EnhancedInvoice, Receipt } from '@/types/payment';
 import { format } from 'date-fns';
 import { BreadcrumbNavigation } from '@/components/common/BreadcrumbNavigation';
 import { paymentService } from '@/services/paymentService';
-import { useAppContext } from '@/context/AppContext';
+import { useAppData } from '@/hooks/useAppData';
 
 export default function PaymentDetailPage() {
   const { paymentId } = useParams<{ paymentId: string }>();
   const navigate = useNavigate();
   const { toast } = useToast();
-  const { getInvoice } = useAppContext();
+  const { getInvoice } = useAppData();
   
   const [payment, setPayment] = useState<Payment | null>(null);
   const [invoice, setInvoice] = useState<EnhancedInvoice | null>(null);

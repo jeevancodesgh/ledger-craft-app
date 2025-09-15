@@ -1,6 +1,6 @@
 import React from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { useAppContext } from '@/context/AppContext';
+import { useAppData } from '@/hooks/useAppData';
 import InvoicePreview from '@/components/invoice/preview/InvoicePreview';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -9,7 +9,7 @@ import { ChevronLeft } from 'lucide-react';
 const InvoiceViewPage = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const { invoices, isLoadingInvoices } = useAppContext();
+  const { invoices, isLoadingInvoices } = useAppData();
 
   const invoice = invoices.find((inv) => inv.id === id);
 

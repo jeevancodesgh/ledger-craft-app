@@ -51,7 +51,7 @@ import ItemSelector from "./ItemSelector";
 import ItemDrawer from "../item/ItemDrawer";
 import { ItemFormValues } from "../item/ItemForm";
 import { Switch } from "@/components/ui/switch";
-import { useAppContext } from "@/context/AppContext";
+import { useAppData } from "@/hooks/useAppData";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   AlertDialog,
@@ -162,7 +162,7 @@ const buttonVariants = {
 const InvoiceForm: React.FC<InvoiceFormProps> = ({
   mode,
   initialValues,
-  customers,
+  customers = [],
   businessProfile,
   isLoadingCustomers,
   onSubmit,
@@ -178,12 +178,14 @@ const InvoiceForm: React.FC<InvoiceFormProps> = ({
   const isMobile = useIsMobile();
   const { toast } = useToast();
 
-  const getInitialItems = () =>
-    initialValues?.items && initialValues.items.length > 0
-      ? initialValues.items
-      : [{ id: "1", description: "", quantity: 1, unit: "each", rate: 0, total: 0 }];
+  const getInitialItems = (): LineItem[] => {
+    if (initialValues?.items && Array.isArray(initialValues.items) && initialValues.items.length > 0) {
+      return initialValues.items;
+    }
+    return [{ id: "1", description: "", quantity: 1, unit: "each", rate: 0, total: 0 }];
+  };
 
-  const [items, setItems] = useState<LineItem[]>(getInitialItems());
+  const [items, setItems] = useState<LineItem[]>(() => getInitialItems());
   const [initialItemsJSON, setInitialItemsJSON] = useState(() => JSON.stringify(getInitialItems()));
 
   const [subtotal, setSubtotal] = useState(0);
@@ -210,8 +212,7 @@ const InvoiceForm: React.FC<InvoiceFormProps> = ({
   const [indexCreatingNewItem, setIndexCreatingNewItem] = useState<number | null>(null);
 
   // Get units from App Context
-  const { units } = useAppContext();
-  const { itemCategories } = useAppContext();
+  const { units = [], itemCategories = [] } = useAppData();
 
   const form = useForm<InvoiceFormValues>({
     resolver: zodResolver(invoiceFormSchema),
@@ -1669,8 +1670,7 @@ const InvoiceForm: React.FC<InvoiceFormProps> = ({
               
               <AlertDialogAction 
                 onClick={() => blocker.proceed?.()}
-                variant="destructive"
-                className="order-1 sm:order-3"
+                className="order-1 sm:order-3 bg-destructive text-destructive-foreground hover:bg-destructive/90"
               >
                 Leave Without Saving
               </AlertDialogAction>

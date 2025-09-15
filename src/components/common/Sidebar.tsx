@@ -1,7 +1,7 @@
 
 import React, { useState, useEffect } from "react";
 import { Link, useLocation } from "react-router-dom";
-import { useAppContext } from "@/context/AppContext";
+import { useAppData } from "@/hooks/useAppData";
 import { 
   LayoutDashboard,
   Users,
@@ -24,7 +24,7 @@ const Sidebar: React.FC<SidebarProps> = ({
   onClose = () => {},
 }) => {
   const location = useLocation();
-  const { businessProfile } = useAppContext();
+  const { businessProfile } = useAppData();
   const [currentPath, setCurrentPath] = useState(location.pathname);
 
   useEffect(() => {

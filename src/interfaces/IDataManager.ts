@@ -17,6 +17,7 @@ export interface IDataState {
   expenseCategories: ExpenseCategory[];
   payments: Payment[];
   receipts: Receipt[];
+  units: string[];
 }
 
 // Loading state interface

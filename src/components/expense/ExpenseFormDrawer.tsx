@@ -27,7 +27,7 @@ import { useForm } from 'react-hook-form';
 import * as z from 'zod';
 import { Expense, PaymentMethod } from '@/types';
 import { DrawerFormLayout } from '@/components/ui/DrawerFormLayout';
-import { useAppContext } from '@/context/AppContext';
+import { useAppData } from '@/hooks/useAppData';
 import { 
   Sparkles, 
   FileText, 
@@ -76,7 +76,7 @@ const ExpenseFormDrawer: React.FC<ExpenseFormDrawerProps> = ({
   initialValues,
   onSubmit,
 }) => {
-  const { expenseCategories, accounts, customers } = useAppContext();
+  const { expenseCategories, accounts, customers } = useAppData();
   const [, setReceiptFile] = useState<File | null>(null);
   const [receiptUrl, setReceiptUrl] = useState<string | null>(initialValues?.receiptUrl || null);
   const [showPaymentDetails, setShowPaymentDetails] = useState(false);

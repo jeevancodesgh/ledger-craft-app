@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useAppContext } from '@/context/AppContext';
+import { useAppData } from '@/hooks/useAppData';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -20,9 +20,7 @@ const profileFormSchema = z.object({
   phone: z.string().optional(),
   website: z.string().optional(),
   taxId: z.string().optional(),
-  defaultTaxRate: z.union([z.number(), z.string()]).optional().transform(value =>
-    value === '' ? null : typeof value === 'string' ? parseFloat(value) : value
-  ),
+  defaultTaxRate: z.number().optional(),
   address: z.string().optional(),
   city: z.string().optional(),
   state: z.string().optional(),
@@ -31,16 +29,14 @@ const profileFormSchema = z.object({
   defaultTerms: z.string().optional(),
   defaultNotes: z.string().optional(),
   invoiceNumberFormat: z.string().min(2, { message: "Format required" }).optional(),
-  invoiceNumberSequence: z.union([z.number(), z.string()]).optional().transform(value =>
-    value === '' ? null : typeof value === 'string' ? parseInt(value, 10) : value
-  ),
+  invoiceNumberSequence: z.number().optional(),
   logoFile: z.any().optional()
 });
 
 type ProfileFormValues = z.infer<typeof profileFormSchema>;
 
 const Settings = () => {
-  const { businessProfile, isLoadingBusinessProfile, updateBusinessProfile, refreshBusinessProfile } = useAppContext();
+  const { businessProfile, isLoadingBusinessProfile, updateBusinessProfile, refreshBusinessProfile } = useAppData();
   const [isSaving, setIsSaving] = useState(false);
   const { toast } = useToast();
   const [activeTab, setActiveTab] = useState("profile");

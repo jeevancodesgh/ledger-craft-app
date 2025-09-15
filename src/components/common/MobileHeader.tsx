@@ -3,7 +3,7 @@ import React from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Menu, ChevronLeft, Plus } from "lucide-react";
-import { useAppContext } from "@/context/AppContext";
+import { useAppData } from "@/hooks/useAppData";
 import { usePermissions } from "@/hooks/usePermissions";
 
 interface MobileHeaderProps {
@@ -13,7 +13,7 @@ interface MobileHeaderProps {
 const MobileHeader: React.FC<MobileHeaderProps> = ({ onMenuClick }) => {
   const location = useLocation();
   const navigate = useNavigate();
-  const { businessProfile } = useAppContext();
+  const { businessProfile } = useAppData();
   const { hasPermission } = usePermissions();
 
   // Determine if we're on a specific route to show back button instead of menu

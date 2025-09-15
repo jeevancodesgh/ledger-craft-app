@@ -8,7 +8,7 @@ import { Badge } from '@/components/ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
-import { useAppContext } from '@/context/AppContext';
+import { useAppData } from '@/hooks/useAppData';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Receipt } from '@/types/payment';
 import { format } from 'date-fns';
@@ -26,7 +26,7 @@ export default function ReceiptsPage() {
     isLoadingReceipts,
     refreshReceipts,
     markReceiptAsEmailed
-  } = useAppContext();
+  } = useAppData();
 
   // No need for fetchReceipts as we're using AppContext
 

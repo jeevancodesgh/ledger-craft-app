@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { useAppContext } from '@/context/AppContext';
+import { useAppData } from '@/hooks/useAppData';
 import { Button } from '@/components/ui/button';
 import { Plus } from 'lucide-react';
 import ExpenseTable from '@/components/expense/ExpenseTable';
@@ -16,7 +16,7 @@ const Expenses = () => {
     createExpense, 
     updateExpense, 
     deleteExpense 
-  } = useAppContext();
+  } = useAppData();
   const { toast } = useToast();
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
   const [selectedExpense, setSelectedExpense] = useState<Expense | null>(null);

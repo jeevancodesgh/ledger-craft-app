@@ -24,7 +24,8 @@ class DataStateManager {
     expenses: [],
     expenseCategories: [],
     payments: [],
-    receipts: []
+    receipts: [],
+    units: ['each', 'hour', 'kg', 'g', 'mg', 'liter', 'ml', 'meter', 'cm', 'mm', 'sq meter', 'sq foot', 'cubic meter', 'cubic foot', 'gallon', 'quart', 'pint', 'ounce', 'lb', 'box', 'pack', 'pair', 'roll', 'set', 'sheet', 'unit']
   };
 
   private loading: ILoadingState = {

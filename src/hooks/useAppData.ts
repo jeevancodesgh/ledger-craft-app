@@ -19,6 +19,7 @@ interface AppData {
   expenseCategories: ExpenseCategory[];
   payments: Payment[];
   receipts: Receipt[];
+  units: string[];
 }
 
 interface AppLoading {

@@ -1,7 +1,7 @@
 
 import React, { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { useAppContext } from "@/context/AppContext";
+import { useAppData } from "@/hooks/useAppData";
 import InvoiceForm from "@/components/invoice/InvoiceForm";
 import { Invoice, Item, Customer } from "@/types";
 import { Loader2 } from "lucide-react";
@@ -13,7 +13,7 @@ import { useToast } from '@/hooks/use-toast';
 const EditInvoicePage = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const { getInvoice, updateInvoice, customers, isLoadingCustomers, businessProfile, items, isLoadingItems, createCustomer } = useAppContext();
+  const { getInvoice, updateInvoice, customers, isLoadingCustomers, businessProfile, items, isLoadingItems, createCustomer } = useAppData();
   const [invoice, setInvoice] = useState<Invoice | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
