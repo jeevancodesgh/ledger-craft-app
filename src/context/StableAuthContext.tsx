@@ -67,12 +67,24 @@ async function checkOnboardingStatus(
     (checkOnboardingStatus as any).isChecking = true;
     console.log('AuthContext: Starting onboarding check for user:', userId);
     
-    // Shorter timeout to prevent hanging on tab focus
+    // Reasonable timeout with retry logic
     const timeoutPromise = new Promise<never>((_, reject) => {
-      setTimeout(() => reject(new Error('Onboarding check timeout')), 5000);
+      setTimeout(() => reject(new Error('Onboarding check timeout')), 8000);
     });
     
-    const businessProfilePromise = businessProfileService.getBusinessProfile();
+    // Add network check before attempting business profile fetch
+    if (!navigator.onLine) {
+      console.log('AuthContext: Device is offline, skipping onboarding check');
+      setOnboardingChecked(true);
+      return;
+    }
+    
+    const businessProfilePromise = businessProfileService.getBusinessProfile()
+      .catch((error) => {
+        console.warn('AuthContext: Business profile service error:', error.message);
+        // Return null instead of throwing to handle gracefully
+        return null;
+      });
     
     const businessProfile = await Promise.race([businessProfilePromise, timeoutPromise]);
     console.log('AuthContext: Business profile found:', !!businessProfile);
@@ -89,12 +101,17 @@ async function checkOnboardingStatus(
     console.log('AuthContext: Onboarding status set to:', isOnboarded);
     
   } catch (error) {
-    console.error('AuthContext: Error checking onboarding status:', error);
-    // Don't change onboarding status on error - keep current state
-    if (!onboardingChecked) {
-      setOnboardingChecked(true);
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+    console.warn('AuthContext: Onboarding check failed:', errorMessage);
+    
+    // For timeout errors, assume not onboarded to be safe
+    if (errorMessage.includes('timeout')) {
+      console.log('AuthContext: Timeout occurred, defaulting to not onboarded');
+      setHasCompletedOnboarding(false);
     }
-    console.log('AuthContext: Onboarding status check failed, keeping current status');
+    
+    setOnboardingChecked(true);
+    console.log('AuthContext: Onboarding check completed with fallback');
   } finally {
     (checkOnboardingStatus as any).isChecking = false;
   }

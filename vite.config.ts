@@ -10,12 +10,50 @@ export default defineConfig(({ mode }) => ({
     host: "::",
     port: 8080,
   },
+  define: {
+    // Development environment flags
+    __DEV_MODE__: mode === 'development',
+    __VERSION_POLLING_ENABLED__: mode === 'production',
+    __FOCUS_CHECKS_ENABLED__: mode === 'production',
+  },
   plugins: [
     react(),
     mode === 'development' &&
     componentTagger(),
     VitePWA({
       registerType: 'autoUpdate',
+      workbox: {
+        // Aggressive cache busting strategies
+        skipWaiting: true,
+        clientsClaim: true,
+        runtimeCaching: [
+          {
+            urlPattern: /^https:\/\/api\./,
+            handler: 'NetworkFirst',
+            options: {
+              cacheName: 'api-cache',
+              networkTimeoutSeconds: 3,
+              cacheableResponse: {
+                statuses: [0, 200],
+              },
+            },
+          },
+          {
+            urlPattern: /\.(?:png|jpg|jpeg|svg|gif|ico)$/,
+            handler: 'StaleWhileRevalidate',
+            options: {
+              cacheName: 'images',
+              expiration: {
+                maxEntries: 100,
+                maxAgeSeconds: 30 * 24 * 60 * 60, // 30 days
+              },
+            },
+          },
+        ],
+        // Exclude files that should always be fresh
+        navigateFallbackDenylist: [/^\/_/, /\/[^/?]+\.[^/]+$/],
+        cleanupOutdatedCaches: true,
+      },
       manifest: {
         name: 'EasyBizInvoice',
         short_name: 'EasyBizInvoice',
@@ -42,6 +80,10 @@ export default defineConfig(({ mode }) => ({
             purpose: 'any maskable',
           },
         ],
+      },
+      // Force update check on app focus
+      devOptions: {
+        enabled: false,
       },
     }),
   ].filter(Boolean),
