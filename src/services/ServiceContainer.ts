@@ -19,8 +19,8 @@ export interface ICustomerService {
 
 export interface IInvoiceService {
   getInvoices(): Promise<any[]>;
-  createInvoice(invoice: any): Promise<any>;
-  updateInvoice(invoice: any): Promise<any>;
+  createInvoice(invoice: any, lineItems: any[]): Promise<any>;
+  updateInvoice(id: string, invoice: any): Promise<any>;
   deleteInvoice(id: string): Promise<void>;
   getInvoice(id: string): Promise<any>;
   getNextInvoiceNumber(): Promise<string>;
@@ -38,6 +38,34 @@ export interface IPaymentService {
   getReceipts(): Promise<any[]>;
   createPayment(payment: any): Promise<any>;
   getInvoicesWithBalance(): Promise<any[]>;
+}
+
+export interface IItemService {
+  getItems(): Promise<any[]>;
+  createItem(item: any): Promise<any>;
+  updateItem(id: string, item: any): Promise<any>;
+  deleteItem(id: string): Promise<void>;
+  getItem(id: string): Promise<any>;
+}
+
+export interface IItemCategoryService {
+  getItemCategories(): Promise<any[]>;
+  createItemCategory(category: any): Promise<any>;
+  updateItemCategory(id: string, category: any): Promise<any>;
+  deleteItemCategory(id: string): Promise<void>;
+  getItemCategory(id: string): Promise<any>;
+}
+
+export interface IAccountService {
+  getAccounts(): Promise<any[]>;
+}
+
+export interface IExpenseService {
+  getExpenses(): Promise<any[]>;
+}
+
+export interface IExpenseCategoryService {
+  getExpenseCategories(): Promise<any[]>;
 }
 
 // Service container class
@@ -98,24 +126,24 @@ class ServiceContainer {
     return this.get<IPaymentService>('paymentService');
   }
 
-  get itemService() {
-    return this.get('itemService');
+  get itemService(): IItemService {
+    return this.get<IItemService>('itemService');
   }
 
-  get itemCategoryService() {
-    return this.get('itemCategoryService');
+  get itemCategoryService(): IItemCategoryService {
+    return this.get<IItemCategoryService>('itemCategoryService');
   }
 
-  get accountService() {
-    return this.get('accountService');
+  get accountService(): IAccountService {
+    return this.get<IAccountService>('accountService');
   }
 
-  get expenseService() {
-    return this.get('expenseService');
+  get expenseService(): IExpenseService {
+    return this.get<IExpenseService>('expenseService');
   }
 
-  get expenseCategoryService() {
-    return this.get('expenseCategoryService');
+  get expenseCategoryService(): IExpenseCategoryService {
+    return this.get<IExpenseCategoryService>('expenseCategoryService');
   }
 }
 

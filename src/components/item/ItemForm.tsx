@@ -307,7 +307,7 @@ export function ItemForm({ initialData, onSubmit, isLoading = false, categories,
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent>
-                      {units.map((unit) => (
+                      {(units || []).map((unit) => (
                         <SelectItem key={unit} value={unit}>
                           {unit}
                         </SelectItem>
@@ -337,7 +337,7 @@ export function ItemForm({ initialData, onSubmit, isLoading = false, categories,
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent>
-                      {effectiveCategories.map((category) => (
+                      {(effectiveCategories || []).map((category) => (
                         <SelectItem key={category.id} value={category.id}>
                           {category.name}
                         </SelectItem>

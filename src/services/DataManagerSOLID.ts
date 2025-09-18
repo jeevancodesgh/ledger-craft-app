@@ -68,7 +68,8 @@ class DataStateManager {
       expenses: [],
       expenseCategories: [],
       payments: [],
-      receipts: []
+      receipts: [],
+      units: ['each', 'hour', 'kg', 'g', 'mg', 'liter', 'ml', 'meter', 'cm', 'mm', 'sq meter', 'sq foot', 'cubic meter', 'cubic foot', 'gallon', 'quart', 'pint', 'ounce', 'lb', 'box', 'pack', 'pair', 'roll', 'set', 'sheet', 'unit']
     };
     this.loading = {
       customers: true,
@@ -462,6 +463,120 @@ class SOLIDDataManager implements IDataManager {
       return updatedProfile;
     } catch (error) {
       console.error('DataManager: Error updating business profile:', error);
+      throw error;
+    }
+  }
+
+  // Item operations
+  async createItem(item: Omit<Item, 'id' | 'createdAt' | 'updatedAt' | 'category'>): Promise<Item> {
+    try {
+      const newItem = await serviceContainer.itemService.createItem(item);
+      const currentData = this.stateManager.getData();
+      const existingItems = currentData.items || [];
+      this.stateManager.updateData('items', [...existingItems, newItem]);
+      this.notify();
+      return newItem;
+    } catch (error) {
+      console.error('DataManager: Error creating item:', error);
+      throw error;
+    }
+  }
+
+  async updateItem(id: string, item: Partial<Omit<Item, 'id' | 'createdAt' | 'updatedAt' | 'category'>>): Promise<Item> {
+    try {
+      const updatedItem = await serviceContainer.itemService.updateItem(id, item);
+      const currentData = this.stateManager.getData();
+      const existingItems = currentData.items || [];
+      const index = existingItems.findIndex(i => i.id === id);
+      if (index !== -1) {
+        const updatedItems = [...existingItems];
+        updatedItems[index] = updatedItem;
+        this.stateManager.updateData('items', updatedItems);
+        this.notify();
+      }
+      return updatedItem;
+    } catch (error) {
+      console.error('DataManager: Error updating item:', error);
+      throw error;
+    }
+  }
+
+  async deleteItem(id: string): Promise<void> {
+    try {
+      await serviceContainer.itemService.deleteItem(id);
+      const currentData = this.stateManager.getData();
+      const existingItems = currentData.items || [];
+      const updatedItems = existingItems.filter(i => i.id !== id);
+      this.stateManager.updateData('items', updatedItems);
+      this.notify();
+    } catch (error) {
+      console.error('DataManager: Error deleting item:', error);
+      throw error;
+    }
+  }
+
+  async getItem(id: string): Promise<Item | null> {
+    try {
+      return await serviceContainer.itemService.getItem(id);
+    } catch (error) {
+      console.error('DataManager: Error getting item:', error);
+      throw error;
+    }
+  }
+
+  // Item Category operations
+  async createItemCategory(category: Omit<ItemCategory, 'id' | 'createdAt' | 'updatedAt'>): Promise<ItemCategory> {
+    try {
+      const newCategory = await serviceContainer.itemCategoryService.createItemCategory(category);
+      const currentData = this.stateManager.getData();
+      const existingCategories = currentData.itemCategories || [];
+      this.stateManager.updateData('itemCategories', [...existingCategories, newCategory]);
+      this.notify();
+      return newCategory;
+    } catch (error) {
+      console.error('DataManager: Error creating item category:', error);
+      throw error;
+    }
+  }
+
+  async updateItemCategory(id: string, category: Partial<Omit<ItemCategory, 'id' | 'createdAt' | 'updatedAt'>>): Promise<ItemCategory> {
+    try {
+      const updatedCategory = await serviceContainer.itemCategoryService.updateItemCategory(id, category);
+      const currentData = this.stateManager.getData();
+      const existingCategories = currentData.itemCategories || [];
+      const index = existingCategories.findIndex(c => c.id === id);
+      if (index !== -1) {
+        const updatedCategories = [...existingCategories];
+        updatedCategories[index] = updatedCategory;
+        this.stateManager.updateData('itemCategories', updatedCategories);
+        this.notify();
+      }
+      return updatedCategory;
+    } catch (error) {
+      console.error('DataManager: Error updating item category:', error);
+      throw error;
+    }
+  }
+
+  async deleteItemCategory(id: string): Promise<void> {
+    try {
+      await serviceContainer.itemCategoryService.deleteItemCategory(id);
+      const currentData = this.stateManager.getData();
+      const existingCategories = currentData.itemCategories || [];
+      const updatedCategories = existingCategories.filter(c => c.id !== id);
+      this.stateManager.updateData('itemCategories', updatedCategories);
+      this.notify();
+    } catch (error) {
+      console.error('DataManager: Error deleting item category:', error);
+      throw error;
+    }
+  }
+
+  async getItemCategory(id: string): Promise<ItemCategory | null> {
+    try {
+      return await serviceContainer.itemCategoryService.getItemCategory(id);
+    } catch (error) {
+      console.error('DataManager: Error getting item category:', error);
       throw error;
     }
   }

@@ -106,6 +106,30 @@ export const useAppData = () => {
   const getInvoicesWithBalance = useCallback(() => 
     solidDataManager.getInvoicesWithBalance(), []);
 
+  const createItem = useCallback((item: Omit<Item, "id" | "createdAt" | "updatedAt" | "category">) => 
+    solidDataManager.createItem(item), []);
+  
+  const updateItem = useCallback((id: string, item: Partial<Omit<Item, "id" | "createdAt" | "updatedAt" | "category">>) => 
+    solidDataManager.updateItem(id, item), []);
+  
+  const deleteItem = useCallback((id: string) => 
+    solidDataManager.deleteItem(id), []);
+  
+  const getItem = useCallback((id: string) => 
+    solidDataManager.getItem(id), []);
+
+  const createItemCategory = useCallback((category: Omit<ItemCategory, "id" | "createdAt" | "updatedAt">) => 
+    solidDataManager.createItemCategory(category), []);
+  
+  const updateItemCategory = useCallback((id: string, category: Partial<Omit<ItemCategory, "id" | "createdAt" | "updatedAt">>) => 
+    solidDataManager.updateItemCategory(id, category), []);
+  
+  const deleteItemCategory = useCallback((id: string) => 
+    solidDataManager.deleteItemCategory(id), []);
+  
+  const getItemCategory = useCallback((id: string) => 
+    solidDataManager.getItemCategory(id), []);
+
   return {
     // Data
     ...data,
@@ -149,5 +173,13 @@ export const useAppData = () => {
     updateBusinessProfile,
     createPayment,
     getInvoicesWithBalance,
+    createItem,
+    updateItem,
+    deleteItem,
+    getItem,
+    createItemCategory,
+    updateItemCategory,
+    deleteItemCategory,
+    getItemCategory,
   };
 };
