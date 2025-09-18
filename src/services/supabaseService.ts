@@ -1202,6 +1202,39 @@ export const businessProfileService = {
     }
     
     return mapSupabaseBusinessProfileToBusinessProfile(result as SupabaseBusinessProfile);
+  },
+
+  async saveBusinessProfile(profile: Omit<BusinessProfile, 'id' | 'createdAt' | 'updatedAt'>): Promise<BusinessProfile> {
+    // saveBusinessProfile is an alias for createOrUpdateBusinessProfile
+    return this.createOrUpdateBusinessProfile(profile);
+  },
+
+  async updateBusinessProfile(profile: BusinessProfile): Promise<BusinessProfile> {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user?.id) {
+      throw new Error('No authenticated user');
+    }
+    
+    const profileWithUserId = {
+      ...profile,
+      userId: user.id
+    };
+    
+    const supabaseProfile = await mapBusinessProfileToSupabaseBusinessProfile(profileWithUserId);
+    
+    const { data, error } = await supabase
+      .from('business_profiles')
+      .update(supabaseProfile)
+      .eq('id', profile.id)
+      .select()
+      .single();
+      
+    if (error) {
+      console.error('Error updating business profile:', error);
+      throw error;
+    }
+    
+    return mapSupabaseBusinessProfileToBusinessProfile(data as SupabaseBusinessProfile);
   }
 };
 
