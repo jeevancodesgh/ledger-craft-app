@@ -25,8 +25,10 @@ const EditInvoicePage = () => {
     if (!id) return;
     setLoading(true);
     setError(null);
-    getInvoice(id)
-      .then((invoiceFound) => {
+    
+    const loadInvoice = async () => {
+      try {
+        const invoiceFound = await getInvoice(id);
         if (!invoiceFound) {
           setError("Invoice not found");
         } else {
@@ -34,15 +36,21 @@ const EditInvoicePage = () => {
           // Set title for print support - will appear in the print dialog/print output
           document.title = `Invoice ${invoiceFound.invoiceNumber}`;
         }
-      })
-      .catch(() => setError("Error loading invoice"))
-      .finally(() => setLoading(false));
+      } catch (error) {
+        console.error('Error loading invoice:', error);
+        setError("Error loading invoice");
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadInvoice();
       
     // Cleanup on unmount
     return () => {
       document.title = "Invoice App"; // Reset title
     };
-  }, [id, getInvoice]);
+  }, [id]); // Removed getInvoice from dependencies to prevent infinite loop
 
   useEffect(() => {
     if (newlyAddedCustomer && invoice) {

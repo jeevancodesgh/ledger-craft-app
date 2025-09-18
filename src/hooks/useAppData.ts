@@ -3,7 +3,7 @@
  * This hook is HMR-safe and performance-optimized
  */
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { solidDataManager } from '@/services/DataManagerSOLID';
 import { Customer, Invoice, BusinessProfile, Item, ItemCategory, Account, Expense, ExpenseCategory } from "@/types";
 import { Payment, Receipt, CreatePaymentRequest, EnhancedInvoice } from "@/types/payment";
@@ -63,6 +63,49 @@ export const useAppData = () => {
     receipts: () => solidDataManager.fetchReceipts(),
   };
 
+  // Memoized CRUD operations to prevent infinite loops in useEffect dependencies
+  const createInvoice = useCallback((invoice: Omit<Invoice, "id" | "createdAt" | "updatedAt">) => 
+    solidDataManager.createInvoice(invoice), []);
+  
+  const updateInvoice = useCallback((invoice: Invoice) => 
+    solidDataManager.updateInvoice(invoice), []);
+  
+  const deleteInvoice = useCallback((id: string) => 
+    solidDataManager.deleteInvoice(id), []);
+  
+  const getInvoice = useCallback((id: string) => 
+    solidDataManager.getInvoice(id), []);
+  
+  const getNextInvoiceNumber = useCallback(() => 
+    solidDataManager.getNextInvoiceNumber(), []);
+  
+  const updateInvoiceStatus = useCallback((id: string, status: Invoice['status']) => 
+    solidDataManager.updateInvoiceStatus(id, status), []);
+  
+  const createCustomer = useCallback((customer: Omit<Customer, "id" | "createdAt" | "updatedAt">) => 
+    solidDataManager.createCustomer(customer), []);
+  
+  const updateCustomer = useCallback((id: string, customer: Partial<Omit<Customer, "id" | "createdAt" | "updatedAt">>) => 
+    solidDataManager.updateCustomer(id, customer), []);
+  
+  const deleteCustomer = useCallback((id: string) => 
+    solidDataManager.deleteCustomer(id), []);
+  
+  const getCustomer = useCallback((id: string) => 
+    solidDataManager.getCustomer(id), []);
+  
+  const saveBusinessProfile = useCallback((profile: Omit<BusinessProfile, "id" | "createdAt" | "updatedAt">) => 
+    solidDataManager.saveBusinessProfile(profile), []);
+  
+  const updateBusinessProfile = useCallback((profile: BusinessProfile) => 
+    solidDataManager.updateBusinessProfile(profile), []);
+  
+  const createPayment = useCallback((payment: CreatePaymentRequest) => 
+    solidDataManager.createPayment(payment), []);
+  
+  const getInvoicesWithBalance = useCallback(() => 
+    solidDataManager.getInvoicesWithBalance(), []);
+
   return {
     // Data
     ...data,
@@ -91,23 +134,20 @@ export const useAppData = () => {
     refreshPayments: refresh.payments,
     refreshReceipts: refresh.receipts,
     
-    // CRUD operations
-    createInvoice: (invoice: Omit<Invoice, "id" | "createdAt" | "updatedAt">) => solidDataManager.createInvoice(invoice),
-    updateInvoice: (invoice: Invoice) => solidDataManager.updateInvoice(invoice),
-    deleteInvoice: (id: string) => solidDataManager.deleteInvoice(id),
-    getInvoice: (id: string) => solidDataManager.getInvoice(id),
-    getNextInvoiceNumber: () => solidDataManager.getNextInvoiceNumber(),
-    updateInvoiceStatus: (id: string, status: Invoice['status']) => solidDataManager.updateInvoiceStatus(id, status),
-    
-    createCustomer: (customer: Omit<Customer, "id" | "createdAt" | "updatedAt">) => solidDataManager.createCustomer(customer),
-    updateCustomer: (id: string, customer: Partial<Omit<Customer, "id" | "createdAt" | "updatedAt">>) => solidDataManager.updateCustomer(id, customer),
-    deleteCustomer: (id: string) => solidDataManager.deleteCustomer(id),
-    getCustomer: (id: string) => solidDataManager.getCustomer(id),
-    
-    saveBusinessProfile: (profile: Omit<BusinessProfile, "id" | "createdAt" | "updatedAt">) => solidDataManager.saveBusinessProfile(profile),
-    updateBusinessProfile: (profile: BusinessProfile) => solidDataManager.updateBusinessProfile(profile),
-    
-    createPayment: (payment: CreatePaymentRequest) => solidDataManager.createPayment(payment),
-    getInvoicesWithBalance: () => solidDataManager.getInvoicesWithBalance(),
+    // Memoized CRUD operations
+    createInvoice,
+    updateInvoice,
+    deleteInvoice,
+    getInvoice,
+    getNextInvoiceNumber,
+    updateInvoiceStatus,
+    createCustomer,
+    updateCustomer,
+    deleteCustomer,
+    getCustomer,
+    saveBusinessProfile,
+    updateBusinessProfile,
+    createPayment,
+    getInvoicesWithBalance,
   };
 };

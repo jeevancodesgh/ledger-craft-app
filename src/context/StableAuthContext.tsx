@@ -273,6 +273,9 @@ function AuthProvider({ children }: { children: React.ReactNode }) {
       }
     );
 
+    // Note: We intentionally don't listen for visibility changes to avoid
+    // unnecessary session rechecks that could trigger unwanted onboarding flows
+
     // Check for existing session
     const checkSession = async () => {
       if (!isMounted) return;
@@ -288,17 +291,33 @@ function AuthProvider({ children }: { children: React.ReactNode }) {
         setUser(currentSession?.user ?? null);
         
         if (currentSession?.user?.id) {
-          console.log('AuthContext: User found, checking onboarding...');
-          await checkOnboardingStatus(
-            currentSession.user.id,
-            setHasCompletedOnboarding,
-            setOnboardingChecked,
-            setLastCheckedUserId,
-            lastCheckedUserId,
-            onboardingChecked,
-            getCachedOnboardingStatus,
-            setCachedOnboardingStatus
-          );
+          console.log('AuthContext: User found, checking if onboarding already verified...');
+          
+          // Check if onboarding status is already known for this user
+          if (onboardingChecked && lastCheckedUserId === currentSession.user.id) {
+            console.log('AuthContext: Onboarding already checked for this user, skipping recheck');
+          } else {
+            // Check cache first before doing full onboarding check
+            const cached = getCachedOnboardingStatus(currentSession.user.id);
+            if (cached && cached.expires > Date.now()) {
+              console.log('AuthContext: Using cached onboarding status on session check:', cached.status);
+              setHasCompletedOnboarding(cached.status);
+              setOnboardingChecked(true);
+              setLastCheckedUserId(currentSession.user.id);
+            } else {
+              console.log('AuthContext: No valid cache, running onboarding check...');
+              await checkOnboardingStatus(
+                currentSession.user.id,
+                setHasCompletedOnboarding,
+                setOnboardingChecked,
+                setLastCheckedUserId,
+                lastCheckedUserId,
+                onboardingChecked,
+                getCachedOnboardingStatus,
+                setCachedOnboardingStatus
+              );
+            }
+          }
         } else {
           console.log('AuthContext: No user, setting defaults...');
           setOnboardingChecked(true);

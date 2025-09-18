@@ -291,9 +291,16 @@ class SOLIDDataManager implements IDataManager {
   // IDataCRUD implementation
   async createInvoice(invoice: Omit<Invoice, "id" | "createdAt" | "updatedAt">): Promise<Invoice> {
     try {
-      const newInvoice = await serviceContainer.invoiceService.createInvoice(invoice);
+      // Extract items from invoice data and ensure currentData.invoices is defined
+      const { items, ...invoiceData } = invoice;
+      const lineItems = items || [];
+      
+      const newInvoice = await serviceContainer.invoiceService.createInvoice(invoiceData, lineItems);
       const currentData = this.stateManager.getData();
-      const updatedInvoices = [newInvoice, ...currentData.invoices]
+      
+      // Ensure invoices array exists, fallback to empty array if undefined
+      const existingInvoices = currentData.invoices || [];
+      const updatedInvoices = [newInvoice, ...existingInvoices]
         .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
       this.stateManager.updateData('invoices', updatedInvoices);
       this.notify();
@@ -306,11 +313,16 @@ class SOLIDDataManager implements IDataManager {
 
   async updateInvoice(invoice: Invoice): Promise<Invoice> {
     try {
-      const updatedInvoice = await serviceContainer.invoiceService.updateInvoice(invoice);
+      // Extract id and rest of the invoice data to match service signature
+      const { id, ...invoiceData } = invoice;
+      const updatedInvoice = await serviceContainer.invoiceService.updateInvoice(id, invoiceData);
       const currentData = this.stateManager.getData();
-      const index = currentData.invoices.findIndex(i => i.id === invoice.id);
+      
+      // Ensure invoices array exists, fallback to empty array if undefined
+      const existingInvoices = currentData.invoices || [];
+      const index = existingInvoices.findIndex(i => i.id === invoice.id);
       if (index !== -1) {
-        const updatedInvoices = [...currentData.invoices];
+        const updatedInvoices = [...existingInvoices];
         updatedInvoices[index] = updatedInvoice;
         this.stateManager.updateData('invoices', updatedInvoices);
         this.notify();
@@ -326,7 +338,8 @@ class SOLIDDataManager implements IDataManager {
     try {
       await serviceContainer.invoiceService.deleteInvoice(id);
       const currentData = this.stateManager.getData();
-      const updatedInvoices = currentData.invoices.filter(i => i.id !== id);
+      const existingInvoices = currentData.invoices || [];
+      const updatedInvoices = existingInvoices.filter(i => i.id !== id);
       this.stateManager.updateData('invoices', updatedInvoices);
       this.notify();
     } catch (error) {
@@ -357,9 +370,10 @@ class SOLIDDataManager implements IDataManager {
     try {
       const updatedInvoice = await serviceContainer.invoiceService.updateInvoiceStatus(id, status);
       const currentData = this.stateManager.getData();
-      const index = currentData.invoices.findIndex(i => i.id === id);
+      const existingInvoices = currentData.invoices || [];
+      const index = existingInvoices.findIndex(i => i.id === id);
       if (index !== -1) {
-        const updatedInvoices = [...currentData.invoices];
+        const updatedInvoices = [...existingInvoices];
         updatedInvoices[index] = updatedInvoice;
         this.stateManager.updateData('invoices', updatedInvoices);
         this.notify();
@@ -389,9 +403,10 @@ class SOLIDDataManager implements IDataManager {
     try {
       const updatedCustomer = await serviceContainer.customerService.updateCustomer(id, customer);
       const currentData = this.stateManager.getData();
-      const index = currentData.customers.findIndex(c => c.id === id);
+      const existingCustomers = currentData.customers || [];
+      const index = existingCustomers.findIndex(c => c.id === id);
       if (index !== -1) {
-        const updatedCustomers = [...currentData.customers];
+        const updatedCustomers = [...existingCustomers];
         updatedCustomers[index] = updatedCustomer;
         this.stateManager.updateData('customers', updatedCustomers);
         this.notify();
@@ -407,7 +422,8 @@ class SOLIDDataManager implements IDataManager {
     try {
       await serviceContainer.customerService.deleteCustomer(id);
       const currentData = this.stateManager.getData();
-      const updatedCustomers = currentData.customers.filter(c => c.id !== id);
+      const existingCustomers = currentData.customers || [];
+      const updatedCustomers = existingCustomers.filter(c => c.id !== id);
       this.stateManager.updateData('customers', updatedCustomers);
       this.notify();
     } catch (error) {
@@ -455,7 +471,8 @@ class SOLIDDataManager implements IDataManager {
     try {
       const newPayment = await serviceContainer.paymentService.createPayment(payment);
       const currentData = this.stateManager.getData();
-      this.stateManager.updateData('payments', [newPayment, ...currentData.payments]);
+      const existingPayments = currentData.payments || [];
+      this.stateManager.updateData('payments', [newPayment, ...existingPayments]);
       // Refresh invoices and receipts to update payment status
       await Promise.all([this.fetchInvoices(), this.fetchReceipts()]);
       return newPayment;

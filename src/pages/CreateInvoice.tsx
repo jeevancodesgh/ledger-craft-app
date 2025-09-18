@@ -19,7 +19,7 @@ const CreateInvoice = () => {
     createCustomer, 
     items, 
     isLoadingItems,
-    fetchBusinessProfile
+    refreshBusinessProfile
   } = useAppData();
   const navigate = useNavigate();
   const { toast } = useToast();
@@ -64,7 +64,7 @@ const CreateInvoice = () => {
 
     const refreshBusinessSettings = async () => {
       try {
-        await fetchBusinessProfile();
+        await refreshBusinessProfile();
       } catch (error) {
         console.error('Error refreshing business profile:', error);
       }

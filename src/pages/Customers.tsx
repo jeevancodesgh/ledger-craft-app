@@ -2,7 +2,7 @@ import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { Card, CardContent, CardFooter, CardHeader } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Plus, Star, Pencil, Trash, Mail, Phone, MapPin, ChevronRight, Filter, X, Search, ChevronDown, RefreshCw, Loader2 } from 'lucide-react';
-import { customerService } from '@/services/supabaseService';
+import { useAppData } from '@/hooks/useAppData';
 import { Customer } from '@/types';
 import { useToast } from '@/hooks/use-toast';
 import { Spinner } from '@/components/ui/spinner';
@@ -78,8 +78,15 @@ type CustomerFormValues = z.infer<typeof customerFormSchema>;
 
 const Customers = () => {
   const { toast } = useToast();
-  const [customers, setCustomers] = useState<Customer[]>([]);
-  const [loading, setLoading] = useState(true);
+  const { 
+    customers, 
+    isLoadingCustomers: loading, 
+    refreshCustomers,
+    createCustomer: createCustomerFromAppData,
+    updateCustomer: updateCustomerFromAppData,
+    deleteCustomer: deleteCustomerFromAppData
+  } = useAppData();
+  
   const [deleteCustomerId, setDeleteCustomerId] = useState<string | null>(null);
   const isMobile = useIsMobile();
   const [filtersOpen, setFiltersOpen] = useState(false);
@@ -97,30 +104,13 @@ const Customers = () => {
     sortOrder: 'asc',
   });
 
-  // No useEffects needed - data manager handles initialization automatically
-
-  const fetchCustomers = useCallback(async () => {
-    try {
-      setLoading(true);
-      const data = await customerService.getCustomers();
-      setCustomers(data);
-    } catch (error) {
-      console.error('Error fetching customers:', error);
-      toast({
-        title: 'Error',
-        description: 'Failed to load customers',
-        variant: 'destructive',
-      });
-    } finally {
-      setLoading(false);
-    }
-  }, [toast]);
+  // Data is automatically loaded by useAppData hook
 
   // Manual refresh function
   const handleManualRefresh = async () => {
     setIsRefreshing(true);
     try {
-      await fetchCustomers();
+      await refreshCustomers();
       toast({
         title: "Refreshed",
         description: "Customer list has been updated.",
@@ -152,7 +142,7 @@ const Customers = () => {
       };
 
       console.log("Transformed customer data:", newCustomer);
-      await customerService.createCustomer(newCustomer);
+      await createCustomerFromAppData(newCustomer);
       console.log("Customer created successfully");
 
       toast({
@@ -162,7 +152,6 @@ const Customers = () => {
 
       setIsCustomerDrawerOpen(false);
       setCustomerToEdit(null);
-      await fetchCustomers();
     } catch (error) {
       console.error('Error creating customer:', error);
       toast({
@@ -189,7 +178,7 @@ const Customers = () => {
         isVip: values.is_vip
       };
 
-      await customerService.updateCustomer(customerToEdit.id, updatedCustomer);
+      await updateCustomerFromAppData(customerToEdit.id, updatedCustomer);
 
       toast({
         title: 'Success',
@@ -198,7 +187,6 @@ const Customers = () => {
 
       setIsCustomerDrawerOpen(false);
       setCustomerToEdit(null);
-      await fetchCustomers();
     } catch (error) {
       console.error('Error updating customer:', error);
       toast({
@@ -213,7 +201,7 @@ const Customers = () => {
     if (!deleteCustomerId) return;
 
     try {
-      await customerService.deleteCustomer(deleteCustomerId);
+      await deleteCustomerFromAppData(deleteCustomerId);
 
       toast({
         title: 'Success',
@@ -221,7 +209,6 @@ const Customers = () => {
       });
 
       setDeleteCustomerId(null);
-      await fetchCustomers();
     } catch (error) {
       console.error('Error deleting customer:', error);
       toast({
