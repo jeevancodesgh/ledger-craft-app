@@ -62,10 +62,18 @@ export interface IAccountService {
 
 export interface IExpenseService {
   getExpenses(): Promise<any[]>;
+  createExpense(expense: any): Promise<any>;
+  updateExpense(id: string, expense: any): Promise<any>;
+  deleteExpense(id: string): Promise<void>;
+  getExpense(id: string): Promise<any>;
 }
 
 export interface IExpenseCategoryService {
   getExpenseCategories(): Promise<any[]>;
+  createExpenseCategory(category: any): Promise<any>;
+  updateExpenseCategory(id: string, category: any): Promise<any>;
+  deleteExpenseCategory(id: string): Promise<void>;
+  getExpenseCategory(id: string): Promise<any>;
 }
 
 // Service container class

@@ -130,6 +130,30 @@ export const useAppData = () => {
   const getItemCategory = useCallback((id: string) => 
     solidDataManager.getItemCategory(id), []);
 
+  const createExpense = useCallback((expense: Omit<Expense, "id" | "createdAt" | "updatedAt" | "category" | "account" | "customer">) => 
+    solidDataManager.createExpense(expense), []);
+  
+  const updateExpense = useCallback((id: string, expense: Partial<Omit<Expense, "id" | "createdAt" | "updatedAt" | "category" | "account" | "customer">>) => 
+    solidDataManager.updateExpense(id, expense), []);
+  
+  const deleteExpense = useCallback((id: string) => 
+    solidDataManager.deleteExpense(id), []);
+  
+  const getExpense = useCallback((id: string) => 
+    solidDataManager.getExpense(id), []);
+
+  const createExpenseCategory = useCallback((category: Omit<ExpenseCategory, "id" | "createdAt" | "updatedAt">) => 
+    solidDataManager.createExpenseCategory(category), []);
+  
+  const updateExpenseCategory = useCallback((id: string, category: Partial<Omit<ExpenseCategory, "id" | "createdAt" | "updatedAt">>) => 
+    solidDataManager.updateExpenseCategory(id, category), []);
+  
+  const deleteExpenseCategory = useCallback((id: string) => 
+    solidDataManager.deleteExpenseCategory(id), []);
+  
+  const getExpenseCategory = useCallback((id: string) => 
+    solidDataManager.getExpenseCategory(id), []);
+
   return {
     // Data
     ...data,
@@ -181,5 +205,13 @@ export const useAppData = () => {
     updateItemCategory,
     deleteItemCategory,
     getItemCategory,
+    createExpense,
+    updateExpense,
+    deleteExpense,
+    getExpense,
+    createExpenseCategory,
+    updateExpenseCategory,
+    deleteExpenseCategory,
+    getExpenseCategory,
   };
 };

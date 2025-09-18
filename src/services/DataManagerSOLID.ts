@@ -581,6 +581,120 @@ class SOLIDDataManager implements IDataManager {
     }
   }
 
+  // Expense operations
+  async createExpense(expense: Omit<Expense, 'id' | 'createdAt' | 'updatedAt' | 'category' | 'account' | 'customer'>): Promise<Expense> {
+    try {
+      const newExpense = await serviceContainer.expenseService.createExpense(expense);
+      const currentData = this.stateManager.getData();
+      const existingExpenses = currentData.expenses || [];
+      this.stateManager.updateData('expenses', [newExpense, ...existingExpenses]);
+      this.notify();
+      return newExpense;
+    } catch (error) {
+      console.error('DataManager: Error creating expense:', error);
+      throw error;
+    }
+  }
+
+  async updateExpense(id: string, expense: Partial<Omit<Expense, 'id' | 'createdAt' | 'updatedAt' | 'category' | 'account' | 'customer'>>): Promise<Expense> {
+    try {
+      const updatedExpense = await serviceContainer.expenseService.updateExpense(id, expense);
+      const currentData = this.stateManager.getData();
+      const existingExpenses = currentData.expenses || [];
+      const index = existingExpenses.findIndex(e => e.id === id);
+      if (index !== -1) {
+        const updatedExpenses = [...existingExpenses];
+        updatedExpenses[index] = updatedExpense;
+        this.stateManager.updateData('expenses', updatedExpenses);
+        this.notify();
+      }
+      return updatedExpense;
+    } catch (error) {
+      console.error('DataManager: Error updating expense:', error);
+      throw error;
+    }
+  }
+
+  async deleteExpense(id: string): Promise<void> {
+    try {
+      await serviceContainer.expenseService.deleteExpense(id);
+      const currentData = this.stateManager.getData();
+      const existingExpenses = currentData.expenses || [];
+      const updatedExpenses = existingExpenses.filter(e => e.id !== id);
+      this.stateManager.updateData('expenses', updatedExpenses);
+      this.notify();
+    } catch (error) {
+      console.error('DataManager: Error deleting expense:', error);
+      throw error;
+    }
+  }
+
+  async getExpense(id: string): Promise<Expense | null> {
+    try {
+      return await serviceContainer.expenseService.getExpense(id);
+    } catch (error) {
+      console.error('DataManager: Error getting expense:', error);
+      throw error;
+    }
+  }
+
+  // Expense Category operations
+  async createExpenseCategory(category: Omit<ExpenseCategory, 'id' | 'createdAt' | 'updatedAt'>): Promise<ExpenseCategory> {
+    try {
+      const newCategory = await serviceContainer.expenseCategoryService.createExpenseCategory(category);
+      const currentData = this.stateManager.getData();
+      const existingCategories = currentData.expenseCategories || [];
+      this.stateManager.updateData('expenseCategories', [...existingCategories, newCategory]);
+      this.notify();
+      return newCategory;
+    } catch (error) {
+      console.error('DataManager: Error creating expense category:', error);
+      throw error;
+    }
+  }
+
+  async updateExpenseCategory(id: string, category: Partial<Omit<ExpenseCategory, 'id' | 'createdAt' | 'updatedAt'>>): Promise<ExpenseCategory> {
+    try {
+      const updatedCategory = await serviceContainer.expenseCategoryService.updateExpenseCategory(id, category);
+      const currentData = this.stateManager.getData();
+      const existingCategories = currentData.expenseCategories || [];
+      const index = existingCategories.findIndex(c => c.id === id);
+      if (index !== -1) {
+        const updatedCategories = [...existingCategories];
+        updatedCategories[index] = updatedCategory;
+        this.stateManager.updateData('expenseCategories', updatedCategories);
+        this.notify();
+      }
+      return updatedCategory;
+    } catch (error) {
+      console.error('DataManager: Error updating expense category:', error);
+      throw error;
+    }
+  }
+
+  async deleteExpenseCategory(id: string): Promise<void> {
+    try {
+      await serviceContainer.expenseCategoryService.deleteExpenseCategory(id);
+      const currentData = this.stateManager.getData();
+      const existingCategories = currentData.expenseCategories || [];
+      const updatedCategories = existingCategories.filter(c => c.id !== id);
+      this.stateManager.updateData('expenseCategories', updatedCategories);
+      this.notify();
+    } catch (error) {
+      console.error('DataManager: Error deleting expense category:', error);
+      throw error;
+    }
+  }
+
+  async getExpenseCategory(id: string): Promise<ExpenseCategory | null> {
+    try {
+      return await serviceContainer.expenseCategoryService.getExpenseCategory(id);
+    } catch (error) {
+      console.error('DataManager: Error getting expense category:', error);
+      throw error;
+    }
+  }
+
   // Payment operations
   async createPayment(payment: CreatePaymentRequest): Promise<Payment> {
     try {
