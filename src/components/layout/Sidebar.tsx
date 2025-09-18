@@ -28,6 +28,7 @@ import {
   Upload
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import AppVersion from '@/components/common/AppVersion';
 
 interface SidebarProps {
   collapsed: boolean;
@@ -209,6 +210,9 @@ export function Sidebar({ collapsed, isMobile, onCloseMobileMenu }: SidebarProps
             </button>
           )}
         </div>
+        
+        {/* App Version */}
+        <AppVersion variant="mobile" />
       </aside>
     );
   }
@@ -326,6 +330,9 @@ export function Sidebar({ collapsed, isMobile, onCloseMobileMenu }: SidebarProps
           </div>
         </div>
       </div>
+      
+      {/* App Version */}
+      <AppVersion collapsed={collapsed} variant="sidebar" />
     </aside>
   );
 }

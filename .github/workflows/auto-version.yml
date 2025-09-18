@@ -1,0 +1,120 @@
+name: Auto Version & Deploy
+
+on:
+  push:
+    branches: [ main, master ]
+  workflow_dispatch:
+    inputs:
+      version_type:
+        description: 'Version bump type'
+        required: false
+        default: 'patch'
+        type: choice
+        options:
+        - patch
+        - minor
+        - major
+
+jobs:
+  version-and-deploy:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      with:
+        token: ${{ secrets.GITHUB_TOKEN }}
+        fetch-depth: 0
+
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '18'
+        cache: 'npm'
+
+    - name: Install dependencies
+      run: npm ci
+
+    - name: Configure Git
+      run: |
+        git config --local user.email "action@github.com"
+        git config --local user.name "GitHub Action"
+
+    - name: Determine version bump type
+      id: version_type
+      run: |
+        if [ "${{ github.event_name }}" == "workflow_dispatch" ]; then
+          echo "type=${{ github.event.inputs.version_type }}" >> $GITHUB_OUTPUT
+        else
+          # Check commit messages for version type hints
+          COMMITS=$(git log --oneline --since="1 day ago" || git log --oneline -10)
+          if echo "$COMMITS" | grep -i "breaking\|major"; then
+            echo "type=major" >> $GITHUB_OUTPUT
+          elif echo "$COMMITS" | grep -i "feat\|feature\|minor"; then
+            echo "type=minor" >> $GITHUB_OUTPUT
+          else
+            echo "type=patch" >> $GITHUB_OUTPUT
+          fi
+        fi
+
+    - name: Check if version bump needed
+      id: check_version
+      run: |
+        # Get the last commit message
+        LAST_COMMIT=$(git log -1 --pretty=%B)
+        if echo "$LAST_COMMIT" | grep -q "chore: release v"; then
+          echo "skip=true" >> $GITHUB_OUTPUT
+          echo "Version commit detected, skipping version bump"
+        else
+          echo "skip=false" >> $GITHUB_OUTPUT
+        fi
+
+    - name: Bump version
+      if: steps.check_version.outputs.skip == 'false'
+      run: |
+        chmod +x scripts/auto-version.js
+        npm run version:${{ steps.version_type.outputs.type }}
+        
+    - name: Get new version
+      if: steps.check_version.outputs.skip == 'false'
+      id: new_version
+      run: |
+        VERSION=$(node -p "require('./package.json').version")
+        echo "version=$VERSION" >> $GITHUB_OUTPUT
+
+    - name: Build application
+      if: steps.check_version.outputs.skip == 'false'
+      run: |
+        npm run build
+        
+    - name: Commit and push version changes
+      if: steps.check_version.outputs.skip == 'false'
+      run: |
+        git add package.json public/version.json
+        git commit -m "chore: release v${{ steps.new_version.outputs.version }}"
+        git push origin ${{ github.ref_name }}
+        git push origin --tags
+
+    - name: Create GitHub Release
+      if: steps.check_version.outputs.skip == 'false'
+      uses: actions/create-release@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        tag_name: v${{ steps.new_version.outputs.version }}
+        release_name: Release v${{ steps.new_version.outputs.version }}
+        body: |
+          ## Changes in v${{ steps.new_version.outputs.version }}
+          
+          🚀 Auto-generated release from latest commits.
+          
+          ### Build Information
+          - **Version:** ${{ steps.new_version.outputs.version }}
+          - **Branch:** ${{ github.ref_name }}
+          - **Commit:** ${{ github.sha }}
+          - **Build Time:** $(date -u +"%Y-%m-%d %H:%M:%S UTC")
+          
+          ### Deployment
+          This version has been automatically built and is ready for deployment.
+        draft: false
+        prerelease: false

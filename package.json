@@ -1,7 +1,7 @@
 {
   "name": "vite_react_shadcn_ts",
   "private": true,
-  "version": "0.0.0",
+  "version": "0.0.2",
   "type": "module",
   "scripts": {
     "dev": "vite",
@@ -9,6 +9,13 @@
     "build": "vite build",
     "build:dev": "vite build --mode development",
     "postbuild": "node scripts/generate-version.js",
+    "version:patch": "node scripts/auto-version.js patch",
+    "version:minor": "node scripts/auto-version.js minor",
+    "version:major": "node scripts/auto-version.js major",
+    "release:patch": "npm run version:patch && git push && git push --tags",
+    "release:minor": "npm run version:minor && git push && git push --tags",
+    "release:major": "npm run version:major && git push && git push --tags",
+    "install:hooks": "node scripts/install-git-hooks.js",
     "lint": "eslint .",
     "preview": "vite preview",
     "test": "vitest",
