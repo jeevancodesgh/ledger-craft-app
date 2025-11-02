@@ -9,6 +9,7 @@ import InvoiceListScreen from '@/screens/invoices/InvoiceListScreen';
 import InvoiceCreateScreen from '@/screens/invoices/InvoiceCreateScreen';
 import InvoiceDetailScreen from '@/screens/invoices/InvoiceDetailScreen';
 import SettingsScreen from '@/screens/settings/SettingsScreen';
+import BusinessSettingsScreen from '@/screens/settings/BusinessSettingsScreen';
 
 // Custom Tab Bar
 import CustomTabBar from '@/components/CustomTabBar';
@@ -39,6 +40,24 @@ function InvoiceStack() {
   );
 }
 
+// Stack navigator for Settings screens
+function SettingsStack() {
+  return (
+    <Stack.Navigator screenOptions={{ headerShown: true }}>
+      <Stack.Screen 
+        name="SettingsList" 
+        component={SettingsScreen}
+        options={{ title: 'Settings' }}
+      />
+      <Stack.Screen 
+        name="BusinessSettings" 
+        component={BusinessSettingsScreen}
+        options={{ title: 'Business Settings' }}
+      />
+    </Stack.Navigator>
+  );
+}
+
 export default function AppNavigator() {
   return (
     <Tab.Navigator
@@ -63,7 +82,7 @@ export default function AppNavigator() {
       />
       <Tab.Screen
         name="Settings"
-        component={SettingsScreen}
+        component={SettingsStack}
         options={{
           tabBarLabel: 'Settings',
         }}

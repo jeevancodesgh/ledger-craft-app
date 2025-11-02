@@ -22,8 +22,29 @@ export interface BusinessProfile {
   defaultNotes?: string;
   bankInfo?: string;
   logoUrl?: string;
+  theme?: BusinessTheme;
   createdAt: string;
   updatedAt: string;
+}
+
+export interface BusinessProfileUpdate {
+  businessName?: string;
+  businessEmail?: string;
+  phone?: string;
+  website?: string;
+  taxId?: string;
+  country?: string;
+  address?: string;
+  city?: string;
+  state?: string;
+  zip?: string;
+  defaultTaxRate?: number;
+  defaultTerms?: string;
+  defaultNotes?: string;
+  invoiceNumberFormat?: string;
+  invoiceNumberSequence?: number;
+  logoUri?: string;
+  theme?: BusinessTheme;
 }
 
 class BusinessProfileService {
@@ -114,7 +135,7 @@ class BusinessProfileService {
 
   // Update business profile
   async updateBusinessProfile(
-    updates: Partial<OnboardingData>
+    updates: BusinessProfileUpdate | Partial<OnboardingData>
   ): Promise<BusinessProfile> {
     try {
       const { data: { user } } = await supabase.auth.getUser();
@@ -124,23 +145,50 @@ class BusinessProfileService {
       }
 
       // Upload new logo if provided
-      let logoUrl: string | undefined;
+      let logoUrl: string | null = null;
       if (updates.logoUri) {
-        logoUrl = await this.uploadLogo(updates.logoUri, user.id);
+        try {
+          logoUrl = await this.uploadLogo(updates.logoUri, user.id);
+        } catch (error) {
+          console.warn('Logo upload failed:', error);
+          // Continue without logo update
+        }
       }
 
       // Prepare update data (using snake_case for database)
-      // Note: Web app stores theme as JSON, not individual columns
       const updateData: any = {};
-      if (updates.businessName) updateData.name = updates.businessName;
-      if (updates.businessEmail) updateData.email = updates.businessEmail;
-      if (updates.country) updateData.country = updates.country;
-      if (updates.invoiceNumberFormat) updateData.invoice_number_format = updates.invoiceNumberFormat;
-      if (updates.defaultTaxRate !== undefined) updateData.default_tax_rate = updates.defaultTaxRate;
+      
+      // Basic info
+      if (updates.businessName !== undefined) updateData.name = updates.businessName;
+      if (updates.businessEmail !== undefined) updateData.email = updates.businessEmail;
+      if (updates.phone !== undefined) updateData.phone = updates.phone;
+      if (updates.website !== undefined) updateData.website = updates.website;
+      if (updates.taxId !== undefined) updateData.tax_id = updates.taxId;
+      if (updates.country !== undefined) updateData.country = updates.country;
+      
+      // Address
       if (updates.address !== undefined) updateData.address = updates.address;
       if (updates.city !== undefined) updateData.city = updates.city;
       if (updates.state !== undefined) updateData.state = updates.state;
       if (updates.zip !== undefined) updateData.zip = updates.zip;
+      
+      // Invoice settings
+      if (updates.invoiceNumberFormat !== undefined) updateData.invoice_number_format = updates.invoiceNumberFormat;
+      if (updates.invoiceNumberSequence !== undefined) updateData.invoice_number_sequence = updates.invoiceNumberSequence;
+      if (updates.defaultTaxRate !== undefined) updateData.default_tax_rate = updates.defaultTaxRate;
+      
+      // Preferences
+      if (updates.defaultTerms !== undefined) updateData.default_terms = updates.defaultTerms;
+      if (updates.defaultNotes !== undefined) updateData.default_notes = updates.defaultNotes;
+      
+      // Theme (stored as JSON in database)
+      if (updates.theme !== undefined) {
+        updateData.primary_color = updates.theme.primary;
+        updateData.secondary_color = updates.theme.secondary;
+        updateData.accent_color = updates.theme.accent;
+      }
+      
+      // Logo
       if (logoUrl) updateData.logo_url = logoUrl;
 
       const { data: profile, error } = await supabase
@@ -220,6 +268,20 @@ class BusinessProfileService {
 
   // Transform snake_case database response to camelCase
   private transformToBusinessProfile(data: any): BusinessProfile {
+    // Reconstruct theme if color data exists
+    let theme: BusinessTheme | undefined;
+    if (data.primary_color || data.secondary_color || data.accent_color) {
+      theme = {
+        primary: data.primary_color || '#5B72EE',
+        secondary: data.secondary_color || '#4A5FD8',
+        accent: data.accent_color || '#00D4FF',
+        text: '#1E293B',
+        textLight: '#64748B',
+        background: '#F8FAFC',
+        surface: '#FFFFFF',
+      };
+    }
+
     return {
       id: data.id,
       userId: data.user_id,
@@ -240,6 +302,7 @@ class BusinessProfileService {
       defaultNotes: data.default_notes,
       bankInfo: data.bank_info,
       logoUrl: data.logo_url,
+      theme: theme,
       createdAt: data.created_at,
       updatedAt: data.updated_at,
     };

@@ -23,6 +23,7 @@ export type MainTabParamList = {
   InvoiceEdit: { invoiceId: string };
   InvoiceDetail: { invoiceId: string };
   Settings: undefined;
+  BusinessSettings: undefined;
 };
 
 export type AppTabParamList = MainTabParamList;
