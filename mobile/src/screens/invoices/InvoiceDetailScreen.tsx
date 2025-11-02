@@ -15,8 +15,10 @@ import { AppTabParamList } from '@/navigation/types';
 import { invoiceService } from '@/services/invoiceService';
 import type { Invoice } from '@/types/invoice';
 import { ModernButton } from '@/components/ui/ModernButton';
-import InvoicePreview from '@/components/invoice/InvoicePreview';
+import InvoicePreviewWithTemplates from '@/components/invoice/InvoicePreviewWithTemplates';
 import { shareInvoicePDF, downloadInvoicePDF } from '@/utils/pdfUtils';
+import { businessProfileService } from '@/services/businessProfileService';
+import type { BusinessProfile } from '@/types/invoice';
 
 type InvoiceDetailNavigationProp = NativeStackNavigationProp<any, 'InvoiceDetail'>;
 type InvoiceDetailRouteProp = RouteProp<AppTabParamList, 'InvoiceDetail'>;
@@ -27,13 +29,32 @@ export default function InvoiceDetailScreen() {
   const { invoiceId } = route.params;
 
   const [invoice, setInvoice] = useState<Invoice | null>(null);
+  const [businessProfile, setBusinessProfile] = useState<BusinessProfile | null>(null);
   const [loading, setLoading] = useState(true);
   const [showPreview, setShowPreview] = useState(false);
   const [generatingPdf, setGeneratingPdf] = useState(false);
 
   useEffect(() => {
-    loadInvoice();
+    loadData();
   }, [invoiceId]);
+
+  const loadData = async () => {
+    try {
+      const [invoiceData, profileData] = await Promise.all([
+        invoiceService.fetchInvoiceById(invoiceId),
+        businessProfileService.fetchBusinessProfile(),
+      ]);
+      setInvoice(invoiceData);
+      setBusinessProfile(profileData);
+    } catch (error) {
+      console.error('Error loading data:', error);
+      Alert.alert('Error', 'Failed to load invoice', [
+        { text: 'OK', onPress: () => navigation.goBack() },
+      ]);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const loadInvoice = async () => {
     try {
@@ -44,8 +65,6 @@ export default function InvoiceDetailScreen() {
       Alert.alert('Error', 'Failed to load invoice', [
         { text: 'OK', onPress: () => navigation.goBack() },
       ]);
-    } finally {
-      setLoading(false);
     }
   };
 
@@ -339,18 +358,17 @@ export default function InvoiceDetailScreen() {
       <Modal
         visible={showPreview}
         animationType="slide"
-        presentationStyle="pageSheet"
+        presentationStyle="fullScreen"
         onRequestClose={() => setShowPreview(false)}
       >
-        <View style={styles.modalContainer}>
-          <View style={styles.modalHeader}>
-            <Text style={styles.modalTitle}>Invoice Preview</Text>
-            <TouchableOpacity onPress={() => setShowPreview(false)}>
-              <Text style={styles.closeButton}>✕</Text>
-            </TouchableOpacity>
-          </View>
-          <InvoicePreview invoice={invoice} />
-        </View>
+        {invoice && (
+          <InvoicePreviewWithTemplates
+            invoice={invoice}
+            businessProfile={businessProfile || undefined}
+            initialTemplate={(invoice.templateName as any) || 'classic'}
+            onClose={() => setShowPreview(false)}
+          />
+        )}
       </Modal>
     </View>
   );

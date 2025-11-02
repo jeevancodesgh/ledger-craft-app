@@ -1,11 +1,17 @@
 import * as Print from 'expo-print';
 import * as Sharing from 'expo-sharing';
 import * as FileSystem from 'expo-file-system';
-import type { Invoice } from '@/types/invoice';
+import type { Invoice, BusinessProfile } from '@/types/invoice';
+import type { InvoiceTemplateId } from '@/types/invoiceTemplates';
+import { getTemplateHTML } from './invoiceTemplates';
 
-export async function generateInvoicePDF(invoice: Invoice): Promise<string | null> {
+export async function generateInvoicePDF(
+  invoice: Invoice,
+  businessProfile?: BusinessProfile,
+  templateId: InvoiceTemplateId = 'classic'
+): Promise<string | null> {
   try {
-    const html = generateInvoiceHTML(invoice);
+    const html = generateInvoiceHTML(invoice, businessProfile, templateId);
     
     const { uri } = await Print.printToFileAsync({
       html,
@@ -19,9 +25,13 @@ export async function generateInvoicePDF(invoice: Invoice): Promise<string | nul
   }
 }
 
-export async function shareInvoicePDF(invoice: Invoice): Promise<void> {
+export async function shareInvoicePDF(
+  invoice: Invoice,
+  businessProfile?: BusinessProfile,
+  templateId: InvoiceTemplateId = 'classic'
+): Promise<void> {
   try {
-    const uri = await generateInvoicePDF(invoice);
+    const uri = await generateInvoicePDF(invoice, businessProfile, templateId);
     
     if (!uri) {
       throw new Error('Failed to generate PDF');
@@ -45,9 +55,13 @@ export async function shareInvoicePDF(invoice: Invoice): Promise<void> {
   }
 }
 
-export async function downloadInvoicePDF(invoice: Invoice): Promise<string> {
+export async function downloadInvoicePDF(
+  invoice: Invoice,
+  businessProfile?: BusinessProfile,
+  templateId: InvoiceTemplateId = 'classic'
+): Promise<string> {
   try {
-    const uri = await generateInvoicePDF(invoice);
+    const uri = await generateInvoicePDF(invoice, businessProfile, templateId);
     
     if (!uri) {
       throw new Error('Failed to generate PDF');
@@ -70,7 +84,17 @@ export async function downloadInvoicePDF(invoice: Invoice): Promise<string> {
   }
 }
 
-function generateInvoiceHTML(invoice: Invoice): string {
+function generateInvoiceHTML(
+  invoice: Invoice,
+  businessProfile?: BusinessProfile,
+  templateId: InvoiceTemplateId = 'classic'
+): string {
+  // Use the new template system
+  return getTemplateHTML(templateId, invoice, businessProfile);
+}
+
+// Legacy function kept for backward compatibility
+function generateInvoiceHTMLLegacy(invoice: Invoice): string {
   const formatCurrency = (amount: number, currency: string) => {
     const symbol = currency === 'NZD' ? '$' : currency;
     return `${symbol}${amount.toFixed(2)}`;

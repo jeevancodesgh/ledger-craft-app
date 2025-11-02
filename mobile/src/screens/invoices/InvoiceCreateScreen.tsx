@@ -18,13 +18,14 @@ import { invoiceService } from '@/services/invoiceService';
 import type { LineItem, Invoice, Customer } from '@/types/invoice';
 import { ModernInput } from '@/components/ui/ModernInput';
 import { ModernButton } from '@/components/ui/ModernButton';
-import InvoicePreview from '@/components/invoice/InvoicePreview';
+import InvoicePreviewWithTemplates from '@/components/invoice/InvoicePreviewWithTemplates';
 import { shareInvoicePDF } from '@/utils/pdfUtils';
 import { CustomerPicker } from '@/components/customers/CustomerPicker';
 import { Customer as CustomerType } from '@/services/customerService';
 import { ItemPicker } from '@/components/items/ItemPicker';
 import { Item } from '@/services/itemService';
 import { businessProfileService } from '@/services/businessProfileService';
+import type { InvoiceTemplateId } from '@/types/invoiceTemplates';
 
 type InvoiceCreateNavigationProp = NativeStackNavigationProp<AppTabParamList, 'InvoiceCreate'>;
 type InvoiceCreateRouteProp = RouteProp<AppTabParamList, 'InvoiceCreate'>;
@@ -44,6 +45,7 @@ export default function InvoiceCreateScreen() {
   const [currency, setCurrency] = useState('NZD');
   const [notes, setNotes] = useState('');
   const [terms, setTerms] = useState('');
+  const [templateName, setTemplateName] = useState<InvoiceTemplateId>('classic');
   
   // Line items
   const [lineItems, setLineItems] = useState<LineItem[]>([
@@ -217,7 +219,7 @@ export default function InvoiceCreateScreen() {
         notes,
         terms,
         currency,
-        templateName: 'classic',
+        templateName,
       };
 
       await invoiceService.createInvoice(invoiceData, lineItems);
@@ -557,31 +559,15 @@ export default function InvoiceCreateScreen() {
       <Modal
         visible={showPreview}
         animationType="slide"
-        presentationStyle="pageSheet"
+        presentationStyle="fullScreen"
         onRequestClose={() => setShowPreview(false)}
       >
-        <View style={styles.modalContainer}>
-          <View style={styles.modalHeader}>
-            <View style={styles.modalHeaderLeft}>
-              <Text style={styles.modalTitle}>Invoice Preview</Text>
-            </View>
-            <View style={styles.modalHeaderRight}>
-              <TouchableOpacity 
-                onPress={handleSharePreviewPDF}
-                disabled={generatingPdf}
-                style={styles.shareButton}
-              >
-                <Text style={styles.shareButtonText}>
-                  {generatingPdf ? 'Generating...' : 'Share PDF'}
-                </Text>
-              </TouchableOpacity>
-              <TouchableOpacity onPress={() => setShowPreview(false)}>
-                <Text style={styles.closeButton}>✕</Text>
-              </TouchableOpacity>
-            </View>
-          </View>
-          <InvoicePreview invoice={getPreviewInvoice()} businessProfile={businessProfile} />
-        </View>
+        <InvoicePreviewWithTemplates
+          invoice={getPreviewInvoice()}
+          businessProfile={businessProfile || undefined}
+          initialTemplate={templateName}
+          onClose={() => setShowPreview(false)}
+        />
       </Modal>
     </KeyboardAvoidingView>
   );
