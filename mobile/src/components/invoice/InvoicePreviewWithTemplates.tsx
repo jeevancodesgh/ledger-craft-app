@@ -8,6 +8,7 @@ import {
   TouchableOpacity,
   Alert,
   Dimensions,
+  StatusBar,
 } from 'react-native';
 import { WebView } from 'react-native-webview';
 import type { Invoice, BusinessProfile } from '@/types/invoice';
@@ -178,11 +179,23 @@ export default function InvoicePreviewWithTemplates({
 
   return (
     <View style={styles.container}>
-      {/* Header */}
+      <StatusBar barStyle="light-content" backgroundColor="#1E2875" />
+      {/* Dark Blue Header */}
       <View style={styles.header}>
-        <View style={styles.headerContent}>
-          <Text style={styles.headerTitle}>Invoice Preview</Text>
-          <Text style={styles.headerSubtitle}>{invoice.invoiceNumber}</Text>
+        <View style={styles.headerTop}>
+          <View style={styles.headerContent}>
+            <Text style={styles.headerTitle}>Invoice Preview</Text>
+            <Text style={styles.headerSubtitle}>{invoice.invoiceNumber}</Text>
+          </View>
+          {onClose && (
+            <TouchableOpacity
+              style={styles.closeButton}
+              onPress={onClose}
+              activeOpacity={0.7}
+            >
+              <Text style={styles.closeButtonText}>✕</Text>
+            </TouchableOpacity>
+          )}
         </View>
         <View style={styles.headerActions}>
           <TouchableOpacity
@@ -192,21 +205,14 @@ export default function InvoicePreviewWithTemplates({
             ]}
             onPress={handleSharePDF}
             disabled={isSharingPDF}
+            activeOpacity={0.8}
           >
             {isSharingPDF ? (
-              <ActivityIndicator size="small" color="#ffffff" />
+              <ActivityIndicator size="small" color="#1E2875" />
             ) : (
               <Text style={styles.sharePDFButtonText}>Share PDF</Text>
             )}
           </TouchableOpacity>
-          {onClose && (
-            <TouchableOpacity
-              style={styles.closeButton}
-              onPress={onClose}
-            >
-              <Text style={styles.closeButtonText}>✕</Text>
-            </TouchableOpacity>
-          )}
         </View>
       </View>
 
@@ -298,49 +304,52 @@ const styles = StyleSheet.create({
     backgroundColor: '#f8fafc',
   },
   header: {
-    backgroundColor: '#ffffff',
-    borderBottomWidth: 1,
-    borderBottomColor: '#e2e8f0',
-    paddingHorizontal: 16,
-    paddingTop: 16,
-    paddingBottom: 12,
+    backgroundColor: '#1E2875',
+    paddingHorizontal: 24,
+    paddingTop: 48,
+    paddingBottom: 20,
+  },
+  headerTop: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'flex-start',
+    marginBottom: 16,
   },
   headerContent: {
-    marginBottom: 12,
+    flex: 1,
   },
   headerTitle: {
-    fontSize: 20,
-    fontWeight: '700',
-    color: '#0f172a',
-    marginBottom: 2,
+    fontSize: 30,
+    fontWeight: '800',
+    color: '#FFFFFF',
+    marginBottom: 4,
   },
   headerSubtitle: {
     fontSize: 14,
-    color: '#64748b',
+    color: 'rgba(255, 255, 255, 0.7)',
   },
   headerActions: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 12,
   },
   sharePDFButton: {
     flex: 1,
-    backgroundColor: '#5B72EE',
+    backgroundColor: '#FFFFFF',
     paddingVertical: 12,
     paddingHorizontal: 20,
-    borderRadius: 10,
+    borderRadius: 20,
     alignItems: 'center',
-    shadowColor: '#5B72EE',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
-    elevation: 4,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.2,
+    shadowRadius: 4,
+    elevation: 3,
   },
   sharePDFButtonDisabled: {
     opacity: 0.6,
   },
   sharePDFButtonText: {
-    color: '#ffffff',
+    color: '#1E2875',
     fontSize: 16,
     fontWeight: '700',
   },
@@ -348,13 +357,14 @@ const styles = StyleSheet.create({
     width: 44,
     height: 44,
     borderRadius: 22,
-    backgroundColor: '#f1f5f9',
+    backgroundColor: 'rgba(255, 255, 255, 0.15)',
     alignItems: 'center',
     justifyContent: 'center',
+    marginLeft: 12,
   },
   closeButtonText: {
     fontSize: 24,
-    color: '#64748b',
+    color: '#FFFFFF',
     fontWeight: '300',
   },
   previewContainer: {

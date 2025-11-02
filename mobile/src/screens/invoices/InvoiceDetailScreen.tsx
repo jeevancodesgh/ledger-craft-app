@@ -8,6 +8,7 @@ import {
   Alert,
   TouchableOpacity,
   Modal,
+  StatusBar,
 } from 'react-native';
 import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
@@ -103,6 +104,14 @@ export default function InvoiceDetailScreen() {
       month: 'long',
       year: 'numeric',
     });
+  };
+
+  // Greeting based on time
+  const getGreeting = () => {
+    const hour = new Date().getHours();
+    if (hour < 12) return 'Good morning';
+    if (hour < 18) return 'Good afternoon';
+    return 'Good evening';
   };
 
   const handleEdit = () => {
@@ -204,6 +213,21 @@ export default function InvoiceDetailScreen() {
 
   return (
     <View style={styles.container}>
+      <StatusBar barStyle="light-content" backgroundColor="#1E2875" />
+      {/* Dark Blue Header */}
+      <View style={styles.topHeader}>
+        <View style={styles.titleSection}>
+          <Text style={styles.headerTitle}>Invoice Details</Text>
+          <Text style={styles.dateText}>
+            {new Date().toLocaleDateString('en-US', { 
+              weekday: 'long', 
+              month: 'long', 
+              day: 'numeric' 
+            })}
+          </Text>
+        </View>
+      </View>
+
       <ScrollView style={styles.scrollView} contentContainerStyle={styles.scrollContent}>
         {/* Header Card */}
         <View style={styles.headerCard}>
@@ -470,6 +494,26 @@ const styles = StyleSheet.create({
   },
   scrollContent: {
     padding: 16,
+    paddingTop: 0,
+  },
+  topHeader: {
+    backgroundColor: '#1E2875',
+    paddingHorizontal: 24,
+    paddingTop: 48,
+    paddingBottom: 32,
+  },
+  titleSection: {
+    marginBottom: 8,
+  },
+  headerTitle: {
+    fontSize: 30,
+    fontWeight: '800',
+    color: '#FFFFFF',
+    marginBottom: 4,
+  },
+  dateText: {
+    fontSize: 14,
+    color: 'rgba(255, 255, 255, 0.7)',
   },
   headerCard: {
     backgroundColor: '#ffffff',
