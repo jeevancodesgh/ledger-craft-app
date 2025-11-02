@@ -135,8 +135,9 @@ export const createAuthSlice: StateCreator<AuthSlice> = (set, get) => ({
       user: null,
       session: null,
       hasCompletedOnboarding: false,
-      onboardingChecked: false,
+      onboardingChecked: true, // Set to true so navigation doesn't show loading
       error: null,
+      loading: false, // Ensure loading is false
     });
   },
 
