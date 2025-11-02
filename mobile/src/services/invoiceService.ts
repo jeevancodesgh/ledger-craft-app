@@ -303,7 +303,7 @@ export class InvoiceService {
     }
   }
 
-  // Generate next invoice number
+  // Generate next invoice number (matches web app logic)
   async generateInvoiceNumber(): Promise<string> {
     try {
       const { data: { user } } = await supabase.auth.getUser();
@@ -312,31 +312,74 @@ export class InvoiceService {
         throw new Error('User not authenticated');
       }
 
-      const { data, error } = await supabase
+      // Get business profile for invoice number format
+      const { data: profile, error: profileError } = await supabase
+        .from('business_profiles')
+        .select('invoice_number_format, invoice_number_sequence')
+        .eq('user_id', user.id)
+        .maybeSingle();
+
+      if (profileError) {
+        console.error('Error fetching business profile:', profileError);
+      }
+
+      // Default format if not set
+      const format = profile?.invoice_number_format || 'INV-{YYYY}-{MM}-{SEQ}';
+
+      // Fetch the latest invoice for this user
+      const { data: lastInvoice, error: invoiceError } = await supabase
         .from('invoices')
-        .select('invoice_number')
+        .select('invoice_number, created_at')
         .eq('user_id', user.id)
         .order('created_at', { ascending: false })
-        .limit(1);
+        .limit(1)
+        .maybeSingle();
 
-      if (error) throw error;
-
-      if (!data || data.length === 0) {
-        return 'INV-0001';
+      if (invoiceError) {
+        console.error('Error fetching last invoice:', invoiceError);
       }
 
-      const lastInvoiceNumber = data[0].invoice_number;
-      const match = lastInvoiceNumber.match(/INV-(\d+)/);
+      // Extract last sequence
+      let lastSeq = 0;
+      if (lastInvoice && lastInvoice.invoice_number) {
+        // Try to extract the last sequence from the invoice number
+        const match = lastInvoice.invoice_number.match(/(\d{3,})$/);
+        if (match) {
+          lastSeq = parseInt(match[1], 10);
+        } else {
+          // If no sequence found in format, use the stored sequence
+          lastSeq = profile?.invoice_number_sequence || 0;
+        }
+      } else {
+        lastSeq = profile?.invoice_number_sequence || 0;
+      }
       
-      if (match) {
-        const nextNumber = parseInt(match[1], 10) + 1;
-        return `INV-${String(nextNumber).padStart(4, '0')}`;
+      const nextSeq = lastSeq + 1;
+
+      // Format the new invoice number
+      const currentDate = new Date();
+      const year = currentDate.getFullYear();
+      const month = String(currentDate.getMonth() + 1).padStart(2, '0');
+      const seq = String(nextSeq).padStart(4, '0');
+      
+      let invoiceNumber = format
+        .replace('{YYYY}', year.toString())
+        .replace('{MM}', month)
+        .replace('{SEQ}', seq);
+
+      // Update the business profile's sequence (if profile exists)
+      if (profile) {
+        await supabase
+          .from('business_profiles')
+          .update({ invoice_number_sequence: nextSeq })
+          .eq('user_id', user.id);
       }
 
-      return 'INV-0001';
+      return invoiceNumber;
     } catch (error) {
       console.error('Error generating invoice number:', error);
-      return 'INV-0001';
+      // Fallback to simple format
+      return `INV-${new Date().getFullYear()}-0001`;
     }
   }
 }
