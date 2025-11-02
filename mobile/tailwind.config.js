@@ -46,6 +46,21 @@ module.exports = {
           primary: '#33415C',
           teal: '#5BC0BE',
           coral: '#F25F5C'
+        },
+        revolut: {
+          blue: {
+            50: '#EEF2FF',
+            100: '#E0E7FF',
+            200: '#C7D2FE',
+            300: '#A5B4FC',
+            400: '#818CF8',
+            500: '#5B72EE',
+            600: '#4158D0',
+            700: '#2E4CEE',
+            800: '#1E3A8A',
+            900: '#1E2875',
+            950: '#0F172A'
+          }
         }
       },
       borderRadius: {
