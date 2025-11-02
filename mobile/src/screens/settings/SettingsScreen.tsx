@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, ScrollView } from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet, ScrollView, StatusBar } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useAuth } from '@/store';
@@ -42,9 +42,19 @@ export default function SettingsScreen() {
 
   return (
     <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
-      {/* Header */}
+      <StatusBar barStyle="light-content" backgroundColor="#1E2875" />
+      {/* Header with Dark Blue Background */}
       <View style={styles.header}>
-        <Text style={styles.headerTitle}>Settings</Text>
+        <View style={styles.titleSection}>
+          <Text style={styles.headerTitle}>Settings</Text>
+          <Text style={styles.dateText}>
+            {new Date().toLocaleDateString('en-US', { 
+              weekday: 'long', 
+              month: 'long', 
+              day: 'numeric' 
+            })}
+          </Text>
+        </View>
         <Text style={styles.headerSubtitle}>Manage your app preferences</Text>
       </View>
 
@@ -106,21 +116,27 @@ const styles = StyleSheet.create({
     backgroundColor: '#F8FAFC',
   },
   header: {
-    backgroundColor: '#FFFFFF',
-    padding: 20,
-    paddingTop: 24,
-    borderBottomWidth: 1,
-    borderBottomColor: '#E2E8F0',
+    backgroundColor: '#1E2875',
+    paddingHorizontal: 24,
+    paddingTop: 48,
+    paddingBottom: 32,
+  },
+  titleSection: {
+    marginBottom: 8,
   },
   headerTitle: {
-    fontSize: 28,
-    fontWeight: '700',
-    color: '#1E293B',
+    fontSize: 30,
+    fontWeight: '800',
+    color: '#FFFFFF',
     marginBottom: 4,
+  },
+  dateText: {
+    fontSize: 14,
+    color: 'rgba(255, 255, 255, 0.7)',
   },
   headerSubtitle: {
     fontSize: 14,
-    color: '#64748B',
+    color: 'rgba(255, 255, 255, 0.8)',
   },
   section: {
     marginTop: 24,

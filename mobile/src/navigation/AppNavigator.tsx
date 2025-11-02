@@ -20,11 +20,11 @@ const Stack = createNativeStackNavigator();
 // Stack navigator for Invoice screens
 function InvoiceStack() {
   return (
-    <Stack.Navigator screenOptions={{ headerShown: true }}>
+    <Stack.Navigator screenOptions={{ headerShown: false }}>
       <Stack.Screen 
         name="InvoiceList" 
         component={InvoiceListScreen}
-        options={{ title: 'Invoices' }}
+        options={{ headerShown: false }}
       />
       <Stack.Screen 
         name="InvoiceCreate" 
@@ -43,11 +43,11 @@ function InvoiceStack() {
 // Stack navigator for Settings screens
 function SettingsStack() {
   return (
-    <Stack.Navigator screenOptions={{ headerShown: true }}>
+    <Stack.Navigator screenOptions={{ headerShown: false }}>
       <Stack.Screen 
         name="SettingsList" 
         component={SettingsScreen}
-        options={{ title: 'Settings' }}
+        options={{ headerShown: false }}
       />
       <Stack.Screen 
         name="BusinessSettings" 

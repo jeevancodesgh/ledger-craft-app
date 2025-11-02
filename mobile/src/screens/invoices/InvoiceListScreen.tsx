@@ -9,6 +9,7 @@ import {
   TextInput,
   Alert,
   ActivityIndicator,
+  StatusBar,
 } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
@@ -182,6 +183,7 @@ export default function InvoiceListScreen() {
     });
   };
 
+
   const renderInvoiceCard = ({ item }: { item: Invoice }) => (
     <SwipeableInvoiceCard
       invoice={item}
@@ -230,10 +232,21 @@ export default function InvoiceListScreen() {
 
   return (
     <View style={styles.container}>
-      {/* Revolut-style Header with Gradient */}
+      <StatusBar barStyle="light-content" backgroundColor="#1E2875" />
+      {/* Header with Dark Blue Background */}
       <View style={styles.headerGradient}>
+        {/* Title, Date and New Button */}
         <View style={styles.header}>
-          <Text style={styles.title}>Invoices</Text>
+          <View style={styles.titleSection}>
+            <Text style={styles.title}>Invoices</Text>
+            <Text style={styles.dateText}>
+              {new Date().toLocaleDateString('en-US', { 
+                weekday: 'long', 
+                month: 'long', 
+                day: 'numeric' 
+              })}
+            </Text>
+          </View>
           <TouchableOpacity
             style={styles.newButton}
             onPress={() => {
@@ -308,7 +321,10 @@ const styles = StyleSheet.create({
     backgroundColor: '#F8FAFC',
   },
   headerGradient: {
-    backgroundColor: '#FFFFFF',
+    backgroundColor: '#1E2875',
+    paddingTop: 48,
+    paddingBottom: 20,
+    marginTop: 0,
     borderBottomLeftRadius: 24,
     borderBottomRightRadius: 24,
     shadowColor: '#000',
@@ -320,42 +336,51 @@ const styles = StyleSheet.create({
   header: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingHorizontal: 20,
-    paddingTop: 16,
+    alignItems: 'flex-start',
+    paddingHorizontal: 24,
     paddingBottom: 12,
   },
+  titleSection: {
+    flex: 1,
+  },
   title: {
-    fontSize: 28,
+    fontSize: 30,
     fontWeight: '800',
-    color: '#0F172A',
+    color: '#FFFFFF',
+    marginBottom: 4,
+  },
+  dateText: {
+    fontSize: 14,
+    color: 'rgba(255, 255, 255, 0.7)',
   },
   newButton: {
-    backgroundColor: '#5B72EE',
+    backgroundColor: '#FFFFFF',
     paddingHorizontal: 20,
     paddingVertical: 10,
     borderRadius: 20,
-    shadowColor: '#5B72EE',
+    shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.3,
+    shadowOpacity: 0.2,
     shadowRadius: 4,
     elevation: 3,
   },
   newButtonText: {
-    color: '#FFFFFF',
+    color: '#1E2875',
     fontSize: 15,
     fontWeight: '700',
   },
   searchContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginHorizontal: 20,
+    marginHorizontal: 24,
     marginTop: 12,
     marginBottom: 16,
-    backgroundColor: '#F1F5F9',
+    backgroundColor: 'rgba(255, 255, 255, 0.15)',
     borderRadius: 16,
     paddingHorizontal: 16,
     height: 52,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.2)',
   },
   searchIcon: {
     fontSize: 18,
@@ -364,11 +389,11 @@ const styles = StyleSheet.create({
   searchInput: {
     flex: 1,
     fontSize: 16,
-    color: '#0F172A',
+    color: '#FFFFFF',
   },
   filterContainer: {
     flexDirection: 'row',
-    paddingHorizontal: 20,
+    paddingHorizontal: 24,
     paddingBottom: 20,
     gap: 10,
   },
@@ -376,21 +401,21 @@ const styles = StyleSheet.create({
     paddingHorizontal: 18,
     paddingVertical: 10,
     borderRadius: 20,
-    backgroundColor: '#F1F5F9',
+    backgroundColor: 'rgba(255, 255, 255, 0.15)',
     borderWidth: 1.5,
-    borderColor: 'transparent',
+    borderColor: 'rgba(255, 255, 255, 0.2)',
   },
   filterButtonActive: {
-    backgroundColor: '#1E3A8A',
-    borderColor: '#1E3A8A',
+    backgroundColor: '#FFFFFF',
+    borderColor: '#FFFFFF',
   },
   filterButtonText: {
     fontSize: 14,
-    color: '#64748B',
+    color: 'rgba(255, 255, 255, 0.8)',
     fontWeight: '600',
   },
   filterButtonTextActive: {
-    color: '#FFFFFF',
+    color: '#1E2875',
   },
   listContent: {
     padding: 16,

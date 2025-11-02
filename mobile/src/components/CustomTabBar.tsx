@@ -1,11 +1,15 @@
-import React from 'react';
-import { View, TouchableOpacity, Text, StyleSheet, Platform } from 'react-native';
+import React, { useEffect, useRef } from 'react';
+import { View, TouchableOpacity, Text, StyleSheet, Platform, Animated } from 'react-native';
 import { BottomTabBarProps } from '@react-navigation/bottom-tabs';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Feather } from '@expo/vector-icons';
 
 const CustomTabBar = ({ state, descriptors, navigation }: BottomTabBarProps) => {
   const insets = useSafeAreaInsets();
+  const prevIndexRef = useRef(state.index);
+  
+  // Animation refs for each tab
+  const animationRefs = useRef<{ [key: string]: Animated.Value }>({});
 
   const getIconName = (routeName: string): keyof typeof Feather.glyphMap => {
     switch (routeName) {
@@ -20,6 +24,49 @@ const CustomTabBar = ({ state, descriptors, navigation }: BottomTabBarProps) => 
     }
   };
 
+  // Initialize animation values for each route
+  useEffect(() => {
+    state.routes.forEach((route, index) => {
+      if (!animationRefs.current[route.key]) {
+        animationRefs.current[route.key] = new Animated.Value(
+          state.index === index ? 1 : 0
+        );
+      }
+    });
+  }, [state.routes]);
+
+  // Animate tabs when index changes
+  useEffect(() => {
+    const currentIndex = state.index;
+    const prevIndex = prevIndexRef.current;
+
+    if (currentIndex !== prevIndex) {
+      // Animate previous tab out
+      const prevRoute = state.routes[prevIndex];
+      if (prevRoute && animationRefs.current[prevRoute.key]) {
+        Animated.spring(animationRefs.current[prevRoute.key], {
+          toValue: 0,
+          useNativeDriver: true,
+          tension: 300,
+          friction: 30,
+        }).start();
+      }
+
+      // Animate current tab in
+      const currentRoute = state.routes[currentIndex];
+      if (currentRoute && animationRefs.current[currentRoute.key]) {
+        Animated.spring(animationRefs.current[currentRoute.key], {
+          toValue: 1,
+          useNativeDriver: true,
+          tension: 300,
+          friction: 30,
+        }).start();
+      }
+
+      prevIndexRef.current = currentIndex;
+    }
+  }, [state.index, state.routes]);
+
   return (
     <View style={[styles.container, { paddingBottom: insets.bottom }]}>
       {state.routes.map((route, index) => {
@@ -33,6 +80,12 @@ const CustomTabBar = ({ state, descriptors, navigation }: BottomTabBarProps) => 
 
         const isFocused = state.index === index;
         const iconName = getIconName(route.name);
+        
+        // Get or create animation value
+        if (!animationRefs.current[route.key]) {
+          animationRefs.current[route.key] = new Animated.Value(isFocused ? 1 : 0);
+        }
+        const animationValue = animationRefs.current[route.key];
 
         const onPress = () => {
           const event = navigation.emit({
@@ -53,6 +106,37 @@ const CustomTabBar = ({ state, descriptors, navigation }: BottomTabBarProps) => 
           });
         };
 
+        // Animated values
+        const iconScale = animationValue.interpolate({
+          inputRange: [0, 1],
+          outputRange: [1, 1.15],
+        });
+
+        const iconOpacity = animationValue.interpolate({
+          inputRange: [0, 1],
+          outputRange: [0.6, 1],
+        });
+
+        const containerScale = animationValue.interpolate({
+          inputRange: [0, 1],
+          outputRange: [0.85, 1],
+        });
+
+        const labelOpacity = animationValue.interpolate({
+          inputRange: [0, 1],
+          outputRange: [0.6, 1],
+        });
+
+        const labelScale = animationValue.interpolate({
+          inputRange: [0, 1],
+          outputRange: [0.9, 1],
+        });
+
+        const backgroundColorOpacity = animationValue.interpolate({
+          inputRange: [0, 1],
+          outputRange: [0, 1],
+        });
+
         return (
           <TouchableOpacity
             key={route.key}
@@ -63,27 +147,51 @@ const CustomTabBar = ({ state, descriptors, navigation }: BottomTabBarProps) => 
             onPress={onPress}
             onLongPress={onLongPress}
             style={styles.tabButton}
+            activeOpacity={0.7}
           >
-            <View
+            <Animated.View
               style={[
                 styles.iconContainer,
-                isFocused && styles.iconContainerActive,
+                {
+                  transform: [{ scale: containerScale }],
+                },
               ]}
             >
-              <Feather
-                name={iconName}
-                size={24}
-                color={isFocused ? '#ffffff' : 'rgba(255, 255, 255, 0.6)'}
+              <Animated.View
+                style={[
+                  StyleSheet.absoluteFill,
+                  {
+                    backgroundColor: 'rgba(255, 255, 255, 0.15)',
+                    borderRadius: 24,
+                    opacity: backgroundColorOpacity,
+                  },
+                ]}
               />
-            </View>
-            <Text
+              <Animated.View
+                style={{
+                  transform: [{ scale: iconScale }],
+                  opacity: iconOpacity,
+                }}
+              >
+                <Feather
+                  name={iconName}
+                  size={24}
+                  color="#ffffff"
+                />
+              </Animated.View>
+            </Animated.View>
+            <Animated.Text
               style={[
                 styles.label,
+                {
+                  opacity: labelOpacity,
+                  transform: [{ scale: labelScale }],
+                },
                 isFocused && styles.labelActive,
               ]}
             >
               {typeof label === 'string' ? label : route.name}
-            </Text>
+            </Animated.Text>
           </TouchableOpacity>
         );
       })}
