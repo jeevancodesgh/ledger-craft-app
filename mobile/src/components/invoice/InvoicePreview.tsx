@@ -4,14 +4,17 @@ import {
   Text,
   StyleSheet,
   ScrollView,
+  Image,
 } from 'react-native';
 import type { Invoice } from '@/types/invoice';
+import type { BusinessProfile } from '@/services/businessProfileService';
 
 interface InvoicePreviewProps {
   invoice: Invoice;
+  businessProfile?: BusinessProfile | null;
 }
 
-export default function InvoicePreview({ invoice }: InvoicePreviewProps) {
+export default function InvoicePreview({ invoice, businessProfile }: InvoicePreviewProps) {
   const formatCurrency = (amount: number, currency: string) => {
     const symbol = currency === 'NZD' ? '$' : currency;
     return `${symbol}${amount.toFixed(2)}`;
@@ -31,9 +34,36 @@ export default function InvoicePreview({ invoice }: InvoicePreviewProps) {
       <View style={styles.invoiceContainer}>
         {/* Header */}
         <View style={styles.header}>
-          <View>
-            <Text style={styles.companyName}>Your Business Name</Text>
+          <View style={styles.businessInfoContainer}>
+            {businessProfile?.logoUrl && (
+              <Image
+                source={{ uri: businessProfile.logoUrl }}
+                style={styles.logo}
+                resizeMode="contain"
+              />
+            )}
+            <Text style={styles.companyName}>
+              {businessProfile?.name || 'Your Business Name'}
+            </Text>
             <Text style={styles.headerText}>Professional Invoice</Text>
+            {businessProfile?.email && (
+              <Text style={styles.businessDetail}>{businessProfile.email}</Text>
+            )}
+            {businessProfile?.phone && (
+              <Text style={styles.businessDetail}>{businessProfile.phone}</Text>
+            )}
+            {businessProfile?.address && (
+              <Text style={styles.businessDetail}>
+                {[
+                  businessProfile.address,
+                  businessProfile.city,
+                  businessProfile.state,
+                  businessProfile.zip,
+                ]
+                  .filter(Boolean)
+                  .join(', ')}
+              </Text>
+            )}
           </View>
           <View style={styles.invoiceNumberContainer}>
             <Text style={styles.invoiceLabel}>INVOICE</Text>
@@ -197,6 +227,16 @@ const styles = StyleSheet.create({
     paddingBottom: 16,
     marginBottom: 20,
   },
+  businessInfoContainer: {
+    flex: 1,
+    marginRight: 16,
+  },
+  logo: {
+    width: 80,
+    height: 80,
+    marginBottom: 12,
+    borderRadius: 8,
+  },
   companyName: {
     fontSize: 24,
     fontWeight: '700',
@@ -206,6 +246,12 @@ const styles = StyleSheet.create({
   headerText: {
     fontSize: 14,
     color: '#64748b',
+    marginBottom: 8,
+  },
+  businessDetail: {
+    fontSize: 12,
+    color: '#64748b',
+    marginBottom: 2,
   },
   invoiceNumberContainer: {
     alignItems: 'flex-end',

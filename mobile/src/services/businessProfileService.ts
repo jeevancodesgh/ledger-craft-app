@@ -234,28 +234,28 @@ class BusinessProfileService {
 
       // Get file extension
       const ext = uri.split('.').pop()?.split('?')[0] || 'jpg';
-      const fileName = `${userId}/logo.${ext}`;
+      const fileName = `business-logos/${userId}-logo.${ext}`;
 
       // Convert base64 to ArrayBuffer
       const arrayBuffer = decode(base64);
 
-      // Upload to Supabase Storage
+      // Upload to Supabase Storage (using 'business-assets' bucket like web app)
       const { data, error } = await supabase.storage
-        .from('business-logos')
+        .from('business-assets')
         .upload(fileName, arrayBuffer, {
           contentType: `image/${ext}`,
           upsert: true,
         });
 
       if (error) {
-        console.warn('Logo upload failed (bucket may not exist):', error.message);
+        console.warn('Logo upload failed:', error.message);
         // Return null instead of throwing - logo is optional
         return null;
       }
 
       // Get public URL
       const { data: publicData } = supabase.storage
-        .from('business-logos')
+        .from('business-assets')
         .getPublicUrl(fileName);
 
       return publicData.publicUrl;
@@ -268,6 +268,9 @@ class BusinessProfileService {
 
   // Transform snake_case database response to camelCase
   private transformToBusinessProfile(data: any): BusinessProfile {
+    console.log('📸 Raw data from database:', data);
+    console.log('📸 logo_url from database:', data.logo_url);
+    
     // Reconstruct theme if color data exists
     let theme: BusinessTheme | undefined;
     if (data.primary_color || data.secondary_color || data.accent_color) {
@@ -282,7 +285,7 @@ class BusinessProfileService {
       };
     }
 
-    return {
+    const profile = {
       id: data.id,
       userId: data.user_id,
       name: data.name,
@@ -306,6 +309,9 @@ class BusinessProfileService {
       createdAt: data.created_at,
       updatedAt: data.updated_at,
     };
+    
+    console.log('📸 Transformed profile.logoUrl:', profile.logoUrl);
+    return profile;
   }
 }
 

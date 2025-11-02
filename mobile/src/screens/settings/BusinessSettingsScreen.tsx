@@ -57,6 +57,8 @@ export default function BusinessSettingsScreen() {
     try {
       setLoading(true);
       const data = await businessProfileService.getBusinessProfile();
+      console.log('📸 Loaded profile data:', data);
+      console.log('📸 Logo URL from database:', data?.logoUrl);
       if (data) {
         setProfile(data);
         populateForm(data);
@@ -85,7 +87,9 @@ export default function BusinessSettingsScreen() {
     setInvoiceNumberSequence(data.invoiceNumberSequence?.toString() || '1');
     setDefaultTerms(data.defaultTerms || '');
     setDefaultNotes(data.defaultNotes || '');
-    setLogoUri(data.logoUrl || null);
+    const logoUrl = data.logoUrl || null;
+    console.log('📸 Setting logoUri to:', logoUrl);
+    setLogoUri(logoUrl);
   };
 
   const validateForm = (): boolean => {
@@ -142,6 +146,7 @@ export default function BusinessSettingsScreen() {
 
       await businessProfileService.updateBusinessProfile(updates);
       Alert.alert('Success', 'Business profile updated successfully');
+      setNewLogoUri(null); // Clear the new logo URI after successful save
       loadProfile(); // Reload to get updated data
     } catch (error) {
       console.error('Error saving profile:', error);
@@ -264,7 +269,13 @@ export default function BusinessSettingsScreen() {
           disabled={imagePickerLoading}
         >
           {logoUri ? (
-            <Image source={{ uri: logoUri }} style={styles.logoImage} />
+            <Image 
+              key={logoUri} 
+              source={{ uri: logoUri }} 
+              style={styles.logoImage}
+              onError={(error) => console.error('📸 Image load error:', error.nativeEvent)}
+              onLoad={() => console.log('📸 Image loaded successfully:', logoUri)}
+            />
           ) : (
             <View style={styles.logoPlaceholder}>
               <Text style={styles.logoPlaceholderText}>📷</Text>

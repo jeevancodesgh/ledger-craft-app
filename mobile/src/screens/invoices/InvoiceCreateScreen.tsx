@@ -24,6 +24,7 @@ import { CustomerPicker } from '@/components/customers/CustomerPicker';
 import { Customer as CustomerType } from '@/services/customerService';
 import { ItemPicker } from '@/components/items/ItemPicker';
 import { Item } from '@/services/itemService';
+import { businessProfileService } from '@/services/businessProfileService';
 
 type InvoiceCreateNavigationProp = NativeStackNavigationProp<AppTabParamList, 'InvoiceCreate'>;
 type InvoiceCreateRouteProp = RouteProp<AppTabParamList, 'InvoiceCreate'>;
@@ -65,6 +66,7 @@ export default function InvoiceCreateScreen() {
   const [showCustomerPicker, setShowCustomerPicker] = useState(false);
   const [showItemPicker, setShowItemPicker] = useState(false);
   const [currentLineItemIndex, setCurrentLineItemIndex] = useState<number | null>(null);
+  const [businessProfile, setBusinessProfile] = useState<Awaited<ReturnType<typeof businessProfileService.getBusinessProfile>>>(null);
 
   // Load invoice number and customers on mount
   useEffect(() => {
@@ -73,13 +75,28 @@ export default function InvoiceCreateScreen() {
 
   const loadInitialData = async () => {
     try {
-      const [number, customerList] = await Promise.all([
+      const [number, customerList, profile] = await Promise.all([
         invoiceService.generateInvoiceNumber(),
         invoiceService.fetchCustomers(),
+        businessProfileService.getBusinessProfile(),
       ]);
       
       setInvoiceNumber(number);
       setCustomers(customerList);
+      setBusinessProfile(profile);
+      
+      // Load default payment terms and notes from business profile
+      if (profile) {
+        if (profile.defaultTerms) {
+          setTerms(profile.defaultTerms);
+        }
+        if (profile.defaultNotes) {
+          setNotes(profile.defaultNotes);
+        }
+        if (profile.defaultTaxRate) {
+          setTaxRate(profile.defaultTaxRate);
+        }
+      }
       
       if (customerList.length > 0) {
         setCustomerId(customerList[0].id);
@@ -563,7 +580,7 @@ export default function InvoiceCreateScreen() {
               </TouchableOpacity>
             </View>
           </View>
-          <InvoicePreview invoice={getPreviewInvoice()} />
+          <InvoicePreview invoice={getPreviewInvoice()} businessProfile={businessProfile} />
         </View>
       </Modal>
     </KeyboardAvoidingView>
