@@ -13,12 +13,17 @@ import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { AppTabParamList } from '@/navigation/types';
 import { invoiceService } from '@/services/invoiceService';
+import { paymentService } from '@/services/paymentService';
 import type { Invoice } from '@/types/invoice';
+import type { CreatePaymentRequest } from '@/types/payment';
+import type { BusinessProfile } from '@/types/invoice';
 import { ModernButton } from '@/components/ui/ModernButton';
 import InvoicePreviewWithTemplates from '@/components/invoice/InvoicePreviewWithTemplates';
 import { shareInvoicePDF, downloadInvoicePDF } from '@/utils/pdfUtils';
 import { businessProfileService } from '@/services/businessProfileService';
-import type { BusinessProfile } from '@/types/invoice';
+import StatusPicker from '@/components/invoice/StatusPicker';
+import PaymentCaptureModal from '@/components/invoice/PaymentCaptureModal';
+import { getStatusColor, getStatusIcon } from '@/utils/statusUtils';
 
 type InvoiceDetailNavigationProp = NativeStackNavigationProp<any, 'InvoiceDetail'>;
 type InvoiceDetailRouteProp = RouteProp<AppTabParamList, 'InvoiceDetail'>;
@@ -33,6 +38,9 @@ export default function InvoiceDetailScreen() {
   const [loading, setLoading] = useState(true);
   const [showPreview, setShowPreview] = useState(false);
   const [generatingPdf, setGeneratingPdf] = useState(false);
+  const [statusPickerVisible, setStatusPickerVisible] = useState(false);
+  const [paymentModalVisible, setPaymentModalVisible] = useState(false);
+  const [updatingStatus, setUpdatingStatus] = useState(false);
 
   useEffect(() => {
     loadData();
@@ -102,32 +110,50 @@ export default function InvoiceDetailScreen() {
     navigation.navigate('InvoiceEdit', { invoiceId });
   };
 
-  const handleMarkAsPaid = async () => {
-    Alert.alert(
-      'Mark as Paid',
-      'Are you sure you want to mark this invoice as paid?',
-      [
-        { text: 'Cancel', style: 'cancel' },
-        {
-          text: 'Mark as Paid',
-          onPress: async () => {
-            try {
-              if (!invoice) return;
-              await invoiceService.updateInvoice(
-                invoiceId,
-                { ...invoice, status: 'paid' },
-                invoice.items
-              );
-              Alert.alert('Success', 'Invoice marked as paid');
-              loadInvoice();
-            } catch (error) {
-              console.error('Error updating invoice:', error);
-              Alert.alert('Error', 'Failed to update invoice');
-            }
-          },
-        },
-      ]
-    );
+  const handleStatusChange = async (newStatus: string) => {
+    // If changing to "paid", open payment capture modal
+    if (newStatus === 'paid') {
+      setPaymentModalVisible(true);
+      return;
+    }
+
+    // For other statuses, update directly
+    setUpdatingStatus(true);
+
+    try {
+      await invoiceService.updateInvoiceStatus(invoiceId, newStatus as any);
+      
+      // Reload invoice data
+      await loadInvoice();
+      
+      Alert.alert('Success', `Invoice status changed to ${newStatus}`);
+    } catch (error) {
+      console.error('Error updating status:', error);
+      Alert.alert('Error', 'Failed to update invoice status. Please try again.');
+    } finally {
+      setUpdatingStatus(false);
+    }
+  };
+
+  const handlePaymentSubmit = async (paymentData: CreatePaymentRequest) => {
+    try {
+      await paymentService.createPayment(paymentData);
+      
+      // Reload invoice data
+      await loadInvoice();
+      
+      // Close modal
+      setPaymentModalVisible(false);
+      
+      Alert.alert('Success', 'Payment recorded successfully');
+    } catch (error) {
+      console.error('Error recording payment:', error);
+      throw error; // Let the modal handle the error
+    }
+  };
+
+  const handleMarkAsPaid = () => {
+    setPaymentModalVisible(true);
   };
 
   const handleDownloadPDF = async () => {
@@ -195,6 +221,34 @@ export default function InvoiceDetailScreen() {
             <Text style={styles.amountLabel}>Total Amount</Text>
             <Text style={styles.amountValue}>{formatCurrency(invoice.total || 0, invoice.currency || 'NZD')}</Text>
           </View>
+        </View>
+
+        {/* Status Section */}
+        <View style={styles.card}>
+          <Text style={styles.sectionTitle}>Invoice Status</Text>
+          <TouchableOpacity
+            style={styles.statusButton}
+            onPress={() => setStatusPickerVisible(true)}
+            disabled={updatingStatus}
+            activeOpacity={0.7}
+          >
+            <View style={styles.statusButtonLeft}>
+              <View style={[styles.statusDot, { backgroundColor: getStatusColor(invoice.status) }]} />
+              <View>
+                <Text style={styles.statusButtonLabel}>Current Status</Text>
+                <Text style={styles.statusButtonValue}>
+                  {getStatusIcon(invoice.status)} {invoice.status.toUpperCase()}
+                </Text>
+              </View>
+            </View>
+            <Text style={styles.changeText}>Change →</Text>
+          </TouchableOpacity>
+          {updatingStatus && (
+            <View style={styles.statusLoading}>
+              <ActivityIndicator size="small" color="#5B72EE" />
+              <Text style={styles.statusLoadingText}>Updating status...</Text>
+            </View>
+          )}
         </View>
 
         {/* Customer Details Card */}
@@ -370,6 +424,22 @@ export default function InvoiceDetailScreen() {
           />
         )}
       </Modal>
+
+      {/* Status Picker Modal */}
+      <StatusPicker
+        visible={statusPickerVisible}
+        currentStatus={invoice.status}
+        onSelect={handleStatusChange}
+        onClose={() => setStatusPickerVisible(false)}
+      />
+
+      {/* Payment Capture Modal */}
+      <PaymentCaptureModal
+        visible={paymentModalVisible}
+        invoice={invoice}
+        onSubmit={handlePaymentSubmit}
+        onClose={() => setPaymentModalVisible(false)}
+      />
     </View>
   );
 }
@@ -587,6 +657,53 @@ const styles = StyleSheet.create({
     fontSize: 28,
     color: '#64748b',
     fontWeight: '300',
+  },
+  statusButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingVertical: 16,
+    paddingHorizontal: 16,
+    backgroundColor: '#f8fafc',
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: '#e2e8f0',
+  },
+  statusButtonLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+  },
+  statusDot: {
+    width: 14,
+    height: 14,
+    borderRadius: 7,
+  },
+  statusButtonLabel: {
+    fontSize: 13,
+    color: '#64748b',
+    marginBottom: 4,
+  },
+  statusButtonValue: {
+    fontSize: 17,
+    fontWeight: '700',
+    color: '#0f172a',
+  },
+  changeText: {
+    fontSize: 15,
+    fontWeight: '600',
+    color: '#5B72EE',
+  },
+  statusLoading: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 12,
+    gap: 8,
+  },
+  statusLoadingText: {
+    fontSize: 14,
+    color: '#64748b',
   },
 });
 

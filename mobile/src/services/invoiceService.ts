@@ -382,6 +382,34 @@ export class InvoiceService {
       return `INV-${new Date().getFullYear()}-0001`;
     }
   }
+
+  // Update invoice status only
+  async updateInvoiceStatus(
+    id: string,
+    status: 'draft' | 'sent' | 'paid' | 'overdue'
+  ): Promise<void> {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      
+      if (!user) {
+        throw new Error('User not authenticated');
+      }
+
+      const { error } = await supabase
+        .from('invoices')
+        .update({
+          status,
+          updated_at: new Date().toISOString(),
+        })
+        .eq('id', id)
+        .eq('user_id', user.id);
+
+      if (error) throw error;
+    } catch (error) {
+      console.error('Error updating invoice status:', error);
+      throw error;
+    }
+  }
 }
 
 export const invoiceService = new InvoiceService();

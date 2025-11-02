@@ -7,14 +7,19 @@ import {
   RefreshControl,
   StyleSheet,
   TextInput,
-  Animated,
+  Alert,
+  ActivityIndicator,
 } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { AppTabParamList } from '@/navigation/types';
 import { invoiceService } from '@/services/invoiceService';
+import { paymentService } from '@/services/paymentService';
 import type { Invoice } from '@/types/invoice';
+import type { CreatePaymentRequest } from '@/types/payment';
 import { useFocusEffect } from '@react-navigation/native';
+import SwipeableInvoiceCard from '@/components/invoice/SwipeableInvoiceCard';
+import PaymentCaptureModal from '@/components/invoice/PaymentCaptureModal';
 
 type InvoiceListNavigationProp = NativeStackNavigationProp<any, 'InvoiceList'>;
 
@@ -26,6 +31,9 @@ export default function InvoiceListScreen() {
   const [refreshing, setRefreshing] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [filter, setFilter] = useState<'all' | 'draft' | 'sent' | 'paid' | 'overdue'>('all');
+  const [updatingStatus, setUpdatingStatus] = useState<Record<string, boolean>>({});
+  const [paymentModalVisible, setPaymentModalVisible] = useState(false);
+  const [selectedInvoiceForPayment, setSelectedInvoiceForPayment] = useState<Invoice | null>(null);
 
   const loadInvoices = async () => {
     try {
@@ -83,6 +91,53 @@ export default function InvoiceListScreen() {
     applyFilters(invoices, searchQuery, newFilter);
   };
 
+  const handleStatusChange = async (invoiceId: string, newStatus: string) => {
+    // If changing to "paid", open payment capture modal
+    if (newStatus === 'paid') {
+      const invoice = invoices.find((i) => i.id === invoiceId);
+      if (invoice) {
+        setSelectedInvoiceForPayment(invoice);
+        setPaymentModalVisible(true);
+      }
+      return;
+    }
+
+    // For other statuses, update directly
+    setUpdatingStatus((prev) => ({ ...prev, [invoiceId]: true }));
+
+    try {
+      await invoiceService.updateInvoiceStatus(invoiceId, newStatus as any);
+      
+      // Refresh the list
+      await loadInvoices();
+      
+      Alert.alert('Success', `Invoice status changed to ${newStatus}`);
+    } catch (error) {
+      console.error('Error updating status:', error);
+      Alert.alert('Error', 'Failed to update invoice status. Please try again.');
+    } finally {
+      setUpdatingStatus((prev) => ({ ...prev, [invoiceId]: false }));
+    }
+  };
+
+  const handlePaymentSubmit = async (paymentData: CreatePaymentRequest) => {
+    try {
+      await paymentService.createPayment(paymentData);
+      
+      // Refresh the invoice list
+      await loadInvoices();
+      
+      // Close modal
+      setPaymentModalVisible(false);
+      setSelectedInvoiceForPayment(null);
+      
+      Alert.alert('Success', 'Payment recorded successfully');
+    } catch (error) {
+      console.error('Error recording payment:', error);
+      throw error; // Let the modal handle the error
+    }
+  };
+
   const getStatusColor = (status: string) => {
     switch (status) {
       case 'paid':
@@ -128,45 +183,17 @@ export default function InvoiceListScreen() {
   };
 
   const renderInvoiceCard = ({ item }: { item: Invoice }) => (
-    <TouchableOpacity
-      style={styles.invoiceCard}
+    <SwipeableInvoiceCard
+      invoice={item}
       onPress={() => {
         // @ts-ignore - Navigation types will be properly typed
         navigation.navigate('InvoiceDetail', { invoiceId: item.id });
       }}
-      activeOpacity={0.7}
-    >
-      {/* Gradient Header */}
-      <View style={[styles.cardHeader, { backgroundColor: getStatusColor(item.status) + '15' }]}>
-        <View style={styles.cardHeaderTop}>
-          <Text style={styles.invoiceNumber}>{item.invoiceNumber}</Text>
-          <View style={[styles.statusBadge, { backgroundColor: getStatusColor(item.status) }]}>
-            <Text style={styles.statusText}>{getStatusIcon(item.status)} {item.status.toUpperCase()}</Text>
-          </View>
-        </View>
-        <Text style={styles.customerName}>{item.customer?.name || 'Unknown'}</Text>
-      </View>
-      
-      {/* Card Body */}
-      <View style={styles.cardBody}>
-        <View style={styles.amountContainer}>
-          <Text style={styles.amountLabel}>Amount</Text>
-          <Text style={styles.amountValue}>{formatCurrency(item.total, item.currency)}</Text>
-        </View>
-        
-        <View style={styles.datesContainer}>
-          <View style={styles.dateItem}>
-            <Text style={styles.dateLabel}>📅 Date</Text>
-            <Text style={styles.dateValue}>{formatDate(item.date)}</Text>
-          </View>
-          <View style={styles.dateDivider} />
-          <View style={styles.dateItem}>
-            <Text style={styles.dateLabel}>⏰ Due</Text>
-            <Text style={styles.dateValue}>{formatDate(item.dueDate)}</Text>
-          </View>
-        </View>
-      </View>
-    </TouchableOpacity>
+      onStatusChange={handleStatusChange}
+      disabled={updatingStatus[item.id]}
+      formatCurrency={formatCurrency}
+      formatDate={formatDate}
+    />
   );
 
   const renderFilterButtons = () => (
@@ -252,6 +279,19 @@ export default function InvoiceListScreen() {
           </View>
         }
       />
+
+      {/* Payment Capture Modal */}
+      {selectedInvoiceForPayment && (
+        <PaymentCaptureModal
+          visible={paymentModalVisible}
+          invoice={selectedInvoiceForPayment}
+          onSubmit={handlePaymentSubmit}
+          onClose={() => {
+            setPaymentModalVisible(false);
+            setSelectedInvoiceForPayment(null);
+          }}
+        />
+      )}
     </View>
   );
 }
