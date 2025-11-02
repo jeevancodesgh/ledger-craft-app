@@ -103,7 +103,7 @@ export default function SettingsScreen() {
 
       {/* App Info */}
       <View style={styles.appInfo}>
-        <Text style={styles.appInfoText}>LedgerCraft Mobile</Text>
+        <Text style={styles.appInfoText}>EasyBizInvoice Mobile</Text>
         <Text style={styles.appInfoText}>Version 1.0.0</Text>
       </View>
     </ScrollView>

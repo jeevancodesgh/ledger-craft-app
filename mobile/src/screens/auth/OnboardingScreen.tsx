@@ -142,7 +142,7 @@ export default function OnboardingScreen() {
       >
         {/* Header */}
         <View style={styles.header}>
-          <Text style={styles.appTitle}>Welcome to LedgerCraft</Text>
+          <Text style={styles.appTitle}>Welcome to EasyBizInvoice</Text>
           <Text style={styles.appSubtitle}>
             Let's set up your business profile
           </Text>

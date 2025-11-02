@@ -91,9 +91,9 @@ export default function SignupScreen() {
             {/* Logo & Brand */}
             <View className="items-center mb-12">
               <View className="w-16 h-16 bg-primary rounded-2xl items-center justify-center mb-4 shadow-lg">
-                <Text className="text-3xl text-white font-bold">LC</Text>
+                <Text className="text-3xl text-white font-bold">EBI</Text>
               </View>
-              <Text className="text-3xl font-bold text-foreground">Ledger Craft</Text>
+              <Text className="text-3xl font-bold text-foreground">EasyBizInvoice</Text>
               <Text className="text-muted-foreground mt-2">Professional Business Solutions</Text>
             </View>
 

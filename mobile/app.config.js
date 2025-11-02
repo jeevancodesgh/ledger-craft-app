@@ -1,7 +1,7 @@
 module.exports = {
   expo: {
-    name: 'Ledger Craft',
-    slug: 'ledger-craft-mobile',
+    name: 'EasyBizInvoice',
+    slug: 'easybizinvoice-mobile',
     version: '1.0.0',
     orientation: 'portrait',
     icon: './assets/icon.png',
@@ -14,7 +14,7 @@ module.exports = {
     },
     ios: {
       supportsTablet: true,
-      bundleIdentifier: 'com.ledgercraft.app',
+      bundleIdentifier: 'com.easybizinvoice.app',
       config: {
         usesNonExemptEncryption: false,
       },
@@ -24,12 +24,12 @@ module.exports = {
         foregroundImage: './assets/adaptive-icon.png',
         backgroundColor: '#ffffff',
       },
-      package: 'com.ledgercraft.app',
+      package: 'com.easybizinvoice.app',
       edgeToEdgeEnabled: true,
       predictiveBackGestureEnabled: false,
     },
     plugins: ['expo-secure-store'],
-    scheme: 'ledgercraft',
+    scheme: 'easybizinvoice',
     extra: {
       supabaseUrl: process.env.EXPO_PUBLIC_SUPABASE_URL,
       supabaseAnonKey: process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY,

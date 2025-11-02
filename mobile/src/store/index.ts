@@ -19,7 +19,7 @@ export const useStore = create<RootStore>()(
       ...createAuthSlice(...args),
     })),
     {
-      name: 'ledger-craft-mobile-store',
+      name: 'easybizinvoice-mobile-store',
     }
   )
 );
