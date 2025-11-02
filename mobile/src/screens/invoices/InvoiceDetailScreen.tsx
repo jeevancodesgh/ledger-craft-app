@@ -42,7 +42,7 @@ export default function InvoiceDetailScreen() {
     try {
       const [invoiceData, profileData] = await Promise.all([
         invoiceService.fetchInvoiceById(invoiceId),
-        businessProfileService.fetchBusinessProfile(),
+        businessProfileService.getBusinessProfile(),
       ]);
       setInvoice(invoiceData);
       setBusinessProfile(profileData);
@@ -183,17 +183,17 @@ export default function InvoiceDetailScreen() {
         <View style={styles.headerCard}>
           <View style={styles.headerRow}>
             <View>
-              <Text style={styles.invoiceNumber}>{invoice.invoiceNumber}</Text>
-              <Text style={styles.customerName}>{invoice.customer?.name}</Text>
+              <Text style={styles.invoiceNumber}>{invoice.invoiceNumber || 'N/A'}</Text>
+              <Text style={styles.customerName}>{invoice.customer?.name || 'No customer'}</Text>
             </View>
             <View style={[styles.statusBadge, { backgroundColor: getStatusColor(invoice.status) }]}>
-              <Text style={styles.statusText}>{invoice.status.toUpperCase()}</Text>
+              <Text style={styles.statusText}>{(invoice.status || 'draft').toUpperCase()}</Text>
             </View>
           </View>
 
           <View style={styles.amountContainer}>
             <Text style={styles.amountLabel}>Total Amount</Text>
-            <Text style={styles.amountValue}>{formatCurrency(invoice.total, invoice.currency)}</Text>
+            <Text style={styles.amountValue}>{formatCurrency(invoice.total || 0, invoice.currency || 'NZD')}</Text>
           </View>
         </View>
 
@@ -202,11 +202,11 @@ export default function InvoiceDetailScreen() {
           <Text style={styles.sectionTitle}>Customer Details</Text>
           <View style={styles.detailRow}>
             <Text style={styles.detailLabel}>Name:</Text>
-            <Text style={styles.detailValue}>{invoice.customer?.name}</Text>
+            <Text style={styles.detailValue}>{invoice.customer?.name || 'N/A'}</Text>
           </View>
           <View style={styles.detailRow}>
             <Text style={styles.detailLabel}>Email:</Text>
-            <Text style={styles.detailValue}>{invoice.customer?.email}</Text>
+            <Text style={styles.detailValue}>{invoice.customer?.email || 'N/A'}</Text>
           </View>
           {invoice.customer?.phone && (
             <View style={styles.detailRow}>
@@ -226,7 +226,7 @@ export default function InvoiceDetailScreen() {
                   invoice.customer.country,
                 ]
                   .filter(Boolean)
-                  .join(', ')}
+                  .join(', ') || 'N/A'}
               </Text>
             </View>
           )}
@@ -237,15 +237,15 @@ export default function InvoiceDetailScreen() {
           <Text style={styles.sectionTitle}>Invoice Details</Text>
           <View style={styles.detailRow}>
             <Text style={styles.detailLabel}>Date:</Text>
-            <Text style={styles.detailValue}>{formatDate(invoice.date)}</Text>
+            <Text style={styles.detailValue}>{invoice.date ? formatDate(invoice.date) : 'N/A'}</Text>
           </View>
           <View style={styles.detailRow}>
             <Text style={styles.detailLabel}>Due Date:</Text>
-            <Text style={styles.detailValue}>{formatDate(invoice.dueDate)}</Text>
+            <Text style={styles.detailValue}>{invoice.dueDate ? formatDate(invoice.dueDate) : 'N/A'}</Text>
           </View>
           <View style={styles.detailRow}>
             <Text style={styles.detailLabel}>Currency:</Text>
-            <Text style={styles.detailValue}>{invoice.currency}</Text>
+            <Text style={styles.detailValue}>{invoice.currency || 'NZD'}</Text>
           </View>
         </View>
 
@@ -253,13 +253,13 @@ export default function InvoiceDetailScreen() {
         <View style={styles.card}>
           <Text style={styles.sectionTitle}>Line Items</Text>
           {invoice.items.map((item, index) => (
-            <View key={item.id} style={styles.lineItem}>
+            <View key={item.id || index} style={styles.lineItem}>
               <View style={styles.lineItemHeader}>
-                <Text style={styles.lineItemDescription}>{item.description}</Text>
-                <Text style={styles.lineItemTotal}>{formatCurrency(item.total, invoice.currency)}</Text>
+                <Text style={styles.lineItemDescription}>{item.description || 'Item'}</Text>
+                <Text style={styles.lineItemTotal}>{formatCurrency(item.total || 0, invoice.currency || 'NZD')}</Text>
               </View>
               <Text style={styles.lineItemDetails}>
-                {item.quantity} {item.unit} × {formatCurrency(item.rate, invoice.currency)}
+                {item.quantity || 0} {item.unit || 'unit'} × {formatCurrency(item.rate || 0, invoice.currency || 'NZD')}
               </Text>
             </View>
           ))}
@@ -270,31 +270,31 @@ export default function InvoiceDetailScreen() {
           <Text style={styles.sectionTitle}>Summary</Text>
           <View style={styles.summaryRow}>
             <Text style={styles.summaryLabel}>Subtotal:</Text>
-            <Text style={styles.summaryValue}>{formatCurrency(invoice.subtotal, invoice.currency)}</Text>
+            <Text style={styles.summaryValue}>{formatCurrency(invoice.subtotal || 0, invoice.currency)}</Text>
           </View>
-          {invoice.taxAmount > 0 && (
+          {(invoice.taxAmount || 0) > 0 && (
             <View style={styles.summaryRow}>
               <Text style={styles.summaryLabel}>Tax:</Text>
-              <Text style={styles.summaryValue}>{formatCurrency(invoice.taxAmount, invoice.currency)}</Text>
+              <Text style={styles.summaryValue}>{formatCurrency(invoice.taxAmount || 0, invoice.currency)}</Text>
             </View>
           )}
-          {invoice.discount && invoice.discount > 0 && (
+          {(invoice.discount || 0) > 0 && (
             <View style={styles.summaryRow}>
               <Text style={styles.summaryLabel}>Discount:</Text>
-              <Text style={styles.summaryValue}>-{formatCurrency(invoice.discount, invoice.currency)}</Text>
+              <Text style={styles.summaryValue}>-{formatCurrency(invoice.discount || 0, invoice.currency)}</Text>
             </View>
           )}
-          {invoice.additionalCharges && invoice.additionalCharges > 0 && (
+          {(invoice.additionalCharges || 0) > 0 && (
             <View style={styles.summaryRow}>
               <Text style={styles.summaryLabel}>Additional Charges:</Text>
               <Text style={styles.summaryValue}>
-                {formatCurrency(invoice.additionalCharges, invoice.currency)}
+                {formatCurrency(invoice.additionalCharges || 0, invoice.currency)}
               </Text>
             </View>
           )}
           <View style={[styles.summaryRow, styles.totalRow]}>
             <Text style={styles.totalLabel}>Total:</Text>
-            <Text style={styles.totalValue}>{formatCurrency(invoice.total, invoice.currency)}</Text>
+            <Text style={styles.totalValue}>{formatCurrency(invoice.total || 0, invoice.currency)}</Text>
           </View>
         </View>
 
