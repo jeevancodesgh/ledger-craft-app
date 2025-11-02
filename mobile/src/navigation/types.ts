@@ -19,6 +19,11 @@ export type AuthStackParamList = {
 export type MainTabParamList = {
   Dashboard: undefined;
   Invoices: undefined;
+  InvoiceCreate: undefined;
+  InvoiceEdit: { invoiceId: string };
+  InvoiceDetail: { invoiceId: string };
   Settings: undefined;
 };
+
+export type AppTabParamList = MainTabParamList;
 
