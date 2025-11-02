@@ -9,6 +9,7 @@ import {
   StyleSheet,
   Alert,
   Modal,
+  ActivityIndicator,
 } from 'react-native';
 import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
@@ -19,6 +20,10 @@ import { ModernInput } from '@/components/ui/ModernInput';
 import { ModernButton } from '@/components/ui/ModernButton';
 import InvoicePreview from '@/components/invoice/InvoicePreview';
 import { shareInvoicePDF } from '@/utils/pdfUtils';
+import { CustomerPicker } from '@/components/customers/CustomerPicker';
+import { Customer as CustomerType } from '@/services/customerService';
+import { ItemPicker } from '@/components/items/ItemPicker';
+import { Item } from '@/services/itemService';
 
 type InvoiceCreateNavigationProp = NativeStackNavigationProp<AppTabParamList, 'InvoiceCreate'>;
 type InvoiceCreateRouteProp = RouteProp<AppTabParamList, 'InvoiceCreate'>;
@@ -30,6 +35,7 @@ export default function InvoiceCreateScreen() {
   // Form state
   const [invoiceNumber, setInvoiceNumber] = useState('');
   const [customerId, setCustomerId] = useState('');
+  const [selectedCustomer, setSelectedCustomer] = useState<CustomerType | null>(null);
   const [date, setDate] = useState(new Date().toISOString().split('T')[0]);
   const [dueDate, setDueDate] = useState(
     new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]
@@ -56,6 +62,9 @@ export default function InvoiceCreateScreen() {
   const [loadingCustomers, setLoadingCustomers] = useState(true);
   const [showPreview, setShowPreview] = useState(false);
   const [generatingPdf, setGeneratingPdf] = useState(false);
+  const [showCustomerPicker, setShowCustomerPicker] = useState(false);
+  const [showItemPicker, setShowItemPicker] = useState(false);
+  const [currentLineItemIndex, setCurrentLineItemIndex] = useState<number | null>(null);
 
   // Load invoice number and customers on mount
   useEffect(() => {
@@ -121,6 +130,30 @@ export default function InvoiceCreateScreen() {
     if (lineItems.length > 1) {
       setLineItems(lineItems.filter((_, i) => i !== index));
     }
+  };
+
+  const handleSelectItem = (item: Item) => {
+    if (currentLineItemIndex !== null) {
+      const updated = [...lineItems];
+      const currentItem = updated[currentLineItemIndex];
+      
+      // Update all fields at once
+      updated[currentLineItemIndex] = {
+        ...currentItem,
+        description: item.name,
+        rate: item.salePrice || 0,
+        unit: item.unit || 'each',
+        // Recalculate total
+        total: currentItem.quantity * (item.salePrice || 0),
+      };
+      
+      setLineItems(updated);
+    }
+  };
+
+  const openItemPicker = (index: number) => {
+    setCurrentLineItemIndex(index);
+    setShowItemPicker(true);
   };
 
   const formatCurrency = (amount: number) => {
@@ -257,13 +290,41 @@ export default function InvoiceCreateScreen() {
             placeholder="INV-0001"
           />
 
-          <ModernInput
-            label="Customer"
-            value={customers.find((c) => c.id === customerId)?.name || ''}
-            onChangeText={() => {}}
-            placeholder="Select customer"
-            editable={false}
-          />
+          {/* Customer Picker Button */}
+          <View style={styles.inputContainer}>
+            <Text style={styles.inputLabel}>
+              Customer <Text style={styles.required}>*</Text>
+            </Text>
+            <TouchableOpacity
+              onPress={() => setShowCustomerPicker(true)}
+              style={styles.customerButton}
+              activeOpacity={0.7}
+            >
+              {selectedCustomer ? (
+                <View style={styles.selectedCustomerContainer}>
+                  <View style={styles.customerAvatar}>
+                    <Text style={styles.customerAvatarText}>
+                      {selectedCustomer.name
+                        .split(' ')
+                        .map((n) => n[0])
+                        .join('')
+                        .toUpperCase()
+                        .slice(0, 2)}
+                    </Text>
+                  </View>
+                  <View style={styles.customerInfo}>
+                    <Text style={styles.customerName}>{selectedCustomer.name}</Text>
+                    {selectedCustomer.email && (
+                      <Text style={styles.customerEmail}>{selectedCustomer.email}</Text>
+                    )}
+                  </View>
+                  <Text style={styles.changeText}>Change</Text>
+                </View>
+              ) : (
+                <Text style={styles.placeholderText}>Tap to select customer</Text>
+              )}
+            </TouchableOpacity>
+          </View>
 
           <View style={styles.row}>
             <View style={styles.halfWidth}>
@@ -291,11 +352,23 @@ export default function InvoiceCreateScreen() {
 
           {lineItems.map((item, index) => (
             <View key={item.id} style={styles.lineItemCard}>
+              {/* Item Selector Button */}
+              <TouchableOpacity
+                onPress={() => openItemPicker(index)}
+                style={styles.itemSelectorButton}
+                activeOpacity={0.7}
+              >
+                <Text style={styles.itemSelectorLabel}>
+                  {item.description || '📦 Tap to select item'}
+                </Text>
+                <Text style={styles.itemSelectorIcon}>›</Text>
+              </TouchableOpacity>
+
               <ModernInput
-                label="Description"
+                label="Description (or add custom)"
                 value={item.description}
                 onChangeText={(text) => updateLineItem(index, 'description', text)}
-                placeholder="Item description"
+                placeholder="Enter custom description"
               />
 
               <View style={styles.row}>
@@ -396,25 +469,72 @@ export default function InvoiceCreateScreen() {
         <View style={{ height: 120 }} />
       </ScrollView>
 
-      {/* Fixed bottom buttons */}
-      <View style={styles.bottomActions}>
-        <ModernButton onPress={handleCancel} variant="outline" fullWidth>
-          Cancel
-        </ModernButton>
-        <View style={{ width: 12 }} />
-        <ModernButton 
-          onPress={() => setShowPreview(true)} 
-          variant="outline" 
-          fullWidth
-          disabled={!invoiceNumber || !customerId || lineItems.every(item => !item.description)}
-        >
-          Preview
-        </ModernButton>
-        <View style={{ width: 12 }} />
-        <ModernButton onPress={handleSave} variant="primary" fullWidth loading={loading}>
-          {loading ? 'Saving...' : 'Save Invoice'}
-        </ModernButton>
+      {/* Fixed bottom buttons - Revolut style */}
+      <View style={styles.bottomActionsContainer}>
+        <View style={styles.bottomActions}>
+          {/* Cancel - Secondary */}
+          <TouchableOpacity
+            onPress={handleCancel}
+            style={styles.cancelButton}
+            activeOpacity={0.7}
+          >
+            <Text style={styles.cancelButtonText}>Cancel</Text>
+          </TouchableOpacity>
+
+          {/* Preview - Outline */}
+          <TouchableOpacity
+            onPress={() => setShowPreview(true)}
+            style={[
+              styles.previewButton,
+              (!invoiceNumber || !customerId || lineItems.every(item => !item.description)) && styles.buttonDisabled
+            ]}
+            activeOpacity={0.7}
+            disabled={!invoiceNumber || !customerId || lineItems.every(item => !item.description)}
+          >
+            <Text style={[
+              styles.previewButtonText,
+              (!invoiceNumber || !customerId || lineItems.every(item => !item.description)) && styles.buttonTextDisabled
+            ]}>
+              👁️ Preview
+            </Text>
+          </TouchableOpacity>
+
+          {/* Save - Primary with gradient */}
+          <TouchableOpacity
+            onPress={handleSave}
+            style={[styles.saveButton, loading && styles.buttonDisabled]}
+            activeOpacity={0.7}
+            disabled={loading}
+          >
+            {loading ? (
+              <ActivityIndicator color="#FFFFFF" />
+            ) : (
+              <Text style={styles.saveButtonText}>✓ Save Invoice</Text>
+            )}
+          </TouchableOpacity>
+        </View>
       </View>
+
+      {/* Item Picker Modal */}
+      <ItemPicker
+        visible={showItemPicker}
+        onSelect={handleSelectItem}
+        onClose={() => {
+          setShowItemPicker(false);
+          setCurrentLineItemIndex(null);
+        }}
+      />
+
+      {/* Customer Picker Modal */}
+      <CustomerPicker
+        visible={showCustomerPicker}
+        onSelect={(customer) => {
+          setSelectedCustomer(customer);
+          setCustomerId(customer.id);
+        }}
+        onClose={() => setShowCustomerPicker(false)}
+        selectedCustomerId={selectedCustomer?.id}
+      />
 
       {/* Preview Modal */}
       <Modal
@@ -576,9 +696,7 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     color: '#33415C',
   },
-  bottomActions: {
-    flexDirection: 'row',
-    padding: 16,
+  bottomActionsContainer: {
     backgroundColor: '#ffffff',
     borderTopWidth: 1,
     borderTopColor: '#e2e8f0',
@@ -587,6 +705,66 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.1,
     shadowRadius: 4,
     elevation: 4,
+    paddingBottom: Platform.OS === 'ios' ? 20 : 16,
+  },
+  bottomActions: {
+    flexDirection: 'row',
+    padding: 16,
+    gap: 10,
+  },
+  cancelButton: {
+    flex: 1,
+    paddingVertical: 14,
+    borderRadius: 12,
+    backgroundColor: '#F8FAFC',
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
+  },
+  cancelButtonText: {
+    fontSize: 15,
+    fontWeight: '600',
+    color: '#64748B',
+  },
+  previewButton: {
+    flex: 1.2,
+    paddingVertical: 14,
+    borderRadius: 12,
+    backgroundColor: '#FFFFFF',
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 2,
+    borderColor: '#5B72EE',
+  },
+  previewButtonText: {
+    fontSize: 15,
+    fontWeight: '600',
+    color: '#5B72EE',
+  },
+  saveButton: {
+    flex: 1.5,
+    paddingVertical: 14,
+    borderRadius: 12,
+    backgroundColor: '#5B72EE',
+    alignItems: 'center',
+    justifyContent: 'center',
+    shadowColor: '#5B72EE',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 4,
+  },
+  saveButtonText: {
+    fontSize: 15,
+    fontWeight: '700',
+    color: '#FFFFFF',
+  },
+  buttonDisabled: {
+    opacity: 0.5,
+  },
+  buttonTextDisabled: {
+    opacity: 0.5,
   },
   modalContainer: {
     flex: 1,
@@ -628,6 +806,88 @@ const styles = StyleSheet.create({
   closeButton: {
     fontSize: 28,
     color: '#64748b',
+    fontWeight: '300',
+  },
+  inputContainer: {
+    marginBottom: 16,
+  },
+  inputLabel: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#334155',
+    marginBottom: 8,
+  },
+  required: {
+    color: '#ef4444',
+  },
+  customerButton: {
+    backgroundColor: '#ffffff',
+    borderWidth: 1,
+    borderColor: '#cbd5e1',
+    borderRadius: 12,
+    padding: 16,
+    minHeight: 60,
+    justifyContent: 'center',
+  },
+  selectedCustomerContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  customerAvatar: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: '#DBEAFE',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: 12,
+  },
+  customerAvatarText: {
+    fontSize: 14,
+    fontWeight: '700',
+    color: '#1E3A8A',
+  },
+  customerInfo: {
+    flex: 1,
+  },
+  customerName: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#0f172a',
+    marginBottom: 2,
+  },
+  customerEmail: {
+    fontSize: 12,
+    color: '#64748b',
+  },
+  changeText: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#5B72EE',
+  },
+  placeholderText: {
+    fontSize: 16,
+    color: '#94a3b8',
+  },
+  itemSelectorButton: {
+    backgroundColor: '#F8FAFC',
+    borderWidth: 1,
+    borderColor: '#cbd5e1',
+    borderRadius: 8,
+    padding: 12,
+    marginBottom: 12,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  itemSelectorLabel: {
+    fontSize: 14,
+    color: '#334155',
+    fontWeight: '500',
+  },
+  itemSelectorIcon: {
+    fontSize: 20,
+    color: '#94a3b8',
     fontWeight: '300',
   },
 });

@@ -7,13 +7,13 @@ import {
   RefreshControl,
   StyleSheet,
   TextInput,
+  Animated,
 } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { AppTabParamList } from '@/navigation/types';
 import { invoiceService } from '@/services/invoiceService';
 import type { Invoice } from '@/types/invoice';
-import { ModernButton } from '@/components/ui/ModernButton';
 import { useFocusEffect } from '@react-navigation/native';
 
 type InvoiceListNavigationProp = NativeStackNavigationProp<any, 'InvoiceList'>;
@@ -98,6 +98,21 @@ export default function InvoiceListScreen() {
     }
   };
 
+  const getStatusIcon = (status: string) => {
+    switch (status) {
+      case 'paid':
+        return '✓';
+      case 'sent':
+        return '📤';
+      case 'draft':
+        return '📝';
+      case 'overdue':
+        return '⚠️';
+      default:
+        return '•';
+    }
+  };
+
   const formatCurrency = (amount: number, currency: string) => {
     const symbol = currency === 'NZD' ? '$' : currency;
     return `${symbol}${amount.toFixed(2)}`;
@@ -119,29 +134,36 @@ export default function InvoiceListScreen() {
         // @ts-ignore - Navigation types will be properly typed
         navigation.navigate('InvoiceDetail', { invoiceId: item.id });
       }}
+      activeOpacity={0.7}
     >
-      <View style={styles.invoiceHeader}>
-        <View style={styles.invoiceInfo}>
+      {/* Gradient Header */}
+      <View style={[styles.cardHeader, { backgroundColor: getStatusColor(item.status) + '15' }]}>
+        <View style={styles.cardHeaderTop}>
           <Text style={styles.invoiceNumber}>{item.invoiceNumber}</Text>
-          <Text style={styles.customerName}>{item.customer?.name || 'Unknown'}</Text>
+          <View style={[styles.statusBadge, { backgroundColor: getStatusColor(item.status) }]}>
+            <Text style={styles.statusText}>{getStatusIcon(item.status)} {item.status.toUpperCase()}</Text>
+          </View>
         </View>
-        <View style={[styles.statusBadge, { backgroundColor: getStatusColor(item.status) }]}>
-          <Text style={styles.statusText}>{item.status.toUpperCase()}</Text>
-        </View>
+        <Text style={styles.customerName}>{item.customer?.name || 'Unknown'}</Text>
       </View>
       
-      <View style={styles.invoiceDetails}>
-        <View style={styles.detailRow}>
-          <Text style={styles.detailLabel}>Amount:</Text>
-          <Text style={styles.detailValue}>{formatCurrency(item.total, item.currency)}</Text>
+      {/* Card Body */}
+      <View style={styles.cardBody}>
+        <View style={styles.amountContainer}>
+          <Text style={styles.amountLabel}>Amount</Text>
+          <Text style={styles.amountValue}>{formatCurrency(item.total, item.currency)}</Text>
         </View>
-        <View style={styles.detailRow}>
-          <Text style={styles.detailLabel}>Date:</Text>
-          <Text style={styles.detailValue}>{formatDate(item.date)}</Text>
-        </View>
-        <View style={styles.detailRow}>
-          <Text style={styles.detailLabel}>Due:</Text>
-          <Text style={styles.detailValue}>{formatDate(item.dueDate)}</Text>
+        
+        <View style={styles.datesContainer}>
+          <View style={styles.dateItem}>
+            <Text style={styles.dateLabel}>📅 Date</Text>
+            <Text style={styles.dateValue}>{formatDate(item.date)}</Text>
+          </View>
+          <View style={styles.dateDivider} />
+          <View style={styles.dateItem}>
+            <Text style={styles.dateLabel}>⏰ Due</Text>
+            <Text style={styles.dateValue}>{formatDate(item.dueDate)}</Text>
+          </View>
         </View>
       </View>
     </TouchableOpacity>
@@ -181,34 +203,37 @@ export default function InvoiceListScreen() {
 
   return (
     <View style={styles.container}>
-      {/* Header */}
-      <View style={styles.header}>
-        <Text style={styles.title}>Invoices</Text>
-        <ModernButton
-          onPress={() => {
-            // @ts-ignore - Navigation types will be properly typed
-            navigation.navigate('InvoiceCreate');
-          }}
-          variant="primary"
-          size="sm"
-        >
-          + New
-        </ModernButton>
-      </View>
+      {/* Revolut-style Header with Gradient */}
+      <View style={styles.headerGradient}>
+        <View style={styles.header}>
+          <Text style={styles.title}>Invoices</Text>
+          <TouchableOpacity
+            style={styles.newButton}
+            onPress={() => {
+              // @ts-ignore - Navigation types will be properly typed
+              navigation.navigate('InvoiceCreate');
+            }}
+            activeOpacity={0.8}
+          >
+            <Text style={styles.newButtonText}>+ New</Text>
+          </TouchableOpacity>
+        </View>
 
-      {/* Search */}
-      <View style={styles.searchContainer}>
-        <TextInput
-          style={styles.searchInput}
-          placeholder="Search invoices..."
-          value={searchQuery}
-          onChangeText={handleSearch}
-          placeholderTextColor="#94a3b8"
-        />
-      </View>
+        {/* Search with Icon */}
+        <View style={styles.searchContainer}>
+          <Text style={styles.searchIcon}>🔍</Text>
+          <TextInput
+            style={styles.searchInput}
+            placeholder="Search invoices..."
+            value={searchQuery}
+            onChangeText={handleSearch}
+            placeholderTextColor="#94a3b8"
+          />
+        </View>
 
-      {/* Filters */}
-      {renderFilterButtons()}
+        {/* Filters */}
+        {renderFilterButtons()}
+      </View>
 
       {/* Invoice List */}
       <FlatList
@@ -217,10 +242,11 @@ export default function InvoiceListScreen() {
         renderItem={renderInvoiceCard}
         contentContainerStyle={styles.listContent}
         refreshControl={
-          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#33415C" />
+          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#5B72EE" />
         }
         ListEmptyComponent={
           <View style={styles.emptyContainer}>
+            <Text style={styles.emptyIcon}>📄</Text>
             <Text style={styles.emptyText}>No invoices found</Text>
             <Text style={styles.emptySubtext}>Create your first invoice to get started</Text>
           </View>
@@ -233,146 +259,209 @@ export default function InvoiceListScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f8fafc',
+    backgroundColor: '#F8FAFC',
   },
   centerContainer: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: '#f8fafc',
+    backgroundColor: '#F8FAFC',
+  },
+  headerGradient: {
+    backgroundColor: '#FFFFFF',
+    borderBottomLeftRadius: 24,
+    borderBottomRightRadius: 24,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
+    elevation: 5,
   },
   header: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    padding: 16,
-    backgroundColor: '#ffffff',
-    borderBottomWidth: 1,
-    borderBottomColor: '#e2e8f0',
+    paddingHorizontal: 20,
+    paddingTop: 16,
+    paddingBottom: 12,
   },
   title: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    color: '#0f172a',
+    fontSize: 28,
+    fontWeight: '800',
+    color: '#0F172A',
+  },
+  newButton: {
+    backgroundColor: '#5B72EE',
+    paddingHorizontal: 20,
+    paddingVertical: 10,
+    borderRadius: 20,
+    shadowColor: '#5B72EE',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.3,
+    shadowRadius: 4,
+    elevation: 3,
+  },
+  newButtonText: {
+    color: '#FFFFFF',
+    fontSize: 15,
+    fontWeight: '700',
   },
   searchContainer: {
-    padding: 16,
-    backgroundColor: '#ffffff',
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginHorizontal: 20,
+    marginTop: 12,
+    marginBottom: 16,
+    backgroundColor: '#F1F5F9',
+    borderRadius: 16,
+    paddingHorizontal: 16,
+    height: 52,
+  },
+  searchIcon: {
+    fontSize: 18,
+    marginRight: 8,
   },
   searchInput: {
-    height: 48,
-    backgroundColor: '#f1f5f9',
-    borderRadius: 12,
-    paddingHorizontal: 16,
+    flex: 1,
     fontSize: 16,
-    color: '#0f172a',
-    borderWidth: 1,
-    borderColor: '#e2e8f0',
+    color: '#0F172A',
   },
   filterContainer: {
     flexDirection: 'row',
-    paddingHorizontal: 16,
-    paddingBottom: 12,
-    backgroundColor: '#ffffff',
-    gap: 8,
-    flexWrap: 'wrap',
+    paddingHorizontal: 20,
+    paddingBottom: 20,
+    gap: 10,
   },
   filterButton: {
-    paddingHorizontal: 16,
-    paddingVertical: 8,
+    paddingHorizontal: 18,
+    paddingVertical: 10,
     borderRadius: 20,
-    backgroundColor: '#f1f5f9',
-    borderWidth: 1,
-    borderColor: '#e2e8f0',
+    backgroundColor: '#F1F5F9',
+    borderWidth: 1.5,
+    borderColor: 'transparent',
   },
   filterButtonActive: {
-    backgroundColor: '#33415C',
-    borderColor: '#33415C',
+    backgroundColor: '#1E3A8A',
+    borderColor: '#1E3A8A',
   },
   filterButtonText: {
     fontSize: 14,
-    color: '#64748b',
-    fontWeight: '500',
+    color: '#64748B',
+    fontWeight: '600',
   },
   filterButtonTextActive: {
-    color: '#ffffff',
+    color: '#FFFFFF',
   },
   listContent: {
     padding: 16,
   },
   invoiceCard: {
-    backgroundColor: '#ffffff',
-    borderRadius: 12,
-    padding: 16,
-    marginBottom: 12,
+    backgroundColor: '#FFFFFF',
+    borderRadius: 16,
+    marginBottom: 16,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 2,
-    borderWidth: 1,
-    borderColor: '#e2e8f0',
+    shadowOpacity: 0.08,
+    shadowRadius: 12,
+    elevation: 3,
+    overflow: 'hidden',
   },
-  invoiceHeader: {
+  cardHeader: {
+    padding: 16,
+    paddingBottom: 12,
+  },
+  cardHeaderTop: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    alignItems: 'flex-start',
-    marginBottom: 12,
-  },
-  invoiceInfo: {
-    flex: 1,
+    alignItems: 'center',
+    marginBottom: 8,
   },
   invoiceNumber: {
-    fontSize: 18,
-    fontWeight: '700',
-    color: '#0f172a',
-    marginBottom: 4,
+    fontSize: 20,
+    fontWeight: '800',
+    color: '#0F172A',
   },
   customerName: {
-    fontSize: 14,
-    color: '#64748b',
+    fontSize: 15,
+    color: '#64748B',
+    fontWeight: '500',
   },
   statusBadge: {
     paddingHorizontal: 12,
-    paddingVertical: 4,
-    borderRadius: 12,
+    paddingVertical: 6,
+    borderRadius: 16,
+    flexDirection: 'row',
+    alignItems: 'center',
   },
   statusText: {
     fontSize: 11,
-    fontWeight: '700',
-    color: '#ffffff',
+    fontWeight: '800',
+    color: '#FFFFFF',
     letterSpacing: 0.5,
   },
-  invoiceDetails: {
-    gap: 8,
+  cardBody: {
+    padding: 16,
+    paddingTop: 12,
+    backgroundColor: '#FFFFFF',
   },
-  detailRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
+  amountContainer: {
+    marginBottom: 16,
   },
-  detailLabel: {
-    fontSize: 14,
-    color: '#64748b',
-  },
-  detailValue: {
-    fontSize: 14,
+  amountLabel: {
+    fontSize: 12,
+    color: '#94A3B8',
     fontWeight: '600',
-    color: '#0f172a',
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
+    marginBottom: 4,
+  },
+  amountValue: {
+    fontSize: 26,
+    fontWeight: '800',
+    color: '#0F172A',
+  },
+  datesContainer: {
+    flexDirection: 'row',
+    backgroundColor: '#F8FAFC',
+    borderRadius: 12,
+    padding: 12,
+  },
+  dateItem: {
+    flex: 1,
+  },
+  dateDivider: {
+    width: 1,
+    backgroundColor: '#E2E8F0',
+    marginHorizontal: 12,
+  },
+  dateLabel: {
+    fontSize: 12,
+    color: '#64748B',
+    marginBottom: 4,
+    fontWeight: '500',
+  },
+  dateValue: {
+    fontSize: 14,
+    fontWeight: '700',
+    color: '#0F172A',
   },
   emptyContainer: {
-    padding: 32,
+    padding: 48,
     alignItems: 'center',
   },
+  emptyIcon: {
+    fontSize: 64,
+    marginBottom: 16,
+  },
   emptyText: {
-    fontSize: 18,
-    fontWeight: '600',
-    color: '#0f172a',
+    fontSize: 20,
+    fontWeight: '700',
+    color: '#0F172A',
     marginBottom: 8,
   },
   emptySubtext: {
-    fontSize: 14,
-    color: '#64748b',
+    fontSize: 15,
+    color: '#64748B',
     textAlign: 'center',
   },
 });
