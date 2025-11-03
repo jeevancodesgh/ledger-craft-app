@@ -2,7 +2,7 @@ module.exports = {
   expo: {
     name: 'EasyBizInvoice',
     slug: 'easybizinvoice-mobile',
-    version: '1.0.1',
+    version: '1.0.0',
     orientation: 'portrait',
     icon: './assets/icon.png',
     userInterfaceStyle: 'automatic',
@@ -25,6 +25,12 @@ module.exports = {
         backgroundColor: '#ffffff',
       },
       package: 'com.easybizinvoice.app',
+      versionCode: 1,
+      permissions: [
+        'CAMERA',
+        'READ_MEDIA_IMAGES',
+        'READ_EXTERNAL_STORAGE',
+      ],
       edgeToEdgeEnabled: true,
       predictiveBackGestureEnabled: false,
     },
