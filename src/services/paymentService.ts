@@ -2,6 +2,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { Payment, Receipt, CreatePaymentRequest, EnhancedInvoice } from '@/types/payment';
 import { Invoice } from '@/types';
 import { invoiceService } from './supabaseService';
+import { accountingJournalService } from './accountingJournalService';
 
 // Map Supabase payment to Payment type
 const mapSupabasePaymentToPayment = (payment: any): Payment => ({
@@ -58,6 +59,24 @@ export class PaymentService {
 
       // Update invoice payment status and amounts
       await this.updateInvoicePaymentStatus(paymentData.invoiceId);
+
+      // Create journal entry for accounting
+      try {
+        await accountingJournalService.createPaymentJournalEntry(
+          user.id,
+          payment.id,
+          paymentData.invoiceId,
+          {
+            amount: paymentData.amount,
+            paymentDate: paymentData.paymentDate,
+            paymentMethod: paymentData.paymentMethod
+          }
+        );
+      } catch (journalError) {
+        // Log error but don't fail payment creation
+        // The payment exists, journal entry can be created manually if needed
+        console.error('Error creating journal entry for payment:', journalError);
+      }
 
       // Generate receipt
       await this.generateReceipt(payment.id);
@@ -230,8 +249,14 @@ export class PaymentService {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) throw new Error('User not authenticated');
 
-    const year = new Date().getFullYear();
-    const month = String(new Date().getMonth() + 1).padStart(2, '0');
+    const now = new Date();
+    const year = now.getFullYear();
+    const month = String(now.getMonth() + 1).padStart(2, '0');
+    
+    // Calculate first day of next month for proper date range
+    const nextMonth = new Date(year, now.getMonth() + 1, 1);
+    const monthEnd = new Date(nextMonth.getTime() - 1);
+    const monthEndStr = monthEnd.toISOString().split('T')[0]; // Format as YYYY-MM-DD
     
     // Get count of receipts for current month
     const { data: receipts, error } = await supabase
@@ -239,7 +264,7 @@ export class PaymentService {
       .select('id')
       .eq('user_id', user.id)
       .gte('created_at', `${year}-${month}-01`)
-      .lt('created_at', `${year}-${month}-31`);
+      .lt('created_at', nextMonth.toISOString().split('T')[0]); // Use first day of next month for exclusive range
 
     if (error) throw error;
 

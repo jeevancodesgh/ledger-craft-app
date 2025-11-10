@@ -8,6 +8,9 @@ import DashboardScreen from '@/screens/main/DashboardScreen';
 import InvoiceListScreen from '@/screens/invoices/InvoiceListScreen';
 import InvoiceCreateScreen from '@/screens/invoices/InvoiceCreateScreen';
 import InvoiceDetailScreen from '@/screens/invoices/InvoiceDetailScreen';
+import ExpenseListScreen from '@/screens/expenses/ExpenseListScreen';
+import ExpenseCreateScreen from '@/screens/expenses/ExpenseCreateScreen';
+import ExpenseEditScreen from '@/screens/expenses/ExpenseEditScreen';
 import SettingsScreen from '@/screens/settings/SettingsScreen';
 import BusinessSettingsScreen from '@/screens/settings/BusinessSettingsScreen';
 
@@ -35,6 +38,34 @@ function InvoiceStack() {
         name="InvoiceDetail" 
         component={InvoiceDetailScreen}
         options={{ title: 'Invoice Details' }}
+      />
+    </Stack.Navigator>
+  );
+}
+
+// Stack navigator for Expense screens
+function ExpenseStack() {
+  return (
+    <Stack.Navigator screenOptions={{ headerShown: false }}>
+      <Stack.Screen 
+        name="ExpenseList" 
+        component={ExpenseListScreen}
+        options={{ headerShown: false }}
+      />
+      <Stack.Screen 
+        name="ExpenseCreate" 
+        component={ExpenseCreateScreen}
+        options={{ headerShown: false }}
+      />
+      <Stack.Screen 
+        name="ExpenseEdit" 
+        component={ExpenseEditScreen}
+        options={{ headerShown: false }}
+      />
+      <Stack.Screen 
+        name="ExpenseDetail" 
+        component={ExpenseListScreen}
+        options={{ title: 'Expense Details' }}
       />
     </Stack.Navigator>
   );
@@ -78,6 +109,13 @@ export default function AppNavigator() {
         component={InvoiceStack}
         options={{
           tabBarLabel: 'Invoices',
+        }}
+      />
+      <Tab.Screen
+        name="Expenses"
+        component={ExpenseStack}
+        options={{
+          tabBarLabel: 'Expenses',
         }}
       />
       <Tab.Screen

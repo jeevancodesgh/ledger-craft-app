@@ -22,6 +22,10 @@ export type MainTabParamList = {
   InvoiceCreate: undefined;
   InvoiceEdit: { invoiceId: string };
   InvoiceDetail: { invoiceId: string };
+  Expenses: undefined;
+  ExpenseCreate: undefined;
+  ExpenseEdit: { expenseId: string };
+  ExpenseDetail: { expenseId: string };
   Settings: undefined;
   BusinessSettings: undefined;
 };

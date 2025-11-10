@@ -17,6 +17,8 @@ const CustomTabBar = ({ state, descriptors, navigation }: BottomTabBarProps) => 
         return 'home';
       case 'Invoices':
         return 'file-text';
+      case 'Expenses':
+        return 'credit-card';
       case 'Settings':
         return 'settings';
       default:

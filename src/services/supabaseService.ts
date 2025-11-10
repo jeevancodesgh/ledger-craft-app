@@ -6,6 +6,7 @@ import {
   Expense, ExpenseCategory, SupabaseExpense, SupabaseExpenseCategory, ExpenseStatus, PaymentMethod,
   SharedInvoice, SupabaseSharedInvoice, InvoiceTemplateName
 } from '@/types';
+import { accountingJournalService } from './accountingJournalService';
 
 const mapSupabaseCustomerToCustomer = (customer: SupabaseCustomer): Customer => ({
   id: customer.id,
@@ -539,6 +540,9 @@ export const invoiceService = {
   async createInvoice(invoice: Omit<Invoice, 'id' | 'createdAt' | 'updatedAt'>, lineItems: Omit<LineItem, 'id' | 'invoiceId' | 'createdAt' | 'updatedAt'>[]): Promise<Invoice> {
     const supabaseInvoice = await mapInvoiceToSupabaseInvoice(invoice);
     
+    // Get user ID for journal entry
+    const { data: { user } } = await supabase.auth.getUser();
+    const userId = user?.id;
     
     const { data: invoiceData, error: invoiceError } = await supabase
       .from('invoices')
@@ -569,6 +573,28 @@ export const invoiceService = {
       if (lineItemsError) {
         console.error('Error creating line items:', lineItemsError);
         throw lineItemsError;
+      }
+    }
+
+    // Create journal entry for accounting
+    if (userId) {
+      try {
+        await accountingJournalService.createInvoiceJournalEntry(
+          userId,
+          invoiceData.id,
+          {
+            subtotal: invoice.subtotal,
+            taxAmount: invoice.taxAmount || 0,
+            total: invoice.total,
+            taxInclusive: invoiceData.tax_inclusive ?? true, // Default to true for NZ
+            date: invoice.date,
+            invoiceNumber: invoice.invoiceNumber
+          }
+        );
+      } catch (journalError) {
+        // Log error but don't fail invoice creation
+        // The invoice exists, journal entry can be created manually if needed
+        console.error('Error creating journal entry for invoice:', journalError);
       }
     }
     
