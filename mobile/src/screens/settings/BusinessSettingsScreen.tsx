@@ -11,6 +11,7 @@ import {
   Platform,
   ActivityIndicator,
   StyleSheet,
+  StatusBar,
 } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
 import { businessProfileService, BusinessProfile, BusinessProfileUpdate } from '@/services/businessProfileService';
@@ -463,9 +464,21 @@ export default function BusinessSettingsScreen() {
       style={styles.container}
       behavior={Platform.OS === 'ios' ? 'padding' : undefined}
     >
-      <View style={styles.header}>
-        <Text style={styles.headerTitle}>Business Settings</Text>
-        <Text style={styles.headerSubtitle}>Manage your business information and preferences</Text>
+      <StatusBar barStyle="light-content" backgroundColor="#1E2875" />
+      {/* Header with Dark Blue Background */}
+      <View style={styles.headerGradient}>
+        <View style={styles.header}>
+          <View style={styles.titleSection}>
+            <Text style={styles.title}>Business Settings</Text>
+            <Text style={styles.dateText}>
+              {new Date().toLocaleDateString('en-US', {
+                weekday: 'long',
+                month: 'long',
+                day: 'numeric',
+              })}
+            </Text>
+          </View>
+        </View>
       </View>
 
       {renderTabButtons()}
@@ -513,21 +526,38 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#F8FAFC',
   },
-  header: {
-    backgroundColor: '#FFFFFF',
-    padding: 20,
-    borderBottomWidth: 1,
-    borderBottomColor: '#E2E8F0',
+  headerGradient: {
+    backgroundColor: '#1E2875',
+    paddingTop: 48,
+    paddingBottom: 20,
+    marginTop: 0,
+    borderBottomLeftRadius: 24,
+    borderBottomRightRadius: 24,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
+    elevation: 5,
   },
-  headerTitle: {
-    fontSize: 24,
-    fontWeight: '700',
-    color: '#1E293B',
+  header: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'flex-start',
+    paddingHorizontal: 24,
+    paddingBottom: 12,
+  },
+  titleSection: {
+    flex: 1,
+  },
+  title: {
+    fontSize: 30,
+    fontWeight: '800',
+    color: '#FFFFFF',
     marginBottom: 4,
   },
-  headerSubtitle: {
+  dateText: {
     fontSize: 14,
-    color: '#64748B',
+    color: 'rgba(255, 255, 255, 0.7)',
   },
   tabContainer: {
     flexDirection: 'row',
