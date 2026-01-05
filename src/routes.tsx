@@ -35,6 +35,7 @@ const Expenses = lazy(() => import("@/pages/Expenses"));
 const ExpenseCategories = lazy(() => import("@/pages/ExpenseCategories"));
 const BankAccounts = lazy(() => import("@/pages/BankAccounts"));
 const TransactionImport = lazy(() => import("@/pages/TransactionImport"));
+const ReconciliationPage = lazy(() => import("@/pages/ReconciliationPage"));
 const Onboarding = lazy(() => import("@/pages/Onboarding"));
 const EmailConfirmation = lazy(() => import("@/pages/EmailConfirmation"));
 
@@ -141,6 +142,7 @@ const appRoutes: RouteObject[] = [
           { path: "accounts", element: <AccountsPage /> },
           { path: "bank-accounts", element: <BankAccounts /> },
           { path: "transaction-import", element: <TransactionImport /> },
+          { path: "reconciliation", element: <ReconciliationPage /> },
           { path: "categories", element: <Categories /> },
           { path: "expenses", element: <Expenses /> },
           { path: "expense-categories", element: <ExpenseCategories /> },

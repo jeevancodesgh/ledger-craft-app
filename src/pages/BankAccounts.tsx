@@ -4,7 +4,7 @@ import { bankAccountService } from '@/services/bankAccountService';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Plus, Edit, Trash2, CreditCard, Building, Landmark, Wallet, Upload } from 'lucide-react';
+import { Plus, Edit, Trash2, CreditCard, Building, Landmark, Wallet, Upload, ArrowRightLeft } from 'lucide-react';
 import { toast } from 'sonner';
 import { BankAccountDialog } from '@/components/bank-account/BankAccountDialog';
 import { useNavigate } from 'react-router-dom';
@@ -106,6 +106,15 @@ export default function BankAccountsPage() {
           >
             <Upload className="h-4 w-4" />
             Import Transactions
+          </Button>
+          <Button 
+            variant="outline" 
+            onClick={() => navigate('/reconciliation')} 
+            className="gap-2"
+            disabled={accounts.length === 0}
+          >
+            <ArrowRightLeft className="h-4 w-4" />
+            Reconcile
           </Button>
           <Button onClick={handleCreateAccount} className="gap-2">
             <Plus className="h-4 w-4" />
