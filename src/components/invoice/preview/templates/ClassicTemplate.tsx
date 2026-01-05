@@ -162,8 +162,8 @@ const ClassicTemplate = ({
                     </div>
                   )}
                 </td>
-                <td className="py-2 px-1 text-right">{item.quantity}</td>
-                <td className="py-2 px-1 text-right">{formatCurrency(item.rate, invoice.currency)}</td>
+                <td className="py-2 px-1 text-right">{item.quantity} {item.unit}</td>
+                <td className="py-2 px-1 text-right">{formatCurrency(item.rate, invoice.currency)}/{item.rateUnit || item.unit}</td>
                 <td className="py-2 px-2 text-right">{formatCurrency(item.quantity * item.rate, invoice.currency)}</td>
               </tr>
             ))}

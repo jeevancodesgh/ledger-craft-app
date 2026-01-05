@@ -1,5 +1,25 @@
 
 import { Invoice, LineItem } from '@/types';
+import { convertUnits, canConvert } from './unitConversion';
+
+/**
+ * Calculates the total for a single line item with unit conversion support
+ */
+export const calculateLineTotal = (
+  quantity: number,
+  quantityUnit: string,
+  rate: number,
+  rateUnit: string
+): number => {
+  // If units are the same or conversion is not possible, use simple multiplication
+  if (quantityUnit === rateUnit || !canConvert(quantityUnit, rateUnit)) {
+    return Math.round(quantity * rate * 100) / 100;
+  }
+  
+  // Convert quantity to rate unit and calculate
+  const convertedQuantity = convertUnits(quantity, quantityUnit, rateUnit);
+  return Math.round(convertedQuantity * rate * 100) / 100;
+};
 
 /**
  * Calculates the subtotal for an array of line items

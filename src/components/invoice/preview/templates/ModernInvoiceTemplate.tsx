@@ -135,8 +135,12 @@ const ModernInvoiceTemplate = ({
                         <div className="text-xs mt-1" style={{ color: theme.textLight }}>{(item as any).details}</div>
                       )}
                     </td>
-                    <td className="px-2 py-3 align-top" style={{ color: theme.text }}>{item.quantity}</td>
-                    <td className="px-2 py-3 align-top" style={{ color: theme.text }}>{formatCurrency(item.rate, invoice.currency)}</td>
+                    <td className="px-2 py-3 align-top" style={{ color: theme.text }}>
+                      {item.quantity} {item.unit}
+                    </td>
+                    <td className="px-2 py-3 align-top" style={{ color: theme.text }}>
+                      {formatCurrency(item.rate, invoice.currency)}/{item.rateUnit || item.unit}
+                    </td>
                     <td className="px-4 py-3 text-right font-semibold align-top" style={{ color: theme.text }}>{formatCurrency(item.total || item.quantity * item.rate, invoice.currency)}</td>
                   </tr>
                 ))}

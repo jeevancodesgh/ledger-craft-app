@@ -140,8 +140,8 @@ const ExecutiveTemplate = ({
                         </div>
                       )}
                     </td>
-                    <td className="py-2 sm:py-3 px-2 sm:px-6 border-t" style={{ borderColor: theme.textLight + '30', color: theme.text }}>{item.quantity}</td>
-                    <td className="py-2 sm:py-3 px-2 sm:px-6 border-t" style={{ borderColor: theme.textLight + '30', color: theme.text }}>{formatCurrency(item.rate, invoice.currency)}</td>
+                    <td className="py-2 sm:py-3 px-2 sm:px-6 border-t" style={{ borderColor: theme.textLight + '30', color: theme.text }}>{item.quantity} {item.unit}</td>
+                    <td className="py-2 sm:py-3 px-2 sm:px-6 border-t" style={{ borderColor: theme.textLight + '30', color: theme.text }}>{formatCurrency(item.rate, invoice.currency)}/{item.rateUnit || item.unit}</td>
                     <td className="py-2 sm:py-3 px-3 sm:px-6 border-t text-right" style={{ borderColor: theme.textLight + '30', color: theme.text }}>{formatCurrency(item.total || item.quantity * item.rate, invoice.currency)}</td>
                   </tr>
                 ))}

@@ -159,8 +159,8 @@ const ModernTemplate = ({
                     </div>
                   )}
                 </td>
-                <td className="py-2 px-1 text-right" style={{ padding: '8px', textAlign: 'right', color: theme.text }}>{item.quantity}</td>
-                <td className="py-2 px-1 text-right" style={{ padding: '8px', textAlign: 'right', color: theme.text }}>{formatCurrency(item.rate, invoice.currency)}</td>
+                <td className="py-2 px-1 text-right" style={{ padding: '8px', textAlign: 'right', color: theme.text }}>{item.quantity} {item.unit}</td>
+                <td className="py-2 px-1 text-right" style={{ padding: '8px', textAlign: 'right', color: theme.text }}>{formatCurrency(item.rate, invoice.currency)}/{item.rateUnit || item.unit}</td>
                 <td className="py-2 px-2 text-right" style={{ padding: '8px', textAlign: 'right', color: theme.text }}>{formatCurrency(item.quantity * item.rate, invoice.currency)}</td>
               </tr>
             ))}

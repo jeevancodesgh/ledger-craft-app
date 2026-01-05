@@ -4,6 +4,8 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { Card, CardContent } from "@/components/ui/card";
+import { calculateLineTotal } from '@/utils/invoiceUtils';
+import { getCompatibleUnits } from '@/utils/unitConversion';
 import {
   Form,
   FormControl,
@@ -182,7 +184,7 @@ const InvoiceForm: React.FC<InvoiceFormProps> = ({
     if (initialValues?.items && Array.isArray(initialValues.items) && initialValues.items.length > 0) {
       return initialValues.items;
     }
-    return [{ id: "1", description: "", quantity: 1, unit: "each", rate: 0, total: 0 }];
+    return [{ id: "1", description: "", quantity: 1, unit: "each", rate: 0, rateUnit: "each", total: 0 }];
   };
 
   const [items, setItems] = useState<LineItem[]>(() => getInitialItems());
@@ -430,16 +432,20 @@ const InvoiceForm: React.FC<InvoiceFormProps> = ({
   const updateItem = (idx: number, field: keyof LineItem, value: any) => {
     const updated = [...items];
     updated[idx] = { ...updated[idx], [field]: value };
-    if (field === "quantity" || field === "rate") {
+    if (field === "quantity" || field === "rate" || field === "unit" || field === "rateUnit") {
       const quantity = field === "quantity" ? Number(value) : Number(updated[idx].quantity);
+      const unit = field === "unit" ? value : updated[idx].unit;
       const rate = field === "rate" ? Number(value) : Number(updated[idx].rate);
-      updated[idx].total = quantity * rate;
+      const rateUnit = field === "rateUnit" ? value : (updated[idx].rateUnit || unit);
+      
+      // Use the calculation function with unit conversion
+      updated[idx].total = calculateLineTotal(quantity, unit, rate, rateUnit);
     }
     setItems(updated);
   };
 
   const addItem = () => {
-    const newItem = { id: `${items.length + 1}`, description: "", quantity: 1, unit: "each", rate: 0, total: 0 };
+    const newItem = { id: `${items.length + 1}`, description: "", quantity: 1, unit: "each", rate: 0, rateUnit: "each", total: 0 };
     setItems([...items, newItem]);
     if (isMobile) {
       setCurrentItemIndex(items.length);
@@ -545,13 +551,13 @@ const InvoiceForm: React.FC<InvoiceFormProps> = ({
       updatedLineItem.rate = 0; // Default rate if no price info is available
     }
     updatedLineItem.unit = selectedItem.unit || 'each';
+    updatedLineItem.rateUnit = selectedItem.unit || 'each';
     // Tax is handled at the invoice level, not per item in this form currently
     // updatedLineItem.tax = selectedItem.taxRate || 0;
     
-    // Calculate total based on quantity and rate
-    // Ensure quantity is treated as a number
+    // Calculate total based on quantity and rate with unit conversion
     const quantity = Number(updatedLineItem.quantity) || 0; 
-    updatedLineItem.total = quantity * updatedLineItem.rate;
+    updatedLineItem.total = calculateLineTotal(quantity, updatedLineItem.unit, updatedLineItem.rate, updatedLineItem.rateUnit);
     
     const updatedItems = [...items];
     updatedItems[index] = updatedLineItem;
@@ -672,17 +678,44 @@ const InvoiceForm: React.FC<InvoiceFormProps> = ({
               </Select>
             </div>
           </div>
-          <div className="space-y-2">
-            <label className="text-sm font-medium">Rate</label>
-            <Input
-              type="number"
-              min="0"
-              step="0.01"
-              value={currentItem.rate}
-              onChange={e => updateItem(currentItemIndex, "rate", Number(e.target.value))}
-              className="w-full"
-              inputMode="decimal"
-            />
+          <div className="grid grid-cols-2 gap-2">
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Rate</label>
+              <Input
+                type="number"
+                min="0"
+                step="0.01"
+                value={currentItem.rate}
+                onChange={e => updateItem(currentItemIndex, "rate", Number(e.target.value))}
+                className="w-full"
+                inputMode="decimal"
+              />
+            </div>
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Rate Unit</label>
+              <Select
+                value={currentItem.rateUnit || currentItem.unit || "each"}
+                onValueChange={value => updateItem(currentItemIndex, "rateUnit", value)}
+              >
+                <FormControl>
+                  <SelectTrigger>
+                    <SelectValue placeholder="per unit" />
+                  </SelectTrigger>
+                </FormControl>
+                <SelectContent>
+                  {getCompatibleUnits(currentItem.unit || "each").map(unitString => (
+                    <SelectItem key={unitString} value={unitString}>
+                      <div className="flex items-center gap-2">
+                        {unitString === 'each' && <Circle className="h-4 w-4" />}
+                        {unitString === 'kg' && <Weight className="h-4 w-4" />}
+                        {unitString === 'g' && <Weight className="h-4 w-4" />}
+                        <span>per {unitString}</span>
+                      </div>
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
           </div>
           <div className="pt-2">
             <div className="flex justify-between items-center text-sm font-medium">
@@ -1264,6 +1297,7 @@ const InvoiceForm: React.FC<InvoiceFormProps> = ({
                                           <th className="text-right py-2 text-sm font-medium">Qty</th>
                                           <th className="text-left py-2 text-sm font-medium">Unit</th>
                                           <th className="text-right py-2 text-sm font-medium">Rate</th>
+                                          <th className="text-left py-2 text-sm font-medium">Per</th>
                                           <th className="text-right py-2 text-sm font-medium">Total</th>
                                           <th className="py-2 w-10"></th>
                                         </tr>
@@ -1347,6 +1381,25 @@ const InvoiceForm: React.FC<InvoiceFormProps> = ({
                                                 className="w-full text-right"
                                                 data-testid={`item-rate-${index}`}
                                               />
+                                            </td>
+                                            <td className="py-2 px-2">
+                                              <Select
+                                                value={item.rateUnit || item.unit || "each"}
+                                                onValueChange={value => updateItem(index, "rateUnit", value)}
+                                              >
+                                                <FormControl>
+                                                  <SelectTrigger className="h-9">
+                                                    <SelectValue placeholder="per" />
+                                                  </SelectTrigger>
+                                                </FormControl>
+                                                <SelectContent>
+                                                  {getCompatibleUnits(item.unit || "each").map(unitString => (
+                                                    <SelectItem key={unitString} value={unitString}>
+                                                      <span>per {unitString}</span>
+                                                    </SelectItem>
+                                                  ))}
+                                                </SelectContent>
+                                              </Select>
                                             </td>
                                             <td className="py-2 px-2 text-right" data-testid={`item-amount-${index}`}>
                                               {formatCurrency(item.total, form.getValues('currency'))}

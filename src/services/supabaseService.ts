@@ -67,6 +67,7 @@ const mapSupabaseInvoiceToInvoice = (invoice: SupabaseInvoice | any, items: Supa
     quantity: item.quantity,
     unit: item.unit || 'each',
     rate: item.rate,
+    rateUnit: item.rate_unit || item.unit || 'each',
     tax: item.tax,
     total: item.total,
     createdAt: item.created_at,
@@ -561,6 +562,7 @@ export const invoiceService = {
         quantity: item.quantity,
         unit: item.unit || 'each',
         rate: item.rate,
+        rate_unit: item.rateUnit || item.unit || 'each',
         tax: item.tax || null,
         total: item.total,
         invoice_id: invoiceData.id
@@ -652,6 +654,7 @@ export const invoiceService = {
         quantity: item.quantity,
         unit: item.unit || 'each',
         rate: item.rate,
+        rate_unit: item.rateUnit || item.unit || 'each',
         tax: item.tax || null,
         total: item.total,
         invoice_id: id
@@ -721,8 +724,9 @@ export const invoiceService = {
       invoiceId: item.invoice_id,
       description: item.description,
       quantity: item.quantity,
-      unit: 'each',
+      unit: item.unit || 'each',
       rate: item.rate,
+      rateUnit: item.rate_unit || item.unit || 'each',
       tax: item.tax,
       total: item.total,
       createdAt: item.created_at,
@@ -743,6 +747,7 @@ export const invoiceService = {
         quantity: lineItem.quantity,
         unit: lineItem.unit || 'each',
         rate: lineItem.rate,
+        rate_unit: lineItem.rateUnit || lineItem.unit || 'each',
         tax: lineItem.tax || null,
         total: lineItem.total,
         invoice_id: invoiceId 

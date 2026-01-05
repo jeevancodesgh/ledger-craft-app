@@ -123,8 +123,9 @@ export interface LineItem {
   invoiceId?: string;
   description: string;
   quantity: number;
-  unit: string;  // Already has this field
+  unit: string;  // Unit for quantity
   rate: number;
+  rateUnit: string;  // Unit the rate is specified in (e.g., per kg)
   tax?: number | null;
   total: number;
   createdAt?: string;
@@ -244,8 +245,9 @@ export interface SupabaseLineItem {
   invoice_id: string;
   description: string;
   quantity: number;
-  unit: string;  // This field already exists
+  unit: string;  // Unit for quantity
   rate: number;
+  rate_unit: string;  // Unit the rate is specified in (snake_case for database)
   tax: number | null;
   total: number;
   created_at: string;
