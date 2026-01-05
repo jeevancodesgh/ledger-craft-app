@@ -463,7 +463,26 @@ export class SupabaseDataService {
 
   async createDefaultTaxConfiguration(userId: string): Promise<TaxConfiguration> {
     const businessProfile = await this.getUserBusinessProfile(userId);
-    const countryCode = businessProfile?.country || 'NZ';
+    
+    // Map country name to ISO 2-letter code (VARCHAR(2) constraint in database)
+    const countryNameToCode: Record<string, string> = {
+      'New Zealand': 'NZ',
+      'Australia': 'AU',
+      'United States': 'US',
+      'United Kingdom': 'GB',
+      'Canada': 'CA',
+      'Germany': 'DE',
+      'France': 'FR',
+      'Japan': 'JP',
+      'Singapore': 'SG',
+      'India': 'IN',
+    };
+    
+    const rawCountry = businessProfile?.country || 'NZ';
+    // If already a 2-letter code, use it; otherwise map from name
+    const countryCode = rawCountry.length === 2 
+      ? rawCountry.toUpperCase() 
+      : (countryNameToCode[rawCountry] || 'NZ');
     
     // Default to NZ GST configuration
     const defaultConfig = {

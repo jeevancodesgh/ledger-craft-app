@@ -255,19 +255,33 @@ export class TaxCalculationService {
 
       const salesCalculation = await this.calculateGSTReturnSales(salesData, taxConfig);
 
-      // Calculate purchase data using real expense data
-      const purchaseData = expenses.map(expense => ({
-        amount: expense.amount,
-        taxInclusive: expense.tax_inclusive,
-        taxable: expense.is_claimable
-      }));
-
-      const purchaseCalculation = await this.calculateGSTReturnPurchases(purchaseData, taxConfig);
-
-      // Calculate capital goods from expenses
-      const capitalGoods = expenses
-        .filter(expense => expense.is_capital_expense)
-        .reduce((sum, expense) => sum + expense.amount, 0);
+      // Calculate purchase data using actual stored tax_amount from expenses
+      // Use stored tax_amount directly instead of recalculating from amount
+      // Default is_claimable to true if not explicitly set to false
+      const claimableExpenses = expenses.filter(expense => 
+        expense.is_claimable !== false && !expense.is_capital_expense
+      );
+      const capitalExpenses = expenses.filter(expense => expense.is_capital_expense);
+      
+      // Sum actual GST amounts from expenses (using stored tax_amount)
+      const totalPurchases = expenses.reduce((sum, exp) => sum + (exp.amount || 0), 0);
+      const gstOnPurchases = claimableExpenses.reduce((sum, exp) => 
+        sum + (exp.tax_amount || 0), 0
+      );
+      const gstOnCapitalGoods = capitalExpenses.reduce((sum, exp) => 
+        sum + (exp.tax_amount || 0), 0
+      );
+      
+      // Calculate capital goods total
+      const capitalGoods = capitalExpenses.reduce((sum, expense) => 
+        sum + (expense.amount || 0), 0
+      );
+      
+      const purchaseCalculation = {
+        totalPurchases: Math.round(totalPurchases * 100) / 100,
+        gstOnPurchases: Math.round((gstOnPurchases + gstOnCapitalGoods) * 100) / 100,
+        standardRated: Math.round(totalPurchases * 100) / 100
+      };
 
       // Calculate bad debts from written-off invoices
       const badDebts = invoices

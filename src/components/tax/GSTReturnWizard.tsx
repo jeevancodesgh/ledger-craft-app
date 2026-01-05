@@ -169,22 +169,22 @@ export const GSTReturnWizard: React.FC<GSTReturnWizardProps> = ({
         supabaseDataService.getExpensesByPeriod(user.id, startDate, endDate)
       ]);
 
-      // Calculate sales data
-      const totalSales = invoices.reduce((sum, inv) => sum + inv.total, 0);
-      const gstOnSales = invoices.reduce((sum, inv) => sum + (inv.gstAmount || 0), 0);
+      // Calculate sales data (using snake_case from Supabase)
+      const totalSales = invoices.reduce((sum, inv) => sum + (inv.total || inv.total_amount || 0), 0);
+      const gstOnSales = invoices.reduce((sum, inv) => sum + (inv.tax_amount || inv.gstAmount || 0), 0);
       
-      // Calculate purchase data
-      const totalPurchases = expenses.reduce((sum, exp) => sum + exp.amount, 0);
+      // Calculate purchase data (using snake_case from Supabase)
+      const totalPurchases = expenses.reduce((sum, exp) => sum + (exp.amount || 0), 0);
       const gstOnPurchases = expenses
-        .filter(exp => exp.isGstClaimable && !exp.isCapitalExpense)
-        .reduce((sum, exp) => sum + (exp.gstAmount || 0), 0);
+        .filter(exp => (exp.is_claimable !== false) && !exp.is_capital_expense)
+        .reduce((sum, exp) => sum + (exp.tax_amount || 0), 0);
       
       const capitalGoods = expenses
-        .filter(exp => exp.isCapitalExpense)
-        .reduce((sum, exp) => sum + exp.amount, 0);
+        .filter(exp => exp.is_capital_expense)
+        .reduce((sum, exp) => sum + (exp.amount || 0), 0);
       const gstOnCapitalGoods = expenses
-        .filter(exp => exp.isCapitalExpense && exp.isGstClaimable)
-        .reduce((sum, exp) => sum + (exp.gstAmount || 0), 0);
+        .filter(exp => exp.is_capital_expense && (exp.is_claimable !== false))
+        .reduce((sum, exp) => sum + (exp.tax_amount || 0), 0);
 
       setReturnData(prev => ({
         ...prev,
