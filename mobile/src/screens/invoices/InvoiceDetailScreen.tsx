@@ -394,42 +394,53 @@ export default function InvoiceDetailScreen() {
           </View>
         )}
 
-        <View style={{ height: 120 }} />
+        <View style={{ height: 100 }} />
       </ScrollView>
 
-      {/* Fixed bottom actions */}
-      <View style={styles.bottomActions}>
-        <View style={styles.buttonRow}>
-          <ModernButton 
-            onPress={() => setShowPreview(true)} 
-            variant="outline" 
-            size="sm"
-          >
-            Preview
-          </ModernButton>
-          <View style={{ width: 8 }} />
-          <ModernButton 
-            onPress={handleSharePDF} 
-            variant="outline" 
-            size="sm"
-            loading={generatingPdf}
-            disabled={generatingPdf}
-          >
-            {generatingPdf ? 'Generating...' : 'Share PDF'}
-          </ModernButton>
-        </View>
-        <View style={{ height: 8 }} />
-        <View style={styles.buttonRow}>
-          <ModernButton onPress={handleEdit} variant="outline" fullWidth>
-            Edit
-          </ModernButton>
-          <View style={{ width: 12 }} />
-          {invoice.status !== 'paid' && (
-            <ModernButton onPress={handleMarkAsPaid} variant="primary" fullWidth>
-              Mark Paid
-            </ModernButton>
+      {/* Compact Bottom Action Bar */}
+      <View style={styles.bottomBar}>
+        <TouchableOpacity
+          style={styles.bottomBarButton}
+          onPress={() => setShowPreview(true)}
+          activeOpacity={0.7}
+        >
+          <Text style={styles.bottomBarIcon}>👁</Text>
+          <Text style={styles.bottomBarLabel}>Preview</Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity
+          style={styles.bottomBarButton}
+          onPress={handleSharePDF}
+          disabled={generatingPdf}
+          activeOpacity={0.7}
+        >
+          {generatingPdf ? (
+            <ActivityIndicator size="small" color="#5B72EE" />
+          ) : (
+            <Text style={styles.bottomBarIcon}>📤</Text>
           )}
-        </View>
+          <Text style={styles.bottomBarLabel}>Share</Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity
+          style={styles.bottomBarButton}
+          onPress={handleEdit}
+          activeOpacity={0.7}
+        >
+          <Text style={styles.bottomBarIcon}>✏️</Text>
+          <Text style={styles.bottomBarLabel}>Edit</Text>
+        </TouchableOpacity>
+
+        {invoice.status !== 'paid' && (
+          <TouchableOpacity
+            style={styles.bottomBarPrimaryButton}
+            onPress={handleMarkAsPaid}
+            activeOpacity={0.8}
+          >
+            <Text style={styles.bottomBarPrimaryIcon}>✓</Text>
+            <Text style={styles.bottomBarPrimaryLabel}>Paid</Text>
+          </TouchableOpacity>
+        )}
       </View>
 
       {/* Preview Modal */}
@@ -665,16 +676,51 @@ const styles = StyleSheet.create({
     color: '#0f172a',
     lineHeight: 20,
   },
-  bottomActions: {
-    padding: 16,
+  bottomBar: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-around',
     backgroundColor: '#ffffff',
+    paddingVertical: 8,
+    paddingHorizontal: 8,
+    paddingBottom: 24,
     borderTopWidth: 1,
-    borderTopColor: '#e2e8f0',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: -2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 4,
+    borderTopColor: '#f1f5f9',
+  },
+  bottomBarButton: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 6,
+    paddingHorizontal: 16,
+    minWidth: 64,
+  },
+  bottomBarIcon: {
+    fontSize: 20,
+    marginBottom: 2,
+  },
+  bottomBarLabel: {
+    fontSize: 11,
+    fontWeight: '600',
+    color: '#64748b',
+  },
+  bottomBarPrimaryButton: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#10b981',
+    paddingVertical: 8,
+    paddingHorizontal: 20,
+    borderRadius: 20,
+    minWidth: 72,
+  },
+  bottomBarPrimaryIcon: {
+    fontSize: 14,
+    color: '#ffffff',
+    fontWeight: '700',
+  },
+  bottomBarPrimaryLabel: {
+    fontSize: 11,
+    fontWeight: '700',
+    color: '#ffffff',
   },
   buttonRow: {
     flexDirection: 'row',
