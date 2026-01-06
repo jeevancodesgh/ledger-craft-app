@@ -35,6 +35,11 @@ function InvoiceStack() {
         options={{ title: 'Create Invoice' }}
       />
       <Stack.Screen 
+        name="InvoiceEdit" 
+        component={InvoiceCreateScreen}
+        options={{ title: 'Edit Invoice' }}
+      />
+      <Stack.Screen 
         name="InvoiceDetail" 
         component={InvoiceDetailScreen}
         options={{ title: 'Invoice Details' }}

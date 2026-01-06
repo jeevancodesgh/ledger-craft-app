@@ -12,7 +12,7 @@ import {
   ActivityIndicator,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { useNavigation } from '@react-navigation/native';
+import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { LinearGradient } from 'expo-linear-gradient';
 import * as Haptics from 'expo-haptics';
@@ -35,10 +35,16 @@ import { ProgressIndicator } from '@/components/invoice/ProgressIndicator';
 import { FloatingActionButton } from '@/components/ui/FloatingActionButton';
 
 type InvoiceCreateNavigationProp = NativeStackNavigationProp<AppTabParamList, 'InvoiceCreate'>;
+type InvoiceEditRouteProp = RouteProp<{ InvoiceEdit: { invoiceId?: string } }, 'InvoiceEdit'>;
 
 export default function InvoiceCreateScreen() {
   const navigation = useNavigation<InvoiceCreateNavigationProp>();
+  const route = useRoute<InvoiceEditRouteProp>();
   const insets = useSafeAreaInsets();
+  
+  // Check if editing existing invoice
+  const invoiceId = route.params?.invoiceId;
+  const isEditMode = !!invoiceId;
 
   // Form state
   const [invoiceNumber, setInvoiceNumber] = useState('');
@@ -78,7 +84,7 @@ export default function InvoiceCreateScreen() {
   // Load initial data
   useEffect(() => {
     loadInitialData();
-  }, []);
+  }, [invoiceId]);
 
   const loadInitialData = async () => {
     try {
@@ -88,18 +94,58 @@ export default function InvoiceCreateScreen() {
         businessProfileService.getBusinessProfile(),
       ]);
       
-      setInvoiceNumber(number);
       setCustomers(customerList);
       setBusinessProfile(profile);
       
-      if (profile) {
-        if (profile.defaultTerms) setTerms(profile.defaultTerms);
-        if (profile.defaultNotes) setNotes(profile.defaultNotes);
-        if (profile.defaultTaxRate) setTaxRate(profile.defaultTaxRate);
-      }
-      
-      if (customerList.length > 0) {
-        setCustomerId(customerList[0].id);
+      // If editing, load existing invoice data
+      if (isEditMode && invoiceId) {
+        const existingInvoice = await invoiceService.fetchInvoiceById(invoiceId);
+        if (existingInvoice) {
+          setInvoiceNumber(existingInvoice.invoiceNumber);
+          setCustomerId(existingInvoice.customerId || '');
+          setDate(existingInvoice.date);
+          setDueDate(existingInvoice.dueDate);
+          setCurrency(existingInvoice.currency);
+          setNotes(existingInvoice.notes || '');
+          setTerms(existingInvoice.terms || '');
+          setTemplateName((existingInvoice.templateName as InvoiceTemplateId) || 'classic');
+          setSubtotal(existingInvoice.subtotal);
+          setTaxAmount(existingInvoice.taxAmount);
+          setTotal(existingInvoice.total);
+          setTaxEnabled(existingInvoice.taxAmount > 0);
+          setTaxRate(existingInvoice.taxRate || 15);
+          
+          // Load line items
+          if (existingInvoice.items && existingInvoice.items.length > 0) {
+            setLineItems(existingInvoice.items.map((item, index) => ({
+              id: item.id || String(index + 1),
+              description: item.description,
+              quantity: item.quantity,
+              unit: item.unit || 'each',
+              rate: item.rate,
+              total: item.total,
+            })));
+          }
+          
+          // Find and set customer
+          const customer = customerList.find(c => c.id === existingInvoice.customerId);
+          if (customer) {
+            setSelectedCustomer(customer);
+          }
+        }
+      } else {
+        setInvoiceNumber(number);
+        
+        // Only set defaults for new invoices
+        if (profile) {
+          if (profile.defaultTerms) setTerms(profile.defaultTerms);
+          if (profile.defaultNotes) setNotes(profile.defaultNotes);
+          if (profile.defaultTaxRate) setTaxRate(profile.defaultTaxRate);
+        }
+        
+        if (customerList.length > 0) {
+          setCustomerId(customerList[0].id);
+        }
       }
     } catch (error) {
       console.error('Error loading initial data:', error);
@@ -242,26 +288,38 @@ export default function InvoiceCreateScreen() {
         subtotal,
         taxAmount,
         total,
-        status: 'draft',
         notes,
         terms,
         currency,
         templateName,
       };
 
-      await invoiceService.createInvoice(invoiceData, lineItems);
-
-      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-      Alert.alert('Success', 'Invoice created successfully', [
-        {
-          text: 'OK',
-          onPress: () => navigation.goBack(),
-        },
-      ]);
+      if (isEditMode && invoiceId) {
+        // Update existing invoice
+        await invoiceService.updateInvoice(invoiceId, invoiceData, lineItems);
+        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+        Alert.alert('Success', 'Invoice updated successfully', [
+          {
+            text: 'OK',
+            onPress: () => navigation.goBack(),
+          },
+        ]);
+      } else {
+        // Create new invoice
+        invoiceData.status = 'draft';
+        await invoiceService.createInvoice(invoiceData, lineItems);
+        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+        Alert.alert('Success', 'Invoice created successfully', [
+          {
+            text: 'OK',
+            onPress: () => navigation.goBack(),
+          },
+        ]);
+      }
     } catch (error) {
-      console.error('Error creating invoice:', error);
+      console.error('Error saving invoice:', error);
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
-      Alert.alert('Error', 'Failed to create invoice. Please try again.');
+      Alert.alert('Error', `Failed to ${isEditMode ? 'update' : 'create'} invoice. Please try again.`);
     } finally {
       setLoading(false);
     }
@@ -331,6 +389,7 @@ export default function InvoiceCreateScreen() {
         invoiceNumber={invoiceNumber}
         total={total}
         currency={currency}
+        title={isEditMode ? 'Edit Invoice' : 'Create Invoice'}
       />
 
       <ScrollView 
@@ -528,7 +587,7 @@ export default function InvoiceCreateScreen() {
               {loading ? (
                 <ActivityIndicator color="#FFFFFF" />
               ) : (
-                <Text style={styles.saveButtonText}>✓ Save Invoice</Text>
+                <Text style={styles.saveButtonText}>✓ {isEditMode ? 'Update Invoice' : 'Save Invoice'}</Text>
               )}
             </LinearGradient>
           </TouchableOpacity>

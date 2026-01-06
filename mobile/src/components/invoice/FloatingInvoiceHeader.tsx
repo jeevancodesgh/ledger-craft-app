@@ -8,19 +8,21 @@ interface FloatingInvoiceHeaderProps {
   invoiceNumber: string;
   total: number;
   currency?: string;
+  title?: string;
 }
 
 export function FloatingInvoiceHeader({
   invoiceNumber,
   total,
   currency = 'NZD',
+  title = 'Create Invoice',
 }: FloatingInvoiceHeaderProps) {
   return (
     <Animated.View entering={FadeInDown.duration(400)} style={styles.container}>
       <BlurView intensity={95} tint="light" style={styles.blurContainer}>
         <View style={styles.content}>
           <View style={styles.leftSection}>
-            <Text style={styles.title}>Create Invoice</Text>
+            <Text style={styles.title}>{title}</Text>
             <Text style={styles.invoiceNumber}>{invoiceNumber}</Text>
           </View>
           <View style={styles.rightSection}>
