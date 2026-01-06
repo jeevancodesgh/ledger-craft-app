@@ -552,8 +552,6 @@ const InvoiceForm: React.FC<InvoiceFormProps> = ({
     }
     updatedLineItem.unit = selectedItem.unit || 'each';
     updatedLineItem.rateUnit = selectedItem.unit || 'each';
-    // Tax is handled at the invoice level, not per item in this form currently
-    // updatedLineItem.tax = selectedItem.taxRate || 0;
     
     // Calculate total based on quantity and rate with unit conversion
     const quantity = Number(updatedLineItem.quantity) || 0; 
@@ -624,7 +622,7 @@ const InvoiceForm: React.FC<InvoiceFormProps> = ({
                 // Pass the currentItemIndex to handleCreateNewItem
                 onCreateNewItem={() => handleCreateNewItem(currentItemIndex)}
                 buttonClassName="w-full justify-start text-primary border border-primary font-semibold"
-                refetch={triggerItemsRefetch}
+                refetch={refetchItemsTrigger}
               />
             </div>
 
@@ -1329,7 +1327,7 @@ const InvoiceForm: React.FC<InvoiceFormProps> = ({
                                                       onCreateNewItem={() => handleCreateNewItem(index)}
                                                       buttonClassName="h-6 w-6 p-0"
                                                       iconOnly
-                                                      refetch={triggerItemsRefetch}
+                                                      refetch={refetchItemsTrigger}
                                                     />
                                                   </div>
                                                 </div>

@@ -39,7 +39,7 @@ export default function InvoicePreviewWithTemplates({
   const [isLoadingWebView, setIsLoadingWebView] = useState(true);
   const [isSharingPDF, setIsSharingPDF] = useState(false);
   const [webViewError, setWebViewError] = useState<string | null>(null);
-  const [zoomLevel, setZoomLevel] = useState(0.75); // Default 75% for mobile
+  const [zoomLevel, setZoomLevel] = useState(1.0); // Default 100% for proper readability
   const [hasAutoFitted, setHasAutoFitted] = useState(false);
 
   // Zoom control functions
@@ -48,11 +48,11 @@ export default function InvoicePreviewWithTemplates({
   };
 
   const zoomOut = () => {
-    setZoomLevel((prev) => Math.max(prev - 0.1, 0.5));
+    setZoomLevel((prev) => Math.max(prev - 0.1, 0.8));
   };
 
   const resetZoom = () => {
-    setZoomLevel(0.75);
+    setZoomLevel(1.0);
   };
 
   // Generate zoom injection script
@@ -65,13 +65,14 @@ export default function InvoicePreviewWithTemplates({
           viewport.name = 'viewport';
           document.head.appendChild(viewport);
         }
-        viewport.content = 'width=device-width, initial-scale=${zoom}, maximum-scale=3.0, minimum-scale=0.5, user-scalable=yes';
+        viewport.content = 'width=device-width, initial-scale=${zoom}, maximum-scale=3.0, minimum-scale=0.8, user-scalable=yes';
         
-        // Apply zoom to body
+        // Apply zoom to document root for better compatibility
+        document.documentElement.style.zoom = '${zoom}';
+        
+        // Also apply to body
         if (document.body) {
           document.body.style.zoom = '${zoom}';
-          document.body.style.transform = 'scale(${zoom})';
-          document.body.style.transformOrigin = 'top left';
         }
       } catch (e) {
         console.error('Zoom script error:', e);
@@ -106,19 +107,24 @@ export default function InvoicePreviewWithTemplates({
           const contentWidth = document.body.scrollWidth;
           const contentHeight = document.body.scrollHeight;
           
-          // Calculate zoom to fit width with some padding
-          const widthZoom = (screenWidth * 0.95) / contentWidth;
+          // For mobile, we want to fit the width perfectly
+          const widthZoom = screenWidth / contentWidth;
           
-          // Calculate zoom to fit height if content is taller than screen
+          // Don't scale down too much for height
           const heightZoom = contentHeight > screenHeight 
-            ? (screenHeight * 0.9) / contentHeight 
+            ? (screenHeight * 0.98) / contentHeight 
             : 1.0;
           
-          // Use the smaller zoom to ensure everything fits
-          const optimalZoom = Math.min(widthZoom, heightZoom, 1.0);
+          // Use width-based zoom primarily, but cap if content is too tall
+          let optimalZoom = Math.min(widthZoom, 1.2); // Allow slight zoom in up to 120%
           
-          // Clamp between 0.5 and 1.0 for initial load
-          const finalZoom = Math.max(0.5, Math.min(optimalZoom, 1.0));
+          // If content is very tall, use height zoom instead
+          if (heightZoom < optimalZoom) {
+            optimalZoom = Math.max(heightZoom, 0.85);
+          }
+          
+          // Clamp between 0.85 and 1.2 for good readability
+          const finalZoom = Math.max(0.85, Math.min(optimalZoom, 1.2));
           
           window.ReactNativeWebView.postMessage(JSON.stringify({
             type: 'autoFitZoom',
@@ -246,8 +252,8 @@ export default function InvoicePreviewWithTemplates({
               style={styles.webView}
               onLoad={() => {
                 setIsLoadingWebView(false);
-                // Auto-fit content after a small delay to ensure content is rendered
-                setTimeout(() => autoFitContent(), 300);
+                // Auto-fit content after ensuring rendering is complete
+                setTimeout(() => autoFitContent(), 500);
               }}
               onError={handleWebViewError}
               onHttpError={handleWebViewError}
@@ -255,7 +261,7 @@ export default function InvoicePreviewWithTemplates({
               originWhitelist={['*']}
               javaScriptEnabled={true}
               domStorageEnabled={true}
-              scalesPageToFit={false}
+              scalesPageToFit={true}
               showsVerticalScrollIndicator={true}
               showsHorizontalScrollIndicator={false}
               injectedJavaScript={getZoomScript(zoomLevel)}
@@ -269,8 +275,8 @@ export default function InvoicePreviewWithTemplates({
         <View style={styles.zoomControls}>
           <TouchableOpacity
             onPress={zoomOut}
-            style={[styles.zoomButton, zoomLevel <= 0.5 && styles.zoomButtonDisabled]}
-            disabled={zoomLevel <= 0.5}
+            style={[styles.zoomButton, zoomLevel <= 0.8 && styles.zoomButtonDisabled]}
+            disabled={zoomLevel <= 0.8}
             activeOpacity={0.7}
           >
             <Text style={styles.zoomIcon}>−</Text>
@@ -305,28 +311,29 @@ const styles = StyleSheet.create({
   },
   header: {
     backgroundColor: '#1E2875',
-    paddingHorizontal: 24,
+    paddingHorizontal: 20,
     paddingTop: 48,
-    paddingBottom: 20,
+    paddingBottom: 16,
   },
   headerTop: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'flex-start',
-    marginBottom: 16,
+    marginBottom: 12,
   },
   headerContent: {
     flex: 1,
   },
   headerTitle: {
-    fontSize: 30,
+    fontSize: 24,
     fontWeight: '800',
     color: '#FFFFFF',
-    marginBottom: 4,
+    marginBottom: 2,
   },
   headerSubtitle: {
-    fontSize: 14,
+    fontSize: 13,
     color: 'rgba(255, 255, 255, 0.7)',
+    fontWeight: '500',
   },
   headerActions: {
     flexDirection: 'row',
@@ -335,7 +342,7 @@ const styles = StyleSheet.create({
   sharePDFButton: {
     flex: 1,
     backgroundColor: '#FFFFFF',
-    paddingVertical: 12,
+    paddingVertical: 10,
     paddingHorizontal: 20,
     borderRadius: 20,
     alignItems: 'center',
@@ -350,20 +357,20 @@ const styles = StyleSheet.create({
   },
   sharePDFButtonText: {
     color: '#1E2875',
-    fontSize: 16,
+    fontSize: 15,
     fontWeight: '700',
   },
   closeButton: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
+    width: 40,
+    height: 40,
+    borderRadius: 20,
     backgroundColor: 'rgba(255, 255, 255, 0.15)',
     alignItems: 'center',
     justifyContent: 'center',
     marginLeft: 12,
   },
   closeButtonText: {
-    fontSize: 24,
+    fontSize: 22,
     color: '#FFFFFF',
     fontWeight: '300',
   },

@@ -84,9 +84,9 @@ export function ModernButton({
         ]}
       >
         <LinearGradient
-          colors={['#33415C', '#2a3548']}
+          colors={['#5B72EE', '#4A5FD8']}
           start={{ x: 0, y: 0 }}
-          end={{ x: 1, y: 0 }}
+          end={{ x: 1, y: 1 }}
           style={styles.gradient}
         >
           {buttonContent}
@@ -121,11 +121,11 @@ export function ModernButton({
 const styles = StyleSheet.create({
   button: {
     borderRadius: 12,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 2,
+    shadowColor: '#5B72EE',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 4,
   },
   buttonContent: {
     flexDirection: 'row',
