@@ -3,13 +3,12 @@ import {
   View,
   Text,
   FlatList,
-  TouchableOpacity,
   RefreshControl,
   StyleSheet,
   TextInput,
   Alert,
-  ActivityIndicator,
   StatusBar,
+  ScrollView,
 } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
@@ -21,6 +20,8 @@ import type { CreatePaymentRequest } from '@/types/payment';
 import { useFocusEffect } from '@react-navigation/native';
 import SwipeableInvoiceCard from '@/components/invoice/SwipeableInvoiceCard';
 import PaymentCaptureModal from '@/components/invoice/PaymentCaptureModal';
+import { AnimatedFilterButton } from '@/components/ui/AnimatedFilterButton';
+import { AnimatedPressable } from '@/components/ui/AnimatedPressable';
 
 type InvoiceListNavigationProp = NativeStackNavigationProp<any, 'InvoiceList'>;
 
@@ -199,27 +200,21 @@ export default function InvoiceListScreen() {
   );
 
   const renderFilterButtons = () => (
-    <View style={styles.filterContainer}>
+    <ScrollView
+      horizontal
+      showsHorizontalScrollIndicator={false}
+      contentContainerStyle={styles.filterContainer}
+    >
       {(['all', 'draft', 'sent', 'paid', 'overdue'] as const).map((filterOption) => (
-        <TouchableOpacity
+        <AnimatedFilterButton
           key={filterOption}
-          style={[
-            styles.filterButton,
-            filter === filterOption && styles.filterButtonActive,
-          ]}
+          label={filterOption.charAt(0).toUpperCase() + filterOption.slice(1)}
+          active={filter === filterOption}
           onPress={() => handleFilterChange(filterOption)}
-        >
-          <Text
-            style={[
-              styles.filterButtonText,
-              filter === filterOption && styles.filterButtonTextActive,
-            ]}
-          >
-            {filterOption.charAt(0).toUpperCase() + filterOption.slice(1)}
-          </Text>
-        </TouchableOpacity>
+          variant="dark"
+        />
       ))}
-    </View>
+    </ScrollView>
   );
 
   if (loading) {
@@ -247,16 +242,16 @@ export default function InvoiceListScreen() {
               })}
             </Text>
           </View>
-          <TouchableOpacity
+          <AnimatedPressable
             style={styles.newButton}
             onPress={() => {
               // @ts-ignore - Navigation types will be properly typed
               navigation.navigate('InvoiceCreate');
             }}
-            activeOpacity={0.8}
+            haptic
           >
             <Text style={styles.newButtonText}>+ New</Text>
-          </TouchableOpacity>
+          </AnimatedPressable>
         </View>
 
         {/* Search with Icon */}
@@ -396,26 +391,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: 24,
     paddingBottom: 20,
     gap: 10,
-  },
-  filterButton: {
-    paddingHorizontal: 18,
-    paddingVertical: 10,
-    borderRadius: 20,
-    backgroundColor: 'rgba(255, 255, 255, 0.15)',
-    borderWidth: 1.5,
-    borderColor: 'rgba(255, 255, 255, 0.2)',
-  },
-  filterButtonActive: {
-    backgroundColor: '#FFFFFF',
-    borderColor: '#FFFFFF',
-  },
-  filterButtonText: {
-    fontSize: 14,
-    color: 'rgba(255, 255, 255, 0.8)',
-    fontWeight: '600',
-  },
-  filterButtonTextActive: {
-    color: '#1E2875',
   },
   listContent: {
     padding: 16,

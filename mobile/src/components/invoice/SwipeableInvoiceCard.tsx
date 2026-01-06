@@ -1,9 +1,19 @@
-import React, { useRef } from 'react';
+/**
+ * SwipeableInvoiceCard - Revolut-Style Swipeable Card with Press Feedback
+ * 
+ * Features:
+ * - Swipe to reveal status actions
+ * - Press scale animation (0.98) when touched
+ * - Shadow depth animation on press
+ * - Haptic feedback
+ * - Spring physics for natural feel
+ */
+
+import React, { useRef, useCallback } from 'react';
 import {
   View,
   Text,
   StyleSheet,
-  TouchableOpacity,
   Dimensions,
   Platform,
 } from 'react-native';
@@ -12,10 +22,13 @@ import Animated, {
   useSharedValue,
   withSpring,
   runOnJS,
+  interpolate,
 } from 'react-native-reanimated';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
+import * as Haptics from 'expo-haptics';
 import type { Invoice } from '@/types/invoice';
 import { STATUS_OPTIONS, getStatusColor, getStatusIcon } from '@/utils/statusUtils';
+import { SPRING_CONFIG, SCALE } from '@/utils/animations';
 
 interface SwipeableInvoiceCardProps {
   invoice: Invoice;
@@ -29,7 +42,7 @@ interface SwipeableInvoiceCardProps {
 const SCREEN_WIDTH = Dimensions.get('window').width;
 const SWIPE_THRESHOLD = -100; // Negative for left swipe
 const ACTION_BUTTON_WIDTH = 80;
-const SPRING_CONFIG = {
+const SWIPE_SPRING_CONFIG = {
   damping: 20,
   stiffness: 90,
 };
@@ -44,33 +57,42 @@ export default function SwipeableInvoiceCard({
 }: SwipeableInvoiceCardProps) {
   const translateX = useSharedValue(0);
   const isSwipedRef = useRef(false);
+  const cardPressed = useSharedValue(false);
 
   // Filter out current status from action buttons
   const availableStatuses = STATUS_OPTIONS.filter((opt) => opt.value !== invoice.status);
 
-  const triggerHaptic = () => {
-    if (Platform.OS === 'ios') {
+  // Trigger haptic feedback
+  const triggerHaptic = useCallback((style: Haptics.ImpactFeedbackStyle = Haptics.ImpactFeedbackStyle.Light) => {
+    if (Platform.OS !== 'web') {
       try {
-        const { impactAsync, ImpactFeedbackStyle } = require('expo-haptics');
-        impactAsync(ImpactFeedbackStyle.Medium);
+        Haptics.impactAsync(style);
       } catch (error) {
-        console.log('Haptic feedback not available');
+        // Haptic feedback not available
       }
     }
-  };
+  }, []);
 
-  const handleStatusPress = (status: string) => {
+  // Handle card press
+  const handleCardPress = useCallback(() => {
+    if (!disabled) {
+      onPress();
+    }
+  }, [disabled, onPress]);
+
+  const handleStatusPress = useCallback((status: string) => {
     // Trigger haptic feedback
-    triggerHaptic();
+    triggerHaptic(Haptics.ImpactFeedbackStyle.Medium);
 
     // Animate back to original position
-    translateX.value = withSpring(0, SPRING_CONFIG);
+    translateX.value = withSpring(0, SWIPE_SPRING_CONFIG);
     isSwipedRef.current = false;
 
     // Call status change handler
     onStatusChange(invoice.id, status);
-  };
+  }, [invoice.id, onStatusChange, triggerHaptic, translateX]);
 
+  // Pan gesture for swipe
   const panGesture = Gesture.Pan()
     .onUpdate((event) => {
       if (disabled) return;
@@ -96,19 +118,64 @@ export default function SwipeableInvoiceCard({
       // Snap to position based on velocity and position
       if (translateX.value < SWIPE_THRESHOLD || event.velocityX < -500) {
         // Snap open
-        translateX.value = withSpring(-ACTION_BUTTON_WIDTH * availableStatuses.length, SPRING_CONFIG);
+        translateX.value = withSpring(-ACTION_BUTTON_WIDTH * availableStatuses.length, SWIPE_SPRING_CONFIG);
         isSwipedRef.current = true;
       } else {
         // Snap closed
-        translateX.value = withSpring(0, SPRING_CONFIG);
+        translateX.value = withSpring(0, SWIPE_SPRING_CONFIG);
         isSwipedRef.current = false;
       }
     });
 
-  const cardAnimatedStyle = useAnimatedStyle(() => ({
+  // Tap gesture for card press
+  const tapGesture = Gesture.Tap()
+    .enabled(!disabled)
+    .onBegin(() => {
+      'worklet';
+      cardPressed.value = true;
+    })
+    .onFinalize(() => {
+      'worklet';
+      cardPressed.value = false;
+    })
+    .onEnd(() => {
+      'worklet';
+      // Only trigger press if not swiped
+      if (Math.abs(translateX.value) < 10) {
+        runOnJS(triggerHaptic)(Haptics.ImpactFeedbackStyle.Light);
+        runOnJS(handleCardPress)();
+      }
+    });
+
+  // Combine gestures - pan takes priority
+  const composedGesture = Gesture.Race(panGesture, tapGesture);
+
+  // Animated style for card translation (swipe)
+  const cardSwipeStyle = useAnimatedStyle(() => ({
     transform: [{ translateX: translateX.value }],
   }));
 
+  // Animated style for press feedback
+  const cardPressStyle = useAnimatedStyle(() => {
+    'worklet';
+    const scale = withSpring(
+      cardPressed.value ? SCALE.cardPressed : 1,
+      SPRING_CONFIG.gentle
+    );
+
+    const shadowOpacity = interpolate(
+      cardPressed.value ? 1 : 0,
+      [0, 1],
+      [0.1, 0.05]
+    );
+
+    return {
+      transform: [{ scale }],
+      shadowOpacity,
+    };
+  });
+
+  // Animated style for actions container
   const actionsAnimatedStyle = useAnimatedStyle(() => {
     const opacity = Math.min(Math.abs(translateX.value) / 100, 1);
     return {
@@ -116,36 +183,49 @@ export default function SwipeableInvoiceCard({
     };
   });
 
+  // Animated style for action buttons
+  const getActionButtonStyle = (index: number) => {
+    return useAnimatedStyle(() => {
+      const progress = Math.min(Math.abs(translateX.value) / (ACTION_BUTTON_WIDTH * (index + 1)), 1);
+      const scale = interpolate(progress, [0, 0.5, 1], [0.8, 0.95, 1]);
+      
+      return {
+        transform: [{ scale }],
+      };
+    });
+  };
+
   return (
     <View style={styles.container}>
       {/* Action Buttons (Behind) */}
       <Animated.View style={[styles.actionsContainer, actionsAnimatedStyle]}>
-        {availableStatuses.map((status) => (
-          <TouchableOpacity
+        {availableStatuses.map((status, index) => (
+          <GestureDetector
             key={status.value}
-            style={[
-              styles.actionButton,
-              { backgroundColor: status.color },
-            ]}
-            onPress={() => handleStatusPress(status.value)}
-            activeOpacity={0.7}
-            disabled={disabled}
+            gesture={Gesture.Tap()
+              .onEnd(() => {
+                'worklet';
+                runOnJS(handleStatusPress)(status.value);
+              })}
           >
-            <Text style={styles.actionIcon}>{status.icon}</Text>
-            <Text style={styles.actionLabel}>{status.label}</Text>
-          </TouchableOpacity>
+            <Animated.View
+              style={[
+                styles.actionButton,
+                { backgroundColor: status.color },
+                getActionButtonStyle(index),
+              ]}
+            >
+              <Text style={styles.actionIcon}>{status.icon}</Text>
+              <Text style={styles.actionLabel}>{status.label}</Text>
+            </Animated.View>
+          </GestureDetector>
         ))}
       </Animated.View>
 
       {/* Swipeable Card */}
-      <GestureDetector gesture={panGesture}>
-        <Animated.View style={[styles.card, cardAnimatedStyle]}>
-          <TouchableOpacity
-            style={styles.cardContent}
-            onPress={onPress}
-            activeOpacity={0.7}
-            disabled={disabled}
-          >
+      <GestureDetector gesture={composedGesture}>
+        <Animated.View style={[styles.card, cardSwipeStyle, cardPressStyle]}>
+          <View style={styles.cardContent}>
             {/* Gradient Header */}
             <View
               style={[
@@ -190,7 +270,7 @@ export default function SwipeableInvoiceCard({
                 </View>
               </View>
             </View>
-          </TouchableOpacity>
+          </View>
         </Animated.View>
       </GestureDetector>
     </View>
@@ -316,4 +396,3 @@ const styles = StyleSheet.create({
     marginHorizontal: 16,
   },
 });
-

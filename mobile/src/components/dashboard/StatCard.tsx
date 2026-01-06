@@ -1,5 +1,26 @@
-import React from 'react';
-import { View, Text, TouchableOpacity } from 'react-native';
+/**
+ * StatCard - Revolut-Style Animated Stat Card
+ * 
+ * Features:
+ * - Press scale animation (0.98)
+ * - Animated icon container on press
+ * - Shadow depth animation
+ * - Haptic feedback
+ * - Optional onPress handler
+ */
+
+import React, { useCallback } from 'react';
+import { View, Text, StyleSheet, Platform } from 'react-native';
+import Animated, {
+  useSharedValue,
+  useAnimatedStyle,
+  withSpring,
+  interpolate,
+  runOnJS,
+} from 'react-native-reanimated';
+import { Gesture, GestureDetector } from 'react-native-gesture-handler';
+import * as Haptics from 'expo-haptics';
+import { SPRING_CONFIG, SCALE, SHADOWS } from '@/utils/animations';
 
 interface StatCardProps {
   icon: React.ReactNode;
@@ -11,6 +32,7 @@ interface StatCardProps {
     isPositive?: boolean;
   };
   variant?: 'default' | 'success' | 'warning' | 'danger';
+  onPress?: () => void;
 }
 
 export function StatCard({
@@ -19,55 +41,194 @@ export function StatCard({
   value,
   subtitle,
   trend,
-  variant = 'default'
+  variant = 'default',
+  onPress,
 }: StatCardProps) {
+  // Animation shared values
+  const pressed = useSharedValue(false);
+
+  // Trigger haptic feedback
+  const triggerHaptic = useCallback(() => {
+    if (Platform.OS !== 'web') {
+      try {
+        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+      } catch (error) {
+        // Haptic feedback not available
+      }
+    }
+  }, []);
+
+  // Handle press
+  const handlePress = useCallback(() => {
+    if (onPress) {
+      onPress();
+    }
+  }, [onPress]);
+
+  // Tap gesture
+  const tapGesture = Gesture.Tap()
+    .enabled(!!onPress)
+    .onBegin(() => {
+      'worklet';
+      pressed.value = true;
+    })
+    .onFinalize(() => {
+      'worklet';
+      pressed.value = false;
+    })
+    .onEnd(() => {
+      'worklet';
+      runOnJS(triggerHaptic)();
+      runOnJS(handlePress)();
+    });
+
+  // Animated card style
+  const animatedCardStyle = useAnimatedStyle(() => {
+    'worklet';
+    const scale = withSpring(
+      pressed.value ? SCALE.cardPressed : 1,
+      SPRING_CONFIG.gentle
+    );
+
+    const shadowOpacity = interpolate(
+      pressed.value ? 1 : 0,
+      [0, 1],
+      [0.08, 0.04]
+    );
+
+    return {
+      transform: [{ scale }],
+      shadowOpacity,
+    };
+  });
+
+  // Animated icon container style
+  const animatedIconStyle = useAnimatedStyle(() => {
+    'worklet';
+    const scale = withSpring(
+      pressed.value ? 0.9 : 1,
+      SPRING_CONFIG.snappy
+    );
+
+    return {
+      transform: [{ scale }],
+    };
+  });
+
   const iconBgColors = {
-    default: 'bg-revolut-blue-100',
-    success: 'bg-emerald-100',
-    warning: 'bg-amber-100',
-    danger: 'bg-red-100'
+    default: '#EEF2FF',
+    success: '#D1FAE5',
+    warning: '#FEF3C7',
+    danger: '#FEE2E2',
   };
 
   const valueColors = {
-    default: 'text-foreground',
-    success: 'text-emerald-600',
-    warning: 'text-amber-600',
-    danger: 'text-red-600'
+    default: '#0F172A',
+    success: '#059669',
+    warning: '#D97706',
+    danger: '#DC2626',
   };
 
-  const trendColor = trend?.isPositive !== false ? 'text-emerald-600' : 'text-red-600';
-  const trendBg = trend?.isPositive !== false ? 'bg-emerald-50' : 'bg-red-50';
+  const trendColor = trend?.isPositive !== false ? '#059669' : '#DC2626';
+  const trendBgColor = trend?.isPositive !== false ? '#ECFDF5' : '#FEF2F2';
 
-  return (
-    <View className="bg-white rounded-2xl p-4 shadow-sm border border-gray-100">
-      <View className="flex-row items-start justify-between mb-3">
-        <View className={`${iconBgColors[variant]} p-3 rounded-xl`}>
+  const content = (
+    <>
+      <View style={styles.header}>
+        <Animated.View
+          style={[
+            styles.iconContainer,
+            { backgroundColor: iconBgColors[variant] },
+            animatedIconStyle,
+          ]}
+        >
           {icon}
-        </View>
-        
+        </Animated.View>
+
         {trend && (
-          <View className={`${trendBg} px-2 py-1 rounded-full`}>
-            <Text className={`${trendColor} text-xs font-semibold`}>
-              {trend.value > 0 ? '+' : ''}{trend.value.toFixed(1)}%
+          <View style={[styles.trendBadge, { backgroundColor: trendBgColor }]}>
+            <Text style={[styles.trendText, { color: trendColor }]}>
+              {trend.value > 0 ? '+' : ''}
+              {trend.value.toFixed(1)}%
             </Text>
           </View>
         )}
       </View>
 
-      <View>
-        <Text className="text-gray-500 text-xs font-medium uppercase tracking-wide mb-1">
-          {title}
-        </Text>
-        <Text className={`text-2xl font-bold ${valueColors[variant]}`}>
+      <View style={styles.content}>
+        <Text style={styles.title}>{title}</Text>
+        <Text style={[styles.value, { color: valueColors[variant] }]}>
           {value}
         </Text>
-        {subtitle && (
-          <Text className="text-gray-500 text-xs mt-1">
-            {subtitle}
-          </Text>
-        )}
+        {subtitle && <Text style={styles.subtitle}>{subtitle}</Text>}
       </View>
-    </View>
+    </>
+  );
+
+  // If no onPress, render without gesture detector
+  if (!onPress) {
+    return <View style={styles.card}>{content}</View>;
+  }
+
+  return (
+    <GestureDetector gesture={tapGesture}>
+      <Animated.View style={[styles.card, animatedCardStyle]}>
+        {content}
+      </Animated.View>
+    </GestureDetector>
   );
 }
 
+const styles = StyleSheet.create({
+  card: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 16,
+    padding: 16,
+    borderWidth: 1,
+    borderColor: '#F1F5F9',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.08,
+    shadowRadius: 12,
+    elevation: 3,
+  },
+  header: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    justifyContent: 'space-between',
+    marginBottom: 12,
+  },
+  iconContainer: {
+    padding: 12,
+    borderRadius: 12,
+  },
+  trendBadge: {
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 12,
+  },
+  trendText: {
+    fontSize: 12,
+    fontWeight: '600',
+  },
+  content: {},
+  title: {
+    fontSize: 12,
+    fontWeight: '500',
+    color: '#64748B',
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
+    marginBottom: 4,
+  },
+  value: {
+    fontSize: 24,
+    fontWeight: '700',
+  },
+  subtitle: {
+    fontSize: 12,
+    color: '#64748B',
+    marginTop: 4,
+  },
+});
+
+export default StatCard;
