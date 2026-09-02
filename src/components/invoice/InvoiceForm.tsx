@@ -28,6 +28,7 @@ import { LineItem, Invoice, Customer, BusinessProfile, Item, AdditionalCharge } 
 import { format } from "date-fns";
 import { cn } from "@/lib/utils";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { PageHeader } from "@/components/layout/PageHeader";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   Drawer,
@@ -49,6 +50,7 @@ import AdditionalChargesManager from './AdditionalChargesManager';
 import { useToast } from "@/hooks/use-toast";
 import { useAutoSave, AutoSaveData } from "@/hooks/use-auto-save";
 import InvoicePreview from "./preview/InvoicePreview";
+import { ProfileCompletenessBanner } from "./ProfileCompletenessBanner";
 import ItemSelector from "./ItemSelector";
 import ItemDrawer from "../item/ItemDrawer";
 import { ItemFormValues } from "../item/ItemForm";
@@ -827,6 +829,7 @@ const InvoiceForm: React.FC<InvoiceFormProps> = ({
 
     return (
       <div className="space-y-4">
+        <ProfileCompletenessBanner profile={businessProfile} />
         {!isMobile && (
           <div className="mb-4">
             <h3 className="text-lg font-medium mb-2">Template</h3>
@@ -868,30 +871,12 @@ const InvoiceForm: React.FC<InvoiceFormProps> = ({
 
   return (
     <div className="space-y-6 pb-32 px-0 -mx-4 sm:mx-0 sm:px-0 sm:pb-6">
-      <div className="flex justify-between items-center px-4 sm:px-0">
-        <div className="flex items-center gap-3">
-          <motion.div
-            whileHover={{ scale: 1.05 }}
-            whileTap={{ scale: 0.95 }}
-          >
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={onCancel}
-              className="mr-0 h-10 w-10 p-0 rounded-full hover:bg-muted/50"
-            >
-              <ArrowLeft size={18} />
-            </Button>
-          </motion.div>
-          <div>
-            <h1 className="text-xl md:text-3xl font-bold truncate bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
-              {mode === "edit" ? "Edit Invoice" : "Create Invoice"}
-            </h1>
-            <p className="text-sm text-muted-foreground hidden sm:block">
-              {mode === "edit" ? "Update your invoice details" : "Create a new invoice for your client"}
-            </p>
-          </div>
-        </div>
+      <div className="px-4 sm:px-0">
+        <PageHeader
+          title={mode === "edit" ? "Edit Invoice" : "Create Invoice"}
+          description={mode === "edit" ? "Update your invoice details" : "Create a new invoice for your client"}
+          onBack={onCancel}
+        />
       </div>
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
@@ -917,7 +902,7 @@ const InvoiceForm: React.FC<InvoiceFormProps> = ({
             exit="exit"
             variants={tabVariants}
           >
-            <Card className="border-0 shadow-lg bg-gradient-to-br from-card to-card/50 backdrop-blur-sm">
+            <Card className="border border-border shadow-none">
               <CardContent className="pt-6 pb-4 px-4 sm:p-8 sm:pt-8">
                 <Form {...form}>
                   <form onSubmit={form.handleSubmit(localOnSubmit)} className="space-y-6" data-invoice-form>
@@ -989,7 +974,7 @@ const InvoiceForm: React.FC<InvoiceFormProps> = ({
                           transition={{ duration: 0.2 }}
                           className="col-span-1 md:col-span-2 mt-4"
                         >
-                        <Card className="bg-gradient-to-r from-primary/5 to-accent/5 border border-primary/20 backdrop-blur-sm">
+                        <Card className="border border-border bg-muted/40">
                           <CardContent className="py-4 px-6 flex flex-col gap-2">
                             <div className="font-semibold text-lg flex items-center gap-3">
                               <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center">
@@ -1543,7 +1528,7 @@ const InvoiceForm: React.FC<InvoiceFormProps> = ({
                 const form = document.querySelector('form[data-invoice-form]') as HTMLFormElement;
                 if (form) form.requestSubmit();
               }}
-              className="gap-2 w-full h-12 rounded-xl bg-gradient-to-r from-primary to-accent hover:from-primary/90 hover:to-accent/90 transition-all duration-200 shadow-lg"
+              className="gap-2 w-full h-12"
               data-testid="save-invoice-button"
             >
               <Save size={16} />
@@ -1595,7 +1580,7 @@ const InvoiceForm: React.FC<InvoiceFormProps> = ({
                 const form = document.querySelector('form[data-invoice-form]') as HTMLFormElement;
                 if (form) form.requestSubmit();
               }}
-              className="gap-2 h-12 px-6 rounded-xl bg-gradient-to-r from-primary to-accent hover:from-primary/90 hover:to-accent/90 transition-all duration-200 shadow-lg"
+              className="gap-2 h-12 px-6"
               data-testid="save-invoice-button"
             >
               <Save size={16} />

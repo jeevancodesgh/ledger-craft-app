@@ -22,6 +22,7 @@ import SwipeableInvoiceCard from '@/components/invoice/SwipeableInvoiceCard';
 import PaymentCaptureModal from '@/components/invoice/PaymentCaptureModal';
 import { AnimatedFilterButton } from '@/components/ui/AnimatedFilterButton';
 import { AnimatedPressable } from '@/components/ui/AnimatedPressable';
+import { EmptyState } from '@/components/ui/EmptyState';
 
 type InvoiceListNavigationProp = NativeStackNavigationProp<any, 'InvoiceList'>;
 
@@ -280,11 +281,19 @@ export default function InvoiceListScreen() {
           <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#5B72EE" />
         }
         ListEmptyComponent={
-          <View style={styles.emptyContainer}>
-            <Text style={styles.emptyIcon}>📄</Text>
-            <Text style={styles.emptyText}>No invoices found</Text>
-            <Text style={styles.emptySubtext}>Create your first invoice to get started</Text>
-          </View>
+          invoices.length === 0 ? (
+            <EmptyState
+              title="Create your first invoice"
+              description="Send it, get paid, GST-ready."
+              actionLabel="Create invoice"
+              onAction={() => navigation.navigate('InvoiceCreate')}
+            />
+          ) : (
+            <View style={styles.emptyContainer}>
+              <Text style={styles.emptyText}>No invoices match your filters</Text>
+              <Text style={styles.emptySubtext}>Try a different search or status</Text>
+            </View>
+          )
         }
       />
 

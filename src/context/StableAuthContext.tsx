@@ -24,6 +24,7 @@ interface AuthContextValue {
   readonly signOut: () => Promise<void>;
   readonly refreshUser: () => Promise<void>;
   readonly retryOnboardingCheck: () => Promise<void>;
+  readonly markOnboardingComplete: () => void;
 }
 
 // Create context with stable default
@@ -39,17 +40,18 @@ async function checkOnboardingStatus(
   lastCheckedUserId: string | null,
   onboardingChecked: boolean,
   getCachedOnboardingStatus: (userId: string) => any,
-  setCachedOnboardingStatus: (userId: string, status: boolean) => void
+  setCachedOnboardingStatus: (userId: string, status: boolean) => void,
+  options?: { force?: boolean }
 ): Promise<void> {
   // Don't check again if already checked for this specific user
-  if (onboardingChecked && lastCheckedUserId === userId) {
+  if (!options?.force && onboardingChecked && lastCheckedUserId === userId) {
     console.log('AuthContext: Onboarding status already checked for this user, skipping...');
     return;
   }
 
   // Check cache first
   const cached = getCachedOnboardingStatus(userId);
-  if (cached && cached.expires > Date.now()) {
+  if (!options?.force && cached && cached.expires > Date.now()) {
     console.log('AuthContext: Using cached onboarding status:', cached.status);
     setHasCompletedOnboarding(cached.status);
     setOnboardingChecked(true);
@@ -202,11 +204,6 @@ function AuthProvider({ children }: { children: React.ReactNode }) {
     setUser(currentSession?.user ?? null);
     
     if (currentSession?.user?.id) {
-      // Only reset onboarding check if it's a different user
-      if (lastCheckedUserId !== currentSession.user.id) {
-        setOnboardingChecked(false);
-        setLastCheckedUserId(null);
-      }
       await checkOnboardingStatus(
         currentSession.user.id,
         setHasCompletedOnboarding,
@@ -215,7 +212,8 @@ function AuthProvider({ children }: { children: React.ReactNode }) {
         lastCheckedUserId,
         onboardingChecked,
         getCachedOnboardingStatus,
-        setCachedOnboardingStatus
+        setCachedOnboardingStatus,
+        { force: true }
       );
     }
   };
@@ -223,6 +221,11 @@ function AuthProvider({ children }: { children: React.ReactNode }) {
   const retryOnboardingCheck = async () => {
     if (user?.id) {
       console.log('Retrying onboarding check...');
+      try {
+        localStorage.removeItem(getOnboardingCacheKey(user.id));
+      } catch {
+        // Ignore localStorage errors
+      }
       setOnboardingChecked(false);
       setLastCheckedUserId(null);
       setHasCompletedOnboarding(false);
@@ -234,9 +237,20 @@ function AuthProvider({ children }: { children: React.ReactNode }) {
         lastCheckedUserId,
         onboardingChecked,
         getCachedOnboardingStatus,
-        setCachedOnboardingStatus
+        setCachedOnboardingStatus,
+        { force: true }
       );
     }
+  };
+
+  const markOnboardingComplete = () => {
+    if (!user?.id) {
+      return;
+    }
+    setHasCompletedOnboarding(true);
+    setOnboardingChecked(true);
+    setLastCheckedUserId(user.id);
+    setCachedOnboardingStatus(user.id, true);
   };
 
   // Single useEffect for auth management
@@ -376,6 +390,7 @@ function AuthProvider({ children }: { children: React.ReactNode }) {
     signOut,
     refreshUser,
     retryOnboardingCheck,
+    markOnboardingComplete,
   }), [
     user,
     session,

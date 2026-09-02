@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { Copy, Calendar, Share2, Link2, Check, Mail } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
@@ -26,6 +26,8 @@ import { emailService } from '@/services/emailService';
 import { pdfService } from '@/services/pdfService';
 import { renderTemplateToHtml, createTemplateElement } from '@/services/invoiceTemplateRenderer';
 import { businessProfileService } from '@/services/supabaseService';
+import { ProfileCompletenessBanner } from './ProfileCompletenessBanner';
+import type { BusinessProfile } from '@/types';
 
 interface ShareInvoiceModalProps {
   open: boolean;
@@ -65,7 +67,32 @@ const ShareInvoiceModal: React.FC<ShareInvoiceModalProps> = ({
   const [enableExpiration, setEnableExpiration] = useState(false);
   const [expirationDays, setExpirationDays] = useState(30);
   const [copied, setCopied] = useState(false);
+  const [profile, setProfile] = useState<BusinessProfile | null>(null);
   const urlInputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    if (!open) {
+      return;
+    }
+
+    let cancelled = false;
+    businessProfileService
+      .getBusinessProfile()
+      .then((data) => {
+        if (!cancelled) {
+          setProfile(data);
+        }
+      })
+      .catch(() => {
+        if (!cancelled) {
+          setProfile(null);
+        }
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [open]);
 
   const handleCreateShareLink = async () => {
     setIsCreating(true);
@@ -260,6 +287,7 @@ const ShareInvoiceModal: React.FC<ShareInvoiceModalProps> = ({
         </DialogHeader>
 
         <div className="space-y-4">
+          <ProfileCompletenessBanner profile={profile} />
           {/* Template Selection - Only show if no template is saved */}
           {showTemplateSelection && (
             <div className="space-y-2">

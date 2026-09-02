@@ -16,12 +16,14 @@ import type { InvoiceTemplateId } from '@/types/invoiceTemplates';
 import TemplateSelector from './TemplateSelector';
 import { getTemplateHTML } from '@/utils/invoiceTemplates';
 import { shareInvoicePDF } from '@/utils/pdfUtils';
+import { ProfileCompletenessBanner } from '@/components/invoice/ProfileCompletenessBanner';
 
 interface InvoicePreviewWithTemplatesProps {
   invoice: Invoice;
   businessProfile?: BusinessProfile;
   initialTemplate?: InvoiceTemplateId;
   onClose?: () => void;
+  onCompleteProfile?: () => void;
 }
 
 const { height: screenHeight } = Dimensions.get('window');
@@ -31,6 +33,7 @@ export default function InvoicePreviewWithTemplates({
   businessProfile,
   initialTemplate = 'classic',
   onClose,
+  onCompleteProfile,
 }: InvoicePreviewWithTemplatesProps) {
   const webViewRef = useRef<WebView>(null);
   const [selectedTemplate, setSelectedTemplate] = useState<InvoiceTemplateId>(
@@ -220,6 +223,13 @@ export default function InvoicePreviewWithTemplates({
             )}
           </TouchableOpacity>
         </View>
+      </View>
+
+      <View style={{ paddingHorizontal: 16, paddingTop: 8 }}>
+        <ProfileCompletenessBanner
+          profile={businessProfile}
+          onCompleteProfile={onCompleteProfile}
+        />
       </View>
 
       {/* Template Selector */}

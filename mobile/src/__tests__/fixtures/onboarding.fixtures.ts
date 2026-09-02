@@ -1,4 +1,4 @@
-import { OnboardingData, BusinessTheme, PRESET_THEMES, DEFAULT_THEME } from '@/types/onboarding';
+import { OnboardingData, BusinessTheme, DEFAULT_THEME } from '@/types/onboarding';
 
 export const mockBusinessTheme: BusinessTheme = DEFAULT_THEME;
 

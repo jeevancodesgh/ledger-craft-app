@@ -1,11 +1,14 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text, ScrollView, TouchableOpacity, RefreshControl, ActivityIndicator } from 'react-native';
+import { useNavigation } from '@react-navigation/native';
 import { useAuth } from '@/store';
 import { invoiceService } from '@/services/invoiceService';
 import type { Invoice } from '@/types/invoice';
+import { EmptyState } from '@/components/ui/EmptyState';
 
 export default function DashboardScreen() {
   const { user } = useAuth();
+  const navigation = useNavigation();
   const [invoices, setInvoices] = useState<Invoice[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -255,14 +258,17 @@ export default function DashboardScreen() {
                 </View>
               ))
             ) : (
-              <View className="py-8 items-center">
-                <Text className="text-gray-500 text-center mb-4">
-                  No invoices yet
-                </Text>
-                <Text className="text-sm text-gray-400 text-center">
-                  Create your first invoice to get started
-                </Text>
-              </View>
+              <EmptyState
+                title="Create your first invoice"
+                description="Send it, get paid, GST-ready."
+                actionLabel="Create invoice"
+                onAction={() =>
+                  navigation.navigate(
+                    'Invoices' as never,
+                    { screen: 'InvoiceCreate' } as never
+                  )
+                }
+              />
             )}
           </View>
         </View>

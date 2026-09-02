@@ -25,6 +25,7 @@ import { businessProfileService } from '@/services/businessProfileService';
 import StatusPicker from '@/components/invoice/StatusPicker';
 import PaymentCaptureModal from '@/components/invoice/PaymentCaptureModal';
 import { getStatusColor, getStatusIcon } from '@/utils/statusUtils';
+import { ProfileCompletenessBanner } from '@/components/invoice/ProfileCompletenessBanner';
 
 type InvoiceDetailNavigationProp = NativeStackNavigationProp<any, 'InvoiceDetail'>;
 type InvoiceDetailRouteProp = RouteProp<AppTabParamList, 'InvoiceDetail'>;
@@ -394,6 +395,14 @@ export default function InvoiceDetailScreen() {
           </View>
         )}
 
+        <View style={{ paddingHorizontal: 16, paddingBottom: 8 }}>
+          <ProfileCompletenessBanner
+            profile={businessProfile}
+            onCompleteProfile={() => {
+              navigation.getParent()?.navigate('Settings' as never);
+            }}
+          />
+        </View>
         <View style={{ height: 100 }} />
       </ScrollView>
 
@@ -456,6 +465,9 @@ export default function InvoiceDetailScreen() {
             businessProfile={businessProfile || undefined}
             initialTemplate={(invoice.templateName as any) || 'classic'}
             onClose={() => setShowPreview(false)}
+            onCompleteProfile={() => {
+              navigation.getParent()?.navigate('Settings' as never);
+            }}
           />
         )}
       </Modal>

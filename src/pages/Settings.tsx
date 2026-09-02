@@ -13,6 +13,7 @@ import { useToast } from '@/hooks/use-toast';
 import { Loader2, Upload } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import ThemePicker from '@/components/business/ThemePicker';
+import { PageHeader } from '@/components/layout/PageHeader';
 
 const profileFormSchema = z.object({
   name: z.string().min(1, { message: "Business name is required" }),
@@ -200,7 +201,7 @@ const Settings = () => {
 
   return (
     <div className="space-y-6">
-      <h1 className="text-3xl font-bold">Settings</h1>
+      <PageHeader title="Settings" />
       <Tabs defaultValue="profile" value={activeTab} onValueChange={setActiveTab}>
         <TabsList>
           <TabsTrigger value="profile">Business Profile</TabsTrigger>
@@ -483,7 +484,7 @@ const Settings = () => {
             <div className="mt-6">
               <Button
                 type="submit"
-                className="bg-invoice-teal hover:bg-invoice-teal/90"
+                className=""
                 disabled={isSaving}
               >
                 {isSaving ? (

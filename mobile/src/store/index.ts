@@ -36,6 +36,7 @@ export const useAuth = () => {
   const signOut = useStore((state) => state.signOut);
   const signInWithGoogle = useStore((state) => state.signInWithGoogle);
   const checkOnboardingStatus = useStore((state) => state.checkOnboardingStatus);
+  const setOnboardingStatus = useStore((state) => state.setOnboardingStatus);
   const initialize = useStore((state) => state.initialize);
 
   return useMemo(() => ({
@@ -49,6 +50,7 @@ export const useAuth = () => {
     signOut,
     signInWithGoogle,
     checkOnboardingStatus,
+    setOnboardingStatus,
     initialize,
   }), [
     user,
@@ -61,6 +63,7 @@ export const useAuth = () => {
     signOut,
     signInWithGoogle,
     checkOnboardingStatus,
+    setOnboardingStatus,
     initialize,
   ]);
 };

@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { format, subMonths, startOfQuarter, endOfQuarter } from 'date-fns';
+import React from 'react';
+import { format } from 'date-fns';
 import {
   FileText,
   Calendar,
@@ -10,8 +10,6 @@ import {
   Send,
   Eye,
   Plus,
-  RefreshCw,
-  Calculator,
   Building,
   DollarSign,
   TrendingUp,
@@ -24,11 +22,9 @@ import { Badge } from '@/components/ui/badge';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Progress } from '@/components/ui/progress';
 import { Separator } from '@/components/ui/separator';
-import { TaxReturn, IRDReturnData } from '@/types/payment';
+import { TaxReturn } from '@/types/payment';
 
 interface IRDReportingDashboardProps {
   taxReturns: TaxReturn[];
@@ -38,7 +34,7 @@ interface IRDReportingDashboardProps {
     issues: string[];
     warnings: string[];
   };
-  onCreateGSTReturn: (period: { start: string; end: string }) => void;
+  onCreateGSTReturn: () => void;
   onCreateIncomeReturn: (period: { start: string; end: string }) => void;
   onSubmitReturn: (returnId: string) => void;
   onExportReturn: (returnId: string, format: string) => void;
@@ -55,9 +51,6 @@ export function IRDReportingDashboard({
   onExportReturn,
   isLoading = false
 }: IRDReportingDashboardProps) {
-  const [selectedPeriod, setSelectedPeriod] = useState('current_quarter');
-  const [showCreateGSTReturn, setShowCreateGSTReturn] = useState(false);
-
   // Separate returns by type
   const gstReturns = taxReturns.filter(r => r.returnType === 'GST');
   const incomeReturns = taxReturns.filter(r => r.returnType === 'Income_Tax');
@@ -87,6 +80,19 @@ export function IRDReportingDashboard({
     }
   };
 
+  const getReconBadge = (status?: string) => {
+    switch (status) {
+      case 'ready':
+        return <Badge className="bg-emerald-50 text-emerald-700">Reconciled</Badge>;
+      case 'warning':
+        return <Badge className="bg-amber-50 text-amber-800">Check recs</Badge>;
+      case 'not_applicable':
+        return <Badge variant="secondary">No banks</Badge>;
+      default:
+        return <Badge variant="outline">Not checked</Badge>;
+    }
+  };
+
   const formatCurrency = (amount: number) => `$${amount.toLocaleString()}`;
 
   return (
@@ -106,26 +112,10 @@ export function IRDReportingDashboard({
             IRD Website
           </Button>
           
-          <Dialog open={showCreateGSTReturn} onOpenChange={setShowCreateGSTReturn}>
-            <DialogTrigger asChild>
-              <Button>
-                <Plus className="mr-2 h-4 w-4" />
-                New GST Return
-              </Button>
-            </DialogTrigger>
-            <DialogContent>
-              <DialogHeader>
-                <DialogTitle>Create GST Return</DialogTitle>
-              </DialogHeader>
-              <GSTReturnCreator
-                onSubmit={(period) => {
-                  onCreateGSTReturn(period);
-                  setShowCreateGSTReturn(false);
-                }}
-                onCancel={() => setShowCreateGSTReturn(false)}
-              />
-            </DialogContent>
-          </Dialog>
+          <Button onClick={onCreateGSTReturn}>
+            <Plus className="mr-2 h-4 w-4" />
+            New GST Return
+          </Button>
         </div>
       </div>
 
@@ -272,7 +262,7 @@ export function IRDReportingDashboard({
             <CardHeader>
               <div className="flex items-center justify-between">
                 <CardTitle>GST Returns</CardTitle>
-                <Button variant="outline" onClick={() => setShowCreateGSTReturn(true)}>
+                <Button variant="outline" onClick={onCreateGSTReturn}>
                   <Plus className="mr-2 h-4 w-4" />
                   New Return
                 </Button>
@@ -295,6 +285,7 @@ export function IRDReportingDashboard({
                         <TableHead>GST on Sales</TableHead>
                         <TableHead>GST on Purchases</TableHead>
                         <TableHead>Net GST</TableHead>
+                        <TableHead>Recon</TableHead>
                         <TableHead>Status</TableHead>
                         <TableHead className="text-right">Actions</TableHead>
                       </TableRow>
@@ -326,6 +317,9 @@ export function IRDReportingDashboard({
                           }`}>
                             {formatCurrency(Math.abs(gstReturn.netGst))}
                             {gstReturn.netGst < 0 && ' (refund)'}
+                          </TableCell>
+                          <TableCell>
+                            {getReconBadge(gstReturn.returnData?.reconciliation?.status)}
                           </TableCell>
                           <TableCell>
                             {getStatusBadge(gstReturn.status)}
@@ -449,88 +443,6 @@ export function IRDReportingDashboard({
           />
         </TabsContent>
       </Tabs>
-    </div>
-  );
-}
-
-// GST Return Creator Component
-function GSTReturnCreator({
-  onSubmit,
-  onCancel
-}: {
-  onSubmit: (period: { start: string; end: string }) => void;
-  onCancel: () => void;
-}) {
-  const [selectedPeriod, setSelectedPeriod] = useState('current_quarter');
-
-  const getPeriodDates = (period: string) => {
-    const now = new Date();
-    switch (period) {
-      case 'current_quarter':
-        return {
-          start: startOfQuarter(now).toISOString().split('T')[0],
-          end: endOfQuarter(now).toISOString().split('T')[0]
-        };
-      case 'last_quarter':
-        const lastQuarter = subMonths(now, 3);
-        return {
-          start: startOfQuarter(lastQuarter).toISOString().split('T')[0],
-          end: endOfQuarter(lastQuarter).toISOString().split('T')[0]
-        };
-      default:
-        return {
-          start: startOfQuarter(now).toISOString().split('T')[0],
-          end: endOfQuarter(now).toISOString().split('T')[0]
-        };
-    }
-  };
-
-  const handleSubmit = () => {
-    const dates = getPeriodDates(selectedPeriod);
-    onSubmit(dates);
-  };
-
-  return (
-    <div className="space-y-6">
-      <div className="space-y-2">
-        <label className="text-sm font-medium">Reporting Period</label>
-        <Select value={selectedPeriod} onValueChange={setSelectedPeriod}>
-          <SelectTrigger>
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="current_quarter">Current Quarter</SelectItem>
-            <SelectItem value="last_quarter">Last Quarter</SelectItem>
-            <SelectItem value="custom">Custom Period</SelectItem>
-          </SelectContent>
-        </Select>
-      </div>
-
-      <div className="p-4 bg-muted rounded-lg">
-        <h4 className="font-medium mb-2">Period Summary</h4>
-        <div className="text-sm text-muted-foreground">
-          <p>Start: {format(new Date(getPeriodDates(selectedPeriod).start), 'dd MMMM yyyy')}</p>
-          <p>End: {format(new Date(getPeriodDates(selectedPeriod).end), 'dd MMMM yyyy')}</p>
-        </div>
-      </div>
-
-      <Alert>
-        <Info className="h-4 w-4" />
-        <AlertDescription>
-          This will create a new GST return for the selected period. 
-          All invoices and expenses within this period will be included in the calculations.
-        </AlertDescription>
-      </Alert>
-
-      <div className="flex gap-3">
-        <Button variant="outline" onClick={onCancel} className="flex-1">
-          Cancel
-        </Button>
-        <Button onClick={handleSubmit} className="flex-1">
-          <Calculator className="mr-2 h-4 w-4" />
-          Create GST Return
-        </Button>
-      </div>
     </div>
   );
 }

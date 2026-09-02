@@ -426,32 +426,24 @@ export interface SupabaseExpense {
 }
 
 // Onboarding types
-export type OnboardingStep = 'welcome' | 'invoice-setup' | 'branding' | 'complete';
-
 export interface OnboardingData {
-  // Welcome step - business basics (required)
   businessName: string;
   businessEmail: string;
   country: string;
-  
-  // Invoice setup step (recommended)
   invoiceNumberFormat?: string;
   defaultTaxRate?: number;
   address?: string;
   city?: string;
   state?: string;
   zip?: string;
-  
-  // Branding step (optional)
   theme?: BusinessTheme;
-  logoFile?: File;
 }
 
 export interface OnboardingStepProps {
   data: OnboardingData;
   onDataChange: (updates: Partial<OnboardingData>) => void;
   onNext: () => void;
-  onBack?: () => void;
+  onSkip?: () => void;
   isLoading?: boolean;
 }
 

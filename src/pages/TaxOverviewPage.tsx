@@ -12,6 +12,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Loader2, AlertTriangle, TrendingUp, Calendar, Settings } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { PageHeader } from '@/components/layout/PageHeader';
 
 interface TaxOverview {
   currentGSTPosition: number;
@@ -168,13 +169,10 @@ const TaxOverviewPage: React.FC = () => {
 
   return (
     <div className="space-y-6">
-      {/* Header */}
-      <div className="flex flex-col gap-2">
-        <h1 className="text-3xl font-bold tracking-tight">Tax Overview</h1>
-        <p className="text-muted-foreground">
-          {currentQuarter.quarter} {currentQuarter.year} - Real-time tax position and compliance status
-        </p>
-      </div>
+      <PageHeader
+        title="Tax Overview"
+        description={`${currentQuarter.quarter} ${currentQuarter.year} — real-time tax position and compliance status`}
+      />
 
       {/* Key Metrics Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">

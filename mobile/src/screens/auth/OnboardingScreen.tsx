@@ -8,28 +8,26 @@ import {
   Platform,
   Alert,
 } from 'react-native';
-import {
-  OnboardingStep,
-  OnboardingData,
-  DEFAULT_THEME,
-} from '@/types/onboarding';
+import { OnboardingData, DEFAULT_THEME } from '@/types/onboarding';
 import { businessProfileService } from '@/services/businessProfileService';
 import { useAuth } from '@/store';
-import ProgressIndicator from '@/components/onboarding/ProgressIndicator';
 import WelcomeStep from '@/components/onboarding/WelcomeStep';
-import InvoiceSetupStep from '@/components/onboarding/InvoiceSetupStep';
-import BrandingStep from '@/components/onboarding/BrandingStep';
+import {
+  DEFAULT_INVOICE_NUMBER_FORMAT,
+  DEFAULT_ONBOARDING_COUNTRY,
+  getDefaultTaxRate,
+  stubBusinessName,
+} from '@/utils/countryTaxDefaults';
 
 export default function OnboardingScreen() {
-  const { checkOnboardingStatus } = useAuth();
-  const [currentStep, setCurrentStep] = useState<OnboardingStep>('welcome');
+  const { user, setOnboardingStatus } = useAuth();
   const [isLoading, setIsLoading] = useState(false);
   const [onboardingData, setOnboardingData] = useState<OnboardingData>({
     businessName: '',
-    businessEmail: '',
-    country: '',
-    invoiceNumberFormat: 'INV-{YYYY}-{SEQ}',
-    defaultTaxRate: undefined,
+    businessEmail: user?.email || '',
+    country: DEFAULT_ONBOARDING_COUNTRY,
+    invoiceNumberFormat: DEFAULT_INVOICE_NUMBER_FORMAT,
+    defaultTaxRate: getDefaultTaxRate(DEFAULT_ONBOARDING_COUNTRY),
     address: '',
     city: '',
     state: '',
@@ -42,96 +40,40 @@ export default function OnboardingScreen() {
     setOnboardingData((prev) => ({ ...prev, ...updates }));
   };
 
-  const completeOnboarding = async () => {
+  const completeOnboarding = async (data: OnboardingData) => {
     setIsLoading(true);
     try {
-      // Save business profile to Supabase
-      await businessProfileService.createBusinessProfile(onboardingData);
+      await businessProfileService.createBusinessProfile({
+        ...data,
+        businessEmail: data.businessEmail || user?.email || '',
+        defaultTaxRate: data.defaultTaxRate ?? getDefaultTaxRate(data.country),
+        invoiceNumberFormat: data.invoiceNumberFormat || DEFAULT_INVOICE_NUMBER_FORMAT,
+        theme: data.theme || DEFAULT_THEME,
+      });
 
-      // Update auth state - this will trigger automatic navigation
-      await checkOnboardingStatus();
-
-      // Show success message
-      Alert.alert(
-        'Setup Complete! 🎉',
-        'Your business profile has been created successfully.',
-        [{ text: 'Get Started' }]
-      );
+      setOnboardingStatus(true, true);
     } catch (error) {
       console.error('Error completing onboarding:', error);
-      Alert.alert(
-        'Error',
-        'Failed to complete setup. Please try again.',
-        [{ text: 'OK' }]
-      );
+      Alert.alert('Error', 'Failed to complete setup. Please try again.', [
+        { text: 'OK' },
+      ]);
     } finally {
       setIsLoading(false);
     }
   };
 
-  const handleNext = async () => {
-    if (currentStep === 'welcome') {
-      setCurrentStep('invoice-setup');
-    } else if (currentStep === 'invoice-setup') {
-      setCurrentStep('branding');
-    } else if (currentStep === 'branding') {
-      await completeOnboarding();
-    }
+  const handleSubmit = () => {
+    void completeOnboarding(onboardingData);
   };
 
-  const handleBack = () => {
-    if (currentStep === 'invoice-setup') {
-      setCurrentStep('welcome');
-    } else if (currentStep === 'branding') {
-      setCurrentStep('invoice-setup');
-    }
-  };
-
-  const renderStep = () => {
-    const stepProps = {
-      data: onboardingData,
-      onDataChange: updateData,
-      onNext: handleNext,
-      onBack: currentStep !== 'welcome' ? handleBack : undefined,
-      isLoading,
-    };
-
-    switch (currentStep) {
-      case 'welcome':
-        return <WelcomeStep {...stepProps} />;
-      case 'invoice-setup':
-        return <InvoiceSetupStep {...stepProps} />;
-      case 'branding':
-        return <BrandingStep {...stepProps} />;
-      default:
-        return null;
-    }
-  };
-
-  const getStepTitle = () => {
-    switch (currentStep) {
-      case 'welcome':
-        return 'Tell us about your business';
-      case 'invoice-setup':
-        return 'Configure your invoices';
-      case 'branding':
-        return 'Make it yours';
-      default:
-        return '';
-    }
-  };
-
-  const getStepSubtitle = () => {
-    switch (currentStep) {
-      case 'welcome':
-        return 'We need some basic information to get you started';
-      case 'invoice-setup':
-        return 'Set up professional invoice defaults';
-      case 'branding':
-        return 'Add your logo and choose your brand colors';
-      default:
-        return '';
-    }
+  const handleSkip = () => {
+    void completeOnboarding({
+      ...onboardingData,
+      businessName: stubBusinessName(user),
+      country: onboardingData.country || DEFAULT_ONBOARDING_COUNTRY,
+      defaultTaxRate:
+        onboardingData.defaultTaxRate ?? getDefaultTaxRate(DEFAULT_ONBOARDING_COUNTRY),
+    });
   };
 
   return (
@@ -140,32 +82,24 @@ export default function OnboardingScreen() {
         style={styles.keyboardView}
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
       >
-        {/* Header */}
         <View style={styles.header}>
-          <Text style={styles.appTitle}>Welcome to EasyBizInvoice</Text>
+          <Text style={styles.appTitle}>What is your business called?</Text>
           <Text style={styles.appSubtitle}>
-            Let's set up your business profile
+            We will set GST, invoice numbers, and a default theme. You can
+            change them later.
           </Text>
         </View>
 
-        {/* Progress Indicator */}
-        <ProgressIndicator currentStep={currentStep} />
-
-        {/* Step Content Card */}
         <View style={styles.contentCard}>
-          <View style={styles.stepHeader}>
-            <Text style={styles.stepTitle}>{getStepTitle()}</Text>
-            <Text style={styles.stepSubtitle}>{getStepSubtitle()}</Text>
+          <View style={styles.stepContent}>
+            <WelcomeStep
+              data={onboardingData}
+              onDataChange={updateData}
+              onNext={handleSubmit}
+              onSkip={handleSkip}
+              isLoading={isLoading}
+            />
           </View>
-
-          <View style={styles.stepContent}>{renderStep()}</View>
-        </View>
-
-        {/* Footer */}
-        <View style={styles.footer}>
-          <Text style={styles.footerText}>
-            You can always update these settings later in your profile
-          </Text>
         </View>
       </KeyboardAvoidingView>
     </SafeAreaView>
@@ -182,12 +116,11 @@ const styles = StyleSheet.create({
   },
   header: {
     paddingTop: 20,
-    paddingHorizontal: 20,
+    paddingHorizontal: 24,
     paddingBottom: 16,
-    alignItems: 'center',
   },
   appTitle: {
-    fontSize: 28,
+    fontSize: 24,
     fontWeight: '700',
     color: '#1E293B',
     marginBottom: 8,
@@ -195,6 +128,7 @@ const styles = StyleSheet.create({
   appSubtitle: {
     fontSize: 14,
     color: '#64748B',
+    lineHeight: 20,
   },
   contentCard: {
     flex: 1,
@@ -202,43 +136,11 @@ const styles = StyleSheet.create({
     marginHorizontal: 16,
     marginBottom: 16,
     borderRadius: 20,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 8,
-    elevation: 4,
     overflow: 'hidden',
-  },
-  stepHeader: {
-    paddingHorizontal: 20,
-    paddingTop: 24,
-    paddingBottom: 16,
-    borderBottomWidth: 1,
-    borderBottomColor: '#F1F5F9',
-  },
-  stepTitle: {
-    fontSize: 22,
-    fontWeight: '700',
-    color: '#1E293B',
-    marginBottom: 4,
-  },
-  stepSubtitle: {
-    fontSize: 14,
-    color: '#64748B',
   },
   stepContent: {
     flex: 1,
     paddingHorizontal: 20,
     paddingTop: 24,
-  },
-  footer: {
-    paddingHorizontal: 32,
-    paddingVertical: 16,
-    alignItems: 'center',
-  },
-  footerText: {
-    fontSize: 12,
-    color: '#94A3B8',
-    textAlign: 'center',
   },
 });

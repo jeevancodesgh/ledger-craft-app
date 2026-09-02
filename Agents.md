@@ -2,6 +2,17 @@
 
 This document provides comprehensive guidance for AI agents (LLMs) working on the LedgerCraft codebase. Use this as a reference for understanding project structure, conventions, and development patterns.
 
+## Read this first
+
+- **Spec:** `TARGET_ARCHITECTURE.md` (end state + gates). Hosted `public` schema is empty as of 2026-09-03. Rebuild greenfield; do not replay Git SQL.
+- **Plan:** specialist agents, Lane A (boot current clients) then Lane B (Hono slices). Skills in `.cursor/skills/`.
+- **Roster / Task prompts:** `.cursor/skills/ledgercraft-agent-roster/SKILL.md`
+- **TDD:** `.cursor/skills/ledgercraft-tdd/SKILL.md`
+- **Schema rebuild:** `.cursor/skills/ledgercraft-schema-rebuild/SKILL.md`
+- **After every wave:** `.cursor/skills/ledgercraft-knowledge-sync/SKILL.md`
+
+Orchestrator (parent chat) sequences waves. Do not mix UI redesign, TanStack Router, `apps/` moves, and a data cutover.
+
 ## Table of Contents
 
 1. [Project Overview](#project-overview)
@@ -15,6 +26,7 @@ This document provides comprehensive guidance for AI agents (LLMs) working on th
 9. [Design System Guidelines](#design-system-guidelines)
 10. [Testing Strategy](#testing-strategy)
 11. [Deployment & Build](#deployment--build)
+12. [Reconstruction agents](#reconstruction-agents)
 
 ---
 
@@ -74,10 +86,9 @@ This document provides comprehensive guidance for AI agents (LLMs) working on th
 
 ### Backend & Infrastructure
 
-- **Database**: PostgreSQL (via Supabase)
-- **Authentication**: Supabase Auth (email/password, OAuth)
-- **Storage**: Supabase Storage (for receipts, invoices, logos)
-- **Security**: Row Level Security (RLS) policies
+**Current clients still assume:** PostgreSQL via Supabase, Supabase Auth, Storage, PostgREST, `auth.uid()` RLS. That hosted app schema is empty.
+
+**Target (see `TARGET_ARCHITECTURE.md`):** Hono API, Better Auth, Drizzle, organisation RLS, S3 adapter, Resend/AI behind the API only.
 - **Real-time**: Supabase Realtime subscriptions
 - **API**: Supabase REST API and PostgREST
 
@@ -631,11 +642,15 @@ create policy "Users can view own features"
 
 ## Database Schema
 
+**Current fact (2026-09-03):** hosted `public` is empty. This section is the *application-expected* compatibility schema, not a live dump. Reconstruct via `.cursor/skills/ledgercraft-schema-rebuild/SKILL.md`. Target tenancy is `organisation_id` (see `TARGET_ARCHITECTURE.md`), not `auth.uid()`.
+
+App code uses `line_items` (not `invoice_items`) and `bank_transactions` (not `transactions`).
+
 ### Key Tables
 
 **Core Tables**:
 - `invoices` - Invoice records
-- `invoice_items` - Line items for invoices
+- `line_items` - Line items for invoices
 - `customers` - Customer/client records
 - `items` - Reusable items/products
 - `expenses` - Expense records
@@ -1014,8 +1029,30 @@ try {
 
 ---
 
+## Reconstruction agents
+
+Parent chat is Orchestrator. Launch specialists with Task `generalPurpose` using `.cursor/skills/ledgercraft-agent-roster/SKILL.md`.
+
+| Agent | Owns |
+| --- | --- |
+| Knowledge Steward | `TARGET_ARCHITECTURE.md`, this file, `.cursor/skills`, `.cursor/rules` |
+| Platform | pnpm workspace, Compose/local Postgres, Vite `/api` proxy, API health |
+| Schema | Drizzle baseline, roles, RLS, compatibility tables |
+| Contracts | `packages/contracts` Zod DTOs |
+| API | `api/src/modules/*` vertical slices |
+| Auth | Better Auth, memberships, sessions |
+| Web | `src/` Query hooks and UI |
+| Mobile | `mobile/` Query hooks and screens |
+| Verification | Vitest, RLS tests, Playwright, RN tests |
+
+**Waves:** W0 knowledge (in progress) → W1 platform → W2 compatibility schema (current app boots) → W3 API+identity → W4 customers → W5 invoices (gate) → W6 payments/expenses/accounts → W7 bank/recon/tax → W8 storage/email/AI → W9 client consolidation.
+
+**TDD:** failing tests first; real Postgres for SQL/RLS. **Knowledge:** a wave is not done if docs are stale.
+
 ## Additional Resources
 
+- **Target architecture**: `TARGET_ARCHITECTURE.md`
+- **Project skills**: `.cursor/skills/ledgercraft-*/SKILL.md`
 - **Project Rules**: `.cursor/rules/project-guide.mdc` - Comprehensive development guidelines
 - **README**: `README.md` - Project setup and overview
 - **Mobile Guide**: `mobile/README.md` - Mobile-specific documentation
@@ -1023,6 +1060,6 @@ try {
 
 ---
 
-**Last Updated**: 2024
-**Version**: 1.0.0
+**Last Updated**: 2026-09-03
+**Version**: 1.1.0
 

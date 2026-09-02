@@ -9,6 +9,26 @@ import { GSTReturnWizard } from '../GSTReturnWizard';
 // Mock the router
 vi.mock('react-router-dom', () => ({
   useNavigate: () => vi.fn(),
+  Link: ({ children, to }: { children: React.ReactNode; to: string }) => <a href={to}>{children}</a>,
+}));
+
+vi.mock('@/context/StableAuthContext', () => ({
+  useAuth: () => ({ user: { id: 'test-user' } }),
+}));
+
+vi.mock('@/services/gstReconciliationService', () => ({
+  gstReconciliationService: {
+    getPeriodReconciliation: vi.fn().mockResolvedValue({
+      period: { startDate: '2024-01-01', endDate: '2024-03-31' },
+      readiness: 'not_applicable',
+      accounts: [],
+      unreconciledTransactionCount: 0,
+      unreconciledSamples: [],
+      figures: [],
+      figuresMatch: true,
+      issues: [],
+    }),
+  },
 }));
 
 // Mock the auth hook
@@ -318,8 +338,8 @@ describe('Tax Components', () => {
       );
 
       expect(screen.getByText('GST Return Wizard')).toBeInTheDocument();
-      expect(screen.getByText('Step 1 of 5')).toBeInTheDocument();
-      expect(screen.getByText('Return Period')).toBeInTheDocument();
+      expect(screen.getByText('Step 1 of 6')).toBeInTheDocument();
+      expect(screen.getAllByText('Return Period').length).toBeGreaterThan(0);
     });
 
     it('should show all wizard steps in progress bar', () => {
@@ -330,11 +350,12 @@ describe('Tax Components', () => {
         />
       );
 
-      expect(screen.getByText('Return Period')).toBeInTheDocument();
+      expect(screen.getAllByText('Return Period').length).toBeGreaterThan(0);
       expect(screen.getByText('Sales & Output')).toBeInTheDocument();
       expect(screen.getByText('Purchases & Input')).toBeInTheDocument();
       expect(screen.getByText('Adjustments')).toBeInTheDocument();
-      expect(screen.getByText('Review & Submit')).toBeInTheDocument();
+      expect(screen.getByText('Reconciliation')).toBeInTheDocument();
+      expect(screen.getByText('Review & File')).toBeInTheDocument();
     });
 
     it('should handle quarter selection in step 1', async () => {
@@ -379,7 +400,7 @@ describe('Tax Components', () => {
       await user.click(nextButton);
 
       await waitFor(() => {
-        expect(screen.getByText('Step 2 of 5')).toBeInTheDocument();
+        expect(screen.getByText('Step 2 of 6')).toBeInTheDocument();
       });
     });
 

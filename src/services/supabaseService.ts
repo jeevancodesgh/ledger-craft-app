@@ -1151,19 +1151,20 @@ export const itemService = {
 export const businessProfileService = {
   async getBusinessProfile(): Promise<BusinessProfile | null> {
     const { data: { user } } = await supabase.auth.getUser();
-    if (!user?.id) {
+    const sessionUser = user ?? (await supabase.auth.getSession()).data.session?.user;
+    if (!sessionUser?.id) {
       console.error('No authenticated user found when checking business profile');
       return null;
     }
     
-    console.log('Fetching business profile for user:', user.id);
+    console.log('Fetching business profile for user:', sessionUser.id);
     
     try {
       // Simplified query without timeout wrapper
       const { data, error } = await supabase
         .from('business_profiles')
         .select('*')
-        .eq('user_id', user.id)
+        .eq('user_id', sessionUser.id)
         .limit(1)
         .maybeSingle();
 
@@ -1184,13 +1185,15 @@ export const businessProfileService = {
 
   async createOrUpdateBusinessProfile(profile: Omit<BusinessProfile, 'id' | 'createdAt' | 'updatedAt'>): Promise<BusinessProfile> {
     const { data: { user } } = await supabase.auth.getUser();
-    if (!user?.id) {
+    const sessionUser = user ?? (await supabase.auth.getSession()).data.session?.user;
+    const userId = sessionUser?.id || profile.userId;
+    if (!userId) {
       throw new Error('No authenticated user');
     }
     
     const profileWithUserId = {
       ...profile,
-      userId: user.id
+      userId
     };
     
     const supabaseProfile = await mapBusinessProfileToSupabaseBusinessProfile(profileWithUserId);
@@ -1198,7 +1201,7 @@ export const businessProfileService = {
     const { data: existingProfile } = await supabase
       .from('business_profiles')
       .select('id')
-      .eq('user_id', user.id)
+      .eq('user_id', userId)
       .limit(1);
     
     let result;

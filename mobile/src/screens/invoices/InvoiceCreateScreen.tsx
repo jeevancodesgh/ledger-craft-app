@@ -33,6 +33,7 @@ import { CompactLineItem } from '@/components/invoice/CompactLineItem';
 import { TaxConfigCard } from '@/components/invoice/TaxConfigCard';
 import { ProgressIndicator } from '@/components/invoice/ProgressIndicator';
 import { FloatingActionButton } from '@/components/ui/FloatingActionButton';
+import { ProfileCompletenessBanner } from '@/components/invoice/ProfileCompletenessBanner';
 
 type InvoiceCreateNavigationProp = NativeStackNavigationProp<AppTabParamList, 'InvoiceCreate'>;
 type InvoiceEditRouteProp = RouteProp<{ InvoiceEdit: { invoiceId?: string } }, 'InvoiceEdit'>;
@@ -402,6 +403,12 @@ export default function InvoiceCreateScreen() {
       >
         {/* Progress Indicator */}
         <ProgressIndicator steps={progressSteps} />
+        <ProfileCompletenessBanner
+          profile={businessProfile}
+          onCompleteProfile={() => {
+            navigation.getParent()?.navigate('Settings' as never);
+          }}
+        />
 
         {/* Invoice Details Card */}
         <View style={styles.card}>
@@ -625,6 +632,9 @@ export default function InvoiceCreateScreen() {
           businessProfile={businessProfile || undefined}
           initialTemplate={templateName}
           onClose={() => setShowPreview(false)}
+          onCompleteProfile={() => {
+            navigation.getParent()?.navigate('Settings' as never);
+          }}
         />
       </Modal>
     </KeyboardAvoidingView>
