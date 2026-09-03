@@ -1,10 +1,17 @@
 {
-  "name": "vite_react_shadcn_ts",
+  "name": "web",
   "private": true,
   "version": "0.0.8",
   "type": "module",
   "scripts": {
     "dev": "vite",
+    "dev:api": "pnpm --filter @ledgercraft/api dev",
+    "test:api": "pnpm --filter @ledgercraft/api test",
+    "test:contracts": "pnpm --filter @ledgercraft/contracts test",
+    "db:up": "docker compose up -d --wait",
+    "db:down": "docker compose down",
+    "type-check:api": "pnpm --filter @ledgercraft/api type-check && pnpm --filter @ledgercraft/contracts type-check",
+    "verify:w1": "pnpm test:contracts && pnpm test:api && pnpm type-check:api",
     "prebuild": "node scripts/generate-version.js",
     "build": "vite build",
     "build:dev": "vite build --mode development",

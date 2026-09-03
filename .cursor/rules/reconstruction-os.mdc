@@ -1,0 +1,16 @@
+---
+description: Reconstruction operating system — current wave, next command, and skill index for every session.
+alwaysApply: true
+---
+
+# Reconstruction OS
+
+Read `.cursor/skills/ledgercraft-bootstrap/SKILL.md` first.
+
+- Spec: `TARGET_ARCHITECTURE.md`. Agent guide: `AGENTS.md`.
+- Live DB is gone. Greenfield toward the spec. Do not replay Git SQL.
+- **Now:** W1 scaffolding is in Git. Next: `pnpm install && pnpm db:up && pnpm verify:w1` on a machine with npm registry access. Commit `pnpm-lock.yaml` if it changes.
+- Do not start W2 until `verify:w1` is green.
+- Postgres host port **55432**. API **3001**. Vite **8080** proxies `/api`.
+- Launch specialists via `.cursor/skills/ledgercraft-agent-roster/SKILL.md`.
+- After each wave: `.cursor/skills/ledgercraft-knowledge-sync/SKILL.md`.

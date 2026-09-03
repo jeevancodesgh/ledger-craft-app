@@ -4,7 +4,9 @@
 
 **Reconstruction (2026-09-03):** the hosted project still exists (`viqckjmborlqaemavrzu`) but `public` has zero tables, `auth.users` is empty, storage is empty, and no app migrations are applied. Production rows and identities are unrecoverable unless a platform backup is found. Reconstruction is greenfield toward this document, not a forensic clone. Do not replay checked-in SQL in order. Derive compatibility columns from application TypeScript contracts (`src/types`, service mappers). Skip preserving old `auth.users` UUIDs.
 
-Operating plan: specialist agents, two lanes (compatibility boot vs Hono target), TDD, and a knowledge loop. Skills live in `.cursor/skills/`. Roster and protocol live in `AGENTS.md`.
+**W1 scaffolding is in Git:** `api/`, `packages/contracts/`, `pnpm-workspace.yaml`, Compose Postgres (host port **55432**), Vite `/api` → `:3001`, health/error/RLS tests. Product tables and Better Auth are not started. Clients still use `supabase-js`. Run `pnpm install` + `pnpm db:up` + `pnpm verify:w1` on a machine that can reach the npm registry, then commit the resulting `pnpm-lock.yaml` if it changed.
+
+Operating plan: specialist agents, two lanes (compatibility boot vs Hono target), TDD, and a knowledge loop. Session start: `.cursor/skills/ledgercraft-bootstrap/SKILL.md`. Other skills in `.cursor/skills/`. Roster and protocol in `AGENTS.md`.
 
 Current production uses Supabase Auth, PostgREST, Storage, Edge Functions, Vite, and Expo. Web and mobile clients call `supabase-js` directly. This document defines the final architecture and the safe path from that system.
 

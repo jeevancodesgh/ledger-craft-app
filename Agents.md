@@ -4,12 +4,29 @@ This document provides comprehensive guidance for AI agents (LLMs) working on th
 
 ## Read this first
 
-- **Spec:** `TARGET_ARCHITECTURE.md` (end state + gates). Hosted `public` schema is empty as of 2026-09-03. Rebuild greenfield; do not replay Git SQL.
-- **Plan:** specialist agents, Lane A (boot current clients) then Lane B (Hono slices). Skills in `.cursor/skills/`.
-- **Roster / Task prompts:** `.cursor/skills/ledgercraft-agent-roster/SKILL.md`
-- **TDD:** `.cursor/skills/ledgercraft-tdd/SKILL.md`
-- **Schema rebuild:** `.cursor/skills/ledgercraft-schema-rebuild/SKILL.md`
-- **After every wave:** `.cursor/skills/ledgercraft-knowledge-sync/SKILL.md`
+**Start:** `.cursor/skills/ledgercraft-bootstrap/SKILL.md` then `TARGET_ARCHITECTURE.md`.
+
+| | |
+| --- | --- |
+| Spec | `TARGET_ARCHITECTURE.md` — end state and gates. Not optional. |
+| Live DB | Hosted `public` is empty (2026-09-03). Greenfield. Do not replay Git SQL. No UUID import. |
+| Now | W1 scaffolding is in Git. **Not verified.** Next: `pnpm install && pnpm db:up && pnpm verify:w1` on a PC with npm registry access. |
+| Blocked | W2+ until `verify:w1` is green. |
+| Clients | Still `supabase-js`. No new client SQL, Storage SDK, Edge Functions, or `VITE_OPENAI_*`. |
+| Ports | Postgres **55432**, API **3001**, Vite **8080** (`/api` proxy). |
+| Package manager | **pnpm** workspace (`api`, `packages/contracts`). `mobile/` is not in the workspace yet. |
+
+**Skills (read the matching one):**
+
+| Skill | Use |
+| --- | --- |
+| `.cursor/skills/ledgercraft-bootstrap/SKILL.md` | Every session |
+| `.cursor/skills/ledgercraft-architecture/SKILL.md` | API / DB / auth / providers |
+| `.cursor/skills/ledgercraft-tdd/SKILL.md` | Tests and implementation order |
+| `.cursor/skills/ledgercraft-schema-rebuild/SKILL.md` | Schema from app types |
+| `.cursor/skills/ledgercraft-vertical-slice/SKILL.md` | One domain onto Hono |
+| `.cursor/skills/ledgercraft-agent-roster/SKILL.md` | Task subagent prompts |
+| `.cursor/skills/ledgercraft-knowledge-sync/SKILL.md` | End of wave / doc drift |
 
 Orchestrator (parent chat) sequences waves. Do not mix UI redesign, TanStack Router, `apps/` moves, and a data cutover.
 
@@ -108,13 +125,18 @@ Orchestrator (parent chat) sequences waves. Do not mix UI redesign, TanStack Rou
 
 ```
 ledger-craft-app/
-├── src/                    # Web application source
-├── mobile/                 # Mobile application source
-├── supabase/               # Database migrations and config
-├── tests/                  # E2E tests (Playwright)
-├── public/                 # Static assets for web
-├── .cursor/                # Cursor IDE rules and configs
-└── Agents.md              # This file
+├── src/                      # Web (Vite). Do not move to apps/web until W9
+├── mobile/                   # Expo. Not in pnpm workspace yet
+├── api/                      # Hono + Drizzle (W1+)
+├── packages/contracts/       # Zod DTOs only
+├── docker/postgres/init/     # DB roles for Compose
+├── supabase/                 # Legacy SQL — do not replay in order
+├── tests/                    # Playwright
+├── pnpm-workspace.yaml
+├── TARGET_ARCHITECTURE.md    # End-state spec
+├── .cursor/skills/           # Agent procedures
+├── .cursor/rules/            # Always-on gates
+└── AGENTS.md                 # This file
 ```
 
 ### Web Application (`/src`)
@@ -1045,13 +1067,31 @@ Parent chat is Orchestrator. Launch specialists with Task `generalPurpose` using
 | Mobile | `mobile/` Query hooks and screens |
 | Verification | Vitest, RLS tests, Playwright, RN tests |
 
-**Waves:** W0 knowledge (in progress) → W1 platform → W2 compatibility schema (current app boots) → W3 API+identity → W4 customers → W5 invoices (gate) → W6 payments/expenses/accounts → W7 bank/recon/tax → W8 storage/email/AI → W9 client consolidation.
+**Waves:** W0 knowledge (done) → W1 platform scaffolding (in repo, verify on a clean machine) → W2 compatibility schema (current app boots) → W3 API+identity → W4 customers → W5 invoices (gate) → W6 payments/expenses/accounts → W7 bank/recon/tax → W8 storage/email/AI → W9 client consolidation.
 
 **TDD:** failing tests first; real Postgres for SQL/RLS. **Knowledge:** a wave is not done if docs are stale.
+
+### W1 verify on a clean machine
+
+This machine could not download npm tarballs (HTTP 403). Clone on a PC with registry access:
+
+```bash
+pnpm install
+pnpm db:up
+pnpm verify:w1          # contracts + API health/RLS + typecheck
+pnpm dev:api            # Hono on 127.0.0.1:3001
+pnpm dev                # Vite on :8080, proxies /api
+curl -s localhost:8080/api/healthz
+```
+
+If `pnpm-lock.yaml` changes after install, commit it. Postgres is published on **55432** so it does not fight another local 5432. Env vars: see `.env.example` (`DATABASE_URL` = `ledgercraft_app`, `DATABASE_MIGRATE_URL` = `ledgercraft_migrator`).
+
+W1 is not done until `verify:w1` is green. Do not start W2 (product tables) until then.
 
 ## Additional Resources
 
 - **Target architecture**: `TARGET_ARCHITECTURE.md`
+- **Session start**: `.cursor/skills/ledgercraft-bootstrap/SKILL.md`
 - **Project skills**: `.cursor/skills/ledgercraft-*/SKILL.md`
 - **Project Rules**: `.cursor/rules/project-guide.mdc` - Comprehensive development guidelines
 - **README**: `README.md` - Project setup and overview

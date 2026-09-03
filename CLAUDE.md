@@ -1,7 +1,19 @@
 # Claude Instructions for Ledger Craft App
 
+## Reconstruction (read first)
+
+The hosted `public` schema is empty. Rebuild toward `TARGET_ARCHITECTURE.md`. Do not replay `supabase/migrations` or `migrations/*.sql`.
+
+1. `.cursor/skills/ledgercraft-bootstrap/SKILL.md` — current wave, next command, hard no
+2. `AGENTS.md` — file map, commands, specialist roster
+3. Matching skill in `.cursor/skills/ledgercraft-*`
+
+**Now:** W1 scaffolding is in Git. Next: `pnpm install && pnpm db:up && pnpm verify:w1`. Do not start W2 until that is green. Postgres host port **55432**. API **3001**. Vite **8080**.
+
+New domain work goes through Hono (`api/`), not new `supabase.from` / Storage / Edge Functions / client OpenAI.
+
 ## Project Overview
-Ledger Craft is a modern PWA expense tracking application built with React, TypeScript, and Supabase. The app helps users manage expenses, create invoices, and track financial data.
+Ledger Craft is a modern PWA expense tracking application built with React, TypeScript, and Supabase. The app helps users manage expenses, create invoices, and track financial data. Clients still talk to hosted Supabase; the Hono API (`api/`) is the reconstruction path.
 
 ## Tech Stack
 - **Frontend**: React 18, TypeScript, Tailwind CSS
