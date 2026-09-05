@@ -53,7 +53,7 @@ Produce a table/column/FK/index list from TypeScript, then generate Drizzle + re
 
 `business_profiles`, `customers`, `invoices`, `line_items`, `items`, `item_categories`, `profiles`, `accounts`, `account_templates`, `expenses`, `expense_categories`, `payments`, `receipts`, `tax_configurations`, `tax_returns`, `tax_adjustments`, `journal_entries`, `journal_entry_lines`, `shared_invoices`, `conversations`, `conversation_messages`, `bank_accounts`, `bank_transactions`, `reconciliation_sessions`, `reconciliation_matches`, `reconciliation_adjustments`, `transaction_import_batches`
 
-Plus Lane B: `organisations`, `organisation_memberships`, Better Auth identity tables.
+Plus Lane B: `organisations`, `organisation_memberships`, Better Auth identity tables. Better Auth must **not** create a table named `accounts` — that name is the chart of accounts (W2). Use `auth_accounts` (or equivalent) and configure the adapter.
 
 ## Money
 

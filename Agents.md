@@ -10,8 +10,8 @@ This document provides comprehensive guidance for AI agents (LLMs) working on th
 | --- | --- |
 | Spec | `TARGET_ARCHITECTURE.md` — end state and gates. Not optional. |
 | Live DB | Hosted `public` is empty (2026-09-03). Greenfield. Do not replay Git SQL. No UUID import. |
-| Now | W1 scaffolding is in Git. **Not verified.** Next: `pnpm install && pnpm db:up && pnpm verify:w1` on a PC with npm registry access. |
-| Blocked | W2+ until `verify:w1` is green. |
+| Now | W1+W2 **verified** end-to-end (2026-09-05). Next: W3 Better Auth + memberships. |
+| Blocked | W4 customers slice until a session can bind organisation context. |
 | Clients | Still `supabase-js`. No new client SQL, Storage SDK, Edge Functions, or `VITE_OPENAI_*`. |
 | Ports | Postgres **55432**, API **3001**, Vite **8080** (`/api` proxy). |
 | Package manager | **pnpm** workspace (`api`, `packages/contracts`). `mobile/` is not in the workspace yet. |
@@ -1053,7 +1053,7 @@ try {
 
 ## Reconstruction agents
 
-Parent chat is Orchestrator. Launch specialists with Task `generalPurpose` using `.cursor/skills/ledgercraft-agent-roster/SKILL.md`.
+Parent chat is Orchestrator. Launch specialists with Task `generalPurpose` using `.cursor/skills/ledgercraft-agent-roster/SKILL.md`. Session start: `.cursor/skills/ledgercraft-bootstrap/SKILL.md`.
 
 | Agent | Owns |
 | --- | --- |
@@ -1067,26 +1067,104 @@ Parent chat is Orchestrator. Launch specialists with Task `generalPurpose` using
 | Mobile | `mobile/` Query hooks and screens |
 | Verification | Vitest, RLS tests, Playwright, RN tests |
 
-**Waves:** W0 knowledge (done) → W1 platform scaffolding (in repo, verify on a clean machine) → W2 compatibility schema (current app boots) → W3 API+identity → W4 customers → W5 invoices (gate) → W6 payments/expenses/accounts → W7 bank/recon/tax → W8 storage/email/AI → W9 client consolidation.
+**Waves:** W0 knowledge (done) → W1 platform scaffolding (**verified**) → W2 compatibility schema (**verified in working tree**) → W3 identity (**next**) → W4 customers → W5 invoices (gate) → W6 payments/expenses/accounts → W7 bank/recon/tax → W8 storage/email/AI → W9 client consolidation.
 
 **TDD:** failing tests first; real Postgres for SQL/RLS. **Knowledge:** a wave is not done if docs are stale.
 
-### W1 verify on a clean machine
+### Git / handoff (read before coding)
 
-This machine could not download npm tarballs (HTTP 403). Clone on a PC with registry access:
+| Ref | What is there |
+| --- | --- |
+| `origin/mobile-app` @ `fd62f9a` | W0 + W1 scaffolding only (Hono shell, probe RLS, agent OS). Pushed as jeevancodesgh. |
+| Working tree after `fd62f9a` | **W2 is implemented and `pnpm verify:w2` is green, but not committed.** A fresh clone of origin does **not** have W2. Commit/push this tree before starting W3 on another machine. |
+
+Uncommitted W2 + doc files (as of 2026-09-05):
+
+- `api/drizzle/0001_compatibility.sql` (new)
+- `api/src/db/schema/compatibility-inventory.ts` (new)
+- `api/src/test/schema.compatibility.test.ts` (new)
+- `api/drizzle/meta/_journal.json`
+- `docker/postgres/init/01-roles.sql` (`GRANT CREATE ON DATABASE`)
+- `package.json` (`verify:w2`)
+- `pnpm-lock.yaml` (small install-time tweak)
+- `TARGET_ARCHITECTURE.md`, `AGENTS.md`, `CLAUDE.md`, bootstrap skill, `reconstruction-os.mdc`
+
+### What W1 shipped (in `fd62f9a`)
+
+- pnpm workspace: `api`, `packages/contracts` (`mobile/` not in workspace)
+- Hono healthz/readyz, error envelope, request IDs
+- Compose Postgres host **55432**, roles `ledgercraft_migrator` / `_app` / `_readonly`
+- Probe table `rls_probe` + FORCE RLS (`api/drizzle/0000_framework.sql`)
+- Vite `/api` → `127.0.0.1:3001`
+- Tests: contracts, health, RLS probe
+
+**Gotcha:** migrator must have `CREATE` on database `ledgercraft` so Drizzle can create schema `drizzle`. Init SQL now grants it. Existing volumes need: `GRANT CREATE ON DATABASE ledgercraft TO ledgercraft_migrator;`
+
+### What W2 shipped (working tree, verified)
+
+Compatibility product schema reconstructed from `src/types` Supabase\* interfaces and service mappers. **Not** a replay of `supabase/migrations` or `migrations/*.sql`.
+
+- Inventory: `api/src/db/schema/compatibility-inventory.ts`
+- SQL: `api/drizzle/0001_compatibility.sql` (org RLS helper `ledgercraft_apply_org_rls`)
+- Tests: every listed column exists; invoice money is `NUMERIC`; customers isolated by `organisation_id` under `ledgercraft_app`
+
+Tables: `customers`, `business_profiles`, `item_categories`, `items`, `invoices`, `line_items`, `accounts` (chart of accounts), `account_templates` (global, no org RLS), `expense_categories`, `expenses`, `payments`, `receipts`, `tax_configurations`, `tax_returns`, `tax_adjustments`, `journal_entries`, `journal_entry_lines`, `shared_invoices`, `conversations`, `conversation_messages`, `bank_accounts`, `bank_transactions`, `reconciliation_*`, `transaction_import_batches`, `account_contacts`.
+
+Decisions already locked:
+
+- Tenant key is `organisation_id` + `user_id` (Lane A name) on tenant tables
+- Invoice `payment_status` includes `partially_paid`; `balance_due` is a normal `NUMERIC` column (not generated)
+- Money is `NUMERIC`, never float
+- Drizzle **TS table defs** for product tables are **not** written yet (only `rls_probe`). SQL + inventory are the W2 contract. Add Drizzle tables when a slice needs them.
+- No Better Auth, no `organisations` / `organisation_memberships` tables yet
+- Clients still talk to hosted Supabase via `supabase-js`
+
+### Verify (this machine already passed)
 
 ```bash
 pnpm install
 pnpm db:up
-pnpm verify:w1          # contracts + API health/RLS + typecheck
-pnpm dev:api            # Hono on 127.0.0.1:3001
-pnpm dev                # Vite on :8080, proxies /api
+pnpm verify:w2          # alias of verify:w1; contracts + API + typecheck
+pnpm dev:api            # 127.0.0.1:3001
+pnpm dev                # Vite :8080, proxies /api
 curl -s localhost:8080/api/healthz
 ```
 
-If `pnpm-lock.yaml` changes after install, commit it. Postgres is published on **55432** so it does not fight another local 5432. Env vars: see `.env.example` (`DATABASE_URL` = `ledgercraft_app`, `DATABASE_MIGRATE_URL` = `ledgercraft_migrator`).
+`.env.example` has the three database URLs. Tests fall back to those defaults if `.env` is missing.
 
-W1 is not done until `verify:w1` is green. Do not start W2 (product tables) until then.
+### W3 plan (next — identity, not a client cutover)
+
+**Goal:** Hono can resolve a session and bind `app.user_id` + `app.organisation_id` on a transaction. Clients stay on Supabase Auth. Do **not** authorize application data with two session systems.
+
+**Collision:** product table `accounts` is the chart of accounts. Better Auth's default `accounts` table **must** be renamed (e.g. `auth_accounts`). Configure Better Auth model names explicitly. Avoid a quoted singular `user` table. TARGET identity section: `TARGET_ARCHITECTURE.md` § Identity.
+
+**Identity import:** hosted `auth.users` is empty. Skip preserving old UUIDs. TARGET's "preserve Supabase UUIDs" does not apply.
+
+**TDD order:**
+
+1. Verification: failing tests — `organisations` + `organisation_memberships` columns; unauthenticated protected route → 401 + error envelope; authed request binds org via `set_config`; membership cannot see another org.
+2. Schema: `0002_identity.sql` — `organisations`, `organisation_memberships`, Better Auth tables with **renamed** provider-account table. FORCE RLS on org/membership.
+3. Auth: Better Auth in `api/` (Drizzle adapter, email/password first). Middleware: session → membership → `set_config`. No ownership IDs from the body.
+4. Contracts: session/me DTO only. No customer/invoice routes.
+5. Do **not** switch `src/` or `mobile/` off `supabase.auth`.
+6. `pnpm verify:w3` (add script) must stay green with W1/W2 tests.
+7. Knowledge sync. Then W4 = customers vertical slice.
+
+**Launch (roster):** Auth + Schema + Verification. Not Web/Mobile. Not invoice math.
+
+**W3 out of scope:** customers/invoices Hono routes, TanStack Router, `apps/` move, UI redesign, Expo Better Auth client, Google OAuth (can stub config, do not cut over).
+
+### W4+ (after W3 binds a session)
+
+W4 customers: contracts → failing API tests → repository/use case/route → web Query hook (delete that domain from DataManager) → mobile hook. One domain per change. Invoice gate is W5.
+
+### Hard no (still)
+
+- Replay Git SQL in order
+- New client `supabase.from` / Storage SDK / Edge Function / `VITE_OPENAI_*`
+- Better Auth **and** Supabase sessions both authorizing data
+- Start W4 before session-bound `organisation_id`
+- Commit unless asked
 
 ## Additional Resources
 
@@ -1100,6 +1178,6 @@ W1 is not done until `verify:w1` is green. Do not start W2 (product tables) unti
 
 ---
 
-**Last Updated**: 2026-09-03
-**Version**: 1.1.0
+**Last Updated**: 2026-09-05
+**Version**: 1.2.1
 

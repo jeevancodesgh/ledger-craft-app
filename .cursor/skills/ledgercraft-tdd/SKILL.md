@@ -40,15 +40,22 @@ No production code for a slice until a failing test exists for that slice.
 4. Client-supplied totals cannot override server totals.
 5. Share token expiry/active rules do not leak other rows.
 
-## W1 commands
+## Verify commands
 
 ```bash
 pnpm install
 pnpm db:up
-pnpm verify:w1
+pnpm verify:w2          # W1+W2. Add verify:w3 in the identity wave.
 ```
 
 Postgres host port is `55432`. API tests use `DATABASE_URL` (app role) and `DATABASE_MIGRATE_URL` (migrator). Do not mock Drizzle in `api/src/test`.
+
+## W3 identity gates (before production auth code)
+
+1. Unauthenticated protected route returns 401 with `{ error: { code, message, requestId } }`.
+2. Session + membership binds `set_config('app.organisation_id', …)` inside the use-case transaction.
+3. `ledgercraft_app` cannot read another organisation's memberships/org rows.
+4. Better Auth provider-account table is **not** named `accounts` (that name is the chart of accounts).
 
 ## Forbidden
 

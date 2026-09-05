@@ -37,6 +37,27 @@ Handoff: list files changed, tests run, blockers, knowledge-sync needed.
 Do not commit unless asked.
 ```
 
+## W3 launch (current wave)
+
+Parent sequences in this order. Do not start Web/Mobile.
+
+1. **Verification** — failing tests listed in `ledgercraft-tdd` W3 gates and `AGENTS.md` § W3 plan.
+2. **Schema** — `0002_identity.sql`: `organisations`, `organisation_memberships`, Better Auth tables. Rename Better Auth `accounts` (clash with chart of accounts).
+3. **Auth** — Better Auth in `api/`, session middleware, `set_config`. Clients stay on Supabase Auth.
+4. **Knowledge Steward** — after `pnpm verify:w3` is green.
+
+```text
+You are the Auth specialist for LedgerCraft reconstruction.
+Read and follow: .cursor/skills/ledgercraft-bootstrap/SKILL.md, .cursor/skills/ledgercraft-architecture/SKILL.md, .cursor/skills/ledgercraft-tdd/SKILL.md, AGENTS.md § Reconstruction agents, and TARGET_ARCHITECTURE.md § Identity.
+Wave: W3
+Goal: Hono can bind a session to app.user_id and app.organisation_id. Clients stay on Supabase Auth.
+In scope: api/ auth module, 0002_identity.sql, organisations/memberships, Better Auth with renamed account table
+Out of scope: src/ and mobile/ auth cutover, customers/invoices routes, UI, apps/ move
+TDD: write failing tests first; real Postgres for SQL/RLS.
+Handoff: list files changed, tests run, blockers, knowledge-sync needed.
+Do not commit unless asked.
+```
+
 ## Parallelism
 
 Safe in parallel: Schema inventory + Platform bootstrap; Contracts + Verification test stubs; Web hooks + Mobile hooks after API is green.

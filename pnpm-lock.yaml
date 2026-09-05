@@ -277,12 +277,12 @@ importers:
         specifier: ^4.7.10
         version: 4.13.5
       postgres:
-        specifier: ^3.4.7
+        specifier: ^3.4.5
         version: 3.4.9
-      zod:
-        specifier: ^3.24.3
-        version: 3.24.3
     devDependencies:
+      '@types/node':
+        specifier: ^22.5.5
+        version: 22.7.9
       drizzle-kit:
         specifier: ^0.31.1
         version: 0.31.10

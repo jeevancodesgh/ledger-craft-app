@@ -8,7 +8,7 @@ The hosted `public` schema is empty. Rebuild toward `TARGET_ARCHITECTURE.md`. Do
 2. `AGENTS.md` — file map, commands, specialist roster
 3. Matching skill in `.cursor/skills/ledgercraft-*`
 
-**Now:** W1 scaffolding is in Git. Next: `pnpm install && pnpm db:up && pnpm verify:w1`. Do not start W2 until that is green. Postgres host port **55432**. API **3001**. Vite **8080**.
+**Now:** W1 and W2 are verified end-to-end (2026-09-05; W2 not committed). Next: W3 Better Auth + memberships. Pickup: `AGENTS.md` § Reconstruction agents. Postgres host port **55432**. API **3001**. Vite **8080**.
 
 New domain work goes through Hono (`api/`), not new `supabase.from` / Storage / Edge Functions / client OpenAI.
 

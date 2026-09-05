@@ -4,7 +4,7 @@
 
 **Reconstruction (2026-09-03):** the hosted project still exists (`viqckjmborlqaemavrzu`) but `public` has zero tables, `auth.users` is empty, storage is empty, and no app migrations are applied. Production rows and identities are unrecoverable unless a platform backup is found. Reconstruction is greenfield toward this document, not a forensic clone. Do not replay checked-in SQL in order. Derive compatibility columns from application TypeScript contracts (`src/types`, service mappers). Skip preserving old `auth.users` UUIDs.
 
-**W1 scaffolding is in Git:** `api/`, `packages/contracts/`, `pnpm-workspace.yaml`, Compose Postgres (host port **55432**), Vite `/api` → `:3001`, health/error/RLS tests. Product tables and Better Auth are not started. Clients still use `supabase-js`. Run `pnpm install` + `pnpm db:up` + `pnpm verify:w1` on a machine that can reach the npm registry, then commit the resulting `pnpm-lock.yaml` if it changed.
+**W1+W2 verified (2026-09-05):** `pnpm verify:w2` is green (7 contract + 14 API tests, typecheck). Live smoke: Postgres `55432` has 28 public tables (27 product + `rls_probe`), 48 `NUMERIC` money columns; API `3001` and Vite `8080` both return `{"status":"ok"}` for `/api/healthz` and `/api/readyz`; unknown `/api` paths return `{ error: { code, message, requestId } }`. W1 is on `origin/mobile-app` (`fd62f9a`). W2 SQL/tests/docs are **uncommitted**. Better Auth is not started. Clients still use `supabase-js` (login against hosted Auth fails as expected). **Next: W3** identity. Pickup: `AGENTS.md` § Reconstruction agents.
 
 Operating plan: specialist agents, two lanes (compatibility boot vs Hono target), TDD, and a knowledge loop. Session start: `.cursor/skills/ledgercraft-bootstrap/SKILL.md`. Other skills in `.cursor/skills/`. Roster and protocol in `AGENTS.md`.
 
@@ -176,7 +176,9 @@ This keeps browser cookies first-party and removes most CORS configuration. Loca
 
 ## Identity, tenancy, and authorization
 
-Better Auth owns `users`, `sessions`, `accounts`, and `verifications` in PostgreSQL. Configure Better Auth model names explicitly; avoid a quoted singular `user` table.
+Better Auth owns `users`, `sessions`, `accounts`, and `verifications` in PostgreSQL. Configure Better Auth model names explicitly; avoid a quoted singular `user` table. The product already has `accounts` (chart of accounts). Better Auth's provider-account table **must** use a different name (e.g. `auth_accounts`).
+
+**Reconstruction:** hosted `auth.users` is empty — skip UUID preservation. Stage Better Auth in W3; do not cut clients off Supabase Auth until every protected path uses Hono. Pickup: `AGENTS.md` § Reconstruction agents.
 
 LedgerCraft data is owned by a business/organisation, not directly by one login:
 
