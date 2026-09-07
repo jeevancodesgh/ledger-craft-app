@@ -1,4 +1,4 @@
-import { boolean, date, jsonb, numeric, pgTable, text, timestamp, uuid } from 'drizzle-orm/pg-core';
+import { boolean, date, integer, jsonb, numeric, pgTable, text, timestamp, uuid } from 'drizzle-orm/pg-core';
 
 const timestamptz = (name: string) => timestamp(name, { withTimezone: true, mode: 'date' });
 const money = (name: string) => numeric(name, { precision: 19, scale: 4, mode: 'string' });
@@ -11,8 +11,11 @@ export const invoices = pgTable('invoices', {
   customerId: uuid('customer_id').notNull(),
   date: date('date', { mode: 'string' }).notNull(),
   dueDate: date('due_date', { mode: 'string' }).notNull(),
+  paymentTermDays: integer('payment_term_days'),
   subtotal: money('subtotal').notNull(),
   taxAmount: money('tax_amount').notNull(),
+  discountType: text('discount_type').notNull().default('fixed'),
+  discountPercent: numeric('discount_percent', { precision: 5, scale: 2, mode: 'string' }),
   discount: money('discount'),
   additionalCharges: money('additional_charges'),
   additionalChargesList: jsonb('additional_charges_list'),

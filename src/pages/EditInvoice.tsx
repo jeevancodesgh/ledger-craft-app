@@ -10,11 +10,12 @@ import { formatDate } from "@/utils/invoiceUtils";
 import CustomerFormDrawer, { CustomerFormValues } from '@/components/customer/CustomerFormDrawer';
 import { useToast } from '@/hooks/use-toast';
 import { useCustomerDirectory } from '@/features/customers/hooks/useCustomerDirectory';
+import { invoicesApi } from '@/features/invoices/api/invoicesApi';
 
 const EditInvoicePage = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const { getInvoice, updateInvoice, businessProfile, items, isLoadingItems } = useAppData();
+  const { getInvoice, updateInvoice, businessProfile, items, isLoadingItems, refreshInvoices } = useAppData();
   const { customers, isLoadingCustomers, createCustomer } = useCustomerDirectory();
   const [invoice, setInvoice] = useState<Invoice | null>(null);
   const [loading, setLoading] = useState(true);
@@ -69,24 +70,36 @@ const EditInvoicePage = () => {
     taxAmount: number,
     additionalCharges: number,
     discount: number,
-    additionalChargesList?: any[]
+    additionalChargesList?: any[],
+    intent: 'draft' | 'send' = 'draft',
   ) => {
     if (!invoice) return;
     try {
-      await updateInvoice({
+      const saved = await updateInvoice({
         ...invoice,
         ...values,
         date: formatDate(values.date),
         dueDate: formatDate(values.dueDate),
+        paymentTermDays: values.paymentTermDays,
         items,
         subtotal,
         taxAmount,
         total,
         additionalCharges,
+        discountType: values.discountType,
+        discountPercent: values.discountPercent,
         discount,
         additionalChargesList,
-        templateName: values.templateName, // Save selected template
+        templateName: values.templateName,
       });
+      if (intent === 'send') {
+        await invoicesApi.send(saved.id);
+        await refreshInvoices();
+        toast({
+          title: 'Invoice sent',
+          description: `Invoice ${saved.invoiceNumber} was sent.`,
+        });
+      }
       navigate("/invoices");
     } catch (e: any) {
       setError(e?.message || "Error updating invoice");

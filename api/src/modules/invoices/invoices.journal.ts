@@ -78,11 +78,14 @@ export async function postInvoiceJournal(
     .returning();
   if (!entry) throw new HTTPException(500, { message: 'Failed to post journal entry' });
 
+  const taxAmount = Number(input.taxAmount);
+  const total = Number(input.total);
+  const salesCredit = (Math.round((total - taxAmount) * 100) / 100).toFixed(2);
   const lines = [
     { accountId: arId, description: `Invoice ${input.invoiceNumber}`, debit: input.total, credit: '0.00', order: 1 },
-    { accountId: salesId, description: `Sales revenue - Invoice ${input.invoiceNumber}`, debit: '0.00', credit: input.subtotal, order: 2 },
+    { accountId: salesId, description: `Sales revenue - Invoice ${input.invoiceNumber}`, debit: '0.00', credit: salesCredit, order: 2 },
   ];
-  if (Number(input.taxAmount) > 0) {
+  if (taxAmount > 0) {
     lines.push({
       accountId: gstId,
       description: `GST on Invoice ${input.invoiceNumber}`,

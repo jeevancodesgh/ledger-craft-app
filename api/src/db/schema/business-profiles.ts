@@ -19,6 +19,7 @@ export const businessProfiles = pgTable('business_profiles', {
   website: text('website'),
   defaultTaxRate: numeric('default_tax_rate', { precision: 9, scale: 4, mode: 'string' }),
   defaultTerms: text('default_terms'),
+  paymentTermDays: integer('payment_term_days').notNull().default(30),
   defaultNotes: text('default_notes'),
   bankInfo: text('bank_info'),
   theme: jsonb('theme'),

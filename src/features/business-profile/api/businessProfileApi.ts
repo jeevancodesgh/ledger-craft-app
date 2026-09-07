@@ -36,6 +36,7 @@ function toProfile(dto: BusinessProfileDto): BusinessProfile {
     theme: dto.theme,
     invoiceNumberFormat: dto.invoiceNumberFormat,
     invoiceNumberSequence: dto.invoiceNumberSequence,
+    paymentTermDays: dto.paymentTermDays,
     createdAt: dto.createdAt,
     updatedAt: dto.updatedAt,
   };
@@ -69,6 +70,7 @@ export function toUpsertBusinessProfileRequest(
     theme: profile.theme ?? null,
     invoiceNumberFormat: profile.invoiceNumberFormat ?? null,
     invoiceNumberSequence: profile.invoiceNumberSequence ?? undefined,
+    paymentTermDays: profile.paymentTermDays ?? 30,
   };
 }
 

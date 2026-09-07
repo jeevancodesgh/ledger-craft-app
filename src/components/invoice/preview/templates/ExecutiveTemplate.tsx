@@ -1,5 +1,5 @@
 import React from 'react';
-import { formatCurrency } from '@/utils/invoiceUtils';
+import { formatCurrency, invoiceDiscountLabel } from '@/utils/invoiceUtils';
 import { Invoice, LineItem, BusinessTheme, DEFAULT_BUSINESS_THEME } from '@/types';
 import { PDFCard, PDFCardContent } from '@/components/ui/card';
 import { useIsMobile } from '@/hooks/use-mobile';
@@ -192,7 +192,7 @@ const ExecutiveTemplate = ({
           
           {invoice.discount && invoice.discount > 0 && (
             <div className="flex justify-between py-1 sm:py-2 text-xs sm:text-sm">
-              <span className="font-medium" style={{ color: theme.text }}>Discount:</span>
+              <span className="font-medium" style={{ color: theme.text }}>{invoiceDiscountLabel(invoice)}:</span>
               <span style={{ color: theme.accent }}>-{formatCurrency(invoice.discount, invoice.currency)}</span>
             </div>
           )}

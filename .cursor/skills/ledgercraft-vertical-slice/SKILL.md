@@ -34,7 +34,7 @@ Do not move `src/` → `apps/web` or `mobile/` → `apps/mobile` until every pro
 5. API: repository → use case → route. Standard error envelope.
 6. Web Query hooks; delete that domain from DataManager/context/Zustand server cache.
 7. Mobile Query hooks; delete SQL-bearing service methods for that domain.
-8. Verification: Playwright or RN tests for the happy path + one authz failure.
+8. Verification: `ledgercraft-verify` (tests + live HTTP) then `ledgercraft-verify-ui` for the happy path + one authz failure.
 9. Knowledge sync skill.
 
 ## Feature flag

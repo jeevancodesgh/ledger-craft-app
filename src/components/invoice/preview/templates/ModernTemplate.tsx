@@ -1,7 +1,7 @@
 import React from 'react';
 import { Invoice, BusinessTheme, DEFAULT_BUSINESS_THEME } from '@/types';
 import { Card, CardContent } from "@/components/ui/card";
-import { formatCurrency } from '@/utils/invoiceUtils';
+import { formatCurrency, invoiceDiscountLabel } from '@/utils/invoiceUtils';
 import { useIsMobile } from '@/hooks/use-mobile';
 
 interface ModernTemplateProps {
@@ -212,7 +212,7 @@ const ModernTemplate = ({
           
           {invoice.discount > 0 && (
             <div className="flex justify-between py-1">
-              <span className="font-semibold" style={{ color: theme.text }}>Discount:</span>
+              <span className="font-semibold" style={{ color: theme.text }}>{invoiceDiscountLabel(invoice)}:</span>
               <span style={{ color: theme.accent }}>-{formatCurrency(invoice.discount, invoice.currency)}</span>
             </div>
           )}

@@ -116,6 +116,7 @@ export interface BusinessProfile {
   updatedAt?: string;
   invoiceNumberFormat?: string | null;
   invoiceNumberSequence?: number | null;
+  paymentTermDays?: number;
 }
 
 export interface LineItem {
@@ -175,9 +176,12 @@ export interface Invoice {
   businessProfile?: BusinessProfile;
   date: string;
   dueDate: string;
+  paymentTermDays?: number | null;
   items: LineItem[];
   subtotal: number;
   taxAmount: number;
+  discountType?: 'fixed' | 'percent';
+  discountPercent?: number | null;
   discount?: number | null;
   additionalCharges?: number | null; // Keep for backward compatibility
   additionalChargesList?: AdditionalCharge[]; // New structured charges

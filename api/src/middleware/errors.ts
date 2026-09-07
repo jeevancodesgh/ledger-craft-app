@@ -2,6 +2,7 @@ import { createErrorEnvelope } from '@ledgercraft/contracts';
 import type { ErrorHandler, NotFoundHandler } from 'hono';
 import { HTTPException } from 'hono/http-exception';
 import { ZodError } from 'zod';
+import { errorCodeFromCause } from '../http-error';
 import type { AppEnv } from '../types';
 
 function requestIdFrom(c: { get: (key: 'requestId') => string | undefined }): string {
@@ -20,14 +21,16 @@ export const errorHandler: ErrorHandler<AppEnv> = (error, c) => {
 
   if (error instanceof HTTPException) {
     const status = error.status;
-    const code =
+    const code = errorCodeFromCause(
+      error.cause,
       status === 404
         ? 'NOT_FOUND'
         : status === 401
           ? 'UNAUTHORIZED'
           : status === 403
             ? 'FORBIDDEN'
-            : 'HTTP_ERROR';
+            : 'HTTP_ERROR',
+    );
     return c.json(createErrorEnvelope(code, error.message, requestId), status);
   }
 

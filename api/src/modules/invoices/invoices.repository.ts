@@ -33,8 +33,11 @@ function toDto(
     customerId: row.customerId,
     date: row.date,
     dueDate: row.dueDate,
+    paymentTermDays: row.paymentTermDays ?? null,
     subtotal: roundMoney(Number(row.subtotal)),
     taxAmount: roundMoney(Number(row.taxAmount)),
+    discountType: row.discountType === 'percent' ? 'percent' : 'fixed',
+    discountPercent: row.discountPercent == null ? null : roundMoney(Number(row.discountPercent)),
     discount: row.discount == null ? null : roundMoney(Number(row.discount)),
     additionalCharges:
       row.additionalCharges == null ? null : roundMoney(Number(row.additionalCharges)),
@@ -93,6 +96,7 @@ export async function insertInvoice(
     invoiceNumber: string;
     date: string;
     dueDate: string;
+    paymentTermDays: number | null;
     notes: string | null;
     terms: string | null;
     currency: string;
@@ -110,8 +114,11 @@ export async function insertInvoice(
       customerId: input.customerId,
       date: input.date,
       dueDate: input.dueDate,
+      paymentTermDays: input.paymentTermDays,
       subtotal: input.totals.subtotal,
       taxAmount: input.totals.taxAmount,
+      discountType: input.totals.discountType,
+      discountPercent: input.totals.discountPercent,
       discount: input.totals.discount,
       additionalCharges: input.totals.additionalCharges,
       additionalChargesTotal: input.totals.additionalCharges,
@@ -128,10 +135,74 @@ export async function insertInvoice(
     .returning();
   if (!row) throw new Error('Failed to insert invoice');
 
-  for (const line of input.totals.lines) {
+  await insertLines(tx, ctx.organisationId, row.id, input.totals);
+
+  return (await getInvoice(tx, ctx.organisationId, row.id))!;
+}
+
+export async function replaceInvoiceTotals(
+  tx: Database,
+  organisationId: string,
+  id: string,
+  patch: {
+    date?: string;
+    dueDate?: string;
+    paymentTermDays?: number | null;
+    notes?: string | null;
+    terms?: string | null;
+    totals?: ComputedInvoiceTotals;
+  },
+): Promise<InvoiceDto | undefined> {
+  const existing = await getInvoice(tx, organisationId, id);
+  if (!existing) return undefined;
+
+  const totals = patch.totals;
+  const paid = existing.status === 'paid';
+  await tx
+    .update(invoices)
+    .set({
+      ...(patch.date !== undefined ? { date: patch.date } : {}),
+      ...(patch.dueDate !== undefined ? { dueDate: patch.dueDate } : {}),
+      ...(patch.paymentTermDays !== undefined ? { paymentTermDays: patch.paymentTermDays } : {}),
+      ...(patch.notes !== undefined ? { notes: patch.notes } : {}),
+      ...(patch.terms !== undefined ? { terms: patch.terms } : {}),
+      ...(totals
+        ? {
+            subtotal: totals.subtotal,
+            taxAmount: totals.taxAmount,
+            discountType: totals.discountType,
+            discountPercent: totals.discountPercent,
+            discount: totals.discount,
+            additionalCharges: totals.additionalCharges,
+            additionalChargesTotal: totals.additionalCharges,
+            total: totals.total,
+            taxInclusive: totals.taxInclusive,
+            totalPaid: paid ? totals.total : existing.totalPaid,
+            balanceDue: paid ? '0.00' : totals.total,
+          }
+        : {}),
+      updatedAt: new Date(),
+    })
+    .where(and(eq(invoices.id, id), eq(invoices.organisationId, organisationId)));
+
+  if (totals) {
+    await tx.delete(lineItems).where(eq(lineItems.invoiceId, id));
+    await insertLines(tx, organisationId, id, totals);
+  }
+
+  return getInvoice(tx, organisationId, id);
+}
+
+async function insertLines(
+  tx: Database,
+  organisationId: string,
+  invoiceId: string,
+  totals: ComputedInvoiceTotals,
+): Promise<void> {
+  for (const line of totals.lines) {
     await tx.insert(lineItems).values({
-      organisationId: ctx.organisationId,
-      invoiceId: row.id,
+      organisationId,
+      invoiceId,
       description: line.description,
       quantity: line.quantity,
       unit: line.unit,
@@ -141,8 +212,6 @@ export async function insertInvoice(
       total: line.total,
     });
   }
-
-  return (await getInvoice(tx, ctx.organisationId, row.id))!;
 }
 
 export async function updateInvoiceStatus(

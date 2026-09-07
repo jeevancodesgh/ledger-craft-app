@@ -3,15 +3,18 @@ import {
   type CreateInvoiceRequest,
   type InvoiceDto,
   type InvoiceListResponse,
+  type SendInvoiceRequest,
   type UpdateInvoiceRequest,
 } from '@ledgercraft/contracts';
 import { HTTPException } from 'hono/http-exception';
+import { apiError } from '../../http-error';
 import type { Database } from '../../db/client';
 import { withOrganisationTx } from '../auth/bind-organisation';
 import * as profileRepo from '../business-profile/business-profile.repository';
 import * as customersRepo from '../customers/customers.repository';
 import { postInvoiceJournal } from './invoices.journal';
 import * as invoicesRepo from './invoices.repository';
+import type { InvoiceMailer } from './mailer';
 import { parseMoney } from './money';
 import { computeInvoiceTotals } from './totals';
 
@@ -20,6 +23,12 @@ function formatInvoiceNumber(format: string, sequence: number, date: Date): stri
     .replaceAll('{YYYY}', String(date.getFullYear()))
     .replaceAll('{MM}', String(date.getMonth() + 1).padStart(2, '0'))
     .replaceAll('{SEQ}', String(sequence).padStart(4, '0'));
+}
+
+function assertDueDateNotBeforeInvoiceDate(date: string, dueDate: string): void {
+  if (dueDate < date) {
+    throw apiError(400, 'VALIDATION_ERROR', "Due date can't be before the invoice date");
+  }
 }
 
 export async function listInvoicesForUser(db: Database, userId: string): Promise<InvoiceListResponse> {
@@ -68,6 +77,8 @@ export async function createInvoiceForUser(
       throw new HTTPException(400, { message: 'Set up your business profile first' });
     }
 
+    assertDueDateNotBeforeInvoiceDate(input.date, input.dueDate);
+
     const nextSequence = profile.invoiceNumberSequence ?? 1;
     const invoiceNumber = formatInvoiceNumber(
       profile.invoiceNumberFormat ?? 'INV-{YYYY}-{SEQ}',
@@ -76,17 +87,22 @@ export async function createInvoiceForUser(
     );
     await profileRepo.bumpInvoiceSequence(tx, profile.id, nextSequence + 1);
 
+    const paymentTermDays = input.paymentTermDays ?? profile.paymentTermDays ?? 30;
+    // Client dueDate is authoritative. A mismatch against date + paymentTermDays is an override, not rewritten.
+
     const defaultTaxRate = parseMoney(profile.defaultTaxRate ?? '0');
     const totals = computeInvoiceTotals(input, defaultTaxRate);
+    const status = input.status === 'sent' ? 'draft' : (input.status ?? 'draft');
     const invoice = await invoicesRepo.insertInvoice(tx, ctx, {
       customerId: input.customerId,
       invoiceNumber,
       date: input.date,
       dueDate: input.dueDate,
+      paymentTermDays,
       notes: input.notes ?? null,
       terms: input.terms ?? null,
       currency: input.currency ?? 'NZD',
-      status: input.status ?? 'draft',
+      status,
       totals,
     });
 
@@ -110,13 +126,109 @@ export async function updateInvoiceForUser(
   input: UpdateInvoiceRequest,
 ): Promise<InvoiceDto> {
   return withOrganisationTx(db, userId, async (tx, ctx) => {
-    if (!input.status) {
-      const invoice = await invoicesRepo.getInvoice(tx, ctx.organisationId, id);
-      if (!invoice) throw new HTTPException(404, { message: 'Invoice not found' });
-      return invoice;
+    const existing = await invoicesRepo.getInvoice(tx, ctx.organisationId, id);
+    if (!existing) throw new HTTPException(404, { message: 'Invoice not found' });
+
+    const date = input.date ?? existing.date;
+    const dueDate = input.dueDate ?? existing.dueDate;
+    assertDueDateNotBeforeInvoiceDate(date, dueDate);
+
+    const shouldRecalc =
+      input.items !== undefined ||
+      input.discountType !== undefined ||
+      input.discountPercent !== undefined ||
+      input.discount !== undefined ||
+      input.taxInclusive !== undefined ||
+      input.taxRate !== undefined ||
+      input.additionalCharges !== undefined;
+
+    let totals = undefined;
+    if (shouldRecalc) {
+      const profile = await profileRepo.getBusinessProfile(tx, ctx.organisationId);
+      const defaultTaxRate = parseMoney(profile?.defaultTaxRate ?? '0');
+      const items = input.items ?? existing.items.map((item) => ({
+        description: item.description,
+        quantity: item.quantity,
+        unit: item.unit,
+        rate: item.rate,
+        rateUnit: item.rateUnit,
+      }));
+      totals = computeInvoiceTotals(
+        {
+          items,
+          taxInclusive: input.taxInclusive ?? existing.taxInclusive,
+          taxRate: input.taxRate,
+          discountType: input.discountType ?? existing.discountType,
+          discountPercent: input.discountPercent ?? existing.discountPercent,
+          discount: input.discount ?? existing.discount,
+          additionalCharges: input.additionalCharges ?? existing.additionalCharges,
+        },
+        defaultTaxRate,
+      );
     }
-    const invoice = await invoicesRepo.updateInvoiceStatus(tx, ctx.organisationId, id, input.status);
+
+    const updated = await invoicesRepo.replaceInvoiceTotals(tx, ctx.organisationId, id, {
+      date: input.date,
+      dueDate: input.dueDate,
+      paymentTermDays: input.paymentTermDays,
+      notes: input.notes,
+      terms: input.terms,
+      totals,
+    });
+    if (!updated) throw new HTTPException(404, { message: 'Invoice not found' });
+
+    if (input.status && input.status !== updated.status) {
+      const withStatus = await invoicesRepo.updateInvoiceStatus(tx, ctx.organisationId, id, input.status);
+      if (!withStatus) throw new HTTPException(404, { message: 'Invoice not found' });
+      return withStatus;
+    }
+
+    return updated;
+  });
+}
+
+export async function sendInvoiceForUser(
+  db: Database,
+  userId: string,
+  id: string,
+  input: SendInvoiceRequest,
+  mailer: InvoiceMailer,
+): Promise<InvoiceDto> {
+  const prepared = await withOrganisationTx(db, userId, async (tx, ctx) => {
+    const invoice = await invoicesRepo.getInvoice(tx, ctx.organisationId, id);
     if (!invoice) throw new HTTPException(404, { message: 'Invoice not found' });
-    return invoice;
+    const customer = await customersRepo.getCustomer(tx, ctx.organisationId, invoice.customerId);
+    if (!customer) throw new HTTPException(400, { message: 'Customer not found' });
+
+    const recipients = input.to && input.to.length > 0 ? input.to : [customer.email];
+    const validRecipients = recipients.map((address) => address.trim()).filter((address) => address.length > 0);
+    if (validRecipients.length === 0) {
+      throw apiError(400, 'customer_email_required', 'Add an email to this customer');
+    }
+
+    return { invoice, recipients: validRecipients };
+  });
+
+  // Mail is after the create/update transaction. Status becomes sent only if the mailer accepts.
+  try {
+    await mailer.sendInvoice({
+      invoiceId: prepared.invoice.id,
+      invoiceNumber: prepared.invoice.invoiceNumber,
+      to: prepared.recipients,
+    });
+  } catch {
+    if (prepared.invoice.status !== 'sent') {
+      throw apiError(502, 'email_failed', 'Failed to send invoice email');
+    }
+    throw apiError(502, 'email_failed', 'Failed to resend invoice email');
+  }
+
+  return withOrganisationTx(db, userId, async (tx, ctx) => {
+    if (prepared.invoice.status === 'sent') {
+      return prepared.invoice;
+    }
+    const sent = await invoicesRepo.updateInvoiceStatus(tx, ctx.organisationId, id, 'sent');
+    if (!sent) throw new HTTPException(404, { message: 'Invoice not found' });
+    return sent;
   });
 }

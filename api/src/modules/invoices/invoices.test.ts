@@ -1,10 +1,11 @@
 import { errorEnvelopeSchema, invoiceSchema } from '@ledgercraft/contracts';
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import { createApp } from '../../app';
 import { createDb } from '../../db/client';
 import { getDatabaseUrl } from '../../env';
 import { createAuth } from '../auth/auth';
 import { assertLocalDatabaseReachable, withTestDb } from '../../test/harness';
+import type { InvoiceMailer } from './mailer';
 
 function cookieHeader(response: Response): string {
   const cookies = response.headers.getSetCookie();
@@ -93,6 +94,283 @@ describe('invoice routes', () => {
           headers: { Cookie: ownerB.cookie },
         });
         expect(leaked.status).toBe(404);
+      } finally {
+        await sql.end({ timeout: 5 });
+      }
+    });
+  });
+
+  it('copies profile payment terms and keeps an overridden due date', async () => {
+    await assertLocalDatabaseReachable();
+    await withTestDb(async () => {
+      const { db, sql } = createDb(getDatabaseUrl());
+      try {
+        const auth = createAuth(db);
+        const app = createApp({ auth, db, checkDatabase: async () => true });
+        const owner = await signUp(app, 'Owner Terms');
+        const customer = await seedCustomerAndProfile(app, owner.cookie);
+
+        const created = await app.request('/api/invoices', {
+          method: 'POST',
+          headers: { ...originHeaders, Cookie: owner.cookie },
+          body: JSON.stringify({
+            customerId: customer.id,
+            date: '2026-09-08',
+            dueDate: '2026-10-08',
+            taxInclusive: false,
+            taxRate: '15',
+            items: [{ description: 'Brand identity', quantity: '1', rate: '4500' }],
+          }),
+        });
+        expect(created.status).toBe(201);
+        const invoice = invoiceSchema.parse(await created.json());
+        expect(invoice.paymentTermDays).toBe(30);
+        expect(invoice.dueDate).toBe('2026-10-08');
+
+        const dueOnReceipt = await app.request('/api/invoices', {
+          method: 'POST',
+          headers: { ...originHeaders, Cookie: owner.cookie },
+          body: JSON.stringify({
+            customerId: customer.id,
+            date: '2026-09-08',
+            dueDate: '2026-09-08',
+            paymentTermDays: 0,
+            taxInclusive: false,
+            taxRate: '15',
+            items: [{ description: 'Same-day work', quantity: '1', rate: '100' }],
+          }),
+        });
+        expect(dueOnReceipt.status).toBe(201);
+        expect(invoiceSchema.parse(await dueOnReceipt.json()).dueDate).toBe('2026-09-08');
+
+        const override = await app.request('/api/invoices', {
+          method: 'POST',
+          headers: { ...originHeaders, Cookie: owner.cookie },
+          body: JSON.stringify({
+            customerId: customer.id,
+            date: '2026-09-08',
+            dueDate: '2026-11-01',
+            paymentTermDays: 30,
+            taxInclusive: false,
+            taxRate: '15',
+            items: [{ description: 'Custom due', quantity: '1', rate: '100' }],
+          }),
+        });
+        const overridden = invoiceSchema.parse(await override.json());
+        expect(overridden.dueDate).toBe('2026-11-01');
+        expect(overridden.paymentTermDays).toBe(30);
+
+        const savedTerms = await app.request('/api/business-profile', {
+          method: 'PUT',
+          headers: { ...originHeaders, Cookie: owner.cookie },
+          body: JSON.stringify({
+            name: 'Kauri Studio Ltd',
+            email: 'hello@kauristudio.nz',
+            country: 'NZ',
+            defaultTaxRate: '15',
+            paymentTermDays: 14,
+          }),
+        });
+        expect(savedTerms.status).toBe(200);
+        const next = await app.request('/api/invoices', {
+          method: 'POST',
+          headers: { ...originHeaders, Cookie: owner.cookie },
+          body: JSON.stringify({
+            customerId: customer.id,
+            date: '2026-09-08',
+            dueDate: '2026-09-22',
+            taxInclusive: false,
+            taxRate: '15',
+            items: [{ description: 'Fourteen', quantity: '1', rate: '100' }],
+          }),
+        });
+        expect(invoiceSchema.parse(await next.json()).paymentTermDays).toBe(14);
+
+        const patched = await app.request(`/api/invoices/${invoice.id}`, {
+          method: 'PATCH',
+          headers: { ...originHeaders, Cookie: owner.cookie },
+          body: JSON.stringify({ paymentTermDays: 60, dueDate: '2026-11-07' }),
+        });
+        expect(invoiceSchema.parse(await patched.json()).paymentTermDays).toBe(60);
+      } finally {
+        await sql.end({ timeout: 5 });
+      }
+    });
+  });
+
+  it('computes percent and fixed discounts on the server and recalculates on edit', async () => {
+    await assertLocalDatabaseReachable();
+    await withTestDb(async () => {
+      const { db, sql } = createDb(getDatabaseUrl());
+      try {
+        const auth = createAuth(db);
+        const app = createApp({ auth, db, checkDatabase: async () => true });
+        const owner = await signUp(app, 'Owner Discount');
+        const customer = await seedCustomerAndProfile(app, owner.cookie);
+
+        const percent = await app.request('/api/invoices', {
+          method: 'POST',
+          headers: { ...originHeaders, Cookie: owner.cookie },
+          body: JSON.stringify({
+            customerId: customer.id,
+            date: '2026-09-08',
+            dueDate: '2026-10-08',
+            taxInclusive: false,
+            taxRate: '15',
+            discountType: 'percent',
+            discountPercent: '10',
+            discount: '999',
+            items: [{ description: 'Consulting', quantity: '1', rate: '1000' }],
+          }),
+        });
+        expect(percent.status).toBe(201);
+        const percentInvoice = invoiceSchema.parse(await percent.json());
+        expect(percentInvoice.discountType).toBe('percent');
+        expect(percentInvoice.discountPercent).toBe('10.00');
+        expect(percentInvoice.discount).toBe('100.00');
+        expect(percentInvoice.taxAmount).toBe('135.00');
+        expect(percentInvoice.total).toBe('1035.00');
+
+        const edited = await app.request(`/api/invoices/${percentInvoice.id}`, {
+          method: 'PATCH',
+          headers: { ...originHeaders, Cookie: owner.cookie },
+          body: JSON.stringify({
+            discountType: 'percent',
+            discountPercent: '10',
+            items: [{ description: 'Consulting', quantity: '2', rate: '1000' }],
+          }),
+        });
+        const editedInvoice = invoiceSchema.parse(await edited.json());
+        expect(editedInvoice.discount).toBe('200.00');
+        expect(editedInvoice.taxAmount).toBe('270.00');
+
+        const tooMuch = await app.request('/api/invoices', {
+          method: 'POST',
+          headers: { ...originHeaders, Cookie: owner.cookie },
+          body: JSON.stringify({
+            customerId: customer.id,
+            date: '2026-09-08',
+            dueDate: '2026-10-08',
+            taxInclusive: false,
+            taxRate: '15',
+            discountType: 'fixed',
+            discount: '1000.01',
+            items: [{ description: 'Consulting', quantity: '1', rate: '1000' }],
+          }),
+        });
+        expect(tooMuch.status).toBe(400);
+        expect(errorEnvelopeSchema.parse(await tooMuch.json()).error.message).toMatch(/subtotal/i);
+      } finally {
+        await sql.end({ timeout: 5 });
+      }
+    });
+  });
+
+  it('saves drafts without mail and sends only after the mailer accepts', async () => {
+    await assertLocalDatabaseReachable();
+    await withTestDb(async () => {
+      const { db, sql } = createDb(getDatabaseUrl());
+      try {
+        const auth = createAuth(db);
+        const mailer: InvoiceMailer = {
+          sendInvoice: vi.fn().mockResolvedValue(undefined),
+        };
+        const app = createApp({ auth, db, checkDatabase: async () => true, invoiceMailer: mailer });
+        const owner = await signUp(app, 'Owner Send');
+        const customer = await seedCustomerAndProfile(app, owner.cookie);
+
+        const draft = await app.request('/api/invoices', {
+          method: 'POST',
+          headers: { ...originHeaders, Cookie: owner.cookie },
+          body: JSON.stringify({
+            customerId: customer.id,
+            date: '2026-09-08',
+            dueDate: '2026-10-08',
+            taxInclusive: false,
+            taxRate: '15',
+            items: [{ description: 'Brand identity', quantity: '1', rate: '4500' }],
+          }),
+        });
+        const draftInvoice = invoiceSchema.parse(await draft.json());
+        expect(draftInvoice.status).toBe('draft');
+        expect(mailer.sendInvoice).not.toHaveBeenCalled();
+
+        const sent = await app.request(`/api/invoices/${draftInvoice.id}/send`, {
+          method: 'POST',
+          headers: { ...originHeaders, Cookie: owner.cookie },
+          body: JSON.stringify({}),
+        });
+        expect(sent.status).toBe(200);
+        const sentInvoice = invoiceSchema.parse(await sent.json());
+        expect(sentInvoice.status).toBe('sent');
+        expect(mailer.sendInvoice).toHaveBeenCalledTimes(1);
+        expect(vi.mocked(mailer.sendInvoice).mock.calls[0][0].to).toEqual(['hello@nhcafe.nz']);
+        expect(vi.mocked(mailer.sendInvoice).mock.calls[0][0].invoiceNumber).toBe(draftInvoice.invoiceNumber);
+
+        const resend = await app.request(`/api/invoices/${draftInvoice.id}/send`, {
+          method: 'POST',
+          headers: { ...originHeaders, Cookie: owner.cookie },
+          body: JSON.stringify({}),
+        });
+        expect(resend.status).toBe(200);
+        expect(mailer.sendInvoice).toHaveBeenCalledTimes(2);
+
+        const failingMailer: InvoiceMailer = {
+          sendInvoice: vi.fn().mockRejectedValue(new Error('smtp down')),
+        };
+        const failingApp = createApp({ auth, db, checkDatabase: async () => true, invoiceMailer: failingMailer });
+        const failingDraft = await failingApp.request('/api/invoices', {
+          method: 'POST',
+          headers: { ...originHeaders, Cookie: owner.cookie },
+          body: JSON.stringify({
+            customerId: customer.id,
+            date: '2026-09-08',
+            dueDate: '2026-10-08',
+            taxInclusive: false,
+            taxRate: '15',
+            items: [{ description: 'Unsent', quantity: '1', rate: '10' }],
+          }),
+        });
+        const failingInvoice = invoiceSchema.parse(await failingDraft.json());
+        const failed = await failingApp.request(`/api/invoices/${failingInvoice.id}/send`, {
+          method: 'POST',
+          headers: { ...originHeaders, Cookie: owner.cookie },
+          body: JSON.stringify({}),
+        });
+        expect(failed.status).toBe(502);
+        expect(errorEnvelopeSchema.parse(await failed.json()).error.code).toBe('email_failed');
+        const stillDraft = await failingApp.request(`/api/invoices/${failingInvoice.id}`, {
+          headers: { Cookie: owner.cookie },
+        });
+        expect(invoiceSchema.parse(await stillDraft.json()).status).toBe('draft');
+
+        const noEmailCustomer = await app.request('/api/customers', {
+          method: 'POST',
+          headers: { ...originHeaders, Cookie: owner.cookie },
+          body: JSON.stringify({ name: 'No Email Ltd', email: '', country: 'NZ' }),
+        });
+        const noEmail = (await noEmailCustomer.json()) as { id: string };
+        const noEmailDraft = await app.request('/api/invoices', {
+          method: 'POST',
+          headers: { ...originHeaders, Cookie: owner.cookie },
+          body: JSON.stringify({
+            customerId: noEmail.id,
+            date: '2026-09-08',
+            dueDate: '2026-10-08',
+            taxInclusive: false,
+            taxRate: '15',
+            items: [{ description: 'Mute', quantity: '1', rate: '10' }],
+          }),
+        });
+        const muteInvoice = invoiceSchema.parse(await noEmailDraft.json());
+        const blocked = await app.request(`/api/invoices/${muteInvoice.id}/send`, {
+          method: 'POST',
+          headers: { ...originHeaders, Cookie: owner.cookie },
+          body: JSON.stringify({}),
+        });
+        expect(blocked.status).toBe(400);
+        expect(errorEnvelopeSchema.parse(await blocked.json()).error.code).toBe('customer_email_required');
+        expect(mailer.sendInvoice).toHaveBeenCalledTimes(2);
       } finally {
         await sql.end({ timeout: 5 });
       }

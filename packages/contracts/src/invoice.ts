@@ -1,6 +1,8 @@
 import { z } from 'zod';
 
 const money = z.string().regex(/^-?\d+(\.\d+)?$/);
+const paymentTermDays = z.number().int().min(0).max(365);
+const discountType = z.enum(['fixed', 'percent']);
 
 export const invoiceLineInputSchema = z
   .object({
@@ -12,6 +14,29 @@ export const invoiceLineInputSchema = z
   })
   .strict();
 
+function refineDiscount(
+  value: { discountType?: 'fixed' | 'percent'; discountPercent?: string | null; discount?: string | null },
+  ctx: z.RefinementCtx,
+) {
+  if (value.discountType !== 'percent') return;
+  if (value.discountPercent == null || value.discountPercent === '') {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      message: 'Enter a discount between 0 and 100%',
+      path: ['discountPercent'],
+    });
+    return;
+  }
+  const percent = Number(value.discountPercent);
+  if (!Number.isFinite(percent) || percent < 0 || percent > 100) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      message: 'Enter a discount between 0 and 100%',
+      path: ['discountPercent'],
+    });
+  }
+}
+
 export const createInvoiceRequestSchema = z
   .object({
     customerId: z.string().uuid(),
@@ -22,18 +47,39 @@ export const createInvoiceRequestSchema = z
     currency: z.string().min(1).optional(),
     taxInclusive: z.boolean().optional(),
     taxRate: money.nullable().optional(),
+    paymentTermDays: paymentTermDays.optional(),
+    discountType: discountType.optional(),
+    discountPercent: money.nullable().optional(),
     discount: money.nullable().optional(),
     additionalCharges: money.nullable().optional(),
     status: z.enum(['draft', 'sent', 'paid', 'overdue']).optional(),
     items: z.array(invoiceLineInputSchema).min(1),
   })
-  .strict();
+  .strict()
+  .superRefine(refineDiscount);
 
 export const updateInvoiceRequestSchema = z
   .object({
     status: z.enum(['draft', 'sent', 'paid', 'overdue']).optional(),
     notes: z.string().nullable().optional(),
     terms: z.string().nullable().optional(),
+    date: z.string().min(1).optional(),
+    dueDate: z.string().min(1).optional(),
+    paymentTermDays: paymentTermDays.nullable().optional(),
+    discountType: discountType.optional(),
+    discountPercent: money.nullable().optional(),
+    discount: money.nullable().optional(),
+    taxInclusive: z.boolean().optional(),
+    taxRate: money.nullable().optional(),
+    additionalCharges: money.nullable().optional(),
+    items: z.array(invoiceLineInputSchema).min(1).optional(),
+  })
+  .strict()
+  .superRefine(refineDiscount);
+
+export const sendInvoiceRequestSchema = z
+  .object({
+    to: z.array(z.string().email()).max(5).optional(),
   })
   .strict();
 
@@ -54,8 +100,11 @@ export const invoiceSchema = z.object({
   customerId: z.string().uuid(),
   date: z.string().min(1),
   dueDate: z.string().min(1),
+  paymentTermDays: paymentTermDays.nullable(),
   subtotal: money,
   taxAmount: money,
+  discountType: discountType,
+  discountPercent: money.nullable(),
   discount: money.nullable(),
   additionalCharges: money.nullable(),
   total: money,
@@ -83,6 +132,7 @@ export const invoiceListResponseSchema = z.object({
 
 export type CreateInvoiceRequest = z.infer<typeof createInvoiceRequestSchema>;
 export type UpdateInvoiceRequest = z.infer<typeof updateInvoiceRequestSchema>;
+export type SendInvoiceRequest = z.infer<typeof sendInvoiceRequestSchema>;
 export type InvoiceDto = z.infer<typeof invoiceSchema>;
 export type InvoiceListResponse = z.infer<typeof invoiceListResponseSchema>;
 export type NextInvoiceNumberResponse = z.infer<typeof nextInvoiceNumberResponseSchema>;

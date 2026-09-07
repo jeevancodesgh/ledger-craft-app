@@ -23,6 +23,7 @@ function toDto(row: typeof businessProfiles.$inferSelect): BusinessProfileDto {
     website: row.website ?? null,
     defaultTaxRate: row.defaultTaxRate ?? null,
     defaultTerms: row.defaultTerms ?? null,
+    paymentTermDays: row.paymentTermDays,
     defaultNotes: row.defaultNotes ?? null,
     bankInfo: row.bankInfo ?? null,
     theme: row.theme ?? null,
@@ -70,6 +71,7 @@ export async function upsertBusinessProfile(
   if (input.website !== undefined) values.website = input.website;
   if (input.defaultTaxRate !== undefined) values.defaultTaxRate = input.defaultTaxRate;
   if (input.defaultTerms !== undefined) values.defaultTerms = input.defaultTerms;
+  if (input.paymentTermDays !== undefined) values.paymentTermDays = input.paymentTermDays;
   if (input.defaultNotes !== undefined) values.defaultNotes = input.defaultNotes;
   if (input.bankInfo !== undefined) values.bankInfo = input.bankInfo;
   if (input.theme !== undefined) values.theme = input.theme;
@@ -104,6 +106,7 @@ export async function upsertBusinessProfile(
       website: input.website ?? null,
       defaultTaxRate: input.defaultTaxRate ?? null,
       defaultTerms: input.defaultTerms ?? null,
+      paymentTermDays: input.paymentTermDays ?? 30,
       defaultNotes: input.defaultNotes ?? null,
       bankInfo: input.bankInfo ?? null,
       theme: input.theme ?? null,

@@ -1,7 +1,7 @@
 import React from 'react';
 import { Invoice, BusinessTheme, DEFAULT_BUSINESS_THEME } from '@/types';
 import { Card, CardContent } from "@/components/ui/card";
-import { formatCurrency } from '@/utils/invoiceUtils';
+import { formatCurrency, invoiceDiscountLabel } from '@/utils/invoiceUtils';
 import { useIsMobile } from '@/hooks/use-mobile';
 
 interface MinimalTemplateProps {
@@ -169,7 +169,7 @@ const MinimalTemplate = ({
               
               {invoice.discount && invoice.discount > 0 && (
                 <div className="flex justify-between w-36 sm:w-48">
-                  <span className="text-xs sm:text-sm" style={{ color: theme.textLight }}>Discount</span>
+                  <span className="text-xs sm:text-sm" style={{ color: theme.textLight }}>{invoiceDiscountLabel(invoice)}</span>
                   <span className="text-xs sm:text-sm" style={{ color: theme.accent }}>-{formatCurrency(invoice.discount, invoice.currency)}</span>
                 </div>
               )}

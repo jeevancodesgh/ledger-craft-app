@@ -42,6 +42,8 @@ No production code for a slice until a failing test exists for that slice.
 
 ## Verify commands
 
+After the tests are green, prove the feature with `.cursor/skills/ledgercraft-verify/SKILL.md` (UI/PDF: `ledgercraft-verify-ui`).
+
 ```bash
 pnpm install
 pnpm db:up

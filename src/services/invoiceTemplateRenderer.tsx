@@ -1,6 +1,7 @@
 import React from 'react';
 import { createRoot } from 'react-dom/client';
 import { Invoice, BusinessProfile, DEFAULT_BUSINESS_THEME } from '@/types';
+import { invoiceDisplayTaxRate } from '@/utils/invoiceUtils';
 import { InvoiceTemplateId } from '../components/invoice/templates/InvoiceTemplates';
 import ClassicTemplate from '../components/invoice/preview/templates/ClassicTemplate';
 import ModernTemplate from '../components/invoice/preview/templates/ModernTemplate';
@@ -42,7 +43,7 @@ export const createTemplateData = (invoice: Invoice, businessProfile?: BusinessP
       invoice.customer?.zip,
       invoice.customer?.country
     ].filter(Boolean).join(', ') || '',
-    taxRate: invoice.subtotal > 0 ? ((invoice.taxAmount / invoice.subtotal) * 100).toFixed(2) : '0',
+    taxRate: invoiceDisplayTaxRate(invoice),
     tax: invoice.taxAmount,
     businessLogo: businessProfile?.logoUrl || '',
     theme: businessProfile?.theme || DEFAULT_BUSINESS_THEME,

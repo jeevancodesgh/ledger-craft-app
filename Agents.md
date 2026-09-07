@@ -10,7 +10,7 @@ This document provides comprehensive guidance for AI agents (LLMs) working on th
 | --- | --- |
 | Spec | `TARGET_ARCHITECTURE.md` — end state and gates. Not optional. |
 | Live DB | Hosted `public` is empty (2026-09-03). Greenfield. Do not replay Git SQL. No UUID import. |
-| Now | W1–W4 **verified**. Web has Hono customers, business profile, items, and invoices (GST totals). Remaining W5 gates: idempotency + share tokens. |
+| Now | W1–W4 **verified**. Web invoices: Hono create/list/status/send, payment terms, percent/fixed discount, server GST. Remaining W5 gates: idempotency + share tokens. |
 | Blocked | None for remaining W5 invoice gates. |
 | Clients | Web login is Better Auth. Invoices still `supabase-js`. No new client SQL, Storage SDK, Edge Functions, or `VITE_OPENAI_*`. |
 | Ports | Postgres **55432**, API **3001**, Vite **8080** (`/api` proxy). |
@@ -23,6 +23,8 @@ This document provides comprehensive guidance for AI agents (LLMs) working on th
 | `.cursor/skills/ledgercraft-bootstrap/SKILL.md` | Every session |
 | `.cursor/skills/ledgercraft-architecture/SKILL.md` | API / DB / auth / providers |
 | `.cursor/skills/ledgercraft-tdd/SKILL.md` | Tests and implementation order |
+| `.cursor/skills/ledgercraft-verify/SKILL.md` | Prove a feature/wave works |
+| `.cursor/skills/ledgercraft-verify-ui/SKILL.md` | Browser, screenshots, invoice PDF |
 | `.cursor/skills/ledgercraft-schema-rebuild/SKILL.md` | Schema from app types |
 | `.cursor/skills/ledgercraft-vertical-slice/SKILL.md` | One domain onto Hono |
 | `.cursor/skills/ledgercraft-agent-roster/SKILL.md` | Task subagent prompts |
@@ -1065,7 +1067,7 @@ Parent chat is Orchestrator. Launch specialists with Task `generalPurpose` using
 | Auth | Better Auth, memberships, sessions |
 | Web | `src/` Query hooks and UI |
 | Mobile | `mobile/` Query hooks and screens |
-| Verification | Vitest, RLS tests, Playwright, RN tests |
+| Verification | Vitest, RLS tests, Playwright, RN tests, live smoke (`ledgercraft-verify`) |
 
 **Waves:** W0 knowledge (done) → W1 platform scaffolding (**verified**) → W2 compatibility schema (**verified**) → W3 identity (**verified**) → W4 customers (**verified**) → W5 invoices (gate, **next**) → W6 payments/expenses/accounts → W7 bank/recon/tax → W8 storage/email/AI → W9 client consolidation.
 
@@ -1151,7 +1153,7 @@ Customers CRUD through Hono, scoped to the session organisation. Ownership IDs c
 
 ### W5 status (invoices — in progress)
 
-Web invoice create/list/status is Hono: sequence lock, line items, server GST totals, balanced journal. Client-supplied totals are rejected. Cross-org get is 404. Remaining gates: idempotency key replay, share tokens. Mobile invoices still `supabase-js`.
+Web invoice create/list/status/send is Hono: sequence lock, line items, server GST totals, balanced journal, payment terms, percent or fixed discount. `POST /api/invoices` stays `draft`. `POST /api/invoices/:id/send` emails then sets `sent` (mailer injected; default logs). Client-supplied totals are rejected. Cross-org get is 404. Remaining gates: idempotency key replay, share tokens. Mobile invoices still `supabase-js`.
 
 ### Hard no (still)
 
@@ -1172,6 +1174,6 @@ Web invoice create/list/status is Hono: sequence lock, line items, server GST to
 
 ---
 
-**Last Updated**: 2026-09-07
-**Version**: 1.4.0
+**Last Updated**: 2026-09-08
+**Version**: 1.4.1
 

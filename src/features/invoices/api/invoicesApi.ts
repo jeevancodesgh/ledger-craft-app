@@ -1,4 +1,4 @@
-import type { CreateInvoiceRequest, InvoiceDto, UpdateInvoiceRequest } from '@ledgercraft/contracts';
+import type { CreateInvoiceRequest, InvoiceDto, SendInvoiceRequest, UpdateInvoiceRequest } from '@ledgercraft/contracts';
 import type { Invoice, LineItem } from '@/types';
 
 export function invoicesApiEnabled(): boolean {
@@ -9,6 +9,7 @@ export class InvoicesApiError extends Error {
   constructor(
     message: string,
     readonly status: number,
+    readonly code?: string,
   ) {
     super(message);
     this.name = 'InvoicesApiError';
@@ -56,9 +57,12 @@ function toInvoice(dto: InvoiceDto): Invoice {
       : undefined,
     date: dto.date,
     dueDate: dto.dueDate,
+    paymentTermDays: dto.paymentTermDays,
     items: dto.items.map(toLine),
     subtotal: Number(dto.subtotal),
     taxAmount: Number(dto.taxAmount),
+    discountType: dto.discountType,
+    discountPercent: dto.discountPercent == null ? null : Number(dto.discountPercent),
     discount: dto.discount == null ? null : Number(dto.discount),
     additionalCharges: dto.additionalCharges == null ? null : Number(dto.additionalCharges),
     total: Number(dto.total),
@@ -75,9 +79,10 @@ export function toCreateInvoiceRequest(
   invoice: Omit<Invoice, 'id' | 'createdAt' | 'updatedAt'>,
   lineItems: Array<Pick<LineItem, 'description' | 'quantity' | 'unit' | 'rate' | 'rateUnit'>>,
 ): CreateInvoiceRequest {
+  const taxableBase = Number(invoice.subtotal) - Number(invoice.discount ?? 0);
   const taxRate =
-    invoice.taxAmount && invoice.subtotal
-      ? String(Math.round((invoice.taxAmount / invoice.subtotal) * 10000) / 100)
+    invoice.taxAmount && taxableBase > 0
+      ? String(Math.round((invoice.taxAmount / taxableBase) * 10000) / 100)
       : '0';
   return {
     customerId: invoice.customerId,
@@ -88,6 +93,9 @@ export function toCreateInvoiceRequest(
     currency: invoice.currency || 'NZD',
     taxInclusive: false,
     taxRate,
+    paymentTermDays: invoice.paymentTermDays ?? undefined,
+    discountType: invoice.discountType,
+    discountPercent: money(invoice.discountPercent),
     discount: money(invoice.discount),
     additionalCharges: money(invoice.additionalCharges),
     status: invoice.status,
@@ -101,12 +109,12 @@ export function toCreateInvoiceRequest(
   };
 }
 
-async function parseError(response: Response): Promise<string> {
+async function parseError(response: Response): Promise<{ message: string; code?: string }> {
   try {
-    const body = (await response.json()) as { error?: { message?: string } };
-    return body.error?.message ?? response.statusText;
+    const body = (await response.json()) as { error?: { message?: string; code?: string } };
+    return { message: body.error?.message ?? response.statusText, code: body.error?.code };
   } catch {
-    return response.statusText;
+    return { message: response.statusText };
   }
 }
 
@@ -121,7 +129,8 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
   });
   if (response.status === 204) return undefined as T;
   if (!response.ok) {
-    throw new InvoicesApiError(await parseError(response), response.status);
+    const parsed = await parseError(response);
+    throw new InvoicesApiError(parsed.message, response.status, parsed.code);
   }
   return (await response.json()) as T;
 }
@@ -157,6 +166,49 @@ export const invoicesApi = {
     return toInvoice(
       await request<InvoiceDto>(`/api/invoices/${id}`, {
         method: 'PATCH',
+        body: JSON.stringify(input),
+      }),
+    );
+  },
+
+  async update(
+    id: string,
+    invoice: Partial<Omit<Invoice, 'id' | 'createdAt' | 'updatedAt'>>,
+    lineItems?: Array<Pick<LineItem, 'description' | 'quantity' | 'unit' | 'rate' | 'rateUnit'>>,
+  ): Promise<Invoice> {
+    const input: UpdateInvoiceRequest = {
+      notes: invoice.notes,
+      terms: invoice.terms,
+      date: invoice.date,
+      dueDate: invoice.dueDate,
+      paymentTermDays: invoice.paymentTermDays,
+      discountType: invoice.discountType,
+      discountPercent: money(invoice.discountPercent),
+      discount: money(invoice.discount),
+      additionalCharges: money(invoice.additionalCharges),
+      status: invoice.status,
+      items: lineItems && lineItems.length > 0
+        ? lineItems.map((item) => ({
+            description: item.description,
+            quantity: String(item.quantity),
+            unit: item.unit || 'ea',
+            rate: String(item.rate),
+            rateUnit: item.rateUnit || item.unit || 'ea',
+          }))
+        : undefined,
+    };
+    return toInvoice(
+      await request<InvoiceDto>(`/api/invoices/${id}`, {
+        method: 'PATCH',
+        body: JSON.stringify(input),
+      }),
+    );
+  },
+
+  async send(id: string, input: SendInvoiceRequest = {}): Promise<Invoice> {
+    return toInvoice(
+      await request<InvoiceDto>(`/api/invoices/${id}/send`, {
+        method: 'POST',
         body: JSON.stringify(input),
       }),
     );

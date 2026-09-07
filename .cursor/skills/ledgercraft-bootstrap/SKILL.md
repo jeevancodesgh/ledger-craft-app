@@ -19,7 +19,7 @@ Read this before writing code. Then follow the named skill for the wave you are 
 | W3 | **Verified (2026-09-05).** `pnpm verify:w3` green. Better Auth email/password, `/api/me` binds org. Clients stay on Supabase Auth. |
 | W4 | **Verified (2026-09-07).** `pnpm verify:w4` green. Customers CRUD via Hono. |
 | Git | `origin/mobile-app` includes W4 customers. Working tree also has web Better Auth plus Hono business-profile / items / invoices. |
-| Clients | Web login/signup → Better Auth. Web customers, business profile, items, invoices → Hono. Mobile still Supabase Auth. Full W5 invoice gates (idempotency, share tokens) are open. |
+| Clients | Web login/signup → Better Auth. Web customers, business profile, items, invoices → Hono (payment terms, percent/fixed discount, Save draft / Send). Mobile still Supabase Auth. Full W5 invoice gates (idempotency, share tokens) are open. |
 
 ## Pickup
 
@@ -81,6 +81,8 @@ Do not move `src/` → `apps/web` or `mobile/` → `apps/mobile` until every pro
 | --- | --- |
 | `ledgercraft-architecture` | Any API, DB, auth, storage, email, AI |
 | `ledgercraft-tdd` | Implementing or testing a slice |
+| `ledgercraft-verify` | Prove a feature/wave works (tests + live HTTP) |
+| `ledgercraft-verify-ui` | Browser clicks, screenshots, invoice PDF |
 | `ledgercraft-schema-rebuild` | Tables, Drizzle, RLS, compatibility schema |
 | `ledgercraft-vertical-slice` | Cutting over one domain to Hono |
 | `ledgercraft-agent-roster` | Launching Task subagents |

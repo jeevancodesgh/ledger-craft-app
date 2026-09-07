@@ -21,7 +21,7 @@ Launch specialists with Task `subagent_type: generalPurpose` (explore for invent
 | Auth | architecture, tdd | Better Auth, memberships, Expo/web session config | Invoice math, styling |
 | Web | architecture, tdd, vertical-slice, project-guide UI | `src/` Query hooks and UI | Drizzle, mobile native |
 | Mobile | architecture, tdd, vertical-slice | `mobile/` | Web router, API SQL |
-| Verification | tdd, architecture | Tests only; may add tests in module folders | Shipping implementation without a failing test first |
+| Verification | tdd, verify, verify-ui, architecture | Tests, live smoke, UI/PDF evidence | Shipping implementation without a failing test first; Playwright against hosted empty Supabase |
 
 ## Prompt template
 

@@ -17,6 +17,7 @@ describe('business profile contracts', () => {
     website: null,
     defaultTaxRate: '15.0000',
     defaultTerms: null,
+    paymentTermDays: 30,
     defaultNotes: null,
     bankInfo: null,
     theme: null,
@@ -38,5 +39,14 @@ describe('business profile contracts', () => {
       userId: 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa',
     });
     expect(result.success).toBe(false);
+  });
+
+  it('accepts paymentTermDays on upsert', () => {
+    const parsed = upsertBusinessProfileRequestSchema.parse({
+      name: 'Kauri Studio Ltd',
+      email: 'hello@kauristudio.nz',
+      paymentTermDays: 14,
+    });
+    expect(parsed.paymentTermDays).toBe(14);
   });
 });

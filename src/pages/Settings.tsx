@@ -8,11 +8,13 @@ import { z } from 'zod';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { BusinessProfile, BusinessTheme, DEFAULT_BUSINESS_THEME } from '@/types';
 import { useToast } from '@/hooks/use-toast';
 import { Loader2, Upload } from 'lucide-react';
 import ThemePicker from '@/components/business/ThemePicker';
 import { PageHeader } from '@/components/layout/PageHeader';
+import { PAYMENT_TERM_PRESETS, paymentTermCodeFromDays } from '@/features/invoices/paymentTerms';
 
 const profileFormSchema = z.object({
   name: z.string().min(1, { message: "Business name is required" }),
@@ -27,6 +29,7 @@ const profileFormSchema = z.object({
   zip: z.string().optional(),
   country: z.string().default('New Zealand'),
   defaultTerms: z.string().optional(),
+  paymentTermDays: z.number().int().min(0).max(365).default(30),
   defaultNotes: z.string().optional(),
   invoiceNumberFormat: z.string().min(2, { message: "Format required" }).optional(),
   invoiceNumberSequence: z.number().optional(),
@@ -58,6 +61,7 @@ const Settings = () => {
       zip: businessProfile?.zip || '',
       country: businessProfile?.country || 'New Zealand',
       defaultTerms: businessProfile?.defaultTerms || '',
+      paymentTermDays: businessProfile?.paymentTermDays ?? 30,
       defaultNotes: businessProfile?.defaultNotes || '',
       invoiceNumberFormat: businessProfile?.invoiceNumberFormat || 'INV-{YYYY}-{SEQ}',
       invoiceNumberSequence: businessProfile?.invoiceNumberSequence ?? 1,
@@ -86,6 +90,7 @@ const Settings = () => {
         zip: businessProfile.zip || '',
         country: businessProfile.country || 'New Zealand',
         defaultTerms: businessProfile.defaultTerms || '',
+        paymentTermDays: businessProfile.paymentTermDays ?? 30,
         defaultNotes: businessProfile.defaultNotes || '',
         invoiceNumberFormat: businessProfile.invoiceNumberFormat || 'INV-{YYYY}-{SEQ}',
         invoiceNumberSequence: businessProfile.invoiceNumberSequence ?? 1,
@@ -124,6 +129,7 @@ const Settings = () => {
         state: data.state || null,
         zip: data.zip || null,
         defaultTerms: data.defaultTerms || null,
+        paymentTermDays: data.paymentTermDays ?? 30,
         defaultNotes: data.defaultNotes || null,
         id: businessProfile?.id,
         invoiceNumberFormat: data.invoiceNumberFormat?.trim() || 'INV-{YYYY}-{SEQ}',
@@ -428,6 +434,58 @@ const Settings = () => {
                 </CardHeader>
                 <CardContent>
                   <div className="space-y-4">
+                    <FormField
+                      control={form.control}
+                      name="paymentTermDays"
+                      render={({ field }) => {
+                        const code = paymentTermCodeFromDays(field.value ?? 30);
+                        return (
+                          <FormItem className="space-y-2">
+                            <FormLabel>Payment terms</FormLabel>
+                            <Select
+                              value={code}
+                              onValueChange={(value) => {
+                                if (value === 'custom') {
+                                  field.onChange(field.value ?? 30);
+                                  return;
+                                }
+                                const preset = PAYMENT_TERM_PRESETS.find((item) => item.code === value);
+                                if (preset) field.onChange(preset.days);
+                              }}
+                            >
+                              <FormControl>
+                                <SelectTrigger data-testid="payment-term-days">
+                                  <SelectValue placeholder="30 days" />
+                                </SelectTrigger>
+                              </FormControl>
+                              <SelectContent>
+                                {PAYMENT_TERM_PRESETS.map((preset) => (
+                                  <SelectItem key={preset.code} value={preset.code}>
+                                    {preset.label}
+                                  </SelectItem>
+                                ))}
+                                <SelectItem value="custom">Custom</SelectItem>
+                              </SelectContent>
+                            </Select>
+                            {code === 'custom' && (
+                              <Input
+                                type="number"
+                                min={0}
+                                max={365}
+                                value={field.value ?? 30}
+                                onChange={(event) => field.onChange(Number(event.target.value))}
+                                aria-label="Custom payment term days"
+                              />
+                            )}
+                            <p className="text-sm text-muted-foreground">
+                              New invoices set due date to invoice date + this many days. You can still pick another date on the invoice.
+                            </p>
+                            <FormMessage />
+                          </FormItem>
+                        );
+                      }}
+                    />
+
                     <FormField
                       control={form.control}
                       name="defaultTerms"

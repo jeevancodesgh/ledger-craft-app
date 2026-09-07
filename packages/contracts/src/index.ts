@@ -64,11 +64,13 @@ export {
   invoiceListResponseSchema,
   invoiceSchema,
   nextInvoiceNumberResponseSchema,
+  sendInvoiceRequestSchema,
   updateInvoiceRequestSchema,
   type CreateInvoiceRequest,
   type InvoiceDto,
   type InvoiceListResponse,
   type NextInvoiceNumberResponse,
+  type SendInvoiceRequest,
   type UpdateInvoiceRequest,
 } from './invoice';
 

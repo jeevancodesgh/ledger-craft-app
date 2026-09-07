@@ -646,6 +646,9 @@ export const invoiceService = {
   },
 
   async updateInvoice(id: string, invoice: Partial<Omit<Invoice, 'id' | 'createdAt' | 'updatedAt'>>): Promise<Invoice> {
+    if (invoicesApiEnabled()) {
+      return invoicesApi.update(id, invoice, invoice.items);
+    }
     const existingInvoice = await this.getInvoice(id);
     if (!existingInvoice) {
       throw new Error(`Invoice with id ${id} not found`);

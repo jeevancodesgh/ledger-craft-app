@@ -26,6 +26,9 @@ export function createApp(deps: AppDependencies = {}) {
     if (deps.db) {
       c.set('db', deps.db);
     }
+    if (deps.invoiceMailer) {
+      c.set('invoiceMailer', deps.invoiceMailer);
+    }
     await next();
   });
   app.use('*', requestLogging);

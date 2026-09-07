@@ -1,6 +1,6 @@
 import React from 'react';
 import { Invoice } from '@/types';
-import { formatCurrency } from '@/utils/invoiceUtils';
+import { formatCurrency, invoiceDiscountLabel } from '@/utils/invoiceUtils';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { cn } from '@/lib/utils';
 
@@ -213,9 +213,9 @@ const ClassicTemplate = ({
             )
           )}
           
-          {invoice.discount > 0 && (
+              {invoice.discount && invoice.discount > 0 && (
             <div className="flex justify-between py-1">
-              <span className="font-semibold">Discount:</span>
+              <span className="font-semibold">{invoiceDiscountLabel(invoice)}:</span>
               <span>-{formatCurrency(invoice.discount, invoice.currency)}</span>
             </div>
           )}
