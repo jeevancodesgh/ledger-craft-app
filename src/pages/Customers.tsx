@@ -682,7 +682,9 @@ const Customers = () => {
                       <TableCell>{customer.email}</TableCell>
                       <TableCell>{customer.phone || 'N/A'}</TableCell>
                       <TableCell>
-                        {customer.city && customer.state ? `${customer.city}, ${customer.state}` : 'N/A'}
+                        {customer.city && customer.state
+                          ? `${customer.city}, ${customer.state}`
+                          : customer.city || customer.state || 'N/A'}
                       </TableCell>
                       <TableCell>
                         {customer.tags && customer.tags.length > 0 ? (

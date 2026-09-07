@@ -17,9 +17,9 @@ Read this before writing code. Then follow the named skill for the wave you are 
 | W1 | **Verified.** `pnpm verify:w1` is green (contracts, health/RLS, typecheck). Migrator needs `CREATE` on the database so Drizzle can create the `drizzle` schema. |
 | W2 | **Verified.** `pnpm verify:w2` green. Compatibility product schema on `55432`. |
 | W3 | **Verified (2026-09-05).** `pnpm verify:w3` green. Better Auth email/password, `/api/me` binds org. Clients stay on Supabase Auth. |
-| W4 | **Verified (2026-09-07).** `pnpm verify:w4` green. Customers CRUD via Hono. Web invoices still `supabase-js`. |
-| Git | `origin/mobile-app` = W1 (`fd62f9a`). Local `mobile-app` has W2 (`33cf075`), W3 (`b758b32`), and W4 customers in the working tree. |
-| Clients | Still `supabase-js` → hosted Supabase for invoices and Auth. Customer CRUD is Hono when `VITE_CUSTOMERS_API=true`. |
+| W4 | **Verified (2026-09-07).** `pnpm verify:w4` green. Customers CRUD via Hono. |
+| Git | `origin/mobile-app` includes W4 customers. Working tree also has web Better Auth plus Hono business-profile / items / invoices. |
+| Clients | Web login/signup → Better Auth. Web customers, business profile, items, invoices → Hono. Mobile still Supabase Auth. Full W5 invoice gates (idempotency, share tokens) are open. |
 
 ## Pickup
 

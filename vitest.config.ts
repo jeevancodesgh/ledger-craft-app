@@ -10,6 +10,9 @@ export default defineConfig({
     setupFiles: ['./src/test/setup.ts'],
     env: {
       VITE_CUSTOMERS_API: 'false',
+      VITE_BUSINESS_API: 'false',
+      VITE_ITEMS_API: 'false',
+      VITE_INVOICES_API: 'false',
     },
     include: ['src/**/*.{test,spec}.{js,mjs,cjs,ts,mts,cts,jsx,tsx}'],
     coverage: {

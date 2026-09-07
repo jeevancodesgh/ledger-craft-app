@@ -205,8 +205,8 @@ const InvoiceForm: React.FC<InvoiceFormProps> = ({
   
   // Item management state
   const [isItemDrawerOpen, setIsItemDrawerOpen] = useState(false);
-  const [isTaxEnabled, setIsTaxEnabled] = useState(false);
-  const [taxRate, setTaxRate] = useState(0);
+  const [isTaxEnabled, setIsTaxEnabled] = useState(() => Number(businessProfile?.defaultTaxRate) > 0);
+  const [taxRate, setTaxRate] = useState(() => Number(businessProfile?.defaultTaxRate) || 0);
   const [isAdditionalChargesEnabled, setIsAdditionalChargesEnabled] = useState(false);
   const [additionalChargesList, setAdditionalChargesList] = useState<AdditionalCharge[]>([]);
   const [isDiscountEnabled, setIsDiscountEnabled] = useState(false);
@@ -373,16 +373,21 @@ const InvoiceForm: React.FC<InvoiceFormProps> = ({
       }
       if (businessProfile.currency) {
         form.setValue('currency', businessProfile.currency);
+      } else {
+        form.setValue('currency', 'NZD');
+      }
+      if (Number(businessProfile.defaultTaxRate) > 0 && mode === 'create') {
+        setIsTaxEnabled(true);
+        setTaxRate(Number(businessProfile.defaultTaxRate));
       }
     }
   }, [businessProfile, mode, initialValues]);
 
 
   useEffect(() => {
-    if (!isTaxEnabled) setTaxRate(0);
     if (!isAdditionalChargesEnabled) form.setValue("additionalCharges", 0);
     if (!isDiscountEnabled) form.setValue("discount", 0);
-  }, [isTaxEnabled, isAdditionalChargesEnabled, isDiscountEnabled]);
+  }, [isAdditionalChargesEnabled, isDiscountEnabled]);
 
   // Calculate additional charges total - memoized to prevent unnecessary recalculations
   const calculateAdditionalChargesTotal = React.useCallback((): number => {

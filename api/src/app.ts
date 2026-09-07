@@ -4,8 +4,11 @@ import { errorHandler, notFoundHandler } from './middleware/errors';
 import { requestLogging } from './middleware/logging';
 import { requestContext } from './middleware/request-context';
 import { sessionRoutes } from './modules/auth/session.routes';
+import { businessProfileRoutes } from './modules/business-profile/business-profile.routes';
 import { customerRoutes } from './modules/customers/customers.routes';
 import { healthRoutes } from './modules/health/health.routes';
+import { invoiceRoutes } from './modules/invoices/invoices.routes';
+import { itemRoutes } from './modules/items/items.routes';
 import { getBetterAuthTrustedOrigins } from './env';
 import type { AppDependencies, AppEnv } from './types';
 
@@ -32,7 +35,7 @@ export function createApp(deps: AppDependencies = {}) {
       origin: getBetterAuthTrustedOrigins(),
       credentials: true,
       allowHeaders: ['Content-Type', 'Authorization'],
-      allowMethods: ['GET', 'POST', 'PATCH', 'DELETE', 'OPTIONS'],
+      allowMethods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
     }),
   );
 
@@ -47,6 +50,9 @@ export function createApp(deps: AppDependencies = {}) {
   app.route('/', healthRoutes());
   app.route('/', sessionRoutes());
   app.route('/', customerRoutes());
+  app.route('/', businessProfileRoutes());
+  app.route('/', itemRoutes());
+  app.route('/', invoiceRoutes());
 
   if (process.env.NODE_ENV === 'test') {
     app.get('/api/__test/boom', () => {

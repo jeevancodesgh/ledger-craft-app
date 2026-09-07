@@ -13,6 +13,17 @@ import {
   toCreateCustomerRequest,
   toUpdateCustomerRequest,
 } from '@/features/customers/api/customersApi';
+import {
+  businessProfileApi,
+  businessProfileApiEnabled,
+} from '@/features/business-profile/api/businessProfileApi';
+import {
+  itemsApi,
+  itemsApiEnabled,
+  toCreateItemRequest,
+  toUpdateItemRequest,
+} from '@/features/items/api/itemsApi';
+import { invoicesApi, invoicesApiEnabled } from '@/features/invoices/api/invoicesApi';
 
 const mapSupabaseCustomerToCustomer = (customer: SupabaseCustomer): Customer => ({
   id: customer.id,
@@ -461,6 +472,9 @@ export const customerService = {
 
 export const invoiceService = {
   async getInvoices(): Promise<Invoice[]> {
+    if (invoicesApiEnabled()) {
+      return invoicesApi.list();
+    }
     const { data: { user } } = await supabase.auth.getUser();
     if (!user?.id) {
       console.error('No authenticated user found');
@@ -493,6 +507,9 @@ export const invoiceService = {
   },
 
   async getInvoice(id: string): Promise<Invoice | null> {
+    if (invoicesApiEnabled()) {
+      return invoicesApi.get(id);
+    }
     const { data: { user } } = await supabase.auth.getUser();
     if (!user?.id) {
       console.error('No authenticated user found');
@@ -561,6 +578,9 @@ export const invoiceService = {
   },
 
   async createInvoice(invoice: Omit<Invoice, 'id' | 'createdAt' | 'updatedAt'>, lineItems: Omit<LineItem, 'id' | 'invoiceId' | 'createdAt' | 'updatedAt'>[]): Promise<Invoice> {
+    if (invoicesApiEnabled()) {
+      return invoicesApi.create(invoice, lineItems);
+    }
     const supabaseInvoice = await mapInvoiceToSupabaseInvoice(invoice);
     
     // Get user ID for journal entry
@@ -703,6 +723,9 @@ export const invoiceService = {
   },
   
   async updateInvoiceStatus(id: string, status: Invoice['status']): Promise<Invoice> {
+    if (invoicesApiEnabled()) {
+      return invoicesApi.updateStatus(id, status);
+    }
     const { data: { user } } = await supabase.auth.getUser();
     if (!user?.id) {
       console.error('No authenticated user found');
@@ -855,6 +878,9 @@ export const invoiceService = {
   },
 
   async getNextInvoiceNumber(): Promise<string> {
+    if (invoicesApiEnabled()) {
+      return invoicesApi.nextNumber();
+    }
     // Get business profile
     const { data: { user } } = await supabase.auth.getUser();
     if (!user?.id) throw new Error('No authenticated user');
@@ -916,6 +942,9 @@ export const invoiceService = {
 
 export const itemCategoryService = {
   async getItemCategories(): Promise<ItemCategory[]> {
+    if (itemsApiEnabled()) {
+      return (await itemsApi.list()).categories;
+    }
     const { data: { user } } = await supabase.auth.getUser();
     if (!user?.id) {
       console.error('No authenticated user found');
@@ -936,6 +965,9 @@ export const itemCategoryService = {
   },
 
   async createItemCategory(category: Omit<ItemCategory, 'id' | 'createdAt' | 'updatedAt'>): Promise<ItemCategory> {
+    if (itemsApiEnabled()) {
+      return itemsApi.createCategory({ name: category.name, color: category.color ?? null });
+    }
     const supabaseCategory = await mapItemCategoryToSupabaseItemCategory(category);
     
     const { data, error } = await supabase
@@ -1006,6 +1038,9 @@ export const itemCategoryService = {
 
 export const itemService = {
   async getItems(): Promise<Item[]> {
+    if (itemsApiEnabled()) {
+      return (await itemsApi.list()).items;
+    }
     const { data: { user } } = await supabase.auth.getUser();
     if (!user?.id) {
       console.error('No authenticated user found');
@@ -1033,6 +1068,10 @@ export const itemService = {
   },
 
   async getItem(id: string): Promise<Item | null> {
+    if (itemsApiEnabled()) {
+      const item = (await itemsApi.list()).items.find((row) => row.id === id);
+      return item ?? null;
+    }
     const { data: { user } } = await supabase.auth.getUser();
     if (!user?.id) {
       console.error('No authenticated user found');
@@ -1062,6 +1101,9 @@ export const itemService = {
   },
 
   async createItem(item: Omit<Item, 'id' | 'createdAt' | 'updatedAt' | 'category'>): Promise<Item> {
+    if (itemsApiEnabled()) {
+      return itemsApi.create(toCreateItemRequest(item));
+    }
     const supabaseItem = await mapItemToSupabaseItem(item);
     
     const { data, error } = await supabase
@@ -1084,6 +1126,9 @@ export const itemService = {
   },
 
   async updateItem(id: string, item: Partial<Omit<Item, 'id' | 'createdAt' | 'updatedAt' | 'category'>>): Promise<Item> {
+    if (itemsApiEnabled()) {
+      return itemsApi.update(id, toUpdateItemRequest(item));
+    }
     const { data: { user } } = await supabase.auth.getUser();
     if (!user?.id) {
       console.error('No authenticated user found');
@@ -1124,6 +1169,10 @@ export const itemService = {
   },
 
   async deleteItem(id: string): Promise<void> {
+    if (itemsApiEnabled()) {
+      await itemsApi.remove(id);
+      return;
+    }
     const { data: { user } } = await supabase.auth.getUser();
     if (!user?.id) {
       console.error('No authenticated user found');
@@ -1142,6 +1191,9 @@ export const itemService = {
   },
   
   async getItemsByType(type: 'product' | 'service'): Promise<Item[]> {
+    if (itemsApiEnabled()) {
+      return (await itemsApi.list()).items.filter((item) => item.type === type);
+    }
     const { data: { user } } = await supabase.auth.getUser();
     if (!user?.id) {
       console.error('No authenticated user found');
@@ -1172,6 +1224,9 @@ export const itemService = {
 
 export const businessProfileService = {
   async getBusinessProfile(): Promise<BusinessProfile | null> {
+    if (businessProfileApiEnabled()) {
+      return businessProfileApi.get();
+    }
     const { data: { user } } = await supabase.auth.getUser();
     const sessionUser = user ?? (await supabase.auth.getSession()).data.session?.user;
     if (!sessionUser?.id) {
@@ -1206,6 +1261,9 @@ export const businessProfileService = {
   },
 
   async createOrUpdateBusinessProfile(profile: Omit<BusinessProfile, 'id' | 'createdAt' | 'updatedAt'>): Promise<BusinessProfile> {
+    if (businessProfileApiEnabled()) {
+      return businessProfileApi.upsert(profile);
+    }
     const { data: { user } } = await supabase.auth.getUser();
     const sessionUser = user ?? (await supabase.auth.getSession()).data.session?.user;
     const userId = sessionUser?.id || profile.userId;
@@ -1266,6 +1324,9 @@ export const businessProfileService = {
   },
 
   async updateBusinessProfile(profile: BusinessProfile): Promise<BusinessProfile> {
+    if (businessProfileApiEnabled()) {
+      return businessProfileApi.upsert(profile);
+    }
     const { data: { user } } = await supabase.auth.getUser();
     if (!user?.id) {
       throw new Error('No authenticated user');

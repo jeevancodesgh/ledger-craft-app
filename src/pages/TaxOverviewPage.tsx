@@ -6,8 +6,8 @@ import { QuickActions } from '@/components/tax/QuickActions';
 import { QuarterlyTrends } from '@/components/tax/QuarterlyTrends';
 import { RecentTaxActivity } from '@/components/tax/RecentTaxActivity';
 import { useAuth } from "@/context/StableAuthContext";
-import { supabaseDataService } from '@/services/supabaseDataService';
 import { taxCalculationService } from '@/services/taxCalculationService';
+import { invoiceService } from '@/services/supabaseService';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Loader2, AlertTriangle, TrendingUp, Calendar, Settings } from 'lucide-react';
@@ -80,32 +80,23 @@ const TaxOverviewPage: React.FC = () => {
       // Calculate next payment due date
       const nextDueDate = calculateNextGSTDueDate(end);
       
-      // Get recent tax-related activities
-      const [recentInvoices, recentExpenses] = await Promise.all([
-        supabaseDataService.getInvoicesByPeriod(userId, start, end),
-        supabaseDataService.getExpensesByPeriod(userId, start, end)
-      ]);
+      const invoices = await invoiceService.getInvoices();
+      const invoicesInPeriod = invoices.filter((invoice) => {
+        const date = invoice.date.slice(0, 10);
+        return date >= start && date <= end;
+      });
+      const expenses: Array<{ id: string; description: string; amount: number; taxAmount?: number | null; expenseDate: string }> = [];
 
-      // Combine recent activities
-      const recentActivity = [
-        ...recentInvoices.slice(0, 3).map(inv => ({
-          id: inv.id,
-          type: 'invoice' as const,
-          description: `Invoice ${inv.invoice_number}`,
-          amount: inv.tax_amount || 0,
-          date: inv.date
-        })),
-        ...recentExpenses.slice(0, 3).map(exp => ({
-          id: exp.id,
-          type: 'expense' as const,
-          description: exp.description,
-          amount: exp.tax_amount || 0,
-          date: exp.expense_date
-        }))
-      ].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()).slice(0, 5);
+      const recentActivity = invoicesInPeriod.slice(0, 5).map((inv) => ({
+        id: inv.id,
+        type: 'invoice' as const,
+        description: `Invoice ${inv.invoiceNumber}`,
+        amount: inv.taxAmount || 0,
+        date: inv.date,
+      }));
 
       // Calculate compliance score (simplified)
-      const complianceScore = calculateComplianceScore(gstSummary, recentInvoices, recentExpenses);
+      const complianceScore = calculateComplianceScore(gstSummary, invoicesInPeriod, expenses);
 
       setOverview({
         currentGSTPosition: gstSummary.netGstPosition,
@@ -330,10 +321,10 @@ function calculateComplianceScore(
   let score = 100;
   
   // Deduct points for missing tax calculations
-  const invoicesWithoutTax = invoices.filter(inv => !inv.tax_amount && inv.total > 0);
+  const invoicesWithoutTax = invoices.filter(inv => !inv.taxAmount && inv.total > 0);
   score -= invoicesWithoutTax.length * 5;
-  
-  const expensesWithoutTax = expenses.filter(exp => !exp.tax_amount && exp.amount > 0);
+
+  const expensesWithoutTax = expenses.filter(exp => !exp.taxAmount && exp.amount > 0);
   score -= expensesWithoutTax.length * 3;
   
   // Deduct points for incomplete data

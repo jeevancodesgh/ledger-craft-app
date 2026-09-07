@@ -40,7 +40,7 @@ const CreateInvoice = () => {
       dueDate: new Date(new Date().setDate(new Date().getDate() + 30)),
       notes: "",
       terms: "",
-      currency: "USD",
+      currency: "NZD",
       additionalCharges: 0,
       discount: 0,
     },
@@ -89,7 +89,7 @@ const CreateInvoice = () => {
     if (businessProfile) {
       form.setValue('notes', businessProfile.defaultNotes || "");
       form.setValue('terms', businessProfile.defaultTerms || "");
-      form.setValue('currency', businessProfile.currency || "USD");
+        form.setValue('currency', businessProfile.currency || "NZD");
     }
   }, [businessProfile]);
 

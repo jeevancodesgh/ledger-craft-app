@@ -11,7 +11,6 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '
 import { BusinessProfile, BusinessTheme, DEFAULT_BUSINESS_THEME } from '@/types';
 import { useToast } from '@/hooks/use-toast';
 import { Loader2, Upload } from 'lucide-react';
-import { supabase } from '@/integrations/supabase/client';
 import ThemePicker from '@/components/business/ThemePicker';
 import { PageHeader } from '@/components/layout/PageHeader';
 
@@ -103,26 +102,13 @@ const Settings = () => {
       let logoUrlToSave = businessProfile?.logoUrl || null;
 
       if (data.logoFile && data.logoFile.length > 0) {
-        const file = data.logoFile[0];
-        const fileExt = file.name.split('.').pop();
-        const fileName = `business-logo-${Date.now()}.${fileExt}`;
-        const filePath = `business-logos/${fileName}`;
-
-        const { data: uploadData, error: uploadError } = await supabase.storage
-          .from('business-assets')
-          .upload(filePath, file);
-
-        if (uploadError) {
-          throw new Error(uploadError.message || "Failed to upload logo");
-        }
-
-        if (uploadData) {
-          const { data: publicUrlData } = supabase.storage
-            .from('business-assets')
-            .getPublicUrl(filePath);
-            
-          logoUrlToSave = publicUrlData.publicUrl;
-        }
+        const file = data.logoFile[0] as File;
+        logoUrlToSave = await new Promise<string>((resolve, reject) => {
+          const reader = new FileReader();
+          reader.onload = () => resolve(String(reader.result));
+          reader.onerror = () => reject(new Error('Failed to read logo file'));
+          reader.readAsDataURL(file);
+        });
       }
 
       const profileData: BusinessProfile = {

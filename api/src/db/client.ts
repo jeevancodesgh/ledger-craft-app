@@ -1,6 +1,8 @@
 import { drizzle, type PostgresJsDatabase } from 'drizzle-orm/postgres-js';
 import postgres from 'postgres';
 import { getDatabaseUrl, getMigrateDatabaseUrl } from '../env';
+import { accounts, journalEntries, journalEntryLines } from './schema/accounts';
+import { businessProfiles } from './schema/business-profiles';
 import { customers } from './schema/customers';
 import {
   authAccounts,
@@ -10,6 +12,8 @@ import {
   users,
   verifications,
 } from './schema/identity';
+import { invoices, lineItems } from './schema/invoices';
+import { itemCategories, items } from './schema/items';
 import { rlsProbe } from './schema/probe';
 
 export const schema = {
@@ -21,6 +25,14 @@ export const schema = {
   organisations,
   organisationMemberships,
   customers,
+  businessProfiles,
+  itemCategories,
+  items,
+  invoices,
+  lineItems,
+  accounts,
+  journalEntries,
+  journalEntryLines,
 };
 
 export type Database = PostgresJsDatabase<typeof schema>;

@@ -1,11 +1,6 @@
-import { 
-  TaxConfiguration, 
-  TaxCalculationRequest, 
-  TaxCalculationResult,
-  TaxBreakdown,
-  IRDReturnData 
-} from '@/types/payment';
+import { TaxConfiguration, TaxCalculationRequest, TaxCalculationResult, TaxBreakdown, IRDReturnData } from '@/types/payment';
 import { supabaseDataService } from './supabaseDataService';
+import { expenseService, invoiceService } from './supabaseService';
 
 export class TaxCalculationService {
   /**
@@ -448,56 +443,28 @@ export class TaxCalculationService {
     netGstPosition: number;
   }> {
     try {
-      // Get tax configuration
-      const taxConfig = await this.getActiveTaxConfiguration(userId);
-      if (!taxConfig) {
-        return {
-          totalSales: 0,
-          totalPurchases: 0,
-          gstOnSales: 0,
-          gstOnPurchases: 0,
-          netGstPosition: 0
-        };
-      }
+      const invoices = await invoiceService.getInvoices();
+      const expenses = await expenseService.getExpenses().catch(() => []);
+      const invoicesInPeriod = invoices.filter((invoice) => {
+        const date = invoice.date.slice(0, 10);
+        return date >= periodStart && date <= periodEnd;
+      });
+      const expensesInPeriod = expenses.filter((expense) => {
+        const date = String(expense.expenseDate).slice(0, 10);
+        return date >= periodStart && date <= periodEnd;
+      });
 
-      // Fetch real data from Supabase
-      const [invoices, expenses] = await Promise.all([
-        supabaseDataService.getInvoicesByPeriod(userId, periodStart, periodEnd),
-        supabaseDataService.getExpensesByPeriod(userId, periodStart, periodEnd)
-      ]);
-
-      // Calculate sales totals
       let totalSales = 0;
       let gstOnSales = 0;
-
-      for (const invoice of invoices) {
+      for (const invoice of invoicesInPeriod) {
         totalSales += invoice.total || 0;
-        
-        // Calculate GST from invoice
-        if (invoice.tax_amount) {
-          gstOnSales += invoice.tax_amount;
-        } else {
-          // Estimate GST if not stored (assuming tax-inclusive)
-          const estimatedGST = (invoice.total * taxConfig.taxRate) / (1 + taxConfig.taxRate);
-          gstOnSales += estimatedGST;
-        }
+        gstOnSales += invoice.taxAmount || 0;
       }
 
-      // Calculate purchase totals
       let totalPurchases = 0;
       let gstOnPurchases = 0;
-
-      for (const expense of expenses) {
+      for (const expense of expensesInPeriod) {
         totalPurchases += expense.amount || 0;
-        
-        // Calculate claimable GST from expenses
-        if (expense.tax_amount) {
-          gstOnPurchases += expense.tax_amount;
-        } else {
-          // Estimate GST if not stored (assuming tax-inclusive)
-          const estimatedGST = (expense.amount * taxConfig.taxRate) / (1 + taxConfig.taxRate);
-          gstOnPurchases += estimatedGST;
-        }
       }
 
       // Round values

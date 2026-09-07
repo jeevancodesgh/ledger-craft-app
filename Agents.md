@@ -10,9 +10,9 @@ This document provides comprehensive guidance for AI agents (LLMs) working on th
 | --- | --- |
 | Spec | `TARGET_ARCHITECTURE.md` — end state and gates. Not optional. |
 | Live DB | Hosted `public` is empty (2026-09-03). Greenfield. Do not replay Git SQL. No UUID import. |
-| Now | W1–W4 **verified** (2026-09-07). Next: W5 invoices gate. |
-| Blocked | None for W5 — customers CRUD is Hono and `/api/me` binds org. |
-| Clients | Still `supabase-js`. No new client SQL, Storage SDK, Edge Functions, or `VITE_OPENAI_*`. |
+| Now | W1–W4 **verified**. Web has Hono customers, business profile, items, and invoices (GST totals). Remaining W5 gates: idempotency + share tokens. |
+| Blocked | None for remaining W5 invoice gates. |
+| Clients | Web login is Better Auth. Invoices still `supabase-js`. No new client SQL, Storage SDK, Edge Functions, or `VITE_OPENAI_*`. |
 | Ports | Postgres **55432**, API **3001**, Vite **8080** (`/api` proxy). |
 | Package manager | **pnpm** workspace (`api`, `packages/contracts`). `mobile/` is not in the workspace yet. |
 
@@ -1111,7 +1111,7 @@ Decisions already locked:
 
 ### What W3 shipped (working tree, verified)
 
-Hono binds a Better Auth session to `app.user_id` + `app.organisation_id`. Clients still use Supabase Auth. Do **not** authorize product data with both session systems.
+Hono binds a Better Auth session to `app.user_id` + `app.organisation_id`. Web login/signup use Better Auth. Mobile still uses Supabase Auth. Do **not** authorize product data with both session systems.
 
 - SQL: `api/drizzle/0002_identity.sql` — `users`, `sessions`, `auth_accounts`, `verifications`, `organisations`, `organisation_memberships`
 - Drizzle: `api/src/db/schema/identity.ts`
@@ -1138,7 +1138,7 @@ curl -s localhost:8080/api/me
 
 ### What W4 shipped (working tree, verified)
 
-Customers CRUD through Hono, scoped to the session organisation. Ownership IDs come from the session, never the body. Web invoices still use `supabase-js` (including nested `customers(*)` embeds). Clients still use Supabase Auth for `/login`.
+Customers CRUD through Hono, scoped to the session organisation. Ownership IDs come from the session, never the body. Web invoices still use `supabase-js` (including nested `customers(*)` embeds). Web `/login` and `/signup` use Better Auth email/password.
 
 - Contracts: `packages/contracts/src/customer.ts` — camelCase DTO, strict create body (rejects `organisationId` / `userId`)
 - API: `api/src/modules/customers/` + Drizzle `api/src/db/schema/customers.ts` (W2 SQL, no new migration)
@@ -1147,13 +1147,11 @@ Customers CRUD through Hono, scoped to the session organisation. Ownership IDs c
 - Mobile: `mobile/src/services/customerService.ts` CRUD uses `EXPO_PUBLIC_API_URL` when `EXPO_PUBLIC_CUSTOMERS_API` is not `false`. Expo Better Auth is not wired — mobile CRUD 401s until a session exists
 - Rollback flags: `VITE_CUSTOMERS_API`, `EXPO_PUBLIC_CUSTOMERS_API`
 
-**W4 out of scope (still):** invoices Hono routes, TanStack Router, `apps/` move, UI redesign, cutting clients off Supabase Auth.
+**W4 out of scope (still):** TanStack Router, `apps/` move, UI redesign, cutting mobile off Supabase Auth.
 
-### W5 plan (next — invoices gate)
+### W5 status (invoices — in progress)
 
-Invoice create is one transaction: sequence, lines, server totals, balanced journal, idempotency. Cross-org isolation. Client-supplied totals cannot override the server. Nested `customers(*)` on invoices can move with this slice or stay until the invoice read path is Hono.
-
-**Launch (roster):** Contracts + Verification + API, then Web, then Mobile.
+Web invoice create/list/status is Hono: sequence lock, line items, server GST totals, balanced journal. Client-supplied totals are rejected. Cross-org get is 404. Remaining gates: idempotency key replay, share tokens. Mobile invoices still `supabase-js`.
 
 ### Hard no (still)
 
