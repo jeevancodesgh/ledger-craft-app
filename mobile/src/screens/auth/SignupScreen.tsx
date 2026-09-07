@@ -15,6 +15,7 @@ import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { AuthStackParamList } from '@/navigation/types';
 import { ModernInput } from '@/components/ui/ModernInput';
 import { ModernButton } from '@/components/ui/ModernButton';
+import { authErrorMessage } from '@/features/auth/api/authApi';
 
 type SignupScreenNavigationProp = NativeStackNavigationProp<AuthStackParamList, 'Signup'>;
 
@@ -40,8 +41,8 @@ export default function SignupScreen() {
 
   const validatePassword = (text: string) => {
     setPassword(text);
-    if (text && text.length < 6) {
-      setPasswordError('Password must be at least 6 characters');
+    if (text && text.length < 8) {
+      setPasswordError('Password must be at least 8 characters');
     } else {
       setPasswordError('');
     }
@@ -63,7 +64,8 @@ export default function SignupScreen() {
     setLoading(false);
 
     if (error) {
-      Alert.alert('Signup Failed', error.message);
+      Alert.alert('Signup Failed', authErrorMessage(error));
+      return;
     } else if (needsEmailConfirmation) {
       Alert.alert(
         'Check your email',
@@ -164,22 +166,6 @@ export default function SignupScreen() {
                     Sign in
                   </Text>
                 </Text>
-              </View>
-            </View>
-
-            {/* Features */}
-            <View className="flex-row justify-center space-x-8 mt-4">
-              <View className="items-center">
-                <Text className="text-2xl mb-1">🎯</Text>
-                <Text className="text-xs text-muted-foreground">Free</Text>
-              </View>
-              <View className="items-center">
-                <Text className="text-2xl mb-1">🚀</Text>
-                <Text className="text-xs text-muted-foreground">Quick Setup</Text>
-              </View>
-              <View className="items-center">
-                <Text className="text-2xl mb-1">💼</Text>
-                <Text className="text-xs text-muted-foreground">Professional</Text>
               </View>
             </View>
           </View>

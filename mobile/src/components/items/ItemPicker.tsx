@@ -10,6 +10,7 @@ import {
   SafeAreaView,
 } from 'react-native';
 import { itemService, Item, ItemCategory } from '@/services/itemService';
+import { Feather } from '@expo/vector-icons';
 import { FormInput } from '../ui/FormInput';
 import { FormSwitch } from '../ui/FormSwitch';
 import { ActionButton } from '../ui/ActionButton';
@@ -182,7 +183,7 @@ export function ItemPicker({
             <>
               {/* Search */}
               <View className="flex-row items-center bg-gray-100 rounded-xl px-4 py-2 mb-3">
-                <Text className="text-gray-400 mr-2">🔍</Text>
+                <Feather name="search" size={16} color="#94A3B8" />
                 <TextInput
                   placeholder="Search items..."
                   value={searchQuery}

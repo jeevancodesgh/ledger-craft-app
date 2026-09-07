@@ -10,6 +10,7 @@ import {
   SafeAreaView,
 } from 'react-native';
 import { customerService, Customer } from '@/services/customerService';
+import { Feather } from '@expo/vector-icons';
 import { FormInput } from '../ui/FormInput';
 import { ActionButton } from '../ui/ActionButton';
 
@@ -147,7 +148,7 @@ export function CustomerPicker({
 
           {!showCreateForm && (
             <View className="flex-row items-center bg-gray-100 rounded-xl px-4 py-2">
-              <Text className="text-gray-400 mr-2">🔍</Text>
+              <Feather name="search" size={16} color="#94A3B8" />
               <TextInput
                 placeholder="Search customers..."
                 value={searchQuery}

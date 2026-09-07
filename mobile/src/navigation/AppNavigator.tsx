@@ -1,20 +1,23 @@
-/**
- * App Navigator - Main Application Navigation
- * 
- * Features:
- * - Revolut-style screen transition animations
- * - Custom animated tab bar
- * - Smooth slide-from-right for push navigation
- * - Slide-from-bottom for form/create screens (iOS)
- */
-
 import React from 'react';
-import { Platform } from 'react-native';
-import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
+import { Platform, type ImageSourcePropType } from 'react-native';
+import { createNativeBottomTabNavigator } from '@bottom-tabs/react-navigation';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
-import { MainTabParamList } from './types';
+import type { SFSymbol } from 'sf-symbols-typescript';
+import type { AppleIcon } from 'react-native-bottom-tabs';
+import {
+  HomeStackParamList,
+  InvoiceStackParamList,
+  ExpenseStackParamList,
+  SettingsStackParamList,
+  MainTabParamList,
+} from './types';
+import {
+  COLORS,
+  listHeaderOptions,
+  formHeaderOptions,
+  detailHeaderOptions,
+} from '@/theme/navigation';
 
-// Screens
 import DashboardScreen from '@/screens/main/DashboardScreen';
 import InvoiceListScreen from '@/screens/invoices/InvoiceListScreen';
 import InvoiceCreateScreen from '@/screens/invoices/InvoiceCreateScreen';
@@ -25,186 +28,152 @@ import ExpenseEditScreen from '@/screens/expenses/ExpenseEditScreen';
 import SettingsScreen from '@/screens/settings/SettingsScreen';
 import BusinessSettingsScreen from '@/screens/settings/BusinessSettingsScreen';
 
-// Custom Tab Bar
-import CustomTabBar from '@/components/CustomTabBar';
+const Tab = createNativeBottomTabNavigator<MainTabParamList>();
+const HomeStack = createNativeStackNavigator<HomeStackParamList>();
+const InvoiceStack = createNativeStackNavigator<InvoiceStackParamList>();
+const ExpenseStack = createNativeStackNavigator<ExpenseStackParamList>();
+const SettingsStackNav = createNativeStackNavigator<SettingsStackParamList>();
 
-// Animation configurations
-import {
-  defaultScreenOptions,
-  listScreenOptions,
-  detailScreenOptions,
-  formScreenOptions,
-  settingsScreenOptions,
-} from '@/utils/navigationAnimations';
+function tabIcon(sfSymbol: SFSymbol, androidAsset: ImageSourcePropType) {
+  return (): ImageSourcePropType | AppleIcon =>
+    Platform.OS === 'ios' ? { sfSymbol } : androidAsset;
+}
 
-const Tab = createBottomTabNavigator();
-const Stack = createNativeStackNavigator();
-
-// Stack navigator for Invoice screens
-function InvoiceStack() {
+function HomeNavigator() {
   return (
-    <Stack.Navigator
-      screenOptions={{
-        ...defaultScreenOptions,
-        // Smooth slide animation with gesture support
-        animation: 'slide_from_right',
-        animationDuration: 350,
-        gestureEnabled: true,
-        fullScreenGestureEnabled: Platform.OS === 'ios',
-      }}
-    >
-      <Stack.Screen
+    <HomeStack.Navigator screenOptions={listHeaderOptions}>
+      <HomeStack.Screen
+        name="DashboardHome"
+        component={DashboardScreen}
+        options={{ title: 'Home' }}
+      />
+    </HomeStack.Navigator>
+  );
+}
+
+function InvoiceNavigator() {
+  return (
+    <InvoiceStack.Navigator screenOptions={listHeaderOptions}>
+      <InvoiceStack.Screen
         name="InvoiceList"
         component={InvoiceListScreen}
-        options={listScreenOptions}
+        options={{ title: 'Invoices' }}
       />
-      <Stack.Screen
+      <InvoiceStack.Screen
         name="InvoiceCreate"
         component={InvoiceCreateScreen}
         options={{
-          ...formScreenOptions,
-          // Forms slide from bottom on iOS for better UX
-          animation: Platform.OS === 'ios' ? 'slide_from_bottom' : 'slide_from_right',
-          gestureDirection: Platform.OS === 'ios' ? 'vertical' : 'horizontal',
+          ...formHeaderOptions,
+          title: 'New invoice',
         }}
       />
-      <Stack.Screen
+      <InvoiceStack.Screen
         name="InvoiceEdit"
         component={InvoiceCreateScreen}
         options={{
-          ...formScreenOptions,
-          animation: Platform.OS === 'ios' ? 'slide_from_bottom' : 'slide_from_right',
-          gestureDirection: Platform.OS === 'ios' ? 'vertical' : 'horizontal',
+          ...formHeaderOptions,
+          title: 'Edit invoice',
         }}
       />
-      <Stack.Screen
+      <InvoiceStack.Screen
         name="InvoiceDetail"
         component={InvoiceDetailScreen}
         options={{
-          ...detailScreenOptions,
-          // Detail screens use fade from bottom for elegance
-          animation: 'fade_from_bottom',
-          animationDuration: 300,
+          ...detailHeaderOptions,
+          title: 'Invoice',
         }}
       />
-    </Stack.Navigator>
+    </InvoiceStack.Navigator>
   );
 }
 
-// Stack navigator for Expense screens
-function ExpenseStack() {
+function ExpenseNavigator() {
   return (
-    <Stack.Navigator
-      screenOptions={{
-        ...defaultScreenOptions,
-        animation: 'slide_from_right',
-        animationDuration: 350,
-        gestureEnabled: true,
-        fullScreenGestureEnabled: Platform.OS === 'ios',
-      }}
-    >
-      <Stack.Screen
+    <ExpenseStack.Navigator screenOptions={listHeaderOptions}>
+      <ExpenseStack.Screen
         name="ExpenseList"
         component={ExpenseListScreen}
-        options={listScreenOptions}
+        options={{ title: 'Expenses' }}
       />
-      <Stack.Screen
+      <ExpenseStack.Screen
         name="ExpenseCreate"
         component={ExpenseCreateScreen}
         options={{
-          ...formScreenOptions,
-          animation: Platform.OS === 'ios' ? 'slide_from_bottom' : 'slide_from_right',
-          gestureDirection: Platform.OS === 'ios' ? 'vertical' : 'horizontal',
+          ...formHeaderOptions,
+          title: 'New expense',
         }}
       />
-      <Stack.Screen
+      <ExpenseStack.Screen
         name="ExpenseEdit"
         component={ExpenseEditScreen}
         options={{
-          ...formScreenOptions,
-          animation: Platform.OS === 'ios' ? 'slide_from_bottom' : 'slide_from_right',
-          gestureDirection: Platform.OS === 'ios' ? 'vertical' : 'horizontal',
+          ...formHeaderOptions,
+          title: 'Edit expense',
         }}
       />
-      <Stack.Screen
-        name="ExpenseDetail"
-        component={ExpenseListScreen}
-        options={{
-          ...detailScreenOptions,
-          animation: 'fade_from_bottom',
-          animationDuration: 300,
-        }}
-      />
-    </Stack.Navigator>
+    </ExpenseStack.Navigator>
   );
 }
 
-// Stack navigator for Settings screens
-function SettingsStack() {
+function SettingsNavigator() {
   return (
-    <Stack.Navigator
-      screenOptions={{
-        ...defaultScreenOptions,
-        animation: 'slide_from_right',
-        animationDuration: 350,
-        gestureEnabled: true,
-        fullScreenGestureEnabled: Platform.OS === 'ios',
-      }}
-    >
-      <Stack.Screen
+    <SettingsStackNav.Navigator screenOptions={listHeaderOptions}>
+      <SettingsStackNav.Screen
         name="SettingsList"
         component={SettingsScreen}
-        options={settingsScreenOptions}
+        options={{ title: 'Settings' }}
       />
-      <Stack.Screen
+      <SettingsStackNav.Screen
         name="BusinessSettings"
         component={BusinessSettingsScreen}
         options={{
-          ...settingsScreenOptions,
-          animation: 'slide_from_right',
+          ...detailHeaderOptions,
+          title: 'Business',
         }}
       />
-    </Stack.Navigator>
+    </SettingsStackNav.Navigator>
   );
 }
 
 export default function AppNavigator() {
   return (
     <Tab.Navigator
-      tabBar={(props) => <CustomTabBar {...props} />}
-      screenOptions={{
-        headerShown: false,
-        // Tab switching animation
-        animation: 'fade',
-        lazy: true,
-      }}
+      labeled
+      hapticFeedbackEnabled
+      tabBarActiveTintColor={COLORS.accent}
+      tabBarInactiveTintColor={COLORS.textSecondary}
+      tabBarStyle={{ backgroundColor: COLORS.surface }}
     >
       <Tab.Screen
         name="Dashboard"
-        component={DashboardScreen}
+        component={HomeNavigator}
         options={{
-          tabBarLabel: 'Home',
+          title: 'Home',
+          tabBarIcon: tabIcon('house.fill', require('../../assets/tabs/home.png')),
         }}
       />
       <Tab.Screen
         name="Invoices"
-        component={InvoiceStack}
+        component={InvoiceNavigator}
         options={{
-          tabBarLabel: 'Invoices',
+          title: 'Invoices',
+          tabBarIcon: tabIcon('doc.text.fill', require('../../assets/tabs/invoices.png')),
         }}
       />
       <Tab.Screen
         name="Expenses"
-        component={ExpenseStack}
+        component={ExpenseNavigator}
         options={{
-          tabBarLabel: 'Expenses',
+          title: 'Expenses',
+          tabBarIcon: tabIcon('creditcard.fill', require('../../assets/tabs/expenses.png')),
         }}
       />
       <Tab.Screen
         name="Settings"
-        component={SettingsStack}
+        component={SettingsNavigator}
         options={{
-          tabBarLabel: 'Settings',
+          title: 'Settings',
+          tabBarIcon: tabIcon('gearshape.fill', require('../../assets/tabs/settings.png')),
         }}
       />
     </Tab.Navigator>

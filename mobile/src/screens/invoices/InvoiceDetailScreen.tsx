@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useLayoutEffect } from 'react';
 import {
   View,
   Text,
@@ -6,13 +6,13 @@ import {
   StyleSheet,
   ActivityIndicator,
   Alert,
-  TouchableOpacity,
+  Pressable,
   Modal,
-  StatusBar,
 } from 'react-native';
 import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import { AppTabParamList } from '@/navigation/types';
+import { Feather } from '@expo/vector-icons';
+import { InvoiceStackParamList } from '@/navigation/types';
 import { invoiceService } from '@/services/invoiceService';
 import { paymentService } from '@/services/paymentService';
 import type { Invoice } from '@/types/invoice';
@@ -24,11 +24,11 @@ import { shareInvoicePDF, downloadInvoicePDF } from '@/utils/pdfUtils';
 import { businessProfileService } from '@/services/businessProfileService';
 import StatusPicker from '@/components/invoice/StatusPicker';
 import PaymentCaptureModal from '@/components/invoice/PaymentCaptureModal';
-import { getStatusColor, getStatusIcon } from '@/utils/statusUtils';
+import { getStatusColor } from '@/utils/statusUtils';
 import { ProfileCompletenessBanner } from '@/components/invoice/ProfileCompletenessBanner';
 
-type InvoiceDetailNavigationProp = NativeStackNavigationProp<any, 'InvoiceDetail'>;
-type InvoiceDetailRouteProp = RouteProp<AppTabParamList, 'InvoiceDetail'>;
+type InvoiceDetailNavigationProp = NativeStackNavigationProp<InvoiceStackParamList, 'InvoiceDetail'>;
+type InvoiceDetailRouteProp = RouteProp<InvoiceStackParamList, 'InvoiceDetail'>;
 
 export default function InvoiceDetailScreen() {
   const navigation = useNavigation<InvoiceDetailNavigationProp>();
@@ -47,6 +47,12 @@ export default function InvoiceDetailScreen() {
   useEffect(() => {
     loadData();
   }, [invoiceId]);
+
+  useLayoutEffect(() => {
+    navigation.setOptions({
+      title: invoice?.invoiceNumber || 'Invoice',
+    });
+  }, [navigation, invoice?.invoiceNumber]);
 
   const loadData = async () => {
     try {
@@ -107,16 +113,7 @@ export default function InvoiceDetailScreen() {
     });
   };
 
-  // Greeting based on time
-  const getGreeting = () => {
-    const hour = new Date().getHours();
-    if (hour < 12) return 'Good morning';
-    if (hour < 18) return 'Good afternoon';
-    return 'Good evening';
-  };
-
   const handleEdit = () => {
-    // @ts-ignore
     navigation.navigate('InvoiceEdit', { invoiceId });
   };
 
@@ -214,22 +211,11 @@ export default function InvoiceDetailScreen() {
 
   return (
     <View style={styles.container}>
-      <StatusBar barStyle="light-content" backgroundColor="#1E2875" />
-      {/* Dark Blue Header */}
-      <View style={styles.topHeader}>
-        <View style={styles.titleSection}>
-          <Text style={styles.headerTitle}>Invoice Details</Text>
-          <Text style={styles.dateText}>
-            {new Date().toLocaleDateString('en-US', { 
-              weekday: 'long', 
-              month: 'long', 
-              day: 'numeric' 
-            })}
-          </Text>
-        </View>
-      </View>
-
-      <ScrollView style={styles.scrollView} contentContainerStyle={styles.scrollContent}>
+      <ScrollView
+        style={styles.scrollView}
+        contentContainerStyle={styles.scrollContent}
+        contentInsetAdjustmentBehavior="automatic"
+      >
         {/* Header Card */}
         <View style={styles.headerCard}>
           <View style={styles.headerRow}>
@@ -251,23 +237,24 @@ export default function InvoiceDetailScreen() {
         {/* Status Section */}
         <View style={styles.card}>
           <Text style={styles.sectionTitle}>Invoice Status</Text>
-          <TouchableOpacity
+          <Pressable
             style={styles.statusButton}
             onPress={() => setStatusPickerVisible(true)}
             disabled={updatingStatus}
-            activeOpacity={0.7}
+            accessibilityRole="button"
+            accessibilityLabel="Change invoice status"
           >
             <View style={styles.statusButtonLeft}>
               <View style={[styles.statusDot, { backgroundColor: getStatusColor(invoice.status) }]} />
               <View>
                 <Text style={styles.statusButtonLabel}>Current Status</Text>
                 <Text style={styles.statusButtonValue}>
-                  {getStatusIcon(invoice.status)} {invoice.status.toUpperCase()}
+                  {invoice.status.toUpperCase()}
                 </Text>
               </View>
             </View>
-            <Text style={styles.changeText}>Change →</Text>
-          </TouchableOpacity>
+            <Text style={styles.changeText}>Change</Text>
+          </Pressable>
           {updatingStatus && (
             <View style={styles.statusLoading}>
               <ActivityIndicator size="small" color="#5B72EE" />
@@ -408,47 +395,51 @@ export default function InvoiceDetailScreen() {
 
       {/* Compact Bottom Action Bar */}
       <View style={styles.bottomBar}>
-        <TouchableOpacity
+        <Pressable
           style={styles.bottomBarButton}
           onPress={() => setShowPreview(true)}
-          activeOpacity={0.7}
+          accessibilityRole="button"
+          accessibilityLabel="Preview"
         >
-          <Text style={styles.bottomBarIcon}>👁</Text>
+          <Feather name="eye" size={20} color="#5B72EE" />
           <Text style={styles.bottomBarLabel}>Preview</Text>
-        </TouchableOpacity>
+        </Pressable>
 
-        <TouchableOpacity
+        <Pressable
           style={styles.bottomBarButton}
           onPress={handleSharePDF}
           disabled={generatingPdf}
-          activeOpacity={0.7}
+          accessibilityRole="button"
+          accessibilityLabel="Share"
         >
           {generatingPdf ? (
             <ActivityIndicator size="small" color="#5B72EE" />
           ) : (
-            <Text style={styles.bottomBarIcon}>📤</Text>
+            <Feather name="share" size={20} color="#5B72EE" />
           )}
           <Text style={styles.bottomBarLabel}>Share</Text>
-        </TouchableOpacity>
+        </Pressable>
 
-        <TouchableOpacity
+        <Pressable
           style={styles.bottomBarButton}
           onPress={handleEdit}
-          activeOpacity={0.7}
+          accessibilityRole="button"
+          accessibilityLabel="Edit"
         >
-          <Text style={styles.bottomBarIcon}>✏️</Text>
+          <Feather name="edit-2" size={20} color="#5B72EE" />
           <Text style={styles.bottomBarLabel}>Edit</Text>
-        </TouchableOpacity>
+        </Pressable>
 
         {invoice.status !== 'paid' && (
-          <TouchableOpacity
+          <Pressable
             style={styles.bottomBarPrimaryButton}
             onPress={handleMarkAsPaid}
-            activeOpacity={0.8}
+            accessibilityRole="button"
+            accessibilityLabel="Mark as paid"
           >
-            <Text style={styles.bottomBarPrimaryIcon}>✓</Text>
+            <Feather name="check" size={18} color="#FFFFFF" />
             <Text style={styles.bottomBarPrimaryLabel}>Paid</Text>
-          </TouchableOpacity>
+          </Pressable>
         )}
       </View>
 

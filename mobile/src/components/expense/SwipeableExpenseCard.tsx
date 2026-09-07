@@ -13,6 +13,7 @@ import Animated, {
   withSpring,
 } from 'react-native-reanimated';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
+import { Feather } from '@expo/vector-icons';
 import type { Expense } from '@/types/expense';
 
 interface SwipeableExpenseCardProps {
@@ -45,19 +46,6 @@ const getStatusColor = (status: string) => {
   }
 };
 
-const getStatusIcon = (status: string) => {
-  switch (status) {
-    case 'approved':
-      return '✓';
-    case 'rejected':
-      return '✗';
-    case 'pending':
-      return '⏳';
-    default:
-      return '•';
-  }
-};
-
 export default function SwipeableExpenseCard({
   expense,
   onPress,
@@ -71,8 +59,8 @@ export default function SwipeableExpenseCard({
   const isSwipedRef = useRef(false);
 
   const actions = [
-    { label: 'Edit', icon: '✏️', color: '#3b82f6', action: () => onEdit(expense.id) },
-    { label: 'Delete', icon: '🗑️', color: '#ef4444', action: () => onDelete(expense.id) },
+    { label: 'Edit', icon: 'edit-2', color: '#5B72EE', action: () => onEdit(expense.id) },
+    { label: 'Delete', icon: 'trash-2', color: '#EF4444', action: () => onDelete(expense.id) },
   ];
 
   const triggerHaptic = () => {
@@ -158,7 +146,7 @@ export default function SwipeableExpenseCard({
             activeOpacity={0.7}
             disabled={disabled}
           >
-            <Text style={styles.actionIcon}>{actionItem.icon}</Text>
+            <Feather name={actionItem.icon as 'edit-2' | 'trash-2'} size={18} color="#FFFFFF" />
             <Text style={styles.actionLabel}>{actionItem.label}</Text>
           </TouchableOpacity>
         ))}
@@ -191,7 +179,7 @@ export default function SwipeableExpenseCard({
                   ]}
                 >
                   <Text style={styles.statusText}>
-                    {getStatusIcon(expense.status)} {expense.status.toUpperCase()}
+                    {expense.status.toUpperCase()}
                   </Text>
                 </View>
               </View>

@@ -22,8 +22,7 @@ import { RootStackParamList } from './types';
 import { useAuth, useStore } from '@/store';
 import AuthNavigator from './AuthNavigator';
 import AppNavigator from './AppNavigator';
-
-// Animation configurations
+import { revolutNavigationTheme } from '@/theme/navigation';
 import { rootNavigatorOptions } from '@/utils/navigationAnimations';
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
@@ -85,7 +84,7 @@ export default function RootNavigator() {
   }
 
   return (
-    <NavigationContainer>
+    <NavigationContainer theme={revolutNavigationTheme}>
       <Stack.Navigator
         screenOptions={{
           ...rootNavigatorOptions,

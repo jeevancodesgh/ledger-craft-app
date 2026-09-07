@@ -19,6 +19,7 @@ import {
   StyleSheet,
   Platform,
 } from 'react-native';
+import { Feather } from '@expo/vector-icons';
 import Animated, {
   useSharedValue,
   useAnimatedStyle,
@@ -222,9 +223,11 @@ export function ModernInput({
             style={styles.passwordToggle}
             activeOpacity={0.7}
           >
-            <Text style={{ fontSize: 20 }}>
-              {showPassword ? '👁️' : '👁️‍🗨️'}
-            </Text>
+            <Feather
+              name={showPassword ? 'eye-off' : 'eye'}
+              size={20}
+              color="#64748B"
+            />
           </TouchableOpacity>
         )}
       </AnimatedView>

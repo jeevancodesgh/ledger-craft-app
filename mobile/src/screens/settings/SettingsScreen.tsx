@@ -1,10 +1,12 @@
 import React from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, ScrollView, StatusBar } from 'react-native';
+import { View, Text, Pressable, StyleSheet, ScrollView, Alert } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import { Feather } from '@expo/vector-icons';
 import { useAuth } from '@/store';
+import { SettingsStackParamList } from '@/navigation/types';
 
-type NavigationProp = NativeStackNavigationProp<any>;
+type NavigationProp = NativeStackNavigationProp<SettingsStackParamList, 'SettingsList'>;
 
 export default function SettingsScreen() {
   const { signOut } = useAuth();
@@ -13,63 +15,55 @@ export default function SettingsScreen() {
   const settingsOptions = [
     {
       id: 'business',
-      icon: '🏢',
-      title: 'Business Settings',
-      subtitle: 'Manage your business profile and preferences',
+      icon: 'briefcase' as const,
+      title: 'Business',
+      subtitle: 'Profile, GST, and invoice numbering',
       onPress: () => navigation.navigate('BusinessSettings'),
     },
     {
       id: 'account',
-      icon: '👤',
-      title: 'Account Settings',
+      icon: 'user' as const,
+      title: 'Account',
       subtitle: 'Email, password, and security',
-      onPress: () => {
-        // TODO: Implement account settings
-      },
+      onPress: () => {},
       disabled: true,
     },
     {
       id: 'notifications',
-      icon: '🔔',
+      icon: 'bell' as const,
       title: 'Notifications',
-      subtitle: 'Manage notification preferences',
-      onPress: () => {
-        // TODO: Implement notifications settings
-      },
+      subtitle: 'Reminders and payment alerts',
+      onPress: () => {},
       disabled: true,
     },
   ];
 
-  return (
-    <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
-      <StatusBar barStyle="light-content" backgroundColor="#1E2875" />
-      {/* Header with Dark Blue Background */}
-      <View style={styles.header}>
-        <View style={styles.titleSection}>
-          <Text style={styles.headerTitle}>Settings</Text>
-          <Text style={styles.dateText}>
-            {new Date().toLocaleDateString('en-US', { 
-              weekday: 'long', 
-              month: 'long', 
-              day: 'numeric' 
-            })}
-          </Text>
-        </View>
-        <Text style={styles.headerSubtitle}>Manage your app preferences</Text>
-      </View>
+  const confirmSignOut = () => {
+    Alert.alert('Sign out?', 'You can sign back in anytime.', [
+      { text: 'Cancel', style: 'cancel' },
+      { text: 'Sign out', style: 'destructive', onPress: signOut },
+    ]);
+  };
 
-      {/* Settings Options */}
+  return (
+    <ScrollView
+      style={styles.container}
+      contentInsetAdjustmentBehavior="automatic"
+      showsVerticalScrollIndicator={false}
+    >
       <View style={styles.section}>
         {settingsOptions.map((option) => (
-          <TouchableOpacity
+          <Pressable
             key={option.id}
             style={[styles.optionCard, option.disabled && styles.optionCardDisabled]}
             onPress={option.onPress}
-            activeOpacity={0.7}
             disabled={option.disabled}
+            accessibilityRole="button"
+            accessibilityLabel={option.title}
+            accessibilityState={{ disabled: !!option.disabled }}
           >
             <View style={styles.optionIcon}>
-              <Text style={styles.optionIconText}>{option.icon}</Text>
+              <Feather name={option.icon} size={20} color="#5B72EE" />
             </View>
             <View style={styles.optionContent}>
               <Text style={[styles.optionTitle, option.disabled && styles.optionTextDisabled]}>
@@ -79,31 +73,27 @@ export default function SettingsScreen() {
                 {option.subtitle}
               </Text>
               {option.disabled && (
-                <Text style={styles.comingSoonBadge}>Coming Soon</Text>
+                <Text style={styles.comingSoonBadge}>Coming soon</Text>
               )}
             </View>
-            <Text style={[styles.optionChevron, option.disabled && styles.optionTextDisabled]}>
-              ›
-            </Text>
-          </TouchableOpacity>
+            <Feather name="chevron-right" size={20} color="#94A3B8" />
+          </Pressable>
         ))}
       </View>
 
-      {/* Danger Zone */}
       <View style={styles.section}>
-        <Text style={styles.sectionTitle}>Danger Zone</Text>
-        <TouchableOpacity
+        <Pressable
           style={styles.signOutButton}
-          onPress={signOut}
-          activeOpacity={0.7}
+          onPress={confirmSignOut}
+          accessibilityRole="button"
+          accessibilityLabel="Sign out"
         >
-          <Text style={styles.signOutButtonText}>🚪 Sign Out</Text>
-        </TouchableOpacity>
+          <Text style={styles.signOutButtonText}>Sign out</Text>
+        </Pressable>
       </View>
 
-      {/* App Info */}
       <View style={styles.appInfo}>
-        <Text style={styles.appInfoText}>EasyBizInvoice Mobile</Text>
+        <Text style={styles.appInfoText}>LedgerCraft</Text>
         <Text style={styles.appInfoText}>Version 1.0.0</Text>
       </View>
     </ScrollView>
@@ -115,69 +105,32 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#F8FAFC',
   },
-  header: {
-    backgroundColor: '#1E2875',
-    paddingHorizontal: 24,
-    paddingTop: 48,
-    paddingBottom: 32,
-  },
-  titleSection: {
-    marginBottom: 8,
-  },
-  headerTitle: {
-    fontSize: 30,
-    fontWeight: '800',
-    color: '#FFFFFF',
-    marginBottom: 4,
-  },
-  dateText: {
-    fontSize: 14,
-    color: 'rgba(255, 255, 255, 0.7)',
-  },
-  headerSubtitle: {
-    fontSize: 14,
-    color: 'rgba(255, 255, 255, 0.8)',
-  },
   section: {
-    marginTop: 24,
+    marginTop: 16,
     paddingHorizontal: 16,
-  },
-  sectionTitle: {
-    fontSize: 16,
-    fontWeight: '700',
-    color: '#1E293B',
-    marginBottom: 12,
-    paddingLeft: 4,
   },
   optionCard: {
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: '#FFFFFF',
     padding: 16,
-    borderRadius: 12,
+    borderRadius: 16,
     marginBottom: 12,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.05,
-    shadowRadius: 4,
-    elevation: 2,
     borderWidth: 1,
     borderColor: '#E2E8F0',
+    minHeight: 72,
   },
   optionCardDisabled: {
     opacity: 0.6,
   },
   optionIcon: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
+    width: 40,
+    height: 40,
+    borderRadius: 12,
     backgroundColor: '#EEF2FF',
     alignItems: 'center',
     justifyContent: 'center',
     marginRight: 12,
-  },
-  optionIconText: {
-    fontSize: 24,
   },
   optionContent: {
     flex: 1,
@@ -202,11 +155,6 @@ const styles = StyleSheet.create({
     color: '#5B72EE',
     marginTop: 4,
   },
-  optionChevron: {
-    fontSize: 28,
-    color: '#94A3B8',
-    marginLeft: 8,
-  },
   signOutButton: {
     backgroundColor: '#FEF2F2',
     paddingVertical: 16,
@@ -214,6 +162,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     borderWidth: 1,
     borderColor: '#FEE2E2',
+    minHeight: 52,
   },
   signOutButtonText: {
     fontSize: 16,
@@ -231,4 +180,3 @@ const styles = StyleSheet.create({
     marginBottom: 2,
   },
 });
-

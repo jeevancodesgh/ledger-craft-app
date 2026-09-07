@@ -10,6 +10,7 @@ import {
   SafeAreaView,
 } from 'react-native';
 import { accountService } from '@/services/accountService';
+import { Feather } from '@expo/vector-icons';
 import type { Account } from '@/types/expense';
 
 interface AccountPickerProps {
@@ -95,7 +96,7 @@ export function AccountPicker({
           </View>
 
           <View className="flex-row items-center bg-gray-100 rounded-xl px-4 py-2">
-            <Text className="text-gray-400 mr-2">🔍</Text>
+            <Feather name="search" size={16} color="#94A3B8" />
             <TextInput
               placeholder="Search accounts..."
               value={searchQuery}

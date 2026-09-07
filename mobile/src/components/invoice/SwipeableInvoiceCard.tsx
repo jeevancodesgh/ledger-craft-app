@@ -27,7 +27,7 @@ import Animated, {
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 import * as Haptics from 'expo-haptics';
 import type { Invoice } from '@/types/invoice';
-import { STATUS_OPTIONS, getStatusColor, getStatusIcon } from '@/utils/statusUtils';
+import { STATUS_OPTIONS, getStatusColor } from '@/utils/statusUtils';
 import { SPRING_CONFIG, SCALE } from '@/utils/animations';
 
 interface SwipeableInvoiceCardProps {
@@ -242,7 +242,7 @@ export default function SwipeableInvoiceCard({
                   ]}
                 >
                   <Text style={styles.statusText}>
-                    {getStatusIcon(invoice.status)} {invoice.status.toUpperCase()}
+                    {invoice.status.toUpperCase()}
                   </Text>
                 </View>
               </View>
@@ -260,12 +260,12 @@ export default function SwipeableInvoiceCard({
 
               <View style={styles.datesContainer}>
                 <View style={styles.dateItem}>
-                  <Text style={styles.dateLabel}>📅 Date</Text>
+                  <Text style={styles.dateLabel}>Date</Text>
                   <Text style={styles.dateValue}>{formatDate(invoice.date)}</Text>
                 </View>
                 <View style={styles.dateDivider} />
                 <View style={styles.dateItem}>
-                  <Text style={styles.dateLabel}>⏰ Due</Text>
+                  <Text style={styles.dateLabel}>Due</Text>
                   <Text style={styles.dateValue}>{formatDate(invoice.dueDate)}</Text>
                 </View>
               </View>

@@ -18,6 +18,7 @@ import { businessProfileService, BusinessProfile, BusinessProfileUpdate } from '
 import { FormInput } from '@/components/ui/FormInput';
 import CountryPicker from '@/components/onboarding/CountryPicker';
 import { LoadingOverlay } from '@/components/ui/LoadingOverlay';
+import { Feather } from '@expo/vector-icons';
 
 type TabType = 'profile' | 'preferences' | 'appearance';
 
@@ -427,7 +428,7 @@ export default function BusinessSettingsScreen() {
   const renderAppearanceTab = () => (
     <View style={styles.tabContent}>
       <View style={styles.comingSoonContainer}>
-        <Text style={styles.comingSoonIcon}>🎨</Text>
+        <Feather name="sliders" size={32} color="#5B72EE" />
         <Text style={styles.comingSoonTitle}>Theme Customization</Text>
         <Text style={styles.comingSoonText}>
           Custom theme selection coming soon! You'll be able to personalize your brand colors and appearance.
@@ -456,7 +457,7 @@ export default function BusinessSettingsScreen() {
   );
 
   if (loading) {
-    return <LoadingOverlay visible={true} message="Loading settings..." />;
+    return <LoadingOverlay visible={true} />;
   }
 
   return (
@@ -464,23 +465,6 @@ export default function BusinessSettingsScreen() {
       style={styles.container}
       behavior={Platform.OS === 'ios' ? 'padding' : undefined}
     >
-      <StatusBar barStyle="light-content" backgroundColor="#1E2875" />
-      {/* Header with Dark Blue Background */}
-      <View style={styles.headerGradient}>
-        <View style={styles.header}>
-          <View style={styles.titleSection}>
-            <Text style={styles.title}>Business Settings</Text>
-            <Text style={styles.dateText}>
-              {new Date().toLocaleDateString('en-US', {
-                weekday: 'long',
-                month: 'long',
-                day: 'numeric',
-              })}
-            </Text>
-          </View>
-        </View>
-      </View>
-
       {renderTabButtons()}
 
       <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
@@ -501,7 +485,7 @@ export default function BusinessSettingsScreen() {
             {saving ? (
               <ActivityIndicator color="#FFFFFF" />
             ) : (
-              <Text style={styles.saveButtonText}>💾 Save Changes</Text>
+              <Text style={styles.saveButtonText}>Save</Text>
             )}
           </TouchableOpacity>
         </View>

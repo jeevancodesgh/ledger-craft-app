@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useLayoutEffect, useRef } from 'react';
 import {
   View,
   Text,
@@ -11,12 +11,10 @@ import {
   Modal,
   ActivityIndicator,
 } from 'react-native';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import { LinearGradient } from 'expo-linear-gradient';
 import * as Haptics from 'expo-haptics';
-import { AppTabParamList } from '@/navigation/types';
+import { InvoiceStackParamList } from '@/navigation/types';
 import { invoiceService } from '@/services/invoiceService';
 import type { LineItem, Invoice, Customer } from '@/types/invoice';
 import { ModernInput } from '@/components/ui/ModernInput';
@@ -27,21 +25,19 @@ import { ItemPicker } from '@/components/items/ItemPicker';
 import { Item } from '@/services/itemService';
 import { businessProfileService } from '@/services/businessProfileService';
 import type { InvoiceTemplateId } from '@/types/invoiceTemplates';
-import { FloatingInvoiceHeader } from '@/components/invoice/FloatingInvoiceHeader';
+import { NativeHeaderButton } from '@/components/ui/NativeHeaderButton';
 import { SmartDatePicker } from '@/components/ui/SmartDatePicker';
 import { CompactLineItem } from '@/components/invoice/CompactLineItem';
 import { TaxConfigCard } from '@/components/invoice/TaxConfigCard';
 import { ProgressIndicator } from '@/components/invoice/ProgressIndicator';
-import { FloatingActionButton } from '@/components/ui/FloatingActionButton';
 import { ProfileCompletenessBanner } from '@/components/invoice/ProfileCompletenessBanner';
 
-type InvoiceCreateNavigationProp = NativeStackNavigationProp<AppTabParamList, 'InvoiceCreate'>;
+type InvoiceCreateNavigationProp = NativeStackNavigationProp<InvoiceStackParamList, 'InvoiceCreate'>;
 type InvoiceEditRouteProp = RouteProp<{ InvoiceEdit: { invoiceId?: string } }, 'InvoiceEdit'>;
 
 export default function InvoiceCreateScreen() {
   const navigation = useNavigation<InvoiceCreateNavigationProp>();
   const route = useRoute<InvoiceEditRouteProp>();
-  const insets = useSafeAreaInsets();
   
   // Check if editing existing invoice
   const invoiceId = route.params?.invoiceId;
@@ -114,7 +110,11 @@ export default function InvoiceCreateScreen() {
           setTaxAmount(existingInvoice.taxAmount);
           setTotal(existingInvoice.total);
           setTaxEnabled(existingInvoice.taxAmount > 0);
-          setTaxRate(existingInvoice.taxRate || 15);
+          setTaxRate(
+            existingInvoice.taxAmount > 0 && existingInvoice.subtotal > 0
+              ? Math.round((existingInvoice.taxAmount / existingInvoice.subtotal) * 100)
+              : 15
+          );
           
           // Load line items
           if (existingInvoice.items && existingInvoice.items.length > 0) {
@@ -131,7 +131,7 @@ export default function InvoiceCreateScreen() {
           // Find and set customer
           const customer = customerList.find(c => c.id === existingInvoice.customerId);
           if (customer) {
-            setSelectedCustomer(customer);
+            setSelectedCustomer(customer as CustomerType);
           }
         }
       } else {
@@ -335,13 +335,44 @@ export default function InvoiceCreateScreen() {
   };
 
   const handlePreview = () => {
-    // Don't validate if still loading initial data
     if (loadingCustomers) return;
-    
     if (!validateForm()) return;
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     setShowPreview(true);
   };
+
+  const handleCancelRef = useRef(handleCancel);
+  const handleSaveRef = useRef(handleSave);
+  const handlePreviewRef = useRef(handlePreview);
+  handleCancelRef.current = handleCancel;
+  handleSaveRef.current = handleSave;
+  handlePreviewRef.current = handlePreview;
+
+  useLayoutEffect(() => {
+    navigation.setOptions({
+      title: isEditMode ? 'Edit invoice' : 'New invoice',
+      headerLeft: () => (
+        <NativeHeaderButton
+          label="Cancel"
+          onPress={() => handleCancelRef.current()}
+        />
+      ),
+      headerRight: () => (
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+          <NativeHeaderButton
+            label="Preview"
+            onPress={() => handlePreviewRef.current()}
+          />
+          <NativeHeaderButton
+            label={isEditMode ? 'Update' : 'Save'}
+            primary
+            onPress={() => handleSaveRef.current()}
+            disabled={loading}
+          />
+        </View>
+      ),
+    });
+  }, [navigation, isEditMode, loading]);
 
   const getPreviewInvoice = (): Invoice => {
     const customer = customers.find((c) => c.id === customerId);
@@ -360,7 +391,7 @@ export default function InvoiceCreateScreen() {
       notes,
       terms,
       currency,
-      templateName: 'classic',
+      templateName,
     };
   };
 
@@ -385,20 +416,10 @@ export default function InvoiceCreateScreen() {
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
       style={styles.container}
     >
-      {/* Floating Header */}
-      <FloatingInvoiceHeader
-        invoiceNumber={invoiceNumber}
-        total={total}
-        currency={currency}
-        title={isEditMode ? 'Edit Invoice' : 'Create Invoice'}
-      />
-
       <ScrollView 
         style={styles.scrollView} 
-        contentContainerStyle={[
-          styles.scrollContent, 
-          { paddingTop: Platform.OS === 'ios' ? 140 : 120 }
-        ]}
+        contentContainerStyle={styles.scrollContent}
+        contentInsetAdjustmentBehavior="automatic"
         showsVerticalScrollIndicator={false}
       >
         {/* Progress Indicator */}
@@ -499,6 +520,38 @@ export default function InvoiceCreateScreen() {
               formatCurrency={formatCurrency}
             />
           ))}
+
+          <View style={styles.lineItemActions}>
+            <TouchableOpacity
+              onPress={addCustomLineItem}
+              style={styles.lineItemAction}
+              accessibilityRole="button"
+              accessibilityLabel="Add line"
+            >
+              <Text style={styles.lineItemActionText}>Add line</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              onPress={() => {
+                addLineItem();
+                setTimeout(() => openItemPicker(lineItems.length), 100);
+              }}
+              style={styles.lineItemAction}
+              accessibilityRole="button"
+              accessibilityLabel="Add from catalog"
+            >
+              <Text style={styles.lineItemActionText}>From catalog</Text>
+            </TouchableOpacity>
+            {lineItems.length > 0 && (
+              <TouchableOpacity
+                onPress={duplicateLastItem}
+                style={styles.lineItemAction}
+                accessibilityRole="button"
+                accessibilityLabel="Duplicate last line"
+              >
+                <Text style={styles.lineItemActionText}>Duplicate last</Text>
+              </TouchableOpacity>
+            )}
+          </View>
         </View>
 
         {/* Tax Configuration */}
@@ -534,72 +587,8 @@ export default function InvoiceCreateScreen() {
           />
         </View>
 
-        <View style={{ height: 140 }} />
+        <View style={{ height: 24 }} />
       </ScrollView>
-
-      {/* Floating Action Button */}
-      <FloatingActionButton
-        onAddFromCatalog={() => {
-          addLineItem();
-          setTimeout(() => openItemPicker(lineItems.length), 100);
-        }}
-        onAddCustomItem={addCustomLineItem}
-        onDuplicateLastItem={lineItems.length > 0 ? duplicateLastItem : undefined}
-        hasItems={lineItems.length > 0}
-      />
-
-      {/* Enhanced Bottom Actions Bar */}
-      <View style={styles.bottomActionsContainer}>
-        <View style={styles.bottomActions}>
-          {/* Cancel */}
-          <TouchableOpacity
-            onPress={handleCancel}
-            style={styles.cancelButton}
-            activeOpacity={0.7}
-          >
-            <Text style={styles.cancelButtonText}>Cancel</Text>
-          </TouchableOpacity>
-
-          {/* Preview */}
-          <TouchableOpacity
-            onPress={handlePreview}
-            style={[
-              styles.previewButton,
-              (!isFormValid() || loadingCustomers) && styles.buttonDisabled
-            ]}
-            activeOpacity={0.7}
-            disabled={!isFormValid() || loadingCustomers}
-          >
-            <Text style={[
-              styles.previewButtonText,
-              (!isFormValid() || loadingCustomers) && styles.buttonTextDisabled
-            ]}>
-              👁️ Preview
-            </Text>
-          </TouchableOpacity>
-
-          {/* Save - Gradient Primary */}
-          <TouchableOpacity
-            onPress={handleSave}
-            style={[styles.saveButton, loading && styles.buttonDisabled]}
-            activeOpacity={0.8}
-            disabled={loading}
-          >
-            <LinearGradient
-              colors={['#5B72EE', '#4A5FD8']}
-              start={{ x: 0, y: 0 }}
-              end={{ x: 1, y: 1 }}
-              style={styles.saveGradient}
-            >
-              {loading ? (
-                <ActivityIndicator color="#FFFFFF" />
-              ) : (
-                <Text style={styles.saveButtonText}>✓ {isEditMode ? 'Update Invoice' : 'Save Invoice'}</Text>
-              )}
-            </LinearGradient>
-          </TouchableOpacity>
-        </View>
-      </View>
 
       {/* Modals */}
       <ItemPicker
@@ -762,76 +751,21 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: '#94a3b8',
   },
-  bottomActionsContainer: {
-    backgroundColor: '#ffffff',
-    borderTopWidth: 1,
-    borderTopColor: '#e2e8f0',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: -2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 8,
-    elevation: 8,
-    paddingBottom: Platform.OS === 'ios' ? 24 : 16,
-  },
-  bottomActions: {
+  lineItemActions: {
     flexDirection: 'row',
-    padding: 16,
-    gap: 10,
+    flexWrap: 'wrap',
+    gap: 8,
+    marginTop: 8,
   },
-  cancelButton: {
-    flex: 1,
-    paddingVertical: 15,
+  lineItemAction: {
+    paddingVertical: 10,
+    paddingHorizontal: 14,
     borderRadius: 12,
-    backgroundColor: '#F8FAFC',
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderWidth: 1,
-    borderColor: '#E2E8F0',
+    backgroundColor: '#EEF2FF',
   },
-  cancelButtonText: {
-    fontSize: 15,
+  lineItemActionText: {
+    fontSize: 14,
     fontWeight: '600',
-    color: '#64748B',
-  },
-  previewButton: {
-    flex: 1.3,
-    paddingVertical: 15,
-    borderRadius: 12,
-    backgroundColor: '#FFFFFF',
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderWidth: 2,
-    borderColor: '#5B72EE',
-  },
-  previewButtonText: {
-    fontSize: 15,
-    fontWeight: '700',
     color: '#5B72EE',
-  },
-  saveButton: {
-    flex: 1.5,
-    borderRadius: 12,
-    overflow: 'hidden',
-    shadowColor: '#5B72EE',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.4,
-    shadowRadius: 12,
-    elevation: 6,
-  },
-  saveGradient: {
-    paddingVertical: 15,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  saveButtonText: {
-    fontSize: 15,
-    fontWeight: '700',
-    color: '#FFFFFF',
-  },
-  buttonDisabled: {
-    opacity: 0.5,
-  },
-  buttonTextDisabled: {
-    opacity: 0.5,
   },
 });

@@ -66,7 +66,7 @@ Migrator on an old volume needs `GRANT CREATE ON DATABASE ledgercraft TO ledgerc
 | Invoice PDF | Preview shows the same numbers as the downloaded `%PDF` file |
 | Protected UI | Logged-out `/invoices` and `/customers` redirect to `/login` |
 
-Web login is Better Auth. Web customers, business profile, items, invoices go through Hono. Mobile may still be Supabase Auth — do not authorize product data with both session systems.
+Web and mobile email login/signup are Better Auth. Web customers, business profile, items, invoices go through Hono. Mobile customers go through Hono with a SecureStore cookie jar. Do not authorize product data with both Better Auth and Supabase sessions.
 
 ## Evidence
 

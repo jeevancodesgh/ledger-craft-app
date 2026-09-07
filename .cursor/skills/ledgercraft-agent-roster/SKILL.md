@@ -53,7 +53,7 @@ Read and follow: .cursor/skills/ledgercraft-bootstrap/SKILL.md, .cursor/skills/l
 Wave: W5
 Goal: Invoice create through Hono in one transaction (sequence, lines, server totals, journal), scoped to the session organisation.
 In scope: packages/contracts invoice DTOs, api/src/modules/invoices, web Query hook
-Out of scope: TanStack Router, apps/ move, cutting clients off Supabase Auth, UI redesign
+Out of scope: TanStack Router, apps/ move, UI redesign. Do not authorize product data with both Better Auth and Supabase sessions.
 TDD: write failing tests first; real Postgres for SQL/RLS.
 Handoff: list files changed, tests run, blockers, knowledge-sync needed.
 Do not commit unless asked.

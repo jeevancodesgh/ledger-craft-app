@@ -34,7 +34,7 @@ module.exports = {
       edgeToEdgeEnabled: true,
       predictiveBackGestureEnabled: false,
     },
-    plugins: ['expo-secure-store'],
+    plugins: ['expo-secure-store', 'react-native-bottom-tabs'],
     scheme: 'easybizinvoice',
     extra: {
       supabaseUrl: process.env.EXPO_PUBLIC_SUPABASE_URL,

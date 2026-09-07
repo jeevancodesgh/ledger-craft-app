@@ -10,6 +10,7 @@ import {
   Platform,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { Feather } from '@expo/vector-icons';
 import { STATUS_OPTIONS } from '@/utils/statusUtils';
 
 interface StatusPickerProps {
@@ -137,7 +138,7 @@ export default function StatusPicker({
                   activeOpacity={0.7}
                 >
                   <View style={styles.optionLeft}>
-                    <Text style={styles.optionIcon}>{status.icon}</Text>
+                    <Feather name={status.icon} size={20} color={status.color} />
                     <View style={styles.optionTextContainer}>
                       <Text style={[styles.optionLabel, isSelected && styles.optionLabelSelected]}>
                         {status.label}
@@ -147,7 +148,7 @@ export default function StatusPicker({
                   </View>
                   <View style={styles.optionRight}>
                     <View style={[styles.colorDot, { backgroundColor: status.color }]} />
-                    {isSelected && <Text style={styles.checkmark}>✓</Text>}
+                    {isSelected && <Feather name="check" size={18} color="#5B72EE" />}
                   </View>
                 </TouchableOpacity>
               );

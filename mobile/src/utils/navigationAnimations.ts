@@ -28,15 +28,13 @@ const ANIMATION_DURATION = {
  * Uses native animations for best performance.
  */
 export const defaultScreenOptions: NativeStackNavigationOptions = {
-  headerShown: false,
+  headerShown: true,
   animation: 'slide_from_right',
-  animationDuration: ANIMATION_DURATION.normal,
+  animationDuration: ANIMATION_DURATION.fast,
   gestureEnabled: true,
   gestureDirection: 'horizontal',
-  // iOS-specific
   fullScreenGestureEnabled: true,
   customAnimationOnGesture: true,
-  // Presentation style
   presentation: 'card',
 };
 
@@ -45,7 +43,7 @@ export const defaultScreenOptions: NativeStackNavigationOptions = {
  * Perfect for forms, pickers, and detail screens.
  */
 export const modalScreenOptions: NativeStackNavigationOptions = {
-  headerShown: false,
+  headerShown: true,
   animation: 'slide_from_bottom',
   animationDuration: ANIMATION_DURATION.normal,
   gestureEnabled: true,
@@ -64,7 +62,7 @@ export const modalScreenOptions: NativeStackNavigationOptions = {
  * Good for tab switches and auth transitions.
  */
 export const fadeScreenOptions: NativeStackNavigationOptions = {
-  headerShown: false,
+  headerShown: false, // auth screens keep a custom brand surface
   animation: 'fade',
   animationDuration: ANIMATION_DURATION.fast,
   gestureEnabled: false,

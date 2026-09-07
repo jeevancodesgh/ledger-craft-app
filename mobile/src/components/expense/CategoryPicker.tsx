@@ -10,6 +10,7 @@ import {
   SafeAreaView,
 } from 'react-native';
 import { expenseCategoryService } from '@/services/expenseCategoryService';
+import { Feather } from '@expo/vector-icons';
 import type { ExpenseCategory } from '@/types/expense';
 
 interface CategoryPickerProps {
@@ -80,7 +81,7 @@ export function CategoryPicker({
           </View>
 
           <View className="flex-row items-center bg-gray-100 rounded-xl px-4 py-2">
-            <Text className="text-gray-400 mr-2">🔍</Text>
+            <Feather name="search" size={16} color="#94A3B8" />
             <TextInput
               placeholder="Search categories..."
               value={searchQuery}

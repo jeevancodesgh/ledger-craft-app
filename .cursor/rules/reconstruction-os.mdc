@@ -10,7 +10,7 @@ Read `.cursor/skills/ledgercraft-bootstrap/SKILL.md` first.
 - Spec: `TARGET_ARCHITECTURE.md`. Agent guide: `AGENTS.md`.
 - Live DB is gone. Greenfield toward the spec. Do not replay Git SQL.
 - **Now:** W1–W4 verified. Web Hono covers customers, business profile, items, and invoices (server GST, payment terms, percent/fixed discount, Send). Remaining W5: idempotency + share tokens. Pickup: `AGENTS.md` § Reconstruction agents.
-- W3 binds `user_id` / `organisation_id` on `/api/me`. W4 customers CRUD is Hono. Web login is Better Auth. Do not authorize product data with both Better Auth and Supabase sessions.
+- W3 binds `user_id` / `organisation_id` on `/api/me`. W4 customers CRUD is Hono. Web and mobile email login/signup are Better Auth. Do not authorize product data with both Better Auth and Supabase sessions.
 - Postgres host port **55432**. API **3001**. Vite **8080** proxies `/api`.
 - Launch specialists via `.cursor/skills/ledgercraft-agent-roster/SKILL.md`.
 - After each wave: `.cursor/skills/ledgercraft-knowledge-sync/SKILL.md`.

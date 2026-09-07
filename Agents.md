@@ -12,7 +12,7 @@ This document provides comprehensive guidance for AI agents (LLMs) working on th
 | Live DB | Hosted `public` is empty (2026-09-03). Greenfield. Do not replay Git SQL. No UUID import. |
 | Now | W1–W4 **verified**. Web invoices: Hono create/list/status/send, payment terms, percent/fixed discount, server GST. Remaining W5 gates: idempotency + share tokens. |
 | Blocked | None for remaining W5 invoice gates. |
-| Clients | Web login is Better Auth. Invoices still `supabase-js`. No new client SQL, Storage SDK, Edge Functions, or `VITE_OPENAI_*`. |
+| Clients | Web and mobile email auth are Better Auth. Mobile invoices → Hono. Mobile expenses still `supabase-js`. No new client SQL, Storage SDK, Edge Functions, or `VITE_OPENAI_*`. |
 | Ports | Postgres **55432**, API **3001**, Vite **8080** (`/api` proxy). |
 | Package manager | **pnpm** workspace (`api`, `packages/contracts`). `mobile/` is not in the workspace yet. |
 
@@ -1113,7 +1113,7 @@ Decisions already locked:
 
 ### What W3 shipped (working tree, verified)
 
-Hono binds a Better Auth session to `app.user_id` + `app.organisation_id`. Web login/signup use Better Auth. Mobile still uses Supabase Auth. Do **not** authorize product data with both session systems.
+Hono binds a Better Auth session to `app.user_id` + `app.organisation_id`. Web and mobile email login/signup use Better Auth. Mobile persists the session cookie in SecureStore. Do **not** authorize product data with both session systems.
 
 - SQL: `api/drizzle/0002_identity.sql` — `users`, `sessions`, `auth_accounts`, `verifications`, `organisations`, `organisation_memberships`
 - Drizzle: `api/src/db/schema/identity.ts`
@@ -1146,14 +1146,14 @@ Customers CRUD through Hono, scoped to the session organisation. Ownership IDs c
 - API: `api/src/modules/customers/` + Drizzle `api/src/db/schema/customers.ts` (W2 SQL, no new migration)
 - `GET/POST /api/customers`, `GET/PATCH/DELETE /api/customers/:id` — unauthenticated → 401 envelope; cross-org get → 404
 - Web: `src/features/customers/` Query hooks; `customerService` CRUD uses Hono when `VITE_CUSTOMERS_API=true`
-- Mobile: `mobile/src/services/customerService.ts` CRUD uses `EXPO_PUBLIC_API_URL` when `EXPO_PUBLIC_CUSTOMERS_API` is not `false`. Expo Better Auth is not wired — mobile CRUD 401s until a session exists
+- Mobile: `mobile/src/services/customerService.ts` CRUD uses `EXPO_PUBLIC_API_URL` when `EXPO_PUBLIC_CUSTOMERS_API` is not `false`. Email auth is Better Auth (`mobile/src/features/auth/api`). React Native cannot read `Set-Cookie`; the API exposes `set-auth-token` (bearer plugin) and the mobile cookie jar stores it in SecureStore.
 - Rollback flags: `VITE_CUSTOMERS_API`, `EXPO_PUBLIC_CUSTOMERS_API`
 
-**W4 out of scope (still):** TanStack Router, `apps/` move, UI redesign, cutting mobile off Supabase Auth.
+**W4 out of scope (still):** TanStack Router, `apps/` move, UI redesign.
 
 ### W5 status (invoices — in progress)
 
-Web invoice create/list/status/send is Hono: sequence lock, line items, server GST totals, balanced journal, payment terms, percent or fixed discount. `POST /api/invoices` stays `draft`. `POST /api/invoices/:id/send` emails then sets `sent` (mailer injected; default logs). Client-supplied totals are rejected. Cross-org get is 404. Remaining gates: idempotency key replay, share tokens. Mobile invoices still `supabase-js`.
+Web invoice create/list/status/send is Hono: sequence lock, line items, server GST totals, balanced journal, payment terms, percent or fixed discount. `POST /api/invoices` stays `draft`. `POST /api/invoices/:id/send` emails then sets `sent` (mailer injected; default logs). Client-supplied totals are rejected. Cross-org get is 404. Remaining gates: idempotency key replay, share tokens. Mobile invoices list/create/update go through Hono (`EXPO_PUBLIC_INVOICES_API`).
 
 ### Hard no (still)
 

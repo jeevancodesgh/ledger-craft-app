@@ -1,25 +1,28 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useLayoutEffect } from 'react';
 import {
   View,
   Text,
   FlatList,
-  TouchableOpacity,
+  Pressable,
   RefreshControl,
   StyleSheet,
   TextInput,
   Alert,
   ActivityIndicator,
-  StatusBar,
+  ScrollView,
+  Platform,
 } from 'react-native';
-import { useNavigation } from '@react-navigation/native';
+import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import { AppTabParamList } from '@/navigation/types';
+import { Feather } from '@expo/vector-icons';
+import { ExpenseStackParamList } from '@/navigation/types';
+import { NativeHeaderButton } from '@/components/ui/NativeHeaderButton';
+import { EmptyState } from '@/components/ui/EmptyState';
 import { expenseService } from '@/services/expenseService';
 import type { Expense } from '@/types/expense';
-import { useFocusEffect } from '@react-navigation/native';
 import SwipeableExpenseCard from '@/components/expense/SwipeableExpenseCard';
 
-type ExpenseListNavigationProp = NativeStackNavigationProp<AppTabParamList, 'ExpenseList'>;
+type ExpenseListNavigationProp = NativeStackNavigationProp<ExpenseStackParamList, 'ExpenseList'>;
 
 export default function ExpenseListScreen() {
   const navigation = useNavigation<ExpenseListNavigationProp>();
@@ -87,6 +90,23 @@ export default function ExpenseListScreen() {
     applyFilters(expenses, searchQuery, newFilter);
   };
 
+  useLayoutEffect(() => {
+    navigation.setOptions({
+      headerSearchBarOptions: {
+        placeholder: 'Search expenses',
+        hideWhenScrolling: true,
+        onChangeText: (event) => handleSearch(event.nativeEvent.text),
+      },
+      headerRight: () => (
+        <NativeHeaderButton
+          label="New"
+          primary
+          onPress={() => navigation.navigate('ExpenseCreate')}
+        />
+      ),
+    });
+  }, [navigation, expenses, filter]);
+
   const handleEdit = (expenseId: string) => {
     navigation.navigate('ExpenseEdit', { expenseId });
   };
@@ -146,9 +166,13 @@ export default function ExpenseListScreen() {
   );
 
   const renderFilterButtons = () => (
-    <View style={styles.filterContainer}>
+    <ScrollView
+      horizontal
+      showsHorizontalScrollIndicator={false}
+      contentContainerStyle={styles.filterContainer}
+    >
       {(['all', 'pending', 'approved', 'rejected'] as const).map((filterOption) => (
-        <TouchableOpacity
+        <Pressable
           key={filterOption}
           style={[
             styles.filterButton,
@@ -164,9 +188,9 @@ export default function ExpenseListScreen() {
           >
             {filterOption.charAt(0).toUpperCase() + filterOption.slice(1)}
           </Text>
-        </TouchableOpacity>
+        </Pressable>
       ))}
-    </View>
+    </ScrollView>
   );
 
   if (loading) {
@@ -180,66 +204,42 @@ export default function ExpenseListScreen() {
 
   return (
     <View style={styles.container}>
-      <StatusBar barStyle="light-content" backgroundColor="#1E2875" />
-      {/* Header with Dark Blue Background */}
-      <View style={styles.headerGradient}>
-        {/* Title, Date and New Button */}
-        <View style={styles.header}>
-          <View style={styles.titleSection}>
-            <Text style={styles.title}>Expenses</Text>
-            <Text style={styles.dateText}>
-              {new Date().toLocaleDateString('en-US', {
-                weekday: 'long',
-                month: 'long',
-                day: 'numeric',
-              })}
-            </Text>
-          </View>
-          <TouchableOpacity
-            style={styles.newButton}
-            onPress={() => {
-              // @ts-ignore - Navigation types will be properly typed
-              navigation.navigate('ExpenseCreate');
-            }}
-            activeOpacity={0.8}
-          >
-            <Text style={styles.newButtonText}>+ New</Text>
-          </TouchableOpacity>
-        </View>
-
-        {/* Search with Icon */}
-        <View style={styles.searchContainer}>
-          <Text style={styles.searchIcon}>🔍</Text>
+      {Platform.OS === 'android' && (
+        <View style={styles.androidSearch}>
+          <Feather name="search" size={18} color="#64748B" />
           <TextInput
-            style={styles.searchInput}
-            placeholder="Search expenses..."
+            style={styles.androidSearchInput}
+            placeholder="Search expenses"
             value={searchQuery}
             onChangeText={handleSearch}
-            placeholderTextColor="#94a3b8"
+            placeholderTextColor="#94A3B8"
           />
         </View>
-
-        {/* Filters */}
-        {renderFilterButtons()}
-      </View>
-
-      {/* Expense List */}
+      )}
+      {renderFilterButtons()}
       <FlatList
         data={filteredExpenses}
         keyExtractor={(item) => item.id}
         renderItem={renderExpenseCard}
         contentContainerStyle={styles.listContent}
+        contentInsetAdjustmentBehavior="automatic"
         refreshControl={
           <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#5B72EE" />
         }
         ListEmptyComponent={
-          <View style={styles.emptyContainer}>
-            <Text style={styles.emptyIcon}>💰</Text>
-            <Text style={styles.emptyText}>No expenses found</Text>
-            <Text style={styles.emptySubtext}>
-              Create your first expense to get started
-            </Text>
-          </View>
+          expenses.length === 0 ? (
+            <EmptyState
+              title="No expenses yet"
+              description="Log a receipt or add one by hand."
+              actionLabel="Add expense"
+              onAction={() => navigation.navigate('ExpenseCreate')}
+            />
+          ) : (
+            <View style={styles.emptyContainer}>
+              <Text style={styles.emptyText}>No expenses match</Text>
+              <Text style={styles.emptySubtext}>Try a different search or status</Text>
+            </View>
+          )
         }
       />
     </View>
@@ -262,102 +262,47 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: '#64748B',
   },
-  headerGradient: {
-    backgroundColor: '#1E2875',
-    paddingTop: 48,
-    paddingBottom: 20,
-    marginTop: 0,
-    borderBottomLeftRadius: 24,
-    borderBottomRightRadius: 24,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.1,
-    shadowRadius: 8,
-    elevation: 5,
-  },
-  header: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'flex-start',
-    paddingHorizontal: 24,
-    paddingBottom: 12,
-  },
-  titleSection: {
-    flex: 1,
-  },
-  title: {
-    fontSize: 30,
-    fontWeight: '800',
-    color: '#FFFFFF',
-    marginBottom: 4,
-  },
-  dateText: {
-    fontSize: 14,
-    color: 'rgba(255, 255, 255, 0.7)',
-  },
-  newButton: {
-    backgroundColor: '#FFFFFF',
-    paddingHorizontal: 20,
-    paddingVertical: 10,
-    borderRadius: 20,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.2,
-    shadowRadius: 4,
-    elevation: 3,
-  },
-  newButtonText: {
-    color: '#1E2875',
-    fontSize: 15,
-    fontWeight: '700',
-  },
-  searchContainer: {
+  androidSearch: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginHorizontal: 24,
-    marginTop: 12,
-    marginBottom: 16,
-    backgroundColor: 'rgba(255, 255, 255, 0.15)',
-    borderRadius: 16,
-    paddingHorizontal: 16,
-    height: 52,
+    marginHorizontal: 16,
+    marginTop: 8,
+    marginBottom: 4,
+    backgroundColor: '#FFFFFF',
+    borderRadius: 12,
+    paddingHorizontal: 12,
+    height: 44,
     borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.2)',
+    borderColor: '#E2E8F0',
+    gap: 8,
   },
-  searchIcon: {
-    fontSize: 18,
-    marginRight: 8,
-  },
-  searchInput: {
+  androidSearchInput: {
     flex: 1,
     fontSize: 16,
-    color: '#FFFFFF',
+    color: '#1E293B',
   },
   filterContainer: {
     flexDirection: 'row',
-    paddingHorizontal: 24,
-    paddingBottom: 20,
+    paddingHorizontal: 16,
+    paddingVertical: 12,
     gap: 10,
   },
   filterButton: {
-    paddingHorizontal: 18,
-    paddingVertical: 10,
+    paddingHorizontal: 16,
+    paddingVertical: 8,
     borderRadius: 20,
-    backgroundColor: 'rgba(255, 255, 255, 0.15)',
-    borderWidth: 1.5,
-    borderColor: 'rgba(255, 255, 255, 0.2)',
+    backgroundColor: '#F1F5F9',
   },
   filterButtonActive: {
-    backgroundColor: '#FFFFFF',
-    borderColor: '#FFFFFF',
+    backgroundColor: '#5B72EE',
   },
   filterButtonText: {
     fontSize: 14,
-    color: 'rgba(255, 255, 255, 0.8)',
+    color: '#64748B',
     fontWeight: '600',
   },
   filterButtonTextActive: {
-    color: '#1E2875',
+    color: '#FFFFFF',
   },
   listContent: {
     padding: 16,

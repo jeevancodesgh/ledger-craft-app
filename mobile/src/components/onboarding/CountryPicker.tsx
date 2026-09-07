@@ -8,6 +8,7 @@ import {
   FlatList,
   StyleSheet,
 } from 'react-native';
+import { Feather } from '@expo/vector-icons';
 import { COUNTRIES } from '@/types/onboarding';
 
 interface CountryPickerProps {
@@ -59,7 +60,7 @@ export default function CountryPicker({
 
           {/* Search */}
           <View style={styles.searchContainer}>
-            <Text style={styles.searchIcon}>🔍</Text>
+            <Feather name="search" size={16} color="#94A3B8" />
             <TextInput
               style={styles.searchInput}
               placeholder="Search countries..."

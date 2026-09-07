@@ -38,6 +38,7 @@ export function createApp(deps: AppDependencies = {}) {
       origin: getBetterAuthTrustedOrigins(),
       credentials: true,
       allowHeaders: ['Content-Type', 'Authorization'],
+      exposeHeaders: ['set-auth-token'],
       allowMethods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
     }),
   );

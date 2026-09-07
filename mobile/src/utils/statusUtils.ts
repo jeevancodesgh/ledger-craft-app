@@ -1,9 +1,11 @@
 // Status utilities for invoice status management
 
+export type StatusIconName = 'edit-3' | 'send' | 'check' | 'alert-circle' | 'circle';
+
 export interface StatusOption {
   value: 'draft' | 'sent' | 'paid' | 'overdue';
   label: string;
-  icon: string;
+  icon: StatusIconName;
   color: string;
   description: string;
 }
@@ -12,29 +14,29 @@ export const STATUS_OPTIONS: StatusOption[] = [
   {
     value: 'draft',
     label: 'Draft',
-    icon: '📝',
-    color: '#6b7280',
+    icon: 'edit-3',
+    color: '#64748B',
     description: 'Not sent to customer yet',
   },
   {
     value: 'sent',
     label: 'Sent',
-    icon: '📤',
-    color: '#3b82f6',
+    icon: 'send',
+    color: '#5B72EE',
     description: 'Sent and awaiting payment',
   },
   {
     value: 'paid',
     label: 'Paid',
-    icon: '✓',
-    color: '#10b981',
+    icon: 'check',
+    color: '#10B981',
     description: 'Payment received',
   },
   {
     value: 'overdue',
     label: 'Overdue',
-    icon: '⚠️',
-    color: '#ef4444',
+    icon: 'alert-circle',
+    color: '#EF4444',
     description: 'Payment past due date',
   },
 ];
@@ -44,9 +46,9 @@ export const getStatusColor = (status: string): string => {
   return option?.color || '#6b7280';
 };
 
-export const getStatusIcon = (status: string): string => {
+export const getStatusIcon = (status: string): StatusIconName => {
   const option = STATUS_OPTIONS.find((opt) => opt.value === status);
-  return option?.icon || '•';
+  return option?.icon || 'circle';
 };
 
 export const getStatusLabel = (status: string): string => {

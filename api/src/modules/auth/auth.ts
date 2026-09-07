@@ -1,5 +1,6 @@
 import { betterAuth } from 'better-auth';
 import { drizzleAdapter } from 'better-auth/adapters/drizzle';
+import { bearer } from 'better-auth/plugins';
 import type { Database } from '../../db/client';
 import { authAccounts, sessions, users, verifications } from '../../db/schema/identity';
 import { getBetterAuthSecret, getBetterAuthTrustedOrigins, getBetterAuthUrl } from '../../env';
@@ -32,6 +33,7 @@ export function createAuth(db: Database) {
     emailAndPassword: {
       enabled: true,
     },
+    plugins: [bearer()],
     advanced: {
       database: {
         generateId: 'uuid',

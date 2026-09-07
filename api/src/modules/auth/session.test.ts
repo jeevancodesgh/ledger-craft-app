@@ -44,6 +44,9 @@ describe('session routes', () => {
         });
         expect(signUp.status).toBeLessThan(400);
 
+        const token = signUp.headers.get('set-auth-token');
+        expect(token).toBeTruthy();
+
         const me = await app.request('/api/me', {
           headers: {
             Cookie: cookieHeader(signUp),

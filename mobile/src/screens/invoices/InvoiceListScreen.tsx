@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useLayoutEffect } from 'react';
 import {
   View,
   Text,
@@ -7,12 +7,14 @@ import {
   StyleSheet,
   TextInput,
   Alert,
-  StatusBar,
   ScrollView,
+  Platform,
 } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import { AppTabParamList } from '@/navigation/types';
+import { Feather } from '@expo/vector-icons';
+import { InvoiceStackParamList } from '@/navigation/types';
+import { NativeHeaderButton } from '@/components/ui/NativeHeaderButton';
 import { invoiceService } from '@/services/invoiceService';
 import { paymentService } from '@/services/paymentService';
 import type { Invoice } from '@/types/invoice';
@@ -21,10 +23,9 @@ import { useFocusEffect } from '@react-navigation/native';
 import SwipeableInvoiceCard from '@/components/invoice/SwipeableInvoiceCard';
 import PaymentCaptureModal from '@/components/invoice/PaymentCaptureModal';
 import { AnimatedFilterButton } from '@/components/ui/AnimatedFilterButton';
-import { AnimatedPressable } from '@/components/ui/AnimatedPressable';
 import { EmptyState } from '@/components/ui/EmptyState';
 
-type InvoiceListNavigationProp = NativeStackNavigationProp<any, 'InvoiceList'>;
+type InvoiceListNavigationProp = NativeStackNavigationProp<InvoiceStackParamList, 'InvoiceList'>;
 
 export default function InvoiceListScreen() {
   const navigation = useNavigation<InvoiceListNavigationProp>();
@@ -94,6 +95,23 @@ export default function InvoiceListScreen() {
     applyFilters(invoices, searchQuery, newFilter);
   };
 
+  useLayoutEffect(() => {
+    navigation.setOptions({
+      headerSearchBarOptions: {
+        placeholder: 'Search invoices',
+        hideWhenScrolling: true,
+        onChangeText: (event) => handleSearch(event.nativeEvent.text),
+      },
+      headerRight: () => (
+        <NativeHeaderButton
+          label="New"
+          primary
+          onPress={() => navigation.navigate('InvoiceCreate')}
+        />
+      ),
+    });
+  }, [navigation, invoices, filter]);
+
   const handleStatusChange = async (invoiceId: string, newStatus: string) => {
     // If changing to "paid", open payment capture modal
     if (newStatus === 'paid') {
@@ -141,36 +159,6 @@ export default function InvoiceListScreen() {
     }
   };
 
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'paid':
-        return '#10b981'; // green
-      case 'sent':
-        return '#3b82f6'; // blue
-      case 'draft':
-        return '#6b7280'; // gray
-      case 'overdue':
-        return '#ef4444'; // red
-      default:
-        return '#6b7280';
-    }
-  };
-
-  const getStatusIcon = (status: string) => {
-    switch (status) {
-      case 'paid':
-        return '✓';
-      case 'sent':
-        return '📤';
-      case 'draft':
-        return '📝';
-      case 'overdue':
-        return '⚠️';
-      default:
-        return '•';
-    }
-  };
-
   const formatCurrency = (amount: number, currency: string) => {
     const symbol = currency === 'NZD' ? '$' : currency;
     return `${symbol}${amount.toFixed(2)}`;
@@ -212,7 +200,7 @@ export default function InvoiceListScreen() {
           label={filterOption.charAt(0).toUpperCase() + filterOption.slice(1)}
           active={filter === filterOption}
           onPress={() => handleFilterChange(filterOption)}
-          variant="dark"
+          variant="light"
         />
       ))}
     </ScrollView>
@@ -228,55 +216,25 @@ export default function InvoiceListScreen() {
 
   return (
     <View style={styles.container}>
-      <StatusBar barStyle="light-content" backgroundColor="#1E2875" />
-      {/* Header with Dark Blue Background */}
-      <View style={styles.headerGradient}>
-        {/* Title, Date and New Button */}
-        <View style={styles.header}>
-          <View style={styles.titleSection}>
-            <Text style={styles.title}>Invoices</Text>
-            <Text style={styles.dateText}>
-              {new Date().toLocaleDateString('en-US', { 
-                weekday: 'long', 
-                month: 'long', 
-                day: 'numeric' 
-              })}
-            </Text>
-          </View>
-          <AnimatedPressable
-            style={styles.newButton}
-            onPress={() => {
-              // @ts-ignore - Navigation types will be properly typed
-              navigation.navigate('InvoiceCreate');
-            }}
-            haptic
-          >
-            <Text style={styles.newButtonText}>+ New</Text>
-          </AnimatedPressable>
-        </View>
-
-        {/* Search with Icon */}
-        <View style={styles.searchContainer}>
-          <Text style={styles.searchIcon}>🔍</Text>
+      {Platform.OS === 'android' && (
+        <View style={styles.androidSearch}>
+          <Feather name="search" size={18} color="#64748B" />
           <TextInput
-            style={styles.searchInput}
-            placeholder="Search invoices..."
+            style={styles.androidSearchInput}
+            placeholder="Search invoices"
             value={searchQuery}
             onChangeText={handleSearch}
-            placeholderTextColor="#94a3b8"
+            placeholderTextColor="#94A3B8"
           />
         </View>
-
-        {/* Filters */}
-        {renderFilterButtons()}
-      </View>
-
-      {/* Invoice List */}
+      )}
+      {renderFilterButtons()}
       <FlatList
         data={filteredInvoices}
         keyExtractor={(item) => item.id}
         renderItem={renderInvoiceCard}
         contentContainerStyle={styles.listContent}
+        contentInsetAdjustmentBehavior="automatic"
         refreshControl={
           <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#5B72EE" />
         }
@@ -324,81 +282,29 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     backgroundColor: '#F8FAFC',
   },
-  headerGradient: {
-    backgroundColor: '#1E2875',
-    paddingTop: 48,
-    paddingBottom: 20,
-    marginTop: 0,
-    borderBottomLeftRadius: 24,
-    borderBottomRightRadius: 24,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.1,
-    shadowRadius: 8,
-    elevation: 5,
-  },
-  header: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'flex-start',
-    paddingHorizontal: 24,
-    paddingBottom: 12,
-  },
-  titleSection: {
-    flex: 1,
-  },
-  title: {
-    fontSize: 30,
-    fontWeight: '800',
-    color: '#FFFFFF',
-    marginBottom: 4,
-  },
-  dateText: {
-    fontSize: 14,
-    color: 'rgba(255, 255, 255, 0.7)',
-  },
-  newButton: {
-    backgroundColor: '#FFFFFF',
-    paddingHorizontal: 20,
-    paddingVertical: 10,
-    borderRadius: 20,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.2,
-    shadowRadius: 4,
-    elevation: 3,
-  },
-  newButtonText: {
-    color: '#1E2875',
-    fontSize: 15,
-    fontWeight: '700',
-  },
-  searchContainer: {
+  androidSearch: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginHorizontal: 24,
-    marginTop: 12,
-    marginBottom: 16,
-    backgroundColor: 'rgba(255, 255, 255, 0.15)',
-    borderRadius: 16,
-    paddingHorizontal: 16,
-    height: 52,
+    marginHorizontal: 16,
+    marginTop: 8,
+    marginBottom: 4,
+    backgroundColor: '#FFFFFF',
+    borderRadius: 12,
+    paddingHorizontal: 12,
+    height: 44,
     borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.2)',
+    borderColor: '#E2E8F0',
+    gap: 8,
   },
-  searchIcon: {
-    fontSize: 18,
-    marginRight: 8,
-  },
-  searchInput: {
+  androidSearchInput: {
     flex: 1,
     fontSize: 16,
-    color: '#FFFFFF',
+    color: '#1E293B',
   },
   filterContainer: {
     flexDirection: 'row',
-    paddingHorizontal: 24,
-    paddingBottom: 20,
+    paddingHorizontal: 16,
+    paddingVertical: 12,
     gap: 10,
   },
   listContent: {

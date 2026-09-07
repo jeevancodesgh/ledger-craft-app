@@ -16,6 +16,7 @@ import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { AuthStackParamList } from '@/navigation/types';
 import { ModernInput } from '@/components/ui/ModernInput';
 import { ModernButton } from '@/components/ui/ModernButton';
+import { authErrorMessage } from '@/features/auth/api/authApi';
 
 type LoginScreenNavigationProp = NativeStackNavigationProp<AuthStackParamList, 'Login'>;
 
@@ -40,8 +41,8 @@ export default function LoginScreen() {
 
   const validatePassword = (text: string) => {
     setPassword(text);
-    if (text && text.length < 6) {
-      setPasswordError('Password must be at least 6 characters');
+    if (text && text.length < 8) {
+      setPasswordError('Password must be at least 8 characters');
     } else {
       setPasswordError('');
     }
@@ -63,14 +64,14 @@ export default function LoginScreen() {
     setLoading(false);
 
     if (error) {
-      Alert.alert('Login Failed', error.message);
+      Alert.alert('Login Failed', authErrorMessage(error));
     }
   };
 
   const handleGoogleSignIn = async () => {
     const { error } = await signInWithGoogle();
     if (error) {
-      Alert.alert('Google Sign In Failed', error.message);
+      Alert.alert('Google Sign In Failed', authErrorMessage(error));
     }
   };
 
@@ -177,22 +178,6 @@ export default function LoginScreen() {
                     Sign up for free
                   </Text>
                 </Text>
-              </View>
-            </View>
-
-            {/* Features */}
-            <View className="flex-row justify-center space-x-8 mt-4">
-              <View className="items-center">
-                <Text className="text-2xl mb-1">🔒</Text>
-                <Text className="text-xs text-muted-foreground">Secure</Text>
-              </View>
-              <View className="items-center">
-                <Text className="text-2xl mb-1">⚡</Text>
-                <Text className="text-xs text-muted-foreground">Fast</Text>
-              </View>
-              <View className="items-center">
-                <Text className="text-2xl mb-1">✨</Text>
-                <Text className="text-xs text-muted-foreground">Modern</Text>
               </View>
             </View>
           </View>

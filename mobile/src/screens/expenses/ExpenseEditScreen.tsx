@@ -137,13 +137,6 @@ export default function ExpenseEditScreen() {
   if (!expenseId) {
     return (
       <View style={styles.container}>
-        <View style={styles.header}>
-          <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
-            <Text style={styles.backButtonText}>←</Text>
-          </TouchableOpacity>
-          <Text style={styles.headerTitle}>Edit Expense</Text>
-          <View style={styles.headerSpacer} />
-        </View>
         <View style={styles.centerContainer}>
           <Text style={styles.loadingText}>Invalid expense ID</Text>
           <Text style={styles.errorText}>Please go back and try again.</Text>
@@ -290,17 +283,10 @@ export default function ExpenseEditScreen() {
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
       keyboardVerticalOffset={Platform.OS === 'ios' ? 100 : 0}
     >
-      <View style={styles.header}>
-        <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
-          <Text style={styles.backButtonText}>←</Text>
-        </TouchableOpacity>
-        <Text style={styles.headerTitle}>Edit Expense</Text>
-        <View style={styles.headerSpacer} />
-      </View>
-
       <ScrollView
         style={styles.scrollView}
         contentContainerStyle={styles.scrollContent}
+        contentInsetAdjustmentBehavior="automatic"
         keyboardShouldPersistTaps="handled"
       >
         {/* Basic Info Card */}

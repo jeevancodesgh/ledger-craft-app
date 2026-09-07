@@ -1,3 +1,4 @@
+import { invoicesApi, invoicesApiEnabled } from '@/features/invoices/api/invoicesApi';
 import { supabase } from './supabaseClient';
 import type { Invoice, LineItem, Customer } from '@/types/invoice';
 
@@ -5,6 +6,10 @@ export class InvoiceService {
   // Fetch all invoices for the current user
   async fetchInvoices(): Promise<Invoice[]> {
     try {
+      if (invoicesApiEnabled()) {
+        return invoicesApi.list();
+      }
+
       const { data: { user } } = await supabase.auth.getUser();
       
       if (!user) {
@@ -66,6 +71,10 @@ export class InvoiceService {
   // Fetch a single invoice by ID
   async fetchInvoiceById(id: string): Promise<Invoice> {
     try {
+      if (invoicesApiEnabled()) {
+        return invoicesApi.get(id);
+      }
+
       const { data, error } = await supabase
         .from('invoices')
         .select(`
@@ -141,6 +150,10 @@ export class InvoiceService {
     lineItems: LineItem[]
   ): Promise<Invoice> {
     try {
+      if (invoicesApiEnabled()) {
+        return invoicesApi.create(invoiceData, lineItems);
+      }
+
       const { data: { user } } = await supabase.auth.getUser();
       
       if (!user) {
@@ -208,6 +221,10 @@ export class InvoiceService {
     lineItems: LineItem[]
   ): Promise<Invoice> {
     try {
+      if (invoicesApiEnabled()) {
+        return invoicesApi.update(id, invoiceData, lineItems);
+      }
+
       // Transform to snake_case for database
       const dbInvoiceData = {
         invoice_number: invoiceData.invoiceNumber,
@@ -272,6 +289,10 @@ export class InvoiceService {
   // Fetch all customers
   async fetchCustomers(): Promise<Customer[]> {
     try {
+      if (invoicesApiEnabled()) {
+        return invoicesApi.customers();
+      }
+
       const { data: { user } } = await supabase.auth.getUser();
       
       if (!user) {
@@ -306,6 +327,10 @@ export class InvoiceService {
   // Generate next invoice number (matches web app logic)
   async generateInvoiceNumber(): Promise<string> {
     try {
+      if (invoicesApiEnabled()) {
+        return invoicesApi.nextNumber();
+      }
+
       const { data: { user } } = await supabase.auth.getUser();
       
       if (!user) {
@@ -389,6 +414,11 @@ export class InvoiceService {
     status: 'draft' | 'sent' | 'paid' | 'overdue'
   ): Promise<void> {
     try {
+      if (invoicesApiEnabled()) {
+        await invoicesApi.updateStatus(id, status);
+        return;
+      }
+
       const { data: { user } } = await supabase.auth.getUser();
       
       if (!user) {
