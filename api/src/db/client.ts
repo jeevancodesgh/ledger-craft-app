@@ -1,9 +1,25 @@
 import { drizzle, type PostgresJsDatabase } from 'drizzle-orm/postgres-js';
 import postgres from 'postgres';
 import { getDatabaseUrl, getMigrateDatabaseUrl } from '../env';
+import {
+  authAccounts,
+  organisationMemberships,
+  organisations,
+  sessions,
+  users,
+  verifications,
+} from './schema/identity';
 import { rlsProbe } from './schema/probe';
 
-export const schema = { rlsProbe };
+export const schema = {
+  rlsProbe,
+  users,
+  sessions,
+  authAccounts,
+  verifications,
+  organisations,
+  organisationMemberships,
+};
 
 export type Database = PostgresJsDatabase<typeof schema>;
 

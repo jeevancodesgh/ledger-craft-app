@@ -2,10 +2,14 @@ import { serve } from '@hono/node-server';
 import { createApp } from './app';
 import { createAppDb } from './db/client';
 import { apiPort } from './env';
+import { createAuth } from './modules/auth/auth';
 
 function createRuntimeApp() {
-  const { sql } = createAppDb();
+  const { db, sql } = createAppDb();
+  const auth = createAuth(db);
   return createApp({
+    auth,
+    db,
     checkDatabase: async () => {
       try {
         await sql`SELECT 1`;

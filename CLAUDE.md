@@ -8,7 +8,7 @@ The hosted `public` schema is empty. Rebuild toward `TARGET_ARCHITECTURE.md`. Do
 2. `AGENTS.md` — file map, commands, specialist roster
 3. Matching skill in `.cursor/skills/ledgercraft-*`
 
-**Now:** W1 and W2 are verified end-to-end (2026-09-05; W2 not committed). Next: W3 Better Auth + memberships. Pickup: `AGENTS.md` § Reconstruction agents. Postgres host port **55432**. API **3001**. Vite **8080**.
+**Now:** W1–W3 are verified end-to-end (2026-09-05). Next: W4 customers slice. Pickup: `AGENTS.md` § Reconstruction agents. Postgres host port **55432**. API **3001**. Vite **8080**.
 
 New domain work goes through Hono (`api/`), not new `supabase.from` / Storage / Edge Functions / client OpenAI.
 

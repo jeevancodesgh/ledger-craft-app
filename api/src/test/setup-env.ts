@@ -9,3 +9,5 @@ process.env.DATABASE_URL ??= 'postgres://ledgercraft_app:app@127.0.0.1:55432/led
 process.env.DATABASE_MIGRATE_URL ??=
   'postgres://ledgercraft_migrator:migrator@127.0.0.1:55432/ledgercraft';
 process.env.DATABASE_ADMIN_URL ??= 'postgres://postgres:postgres@127.0.0.1:55432/ledgercraft';
+process.env.BETTER_AUTH_SECRET ??= 'test-only-better-auth-secret-32ch';
+process.env.BETTER_AUTH_URL ??= 'http://localhost:8080';

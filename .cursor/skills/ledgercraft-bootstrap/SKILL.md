@@ -15,31 +15,33 @@ Read this before writing code. Then follow the named skill for the wave you are 
 | Identity cutover | Skip UUID preservation. No users to import. |
 | W0 | Done (skills, rules, docs). |
 | W1 | **Verified.** `pnpm verify:w1` is green (contracts, health/RLS, typecheck). Migrator needs `CREATE` on the database so Drizzle can create the `drizzle` schema. |
-| W2 | **Verified end-to-end (2026-09-05).** `pnpm verify:w2` green. Live: 28 public tables on `55432`, `/api/healthz` + `/api/readyz` via Vite `:8080` proxy, login/signup UI, protected `/invoices` and `/customers` redirect to `/login`. |
-| W3 | Next. Better Auth + memberships. Do not start W4 customers slice until W3 can bind a session. |
-| Git | `origin/mobile-app` = W1 only (`fd62f9a`). W2 is verified **in this working tree and not committed**. |
+| W2 | **Verified.** `pnpm verify:w2` green. Compatibility product schema on `55432`. |
+| W3 | **Verified (2026-09-05).** `pnpm verify:w3` green. Better Auth email/password, `/api/me` binds org. Clients stay on Supabase Auth. |
+| W4 | Next. Customers vertical slice. Session can bind `organisation_id`. |
+| Git | `origin/mobile-app` = W1 (`fd62f9a`). Local `mobile-app` has W2 (`33cf075`) and W3 identity. |
 | Clients | Still `supabase-js` → hosted Supabase. Do not add new `.from` / Storage / client OpenAI. |
 
 ## Pickup
 
-1. Read `AGENTS.md` § Reconstruction agents (what shipped, W3 steps, `accounts` name clash).
-2. If this clone does not contain `api/drizzle/0001_compatibility.sql`, W2 is missing — do not start W3.
-3. Commit/push W2 if still uncommitted and the user asks.
+1. Read `AGENTS.md` § Reconstruction agents (what shipped, W4 customers, `accounts` name clash).
+2. If this clone does not contain `api/drizzle/0002_identity.sql`, W3 is missing — do not start W4.
+3. Commit/push if origin is behind and the user asks.
 
 ## First command
 
 ```bash
 pnpm install
 pnpm db:up
-pnpm verify:w2
+pnpm verify:w3
 ```
 
-If `pnpm-lock.yaml` changes, commit it. Next wave is W3 (Better Auth). Dev smoke:
+If `pnpm-lock.yaml` changes, commit it. Next wave is W4 (customers). Dev smoke:
 
 ```bash
 pnpm dev:api          # 127.0.0.1:3001
 pnpm dev              # Vite :8080, proxies /api
 curl -s localhost:8080/api/healthz
+curl -s localhost:8080/api/me
 ```
 
 ## Env and ports
@@ -64,7 +66,7 @@ mobile/                  Expo. Not in the pnpm workspace yet.
 api/                     Hono + Drizzle + tests
 packages/contracts/      Zod DTOs only
 docker/postgres/init/    roles
-api/drizzle/             0000 probe + 0001 compatibility product tables
+api/drizzle/             0000 probe + 0001 compatibility + 0002 identity
 TARGET_ARCHITECTURE.md   end-state spec
 AGENTS.md                this project’s agent guide
 .cursor/skills/          procedures
@@ -90,8 +92,7 @@ Parent chat = Orchestrator. Task `generalPurpose` + prompt in `ledgercraft-agent
 
 | Next wave | Launch |
 | --- | --- |
-| Finish W1/W2 | Done (`pnpm verify:w2`) |
-| W3 | Auth + Schema (Better Auth, organisations, memberships) |
+| Finish W1/W2/W3 | Done (`pnpm verify:w3`) |
 | W4 | Contracts → Verification (failing tests) → API → Web → Mobile |
 
 ## Hard no
@@ -102,7 +103,7 @@ Parent chat = Orchestrator. Task `generalPurpose` + prompt in `ledgercraft-agent
 - Better Auth + Supabase sessions both authorizing data
 - UI redesign + TanStack Router + `apps/` move + data cutover in one change
 - Mock Drizzle in SQL/RLS/transaction tests
-- Start W4 before W3 can bind a session to `organisation_id`
+- Start W4 without `0002_identity.sql` and a working `/api/me` session bind
 - Commit unless the user asked
 
 ## After any change

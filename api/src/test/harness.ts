@@ -26,6 +26,16 @@ export async function withTestDb<T>(
 
   try {
     await migrator.sql`TRUNCATE TABLE rls_probe`;
+    await migrator.sql`
+      TRUNCATE TABLE
+        organisation_memberships,
+        organisations,
+        sessions,
+        auth_accounts,
+        verifications,
+        users
+      CASCADE
+    `;
     await migrator.db.insert(rlsProbe).values([
       { organisationId: ORG_A, label: 'org-a' },
       { organisationId: ORG_B, label: 'org-b' },
