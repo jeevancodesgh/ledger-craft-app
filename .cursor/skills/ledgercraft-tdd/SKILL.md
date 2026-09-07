@@ -45,7 +45,7 @@ No production code for a slice until a failing test exists for that slice.
 ```bash
 pnpm install
 pnpm db:up
-pnpm verify:w3          # W1–W3. Add verify:w4 with the customers slice.
+pnpm verify:w4          # W1–W4. Add verify:w5 with the invoices slice.
 ```
 
 Postgres host port is `55432`. API tests use `DATABASE_URL` (app role) and `DATABASE_MIGRATE_URL` (migrator). Do not mock Drizzle in `api/src/test`.

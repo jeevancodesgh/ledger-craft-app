@@ -10,8 +10,8 @@ This document provides comprehensive guidance for AI agents (LLMs) working on th
 | --- | --- |
 | Spec | `TARGET_ARCHITECTURE.md` — end state and gates. Not optional. |
 | Live DB | Hosted `public` is empty (2026-09-03). Greenfield. Do not replay Git SQL. No UUID import. |
-| Now | W1–W3 **verified** (2026-09-05). Next: W4 customers vertical slice. |
-| Blocked | None for W4 — `/api/me` binds `app.user_id` + `app.organisation_id`. |
+| Now | W1–W4 **verified** (2026-09-07). Next: W5 invoices gate. |
+| Blocked | None for W5 — customers CRUD is Hono and `/api/me` binds org. |
 | Clients | Still `supabase-js`. No new client SQL, Storage SDK, Edge Functions, or `VITE_OPENAI_*`. |
 | Ports | Postgres **55432**, API **3001**, Vite **8080** (`/api` proxy). |
 | Package manager | **pnpm** workspace (`api`, `packages/contracts`). `mobile/` is not in the workspace yet. |
@@ -1067,7 +1067,7 @@ Parent chat is Orchestrator. Launch specialists with Task `generalPurpose` using
 | Mobile | `mobile/` Query hooks and screens |
 | Verification | Vitest, RLS tests, Playwright, RN tests |
 
-**Waves:** W0 knowledge (done) → W1 platform scaffolding (**verified**) → W2 compatibility schema (**verified**) → W3 identity (**verified**) → W4 customers (**next**) → W5 invoices (gate) → W6 payments/expenses/accounts → W7 bank/recon/tax → W8 storage/email/AI → W9 client consolidation.
+**Waves:** W0 knowledge (done) → W1 platform scaffolding (**verified**) → W2 compatibility schema (**verified**) → W3 identity (**verified**) → W4 customers (**verified**) → W5 invoices (gate, **next**) → W6 payments/expenses/accounts → W7 bank/recon/tax → W8 storage/email/AI → W9 client consolidation.
 
 **TDD:** failing tests first; real Postgres for SQL/RLS. **Knowledge:** a wave is not done if docs are stale.
 
@@ -1077,7 +1077,8 @@ Parent chat is Orchestrator. Launch specialists with Task `generalPurpose` using
 | --- | --- |
 | `origin/mobile-app` @ `fd62f9a` | W0 + W1 scaffolding only. |
 | `mobile-app` local `33cf075` | W2 compatibility schema. Ahead of origin until pushed. |
-| `mobile-app` local | W2 (`33cf075`) + W3 identity (Better Auth, `/api/me`). Push when asked. |
+| `mobile-app` local `b758b32` | W3 identity (Better Auth, `/api/me`). Ahead of origin until pushed. |
+| `mobile-app` local | W4 customers CRUD on Hono (working tree until committed). Push when asked. |
 
 ### What W1 shipped (in `fd62f9a`)
 
@@ -1105,7 +1106,7 @@ Decisions already locked:
 - Tenant key is `organisation_id` + `user_id` (Lane A name) on tenant tables
 - Invoice `payment_status` includes `partially_paid`; `balance_due` is a normal `NUMERIC` column (not generated)
 - Money is `NUMERIC`, never float
-- Drizzle **TS table defs** for product tables are **not** written yet (only `rls_probe` + identity tables). SQL + inventory are the W2 contract. Add Drizzle tables when a slice needs them.
+- Drizzle **TS table defs** for most product tables are **not** written yet (W2 shipped SQL + inventory; W3 identity tables; W4 added `customers`). Add Drizzle tables when a slice needs them.
 - Clients still talk to hosted Supabase via `supabase-js`
 
 ### What W3 shipped (working tree, verified)
@@ -1126,22 +1127,33 @@ Hono binds a Better Auth session to `app.user_id` + `app.organisation_id`. Clien
 ```bash
 pnpm install
 pnpm db:up
-pnpm verify:w3          # alias of verify:w1; contracts + API + typecheck
+pnpm verify:w4          # alias of verify:w1; contracts + API + typecheck
 pnpm dev:api            # 127.0.0.1:3001
 pnpm dev                # Vite :8080, proxies /api
 curl -s localhost:8080/api/healthz
 curl -s localhost:8080/api/me
 ```
 
-`.env.example` has the database URLs and `BETTER_AUTH_*`. Tests fall back to defaults if `.env` is missing.
+`.env.example` has the database URLs, `BETTER_AUTH_*`, and `VITE_CUSTOMERS_API` / `EXPO_PUBLIC_CUSTOMERS_API`. Tests fall back to defaults if `.env` is missing.
 
-### W4 plan (next — customers slice, after session bind)
+### What W4 shipped (working tree, verified)
 
-W4 customers: contracts → failing API tests → repository/use case/route → web Query hook (delete that domain from DataManager) → mobile hook. One domain per change. Invoice gate is W5. Ownership IDs from the session, never the body.
+Customers CRUD through Hono, scoped to the session organisation. Ownership IDs come from the session, never the body. Web invoices still use `supabase-js` (including nested `customers(*)` embeds). Clients still use Supabase Auth for `/login`.
+
+- Contracts: `packages/contracts/src/customer.ts` — camelCase DTO, strict create body (rejects `organisationId` / `userId`)
+- API: `api/src/modules/customers/` + Drizzle `api/src/db/schema/customers.ts` (W2 SQL, no new migration)
+- `GET/POST /api/customers`, `GET/PATCH/DELETE /api/customers/:id` — unauthenticated → 401 envelope; cross-org get → 404
+- Web: `src/features/customers/` Query hooks; `customerService` CRUD uses Hono when `VITE_CUSTOMERS_API=true`
+- Mobile: `mobile/src/services/customerService.ts` CRUD uses `EXPO_PUBLIC_API_URL` when `EXPO_PUBLIC_CUSTOMERS_API` is not `false`. Expo Better Auth is not wired — mobile CRUD 401s until a session exists
+- Rollback flags: `VITE_CUSTOMERS_API`, `EXPO_PUBLIC_CUSTOMERS_API`
+
+**W4 out of scope (still):** invoices Hono routes, TanStack Router, `apps/` move, UI redesign, cutting clients off Supabase Auth.
+
+### W5 plan (next — invoices gate)
+
+Invoice create is one transaction: sequence, lines, server totals, balanced journal, idempotency. Cross-org isolation. Client-supplied totals cannot override the server. Nested `customers(*)` on invoices can move with this slice or stay until the invoice read path is Hono.
 
 **Launch (roster):** Contracts + Verification + API, then Web, then Mobile.
-
-**W4 out of scope:** invoices Hono routes, TanStack Router, `apps/` move, UI redesign, cutting clients off Supabase Auth.
 
 ### Hard no (still)
 
@@ -1162,6 +1174,6 @@ W4 customers: contracts → failing API tests → repository/use case/route → 
 
 ---
 
-**Last Updated**: 2026-09-05
-**Version**: 1.3.0
+**Last Updated**: 2026-09-07
+**Version**: 1.4.0
 

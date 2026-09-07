@@ -28,6 +28,7 @@ export async function withTestDb<T>(
     await migrator.sql`TRUNCATE TABLE rls_probe`;
     await migrator.sql`
       TRUNCATE TABLE
+        customers,
         organisation_memberships,
         organisations,
         sessions,

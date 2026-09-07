@@ -7,6 +7,12 @@ import {
   SharedInvoice, SupabaseSharedInvoice, InvoiceTemplateName
 } from '@/types';
 import { accountingJournalService } from './accountingJournalService';
+import {
+  customersApi,
+  customersApiEnabled,
+  toCreateCustomerRequest,
+  toUpdateCustomerRequest,
+} from '@/features/customers/api/customersApi';
 
 const mapSupabaseCustomerToCustomer = (customer: SupabaseCustomer): Customer => ({
   id: customer.id,
@@ -336,6 +342,9 @@ const mapExpenseToSupabaseExpense = async (
 
 export const customerService = {
   async getCustomers(): Promise<Customer[]> {
+    if (customersApiEnabled()) {
+      return customersApi.list();
+    }
     const { data: { user } } = await supabase.auth.getUser();
     if (!user?.id) {
       console.error('No authenticated user found');
@@ -356,6 +365,9 @@ export const customerService = {
   },
 
   async getCustomer(id: string): Promise<Customer | null> {
+    if (customersApiEnabled()) {
+      return customersApi.get(id);
+    }
     const { data: { user } } = await supabase.auth.getUser();
     if (!user?.id) {
       console.error('No authenticated user found');
@@ -377,6 +389,9 @@ export const customerService = {
   },
 
   async createCustomer(customer: Omit<Customer, 'id' | 'createdAt' | 'updatedAt'>): Promise<Customer> {
+    if (customersApiEnabled()) {
+      return customersApi.create(toCreateCustomerRequest(customer));
+    }
     const supabaseCustomer = await mapCustomerToSupabaseCustomer(customer);
     
     const { data, error } = await supabase
@@ -394,6 +409,9 @@ export const customerService = {
   },
 
   async updateCustomer(id: string, customer: Partial<Omit<Customer, 'id' | 'createdAt' | 'updatedAt'>>): Promise<Customer> {
+    if (customersApiEnabled()) {
+      return customersApi.update(id, toUpdateCustomerRequest(customer));
+    }
     const existingCustomer = await this.getCustomer(id);
     if (!existingCustomer) {
       throw new Error(`Customer with id ${id} not found`);
@@ -425,6 +443,10 @@ export const customerService = {
   },
 
   async deleteCustomer(id: string): Promise<void> {
+    if (customersApiEnabled()) {
+      await customersApi.remove(id);
+      return;
+    }
     const { error } = await supabase
       .from('customers')
       .delete()

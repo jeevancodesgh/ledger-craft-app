@@ -4,6 +4,7 @@ import { errorHandler, notFoundHandler } from './middleware/errors';
 import { requestLogging } from './middleware/logging';
 import { requestContext } from './middleware/request-context';
 import { sessionRoutes } from './modules/auth/session.routes';
+import { customerRoutes } from './modules/customers/customers.routes';
 import { healthRoutes } from './modules/health/health.routes';
 import { getBetterAuthTrustedOrigins } from './env';
 import type { AppDependencies, AppEnv } from './types';
@@ -26,12 +27,12 @@ export function createApp(deps: AppDependencies = {}) {
   });
   app.use('*', requestLogging);
   app.use(
-    '/api/auth/*',
+    '/api/*',
     cors({
       origin: getBetterAuthTrustedOrigins(),
       credentials: true,
       allowHeaders: ['Content-Type', 'Authorization'],
-      allowMethods: ['POST', 'GET', 'OPTIONS'],
+      allowMethods: ['GET', 'POST', 'PATCH', 'DELETE', 'OPTIONS'],
     }),
   );
 
@@ -45,6 +46,7 @@ export function createApp(deps: AppDependencies = {}) {
 
   app.route('/', healthRoutes());
   app.route('/', sessionRoutes());
+  app.route('/', customerRoutes());
 
   if (process.env.NODE_ENV === 'test') {
     app.get('/api/__test/boom', () => {

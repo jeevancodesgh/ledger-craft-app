@@ -24,3 +24,14 @@ export {
   type SessionUser,
 } from './session';
 
+export {
+  createCustomerRequestSchema,
+  customerListResponseSchema,
+  customerSchema,
+  updateCustomerRequestSchema,
+  type CreateCustomerRequest,
+  type CustomerDto,
+  type CustomerListResponse,
+  type UpdateCustomerRequest,
+} from './customer';
+

@@ -5,7 +5,7 @@ import { Plus, Star, Pencil, Trash, Mail, Phone, MapPin, ChevronRight, Filter, X
 import { PageHeader } from '@/components/layout/PageHeader';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { ContentPanel } from '@/components/ui/ContentPanel';
-import { useAppData } from '@/hooks/useAppData';
+import { useCustomerDirectory } from '@/features/customers/hooks/useCustomerDirectory';
 import { Customer } from '@/types';
 import { useToast } from '@/hooks/use-toast';
 import { Spinner } from '@/components/ui/spinner';
@@ -88,7 +88,7 @@ const Customers = () => {
     createCustomer: createCustomerFromAppData,
     updateCustomer: updateCustomerFromAppData,
     deleteCustomer: deleteCustomerFromAppData
-  } = useAppData();
+  } = useCustomerDirectory();
   
   const [deleteCustomerId, setDeleteCustomerId] = useState<string | null>(null);
   const isMobile = useIsMobile();

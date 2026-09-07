@@ -1,3 +1,4 @@
+import { customersApi, customersApiEnabled } from '../features/customers/api/customersApi';
 import { supabase } from './supabaseClient';
 
 export interface Customer {
@@ -17,12 +18,47 @@ export interface Customer {
   updatedAt?: string;
 }
 
+function fromDto(customer: {
+  id: string;
+  name: string;
+  email: string;
+  phone?: string | null;
+  address: string | null;
+  city: string | null;
+  state: string | null;
+  zip: string | null;
+  country: string;
+  isVip?: boolean | null;
+  tags?: string[] | null;
+  createdAt?: string;
+  updatedAt?: string;
+}): Customer {
+  return {
+    id: customer.id,
+    name: customer.name,
+    email: customer.email,
+    phone: customer.phone,
+    address: customer.address,
+    city: customer.city,
+    state: customer.state,
+    zip: customer.zip,
+    country: customer.country,
+    isVip: customer.isVip,
+    tags: customer.tags,
+    createdAt: customer.createdAt,
+    updatedAt: customer.updatedAt,
+  };
+}
+
 export class CustomerService {
-  // Fetch all customers for the current user
   async fetchCustomers(): Promise<Customer[]> {
     try {
+      if (customersApiEnabled()) {
+        return (await customersApi.list()).map(fromDto);
+      }
+
       const { data: { user } } = await supabase.auth.getUser();
-      
+
       if (!user) {
         throw new Error('User not authenticated');
       }
@@ -35,7 +71,6 @@ export class CustomerService {
 
       if (error) throw error;
 
-      // Transform snake_case to camelCase
       return (data || []).map((customer: any) => ({
         id: customer.id,
         name: customer.name,
@@ -58,9 +93,12 @@ export class CustomerService {
     }
   }
 
-  // Fetch a single customer by ID
   async fetchCustomerById(id: string): Promise<Customer> {
     try {
+      if (customersApiEnabled()) {
+        return fromDto(await customersApi.get(id));
+      }
+
       const { data, error } = await supabase
         .from('customers')
         .select('*')
@@ -92,16 +130,31 @@ export class CustomerService {
     }
   }
 
-  // Create a new customer
   async createCustomer(customerData: Omit<Customer, 'id' | 'createdAt' | 'updatedAt' | 'userId'>): Promise<Customer> {
     try {
+      if (customersApiEnabled()) {
+        return fromDto(
+          await customersApi.create({
+            name: customerData.name,
+            email: customerData.email || '',
+            phone: customerData.phone || null,
+            address: customerData.address || null,
+            city: customerData.city || null,
+            state: customerData.state || null,
+            zip: customerData.zip || null,
+            country: customerData.country || 'NZ',
+            isVip: customerData.isVip || false,
+            tags: customerData.tags || [],
+          }),
+        );
+      }
+
       const { data: { user } } = await supabase.auth.getUser();
-      
+
       if (!user) {
         throw new Error('User not authenticated');
       }
 
-      // Transform to snake_case for database
       const dbCustomerData = {
         name: customerData.name,
         email: customerData.email || null,
@@ -131,12 +184,25 @@ export class CustomerService {
     }
   }
 
-  // Update an existing customer
   async updateCustomer(id: string, customerData: Partial<Omit<Customer, 'id' | 'createdAt' | 'updatedAt' | 'userId'>>): Promise<Customer> {
     try {
-      // Transform to snake_case for database
+      if (customersApiEnabled()) {
+        const input: Record<string, unknown> = {};
+        if (customerData.name !== undefined) input.name = customerData.name;
+        if (customerData.email !== undefined) input.email = customerData.email || '';
+        if (customerData.phone !== undefined) input.phone = customerData.phone || null;
+        if (customerData.address !== undefined) input.address = customerData.address || null;
+        if (customerData.city !== undefined) input.city = customerData.city || null;
+        if (customerData.state !== undefined) input.state = customerData.state || null;
+        if (customerData.zip !== undefined) input.zip = customerData.zip || null;
+        if (customerData.country !== undefined) input.country = customerData.country;
+        if (customerData.isVip !== undefined) input.isVip = customerData.isVip;
+        if (customerData.tags !== undefined) input.tags = customerData.tags;
+        return fromDto(await customersApi.update(id, input));
+      }
+
       const dbCustomerData: any = {};
-      
+
       if (customerData.name !== undefined) dbCustomerData.name = customerData.name;
       if (customerData.email !== undefined) dbCustomerData.email = customerData.email || null;
       if (customerData.phone !== undefined) dbCustomerData.phone = customerData.phone || null;
@@ -147,7 +213,7 @@ export class CustomerService {
       if (customerData.country !== undefined) dbCustomerData.country = customerData.country;
       if (customerData.isVip !== undefined) dbCustomerData.is_vip = customerData.isVip;
       if (customerData.tags !== undefined) dbCustomerData.tags = customerData.tags;
-      
+
       dbCustomerData.updated_at = new Date().toISOString();
 
       const { error } = await supabase
@@ -164,9 +230,13 @@ export class CustomerService {
     }
   }
 
-  // Delete a customer
   async deleteCustomer(id: string): Promise<void> {
     try {
+      if (customersApiEnabled()) {
+        await customersApi.remove(id);
+        return;
+      }
+
       const { error } = await supabase
         .from('customers')
         .delete()
@@ -179,7 +249,6 @@ export class CustomerService {
     }
   }
 
-  // Fetch invoices for a specific customer
   async fetchCustomerInvoices(customerId: string): Promise<any[]> {
     try {
       const { data, error } = await supabase
@@ -205,7 +274,6 @@ export class CustomerService {
     }
   }
 
-  // Get customer stats
   async getCustomerStats(customerId: string): Promise<{
     totalInvoices: number;
     totalBilled: number;
@@ -214,7 +282,7 @@ export class CustomerService {
   }> {
     try {
       const invoices = await this.fetchCustomerInvoices(customerId);
-      
+
       const totalInvoices = invoices.length;
       const totalBilled = invoices.reduce((sum, inv) => sum + inv.total, 0);
       const totalPaid = invoices
@@ -241,4 +309,3 @@ export class CustomerService {
 }
 
 export const customerService = new CustomerService();
-

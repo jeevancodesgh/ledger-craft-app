@@ -7,7 +7,7 @@ description: Start-here operating instructions for LedgerCraft reconstruction. U
 
 Read this before writing code. Then follow the named skill for the wave you are on.
 
-## You are here (2026-09-05)
+## You are here (2026-09-07)
 
 | Fact | Detail |
 | --- | --- |
@@ -17,14 +17,14 @@ Read this before writing code. Then follow the named skill for the wave you are 
 | W1 | **Verified.** `pnpm verify:w1` is green (contracts, health/RLS, typecheck). Migrator needs `CREATE` on the database so Drizzle can create the `drizzle` schema. |
 | W2 | **Verified.** `pnpm verify:w2` green. Compatibility product schema on `55432`. |
 | W3 | **Verified (2026-09-05).** `pnpm verify:w3` green. Better Auth email/password, `/api/me` binds org. Clients stay on Supabase Auth. |
-| W4 | Next. Customers vertical slice. Session can bind `organisation_id`. |
-| Git | `origin/mobile-app` = W1 (`fd62f9a`). Local `mobile-app` has W2 (`33cf075`) and W3 identity. |
-| Clients | Still `supabase-js` → hosted Supabase. Do not add new `.from` / Storage / client OpenAI. |
+| W4 | **Verified (2026-09-07).** `pnpm verify:w4` green. Customers CRUD via Hono. Web invoices still `supabase-js`. |
+| Git | `origin/mobile-app` = W1 (`fd62f9a`). Local `mobile-app` has W2 (`33cf075`), W3 (`b758b32`), and W4 customers in the working tree. |
+| Clients | Still `supabase-js` → hosted Supabase for invoices and Auth. Customer CRUD is Hono when `VITE_CUSTOMERS_API=true`. |
 
 ## Pickup
 
-1. Read `AGENTS.md` § Reconstruction agents (what shipped, W4 customers, `accounts` name clash).
-2. If this clone does not contain `api/drizzle/0002_identity.sql`, W3 is missing — do not start W4.
+1. Read `AGENTS.md` § Reconstruction agents (what shipped, W5 invoices, `accounts` name clash).
+2. If this clone does not contain `api/src/modules/customers/`, W4 is missing — do not start W5.
 3. Commit/push if origin is behind and the user asks.
 
 ## First command
@@ -32,10 +32,10 @@ Read this before writing code. Then follow the named skill for the wave you are 
 ```bash
 pnpm install
 pnpm db:up
-pnpm verify:w3
+pnpm verify:w4
 ```
 
-If `pnpm-lock.yaml` changes, commit it. Next wave is W4 (customers). Dev smoke:
+If `pnpm-lock.yaml` changes, commit it. Next wave is W5 (invoices). Dev smoke:
 
 ```bash
 pnpm dev:api          # 127.0.0.1:3001
@@ -92,8 +92,8 @@ Parent chat = Orchestrator. Task `generalPurpose` + prompt in `ledgercraft-agent
 
 | Next wave | Launch |
 | --- | --- |
-| Finish W1/W2/W3 | Done (`pnpm verify:w3`) |
-| W4 | Contracts → Verification (failing tests) → API → Web → Mobile |
+| Finish W1/W2/W3/W4 | Done (`pnpm verify:w4`) |
+| W5 | Contracts → Verification (failing tests) → API → Web → Mobile |
 
 ## Hard no
 
@@ -103,7 +103,7 @@ Parent chat = Orchestrator. Task `generalPurpose` + prompt in `ledgercraft-agent
 - Better Auth + Supabase sessions both authorizing data
 - UI redesign + TanStack Router + `apps/` move + data cutover in one change
 - Mock Drizzle in SQL/RLS/transaction tests
-- Start W4 without `0002_identity.sql` and a working `/api/me` session bind
+- Start W5 without W4 customers routes and a working `/api/me` session bind
 - Commit unless the user asked
 
 ## After any change

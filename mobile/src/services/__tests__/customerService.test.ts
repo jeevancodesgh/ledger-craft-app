@@ -1,140 +1,98 @@
 import { customerService } from '@/services/customerService';
-import { getAuthenticatedSupabaseClient, cleanupTestData } from '@/__tests__/setup/testEnv';
-import { mockCustomerInput } from '@/__tests__/fixtures/customer.fixtures';
 
-describe('CustomerService', () => {
-  let supabase: Awaited<ReturnType<typeof getAuthenticatedSupabaseClient>>;
-  const createdCustomerIds: string[] = [];
+const dto = {
+  id: '11111111-1111-1111-1111-111111111111',
+  name: 'Acme Ltd',
+  email: 'acme@example.com',
+  address: '1 Queen St',
+  city: 'Auckland',
+  state: null,
+  zip: '1010',
+  country: 'NZ',
+  phone: '+64 21 000 0000',
+  isVip: false,
+  tags: [],
+  createdAt: '2026-09-07T00:00:00.000Z',
+  updatedAt: '2026-09-07T00:00:00.000Z',
+};
 
-  beforeAll(async () => {
-    supabase = await getAuthenticatedSupabaseClient();
+function jsonResponse(body: unknown, status = 200) {
+  return {
+    ok: status >= 200 && status < 300,
+    status,
+    json: async () => body,
+  };
+}
+
+describe('CustomerService (Hono)', () => {
+  beforeEach(() => {
+    process.env.EXPO_PUBLIC_CUSTOMERS_API = 'true';
+    process.env.EXPO_PUBLIC_API_URL = 'http://127.0.0.1:3001';
+    global.fetch = jest.fn();
   });
 
-  afterEach(async () => {
-    // Clean up test customers
-    if (createdCustomerIds.length > 0) {
-      await supabase
-        .from('customers')
-        .delete()
-        .in('id', createdCustomerIds);
-      createdCustomerIds.length = 0;
-    }
-    await cleanupTestData.deleteCustomers(supabase);
+  afterEach(() => {
+    jest.resetAllMocks();
   });
 
-  describe('createCustomer', () => {
-    it('should create a customer with valid data', async () => {
-      const testData = {
-        ...mockCustomerInput,
-        name: `TEST_${Date.now()}_Customer`,
-      };
+  it('creates a customer through /api/customers', async () => {
+    (global.fetch as jest.Mock).mockResolvedValueOnce(jsonResponse(dto, 201));
 
-      const customer = await customerService.createCustomer(testData);
-      createdCustomerIds.push(customer.id);
-
-      expect(customer).toBeDefined();
-      expect(customer.name).toBe(testData.name);
-      expect(customer.email).toBe(testData.email);
-      expect(customer.phone).toBe(testData.phone);
-      expect(customer.address).toBe(testData.address);
+    const customer = await customerService.createCustomer({
+      name: dto.name,
+      email: dto.email,
+      phone: dto.phone,
+      address: dto.address,
+      city: dto.city,
+      state: dto.state,
+      zip: dto.zip,
+      country: dto.country,
     });
 
-    it('should handle missing optional fields', async () => {
-      const minimalData = {
-        name: `TEST_${Date.now()}_Minimal`,
-        email: 'minimal@test.com',
-      };
-
-      const customer = await customerService.createCustomer(minimalData);
-      createdCustomerIds.push(customer.id);
-
-      expect(customer).toBeDefined();
-      expect(customer.name).toBe(minimalData.name);
-      expect(customer.email).toBe(minimalData.email);
-    });
+    expect(customer.name).toBe(dto.name);
+    expect(customer.email).toBe(dto.email);
+    expect(global.fetch).toHaveBeenCalledWith(
+      'http://127.0.0.1:3001/api/customers',
+      expect.objectContaining({ method: 'POST' }),
+    );
   });
 
-  describe('getCustomers', () => {
-    it('should return only current users customers', async () => {
-      // Create test customers
-      const customer1 = await customerService.createCustomer({
-        ...mockCustomerInput,
-        name: `TEST_${Date.now()}_Get1`,
-      });
-      const customer2 = await customerService.createCustomer({
-        ...mockCustomerInput,
-        name: `TEST_${Date.now()}_Get2`,
-      });
-      createdCustomerIds.push(customer1.id, customer2.id);
+  it('lists customers through /api/customers', async () => {
+    (global.fetch as jest.Mock).mockResolvedValueOnce(jsonResponse({ customers: [dto] }));
 
-      const customers = await customerService.getCustomers();
+    const customers = await customerService.fetchCustomers();
 
-      expect(customers).toBeDefined();
-      expect(customers.length).toBeGreaterThanOrEqual(2);
-      
-      // Verify our test customers are in the list
-      const testCustomers = customers.filter(c => 
-        c.id === customer1.id || c.id === customer2.id
-      );
-      expect(testCustomers.length).toBe(2);
-    });
-
-    it('should return empty array if no customers exist', async () => {
-      // Clean any existing customers first
-      await cleanupTestData.deleteCustomers(supabase);
-
-      const customers = await customerService.getCustomers();
-
-      expect(customers).toBeDefined();
-      expect(Array.isArray(customers)).toBe(true);
-    });
+    expect(customers).toHaveLength(1);
+    expect(customers[0].id).toBe(dto.id);
   });
 
-  describe('updateCustomer', () => {
-    it('should update customer fields correctly', async () => {
-      // Create a customer first
-      const customer = await customerService.createCustomer({
-        ...mockCustomerInput,
-        name: `TEST_${Date.now()}_Update`,
-      });
-      createdCustomerIds.push(customer.id);
+  it('updates a customer through PATCH /api/customers/:id', async () => {
+    (global.fetch as jest.Mock).mockResolvedValueOnce(
+      jsonResponse({ ...dto, name: 'Updated Ltd' }),
+    );
 
-      // Update it
-      const updatedData = {
-        name: `TEST_${Date.now()}_Updated`,
-        email: 'updated@test.com',
-        phone: '+64 21 999 9999',
-      };
+    const updated = await customerService.updateCustomer(dto.id, { name: 'Updated Ltd' });
 
-      const updated = await customerService.updateCustomer(customer.id, updatedData);
-
-      expect(updated).toBeDefined();
-      expect(updated.name).toBe(updatedData.name);
-      expect(updated.email).toBe(updatedData.email);
-      expect(updated.phone).toBe(updatedData.phone);
-    });
+    expect(updated.name).toBe('Updated Ltd');
+    expect(global.fetch).toHaveBeenCalledWith(
+      `http://127.0.0.1:3001/api/customers/${dto.id}`,
+      expect.objectContaining({ method: 'PATCH' }),
+    );
   });
 
-  describe('deleteCustomer', () => {
-    it('should delete customer successfully', async () => {
-      // Create a customer first
-      const customer = await customerService.createCustomer({
-        ...mockCustomerInput,
-        name: `TEST_${Date.now()}_Delete`,
-      });
-
-      // Delete it
-      await customerService.deleteCustomer(customer.id);
-
-      // Verify it's deleted
-      const { data, error } = await supabase
-        .from('customers')
-        .select('id')
-        .eq('id', customer.id)
-        .maybeSingle();
-
-      expect(data).toBeNull();
+  it('deletes a customer through DELETE /api/customers/:id', async () => {
+    (global.fetch as jest.Mock).mockResolvedValueOnce({
+      ok: true,
+      status: 204,
+      json: async () => {
+        throw new Error('no body');
+      },
     });
+
+    await expect(customerService.deleteCustomer(dto.id)).resolves.toBeUndefined();
+    expect(global.fetch).toHaveBeenCalledWith(
+      `http://127.0.0.1:3001/api/customers/${dto.id}`,
+      expect.objectContaining({ method: 'DELETE' }),
+    );
   });
 });
-

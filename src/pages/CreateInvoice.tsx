@@ -9,18 +9,21 @@ import CustomerFormDrawer, { CustomerFormValues } from '@/components/customer/Cu
 import { invoiceService } from '@/services/supabaseService';
 import { useForm } from 'react-hook-form';
 import { formatDate } from '@/utils/invoiceUtils';
+import { useCustomerDirectory } from '@/features/customers/hooks/useCustomerDirectory';
 
 const CreateInvoice = () => {
   const { 
-    customers, 
-    isLoadingCustomers, 
     createInvoice, 
     businessProfile, 
-    createCustomer, 
     items, 
     isLoadingItems,
     refreshBusinessProfile
   } = useAppData();
+  const {
+    customers,
+    isLoadingCustomers,
+    createCustomer,
+  } = useCustomerDirectory();
   const navigate = useNavigate();
   const { toast } = useToast();
   const [newlyAddedCustomer, setNewlyAddedCustomer] = useState<Customer | null>(null);

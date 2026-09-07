@@ -9,11 +9,13 @@ import { Button } from "@/components/ui/button";
 import { formatDate } from "@/utils/invoiceUtils";
 import CustomerFormDrawer, { CustomerFormValues } from '@/components/customer/CustomerFormDrawer';
 import { useToast } from '@/hooks/use-toast';
+import { useCustomerDirectory } from '@/features/customers/hooks/useCustomerDirectory';
 
 const EditInvoicePage = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const { getInvoice, updateInvoice, customers, isLoadingCustomers, businessProfile, items, isLoadingItems, createCustomer } = useAppData();
+  const { getInvoice, updateInvoice, businessProfile, items, isLoadingItems } = useAppData();
+  const { customers, isLoadingCustomers, createCustomer } = useCustomerDirectory();
   const [invoice, setInvoice] = useState<Invoice | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);

@@ -9,8 +9,8 @@ Read `.cursor/skills/ledgercraft-bootstrap/SKILL.md` first.
 
 - Spec: `TARGET_ARCHITECTURE.md`. Agent guide: `AGENTS.md`.
 - Live DB is gone. Greenfield toward the spec. Do not replay Git SQL.
-- **Now:** W1–W3 are verified end-to-end (2026-09-05). Next: W4 customers slice. Full pickup: `AGENTS.md` § Reconstruction agents.
-- W3 binds `user_id` / `organisation_id` on `/api/me`. Do not authorize product data with both Better Auth and Supabase sessions.
+- **Now:** W1–W4 are verified end-to-end (2026-09-07). Next: W5 invoices gate. Full pickup: `AGENTS.md` § Reconstruction agents.
+- W3 binds `user_id` / `organisation_id` on `/api/me`. W4 customers CRUD is Hono. Do not authorize product data with both Better Auth and Supabase sessions.
 - Postgres host port **55432**. API **3001**. Vite **8080** proxies `/api`.
 - Launch specialists via `.cursor/skills/ledgercraft-agent-roster/SKILL.md`.
 - After each wave: `.cursor/skills/ledgercraft-knowledge-sync/SKILL.md`.
