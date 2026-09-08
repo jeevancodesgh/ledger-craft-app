@@ -15,7 +15,7 @@ export const STATUS_OPTIONS: StatusOption[] = [
     value: 'draft',
     label: 'Draft',
     icon: 'edit-3',
-    color: '#64748B',
+    color: '#636366',
     description: 'Not sent to customer yet',
   },
   {
@@ -29,14 +29,14 @@ export const STATUS_OPTIONS: StatusOption[] = [
     value: 'paid',
     label: 'Paid',
     icon: 'check',
-    color: '#10B981',
+    color: '#34C759',
     description: 'Payment received',
   },
   {
     value: 'overdue',
     label: 'Overdue',
     icon: 'alert-circle',
-    color: '#EF4444',
+    color: '#FF3B30',
     description: 'Payment past due date',
   },
 ];

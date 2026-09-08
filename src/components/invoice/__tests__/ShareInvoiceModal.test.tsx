@@ -2,12 +2,24 @@ import React from 'react';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { vi } from 'vitest';
+import { BrowserRouter } from 'react-router-dom';
 import ShareInvoiceModal from '../ShareInvoiceModal';
 import { Invoice } from '@/types/index';
+import { invoicesApi } from '@/features/invoices/api/invoicesApi';
 
 // Mock the dependencies
 vi.mock('@/hooks/use-toast', () => ({
   useToast: () => ({ toast: vi.fn() }),
+}));
+
+vi.mock('@/features/invoices/api/invoicesApi', () => ({
+  invoicesApi: {
+    share: vi.fn().mockResolvedValue({
+      shareToken: 'test-token-123',
+      expiresAt: null,
+      isActive: true,
+    }),
+  },
 }));
 
 vi.mock('@/services/supabaseService', () => ({
@@ -20,6 +32,9 @@ vi.mock('@/services/supabaseService', () => ({
       expiresAt: null,
       createdAt: new Date().toISOString(),
     }),
+  },
+  businessProfileService: {
+    getBusinessProfile: vi.fn().mockResolvedValue(null),
   },
 }));
 
@@ -95,10 +110,14 @@ const mockInvoice: Invoice = {
 
 const defaultProps = {
   open: true,
-  onOpenChange: jest.fn(),
+  onOpenChange: vi.fn(),
   invoice: mockInvoice,
   businessName: 'Test Business',
 };
+
+function renderModal(ui: React.ReactElement) {
+  return render(<BrowserRouter>{ui}</BrowserRouter>);
+}
 
 describe('ShareInvoiceModal Template Selection', () => {
   beforeEach(() => {
@@ -106,7 +125,7 @@ describe('ShareInvoiceModal Template Selection', () => {
   });
 
   it('should use saved template as default selection', async () => {
-    render(<ShareInvoiceModal {...defaultProps} />);
+    renderModal(<ShareInvoiceModal {...defaultProps} />);
 
     // Wait for modal to be rendered
     await waitFor(() => {
@@ -128,7 +147,7 @@ describe('ShareInvoiceModal Template Selection', () => {
       templateName: undefined,
     };
 
-    render(
+    renderModal(
       <ShareInvoiceModal 
         {...defaultProps} 
         invoice={invoiceWithoutTemplate} 
@@ -164,7 +183,7 @@ describe('ShareInvoiceModal Template Selection', () => {
         templateName: testCase.templateName,
       };
 
-      const { unmount } = render(
+      const { unmount } = renderModal(
         <ShareInvoiceModal 
           {...defaultProps} 
           invoice={invoiceWithTemplate} 
@@ -191,7 +210,7 @@ describe('ShareInvoiceModal Template Selection', () => {
   it('should allow changing template selection', async () => {
     const user = userEvent.setup();
     
-    render(<ShareInvoiceModal {...defaultProps} />);
+    renderModal(<ShareInvoiceModal {...defaultProps} />);
 
     // Wait for modal to be rendered
     await waitFor(() => {
@@ -210,9 +229,8 @@ describe('ShareInvoiceModal Template Selection', () => {
 
   it('should create share link with selected template', async () => {
     const user = userEvent.setup();
-    const { sharedInvoiceService } = require('@/services/supabaseService');
     
-    render(<ShareInvoiceModal {...defaultProps} />);
+    renderModal(<ShareInvoiceModal {...defaultProps} />);
 
     // Wait for modal to be rendered
     await waitFor(() => {
@@ -228,10 +246,9 @@ describe('ShareInvoiceModal Template Selection', () => {
 
       // Wait for the service to be called
       await waitFor(() => {
-        expect(sharedInvoiceService.createSharedInvoice).toHaveBeenCalledWith(
-          '1', // invoice ID
-          'modern', // template name (from the default)
-          undefined // expiration
+        expect(invoicesApi.share).toHaveBeenCalledWith(
+          '1',
+          expect.objectContaining({ templateName: 'modern' }),
         );
       });
     }

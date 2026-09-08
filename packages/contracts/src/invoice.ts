@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { businessProfileSchema } from './business-profile';
 
 const money = z.string().regex(/^-?\d+(\.\d+)?$/);
 const paymentTermDays = z.number().int().min(0).max(365);
@@ -130,9 +131,31 @@ export const invoiceListResponseSchema = z.object({
   invoices: z.array(invoiceSchema),
 });
 
+export const createShareInvoiceRequestSchema = z
+  .object({
+    templateName: z.string().min(1).max(64).optional(),
+    expiresAt: z.string().min(1).nullable().optional(),
+  })
+  .strict();
+
+export const shareInvoiceResponseSchema = z.object({
+  shareToken: z.string().min(1),
+  expiresAt: z.string().nullable(),
+  isActive: z.boolean(),
+});
+
+export const publicSharedInvoiceSchema = z.object({
+  invoice: invoiceSchema,
+  templateName: z.string().min(1),
+  businessProfile: businessProfileSchema,
+});
+
 export type CreateInvoiceRequest = z.infer<typeof createInvoiceRequestSchema>;
 export type UpdateInvoiceRequest = z.infer<typeof updateInvoiceRequestSchema>;
 export type SendInvoiceRequest = z.infer<typeof sendInvoiceRequestSchema>;
 export type InvoiceDto = z.infer<typeof invoiceSchema>;
 export type InvoiceListResponse = z.infer<typeof invoiceListResponseSchema>;
 export type NextInvoiceNumberResponse = z.infer<typeof nextInvoiceNumberResponseSchema>;
+export type CreateShareInvoiceRequest = z.infer<typeof createShareInvoiceRequestSchema>;
+export type ShareInvoiceResponse = z.infer<typeof shareInvoiceResponseSchema>;
+export type PublicSharedInvoice = z.infer<typeof publicSharedInvoiceSchema>;

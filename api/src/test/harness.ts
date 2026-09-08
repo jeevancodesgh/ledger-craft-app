@@ -31,6 +31,8 @@ export async function withTestDb<T>(
         journal_entry_lines,
         journal_entries,
         line_items,
+        shared_invoices,
+        idempotency_keys,
         invoices,
         items,
         item_categories,

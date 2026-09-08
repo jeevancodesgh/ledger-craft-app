@@ -3,13 +3,11 @@ import {
   View,
   Text,
   FlatList,
-  Pressable,
   RefreshControl,
   StyleSheet,
   TextInput,
   Alert,
   ActivityIndicator,
-  ScrollView,
   Platform,
 } from 'react-native';
 import { useNavigation, useFocusEffect } from '@react-navigation/native';
@@ -18,9 +16,11 @@ import { Feather } from '@expo/vector-icons';
 import { ExpenseStackParamList } from '@/navigation/types';
 import { NativeHeaderButton } from '@/components/ui/NativeHeaderButton';
 import { EmptyState } from '@/components/ui/EmptyState';
+import { FilterPills } from '@/components/ui/FilterPills';
 import { expenseService } from '@/services/expenseService';
 import type { Expense } from '@/types/expense';
 import SwipeableExpenseCard from '@/components/expense/SwipeableExpenseCard';
+import { palette, space } from '@/theme/tokens';
 
 type ExpenseListNavigationProp = NativeStackNavigationProp<ExpenseStackParamList, 'ExpenseList'>;
 
@@ -92,11 +92,14 @@ export default function ExpenseListScreen() {
 
   useLayoutEffect(() => {
     navigation.setOptions({
-      headerSearchBarOptions: {
-        placeholder: 'Search expenses',
-        hideWhenScrolling: true,
-        onChangeText: (event) => handleSearch(event.nativeEvent.text),
-      },
+      headerSearchBarOptions:
+        expenses.length > 0
+          ? {
+              placeholder: 'Search expenses',
+              hideWhenScrolling: true,
+              onChangeText: (event) => handleSearch(event.nativeEvent.text),
+            }
+          : undefined,
       headerRight: () => (
         <NativeHeaderButton
           label="New"
@@ -139,8 +142,11 @@ export default function ExpenseListScreen() {
   };
 
   const formatCurrency = (amount: number, currency: string) => {
-    const symbol = currency === 'NZD' ? '$' : currency === 'USD' ? '$' : currency;
-    return `${symbol}${amount.toFixed(2)}`;
+    return new Intl.NumberFormat('en-NZ', {
+      style: 'currency',
+      currency: currency || 'NZD',
+      minimumFractionDigits: 2,
+    }).format(amount);
   };
 
   const formatDate = (dateString: string) => {
@@ -152,7 +158,7 @@ export default function ExpenseListScreen() {
     });
   };
 
-  const renderExpenseCard = ({ item }: { item: Expense }) => (
+  const renderExpenseCard = ({ item, index }: { item: Expense; index: number }) => (
     <SwipeableExpenseCard
       expense={item}
       onPress={() => {
@@ -162,36 +168,21 @@ export default function ExpenseListScreen() {
       onDelete={handleDelete}
       formatCurrency={formatCurrency}
       formatDate={formatDate}
+      isFirst={index === 0}
+      isLast={index === filteredExpenses.length - 1}
     />
   );
 
-  const renderFilterButtons = () => (
-    <ScrollView
-      horizontal
-      showsHorizontalScrollIndicator={false}
-      contentContainerStyle={styles.filterContainer}
-    >
-      {(['all', 'pending', 'approved', 'rejected'] as const).map((filterOption) => (
-        <Pressable
-          key={filterOption}
-          style={[
-            styles.filterButton,
-            filter === filterOption && styles.filterButtonActive,
-          ]}
-          onPress={() => handleFilterChange(filterOption)}
-        >
-          <Text
-            style={[
-              styles.filterButtonText,
-              filter === filterOption && styles.filterButtonTextActive,
-            ]}
-          >
-            {filterOption.charAt(0).toUpperCase() + filterOption.slice(1)}
-          </Text>
-        </Pressable>
-      ))}
-    </ScrollView>
-  );
+  const renderFilterButtons = () => {
+    if (expenses.length === 0) return null;
+    return (
+      <FilterPills
+        options={['all', 'pending', 'approved', 'rejected'] as const}
+        value={filter}
+        onChange={handleFilterChange}
+      />
+    );
+  };
 
   if (loading) {
     return (
@@ -204,7 +195,7 @@ export default function ExpenseListScreen() {
 
   return (
     <View style={styles.container}>
-      {Platform.OS === 'android' && (
+      {Platform.OS === 'android' && expenses.length > 0 && (
         <View style={styles.androidSearch}>
           <Feather name="search" size={18} color="#64748B" />
           <TextInput
@@ -224,7 +215,7 @@ export default function ExpenseListScreen() {
         contentContainerStyle={styles.listContent}
         contentInsetAdjustmentBehavior="automatic"
         refreshControl={
-          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#5B72EE" />
+          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={palette.accent} />
         }
         ListEmptyComponent={
           expenses.length === 0 ? (
@@ -249,63 +240,40 @@ export default function ExpenseListScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#F8FAFC',
+    backgroundColor: palette.background,
   },
   centerContainer: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: '#F8FAFC',
+    backgroundColor: palette.background,
   },
   loadingText: {
     marginTop: 16,
     fontSize: 16,
-    color: '#64748B',
+    color: palette.textSecondary,
   },
   androidSearch: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginHorizontal: 16,
+    marginHorizontal: space.screen,
     marginTop: 8,
     marginBottom: 4,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: palette.fill,
     borderRadius: 12,
     paddingHorizontal: 12,
     height: 44,
-    borderWidth: 1,
-    borderColor: '#E2E8F0',
     gap: 8,
   },
   androidSearchInput: {
     flex: 1,
     fontSize: 16,
-    color: '#1E293B',
-  },
-  filterContainer: {
-    flexDirection: 'row',
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    gap: 10,
-  },
-  filterButton: {
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    borderRadius: 20,
-    backgroundColor: '#F1F5F9',
-  },
-  filterButtonActive: {
-    backgroundColor: '#5B72EE',
-  },
-  filterButtonText: {
-    fontSize: 14,
-    color: '#64748B',
-    fontWeight: '600',
-  },
-  filterButtonTextActive: {
-    color: '#FFFFFF',
+    color: palette.text,
   },
   listContent: {
-    padding: 16,
+    paddingHorizontal: space.screen,
+    paddingTop: 8,
+    paddingBottom: 32,
   },
   emptyContainer: {
     padding: 48,
@@ -318,12 +286,12 @@ const styles = StyleSheet.create({
   emptyText: {
     fontSize: 20,
     fontWeight: '700',
-    color: '#0F172A',
+    color: palette.text,
     marginBottom: 8,
   },
   emptySubtext: {
     fontSize: 15,
-    color: '#64748B',
+    color: palette.textSecondary,
     textAlign: 'center',
   },
 });

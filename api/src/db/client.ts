@@ -14,7 +14,9 @@ import {
 } from './schema/identity';
 import { invoices, lineItems } from './schema/invoices';
 import { itemCategories, items } from './schema/items';
+import { idempotencyKeys } from './schema/idempotency';
 import { rlsProbe } from './schema/probe';
+import { sharedInvoices } from './schema/shared-invoices';
 
 export const schema = {
   rlsProbe,
@@ -33,6 +35,8 @@ export const schema = {
   accounts,
   journalEntries,
   journalEntryLines,
+  idempotencyKeys,
+  sharedInvoices,
 };
 
 export type Database = PostgresJsDatabase<typeof schema>;

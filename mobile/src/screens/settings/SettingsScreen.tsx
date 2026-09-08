@@ -5,38 +5,15 @@ import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { Feather } from '@expo/vector-icons';
 import { useAuth } from '@/store';
 import { SettingsStackParamList } from '@/navigation/types';
+import { GroupedSection } from '@/components/ui/GroupedSection';
+import { ListRow } from '@/components/ui/ListRow';
+import { palette, space } from '@/theme/tokens';
 
 type NavigationProp = NativeStackNavigationProp<SettingsStackParamList, 'SettingsList'>;
 
 export default function SettingsScreen() {
-  const { signOut } = useAuth();
+  const { signOut, user } = useAuth();
   const navigation = useNavigation<NavigationProp>();
-
-  const settingsOptions = [
-    {
-      id: 'business',
-      icon: 'briefcase' as const,
-      title: 'Business',
-      subtitle: 'Profile, GST, and invoice numbering',
-      onPress: () => navigation.navigate('BusinessSettings'),
-    },
-    {
-      id: 'account',
-      icon: 'user' as const,
-      title: 'Account',
-      subtitle: 'Email, password, and security',
-      onPress: () => {},
-      disabled: true,
-    },
-    {
-      id: 'notifications',
-      icon: 'bell' as const,
-      title: 'Notifications',
-      subtitle: 'Reminders and payment alerts',
-      onPress: () => {},
-      disabled: true,
-    },
-  ];
 
   const confirmSignOut = () => {
     Alert.alert('Sign out?', 'You can sign back in anytime.', [
@@ -49,48 +26,52 @@ export default function SettingsScreen() {
     <ScrollView
       style={styles.container}
       contentInsetAdjustmentBehavior="automatic"
+      contentContainerStyle={styles.content}
       showsVerticalScrollIndicator={false}
     >
-      <View style={styles.section}>
-        {settingsOptions.map((option) => (
-          <Pressable
-            key={option.id}
-            style={[styles.optionCard, option.disabled && styles.optionCardDisabled]}
-            onPress={option.onPress}
-            disabled={option.disabled}
-            accessibilityRole="button"
-            accessibilityLabel={option.title}
-            accessibilityState={{ disabled: !!option.disabled }}
-          >
-            <View style={styles.optionIcon}>
-              <Feather name={option.icon} size={20} color="#5B72EE" />
-            </View>
-            <View style={styles.optionContent}>
-              <Text style={[styles.optionTitle, option.disabled && styles.optionTextDisabled]}>
-                {option.title}
-              </Text>
-              <Text style={[styles.optionSubtitle, option.disabled && styles.optionTextDisabled]}>
-                {option.subtitle}
-              </Text>
-              {option.disabled && (
-                <Text style={styles.comingSoonBadge}>Coming soon</Text>
-              )}
-            </View>
-            <Feather name="chevron-right" size={20} color="#94A3B8" />
-          </Pressable>
-        ))}
+      <View style={styles.profile}>
+        <View style={styles.avatar}>
+          <Text style={styles.avatarText}>
+            {(user?.user_metadata?.full_name || user?.email || 'L')
+              .slice(0, 1)
+              .toUpperCase()}
+          </Text>
+        </View>
+        <Text style={styles.name}>{user?.user_metadata?.full_name || 'LedgerCraft'}</Text>
+        {user?.email ? <Text style={styles.email}>{user.email}</Text> : null}
       </View>
 
-      <View style={styles.section}>
+      <GroupedSection title="Business">
+        <ListRow
+          label="Business"
+          subtitle="Profile, GST, and invoice numbering"
+          icon={<Feather name="briefcase" size={15} color={palette.accent} />}
+          onPress={() => navigation.navigate('BusinessSettings')}
+        />
+        <ListRow
+          label="Account"
+          subtitle="Coming soon"
+          icon={<Feather name="user" size={15} color={palette.accent} />}
+          disabled
+        />
+        <ListRow
+          label="Notifications"
+          subtitle="Coming soon"
+          icon={<Feather name="bell" size={15} color={palette.accent} />}
+          disabled
+        />
+      </GroupedSection>
+
+      <GroupedSection>
         <Pressable
-          style={styles.signOutButton}
           onPress={confirmSignOut}
           accessibilityRole="button"
           accessibilityLabel="Sign out"
+          style={({ pressed }) => [styles.signOut, pressed && styles.signOutPressed]}
         >
-          <Text style={styles.signOutButtonText}>Sign out</Text>
+          <Text style={styles.signOutText}>Sign out</Text>
         </Pressable>
-      </View>
+      </GroupedSection>
 
       <View style={styles.appInfo}>
         <Text style={styles.appInfoText}>LedgerCraft</Text>
@@ -103,80 +84,64 @@ export default function SettingsScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#F8FAFC',
+    backgroundColor: palette.background,
   },
-  section: {
-    marginTop: 16,
-    paddingHorizontal: 16,
+  content: {
+    paddingHorizontal: space.screen,
+    paddingTop: 8,
+    paddingBottom: 48,
   },
-  optionCard: {
-    flexDirection: 'row',
+  profile: {
     alignItems: 'center',
-    backgroundColor: '#FFFFFF',
-    padding: 16,
-    borderRadius: 16,
-    marginBottom: 12,
-    borderWidth: 1,
-    borderColor: '#E2E8F0',
-    minHeight: 72,
+    marginBottom: 28,
+    marginTop: 8,
   },
-  optionCardDisabled: {
-    opacity: 0.6,
-  },
-  optionIcon: {
-    width: 40,
-    height: 40,
-    borderRadius: 12,
-    backgroundColor: '#EEF2FF',
+  avatar: {
+    width: 64,
+    height: 64,
+    borderRadius: 32,
+    backgroundColor: palette.accentFill,
     alignItems: 'center',
     justifyContent: 'center',
-    marginRight: 12,
+    marginBottom: 10,
   },
-  optionContent: {
-    flex: 1,
+  avatarText: {
+    fontSize: 24,
+    fontWeight: '700',
+    color: palette.accent,
   },
-  optionTitle: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#1E293B',
-    marginBottom: 2,
+  name: {
+    fontSize: 22,
+    fontWeight: '700',
+    color: palette.text,
+    letterSpacing: -0.3,
   },
-  optionSubtitle: {
-    fontSize: 13,
-    color: '#64748B',
-    lineHeight: 18,
-  },
-  optionTextDisabled: {
-    opacity: 0.5,
-  },
-  comingSoonBadge: {
-    fontSize: 11,
-    fontWeight: '600',
-    color: '#5B72EE',
+  email: {
+    fontSize: 15,
+    color: palette.textSecondary,
     marginTop: 4,
   },
-  signOutButton: {
-    backgroundColor: '#FEF2F2',
-    paddingVertical: 16,
-    borderRadius: 12,
-    alignItems: 'center',
-    borderWidth: 1,
-    borderColor: '#FEE2E2',
+  signOut: {
     minHeight: 52,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: palette.surface,
   },
-  signOutButtonText: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#DC2626',
+  signOutPressed: {
+    backgroundColor: palette.fillMuted,
+  },
+  signOutText: {
+    fontSize: 17,
+    fontWeight: '500',
+    color: palette.danger,
   },
   appInfo: {
     alignItems: 'center',
-    paddingVertical: 32,
-    paddingBottom: 48,
+    paddingTop: 8,
   },
   appInfoText: {
-    fontSize: 12,
-    color: '#94A3B8',
+    fontSize: 13,
+    color: palette.textTertiary,
     marginBottom: 2,
   },
 });

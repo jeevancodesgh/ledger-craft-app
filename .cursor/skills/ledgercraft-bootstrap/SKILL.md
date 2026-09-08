@@ -18,12 +18,13 @@ Read this before writing code. Then follow the named skill for the wave you are 
 | W2 | **Verified.** `pnpm verify:w2` green. Compatibility product schema on `55432`. |
 | W3 | **Verified (2026-09-05).** `pnpm verify:w3` green. Better Auth email/password, `/api/me` binds org. |
 | W4 | **Verified (2026-09-07).** `pnpm verify:w4` green. Customers CRUD via Hono. |
-| Git | `origin/mobile-app` includes W4 customers. Working tree also has web Better Auth plus Hono business-profile / items / invoices. |
-| Clients | Web and mobile email login/signup → Better Auth (`/api/auth/*`). Web customers, business profile, items, invoices → Hono. Mobile customers and invoices → Hono (cookie jar). Mobile expenses still `supabase-js`. Full W5 invoice gates (idempotency, share tokens) are open. |
+| W5 | **Verified (2026-09-08).** `pnpm verify:w5` green. Invoice idempotency + share tokens. |
+| Git | `origin/mobile-app` includes W4 customers. Working tree also has web Better Auth plus Hono business-profile / items / invoices / share. |
+| Clients | Web and mobile email login/signup → Better Auth (`/api/auth/*`). Web customers, business profile, items, invoices → Hono (payment terms, percent/fixed discount, Save draft / Send, idempotency, share tokens). Mobile customers and invoices → Hono (cookie jar). Mobile expenses still `supabase-js`. |
 
 ## Pickup
 
-1. Read `AGENTS.md` § Reconstruction agents (what shipped, W5 invoices, `accounts` name clash).
+1. Read `AGENTS.md` § Reconstruction agents (what shipped, W6 payments/expenses, `accounts` name clash).
 2. If this clone does not contain `api/src/modules/customers/`, W4 is missing — do not start W5.
 3. Commit/push if origin is behind and the user asks.
 
@@ -32,10 +33,10 @@ Read this before writing code. Then follow the named skill for the wave you are 
 ```bash
 pnpm install
 pnpm db:up
-pnpm verify:w4
+pnpm verify:w5
 ```
 
-If `pnpm-lock.yaml` changes, commit it. Next wave is W5 (invoices). Dev smoke:
+If `pnpm-lock.yaml` changes, commit it. Next wave is W6 (payments/expenses). Dev smoke:
 
 ```bash
 pnpm dev:api          # 127.0.0.1:3001
@@ -66,7 +67,7 @@ mobile/                  Expo. Not in the pnpm workspace yet.
 api/                     Hono + Drizzle + tests
 packages/contracts/      Zod DTOs only
 docker/postgres/init/    roles
-api/drizzle/             0000 probe + 0001 compatibility + 0002 identity
+api/drizzle/             0000 probe + 0001 compatibility + 0002 identity + 0003 terms + 0004 idempotency/share
 TARGET_ARCHITECTURE.md   end-state spec
 AGENTS.md                this project’s agent guide
 .cursor/skills/          procedures
@@ -95,7 +96,8 @@ Parent chat = Orchestrator. Task `generalPurpose` + prompt in `ledgercraft-agent
 | Next wave | Launch |
 | --- | --- |
 | Finish W1/W2/W3/W4 | Done (`pnpm verify:w4`) |
-| W5 | Contracts → Verification (failing tests) → API → Web → Mobile |
+| W5 | Invoice idempotency + share (`pnpm verify:w5`) |
+| W6 | Payments, receipts, expenses |
 
 ## Hard no
 

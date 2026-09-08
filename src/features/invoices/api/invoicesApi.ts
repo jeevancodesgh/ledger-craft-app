@@ -1,5 +1,13 @@
-import type { CreateInvoiceRequest, InvoiceDto, SendInvoiceRequest, UpdateInvoiceRequest } from '@ledgercraft/contracts';
+import type {
+  CreateInvoiceRequest,
+  InvoiceDto,
+  PublicSharedInvoice,
+  SendInvoiceRequest,
+  ShareInvoiceResponse,
+  UpdateInvoiceRequest,
+} from '@ledgercraft/contracts';
 import type { Invoice, LineItem } from '@/types';
+import { toProfile } from '@/features/business-profile/api/businessProfileApi';
 
 export function invoicesApiEnabled(): boolean {
   return import.meta.env.VITE_INVOICES_API !== 'false';
@@ -124,7 +132,7 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
     ...init,
     headers: {
       'Content-Type': 'application/json',
-      ...(init?.headers ?? {}),
+      ...((init?.headers ?? {}) as Record<string, string>),
     },
   });
   if (response.status === 204) return undefined as T;
@@ -156,6 +164,7 @@ export const invoicesApi = {
   ): Promise<Invoice> {
     const dto = await request<InvoiceDto>('/api/invoices', {
       method: 'POST',
+      headers: { 'Idempotency-Key': crypto.randomUUID() },
       body: JSON.stringify(toCreateInvoiceRequest(invoice, lineItems)),
     });
     return toInvoice(dto);
@@ -212,6 +221,37 @@ export const invoicesApi = {
         body: JSON.stringify(input),
       }),
     );
+  },
+
+  async share(
+    id: string,
+    input: { templateName?: string; expiresAt?: string },
+  ): Promise<ShareInvoiceResponse> {
+    return request<ShareInvoiceResponse>(`/api/invoices/${id}/share`, {
+      method: 'POST',
+      body: JSON.stringify(input),
+    });
+  },
+
+  async getShared(token: string): Promise<{
+    invoiceData: Invoice;
+    templateData: { templateName: string; businessProfile: ReturnType<typeof toProfile> };
+  } | null> {
+    try {
+      const dto = await request<PublicSharedInvoice>(`/api/public/invoices/${token}`);
+      return {
+        invoiceData: toInvoice(dto.invoice),
+        templateData: {
+          templateName: dto.templateName,
+          businessProfile: toProfile(dto.businessProfile),
+        },
+      };
+    } catch (error) {
+      if (error instanceof InvoicesApiError && (error.status === 404 || error.status === 401)) {
+        return null;
+      }
+      throw error;
+    }
   },
 
   async nextNumber(): Promise<string> {

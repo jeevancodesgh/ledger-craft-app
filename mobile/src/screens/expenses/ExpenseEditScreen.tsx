@@ -657,7 +657,7 @@ export default function ExpenseEditScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#F8FAFC',
+    backgroundColor: '#F2F2F7',
   },
   centerContainer: {
     flex: 1,
@@ -710,19 +710,16 @@ const styles = StyleSheet.create({
   },
   card: {
     backgroundColor: '#FFFFFF',
-    borderRadius: 16,
-    padding: 20,
+    borderRadius: 12,
+    padding: 16,
     marginBottom: 16,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.05,
-    shadowRadius: 8,
-    elevation: 2,
   },
   cardTitle: {
-    fontSize: 18,
-    fontWeight: '700',
-    color: '#1E293B',
+    fontSize: 13,
+    fontWeight: '500',
+    color: '#636366',
+    letterSpacing: -0.08,
+    textTransform: 'uppercase',
     marginBottom: 16,
   },
   row: {
@@ -748,11 +745,9 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    backgroundColor: '#F8FAFC',
+    backgroundColor: '#F4F4F7',
     borderRadius: 12,
-    padding: 16,
-    borderWidth: 1,
-    borderColor: '#E2E8F0',
+    padding: 14,
   },
   selectedItemContainer: {
     flexDirection: 'row',

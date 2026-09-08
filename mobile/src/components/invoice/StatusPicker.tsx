@@ -12,6 +12,7 @@ import {
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Feather } from '@expo/vector-icons';
 import { STATUS_OPTIONS } from '@/utils/statusUtils';
+import { hairline, palette, radius } from '@/theme/tokens';
 
 interface StatusPickerProps {
   visible: boolean;
@@ -118,8 +119,7 @@ export default function StatusPicker({
 
           {/* Title */}
           <View style={styles.header}>
-            <Text style={styles.title}>Change Invoice Status</Text>
-            <Text style={styles.subtitle}>Select a new status for this invoice</Text>
+            <Text style={styles.title}>Status</Text>
           </View>
 
           {/* Status Options */}
@@ -137,7 +137,7 @@ export default function StatusPicker({
                   onPress={() => handleSelect(status.value)}
                   activeOpacity={0.7}
                 >
-                  <View style={styles.optionLeft}>
+                  <View style={[styles.optionLeft, { gap: 12 }]}>
                     <Feather name={status.icon} size={20} color={status.color} />
                     <View style={styles.optionTextContainer}>
                       <Text style={[styles.optionLabel, isSelected && styles.optionLabelSelected]}>
@@ -148,7 +148,7 @@ export default function StatusPicker({
                   </View>
                   <View style={styles.optionRight}>
                     <View style={[styles.colorDot, { backgroundColor: status.color }]} />
-                    {isSelected && <Feather name="check" size={18} color="#5B72EE" />}
+                    {isSelected && <Feather name="check" size={18} color={palette.accent} />}
                   </View>
                 </TouchableOpacity>
               );
@@ -179,40 +179,31 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(0, 0, 0, 0.5)',
   },
   bottomSheet: {
-    backgroundColor: '#ffffff',
+    backgroundColor: palette.surface,
     borderTopLeftRadius: 20,
     borderTopRightRadius: 20,
     paddingTop: 8,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: -4 },
-    shadowOpacity: 0.15,
-    shadowRadius: 12,
-    elevation: 8,
   },
   handleContainer: {
     alignItems: 'center',
     paddingVertical: 8,
   },
   handle: {
-    width: 40,
-    height: 4,
-    backgroundColor: '#cbd5e1',
-    borderRadius: 2,
+    width: 36,
+    height: 5,
+    backgroundColor: palette.fill,
+    borderRadius: 3,
   },
   header: {
-    paddingHorizontal: 24,
-    paddingTop: 8,
-    paddingBottom: 20,
+    paddingHorizontal: 20,
+    paddingTop: 4,
+    paddingBottom: 12,
   },
   title: {
-    fontSize: 22,
-    fontWeight: '700',
-    color: '#0f172a',
-    marginBottom: 4,
-  },
-  subtitle: {
-    fontSize: 14,
-    color: '#64748b',
+    fontSize: 17,
+    fontWeight: '600',
+    color: palette.text,
+    textAlign: 'center',
   },
   optionsContainer: {
     paddingHorizontal: 16,
@@ -221,43 +212,35 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingVertical: 16,
-    paddingHorizontal: 16,
-    marginBottom: 8,
-    backgroundColor: '#f8fafc',
-    borderRadius: 12,
-    minHeight: 72,
-    borderWidth: 2,
-    borderColor: 'transparent',
+    paddingVertical: 14,
+    paddingHorizontal: 4,
+    minHeight: 56,
+    borderBottomWidth: hairline,
+    borderBottomColor: palette.separator,
   },
   optionSelected: {
-    backgroundColor: '#eff6ff',
-    borderColor: '#3b82f6',
+    backgroundColor: 'transparent',
   },
   optionLeft: {
     flexDirection: 'row',
     alignItems: 'center',
     flex: 1,
   },
-  optionIcon: {
-    fontSize: 32,
-    marginRight: 16,
-  },
   optionTextContainer: {
     flex: 1,
   },
   optionLabel: {
     fontSize: 17,
-    fontWeight: '600',
-    color: '#0f172a',
+    fontWeight: '500',
+    color: palette.text,
     marginBottom: 2,
   },
   optionLabelSelected: {
-    color: '#1e40af',
+    color: palette.accent,
   },
   optionDescription: {
     fontSize: 13,
-    color: '#64748b',
+    color: palette.textSecondary,
   },
   optionRight: {
     flexDirection: 'row',
@@ -265,28 +248,23 @@ const styles = StyleSheet.create({
     gap: 12,
   },
   colorDot: {
-    width: 12,
-    height: 12,
-    borderRadius: 6,
-  },
-  checkmark: {
-    fontSize: 20,
-    color: '#3b82f6',
-    fontWeight: '700',
+    width: 8,
+    height: 8,
+    borderRadius: 4,
   },
   cancelButton: {
     marginHorizontal: 16,
     marginTop: 12,
     marginBottom: 8,
-    paddingVertical: 16,
-    backgroundColor: '#f1f5f9',
-    borderRadius: 12,
+    paddingVertical: 14,
+    backgroundColor: palette.fill,
+    borderRadius: radius.pill,
     alignItems: 'center',
   },
   cancelButtonText: {
     fontSize: 17,
     fontWeight: '600',
-    color: '#64748b',
+    color: palette.text,
   },
 });
 

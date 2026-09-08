@@ -1,34 +1,17 @@
-/**
- * SwipeableInvoiceCard - Revolut-Style Swipeable Card with Press Feedback
- * 
- * Features:
- * - Swipe to reveal status actions
- * - Press scale animation (0.98) when touched
- * - Shadow depth animation on press
- * - Haptic feedback
- * - Spring physics for natural feel
- */
-
 import React, { useRef, useCallback } from 'react';
-import {
-  View,
-  Text,
-  StyleSheet,
-  Dimensions,
-  Platform,
-} from 'react-native';
+import { View, Text, StyleSheet, Platform } from 'react-native';
 import Animated, {
   useAnimatedStyle,
   useSharedValue,
   withSpring,
   runOnJS,
-  interpolate,
 } from 'react-native-reanimated';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
+import { Feather } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import type { Invoice } from '@/types/invoice';
-import { STATUS_OPTIONS, getStatusColor } from '@/utils/statusUtils';
-import { SPRING_CONFIG, SCALE } from '@/utils/animations';
+import { STATUS_OPTIONS, getStatusColor, getStatusLabel } from '@/utils/statusUtils';
+import { hairline, palette, radius } from '@/theme/tokens';
 
 interface SwipeableInvoiceCardProps {
   invoice: Invoice;
@@ -37,14 +20,15 @@ interface SwipeableInvoiceCardProps {
   disabled?: boolean;
   formatCurrency: (amount: number, currency: string) => string;
   formatDate: (dateString: string) => string;
+  isFirst?: boolean;
+  isLast?: boolean;
 }
 
-const SCREEN_WIDTH = Dimensions.get('window').width;
-const SWIPE_THRESHOLD = -100; // Negative for left swipe
-const ACTION_BUTTON_WIDTH = 80;
+const SWIPE_THRESHOLD = -80;
+const ACTION_BUTTON_WIDTH = 72;
 const SWIPE_SPRING_CONFIG = {
   damping: 20,
-  stiffness: 90,
+  stiffness: 180,
 };
 
 export default function SwipeableInvoiceCard({
@@ -54,26 +38,19 @@ export default function SwipeableInvoiceCard({
   disabled = false,
   formatCurrency,
   formatDate,
+  isFirst = false,
+  isLast = false,
 }: SwipeableInvoiceCardProps) {
   const translateX = useSharedValue(0);
   const isSwipedRef = useRef(false);
-  const cardPressed = useSharedValue(false);
-
-  // Filter out current status from action buttons
   const availableStatuses = STATUS_OPTIONS.filter((opt) => opt.value !== invoice.status);
 
-  // Trigger haptic feedback
   const triggerHaptic = useCallback((style: Haptics.ImpactFeedbackStyle = Haptics.ImpactFeedbackStyle.Light) => {
     if (Platform.OS !== 'web') {
-      try {
-        Haptics.impactAsync(style);
-      } catch (error) {
-        // Haptic feedback not available
-      }
+      Haptics.impactAsync(style).catch(() => undefined);
     }
   }, []);
 
-  // Handle card press
   const handleCardPress = useCallback(() => {
     if (!disabled) {
       onPress();
@@ -81,195 +58,106 @@ export default function SwipeableInvoiceCard({
   }, [disabled, onPress]);
 
   const handleStatusPress = useCallback((status: string) => {
-    // Trigger haptic feedback
     triggerHaptic(Haptics.ImpactFeedbackStyle.Medium);
-
-    // Animate back to original position
     translateX.value = withSpring(0, SWIPE_SPRING_CONFIG);
     isSwipedRef.current = false;
-
-    // Call status change handler
     onStatusChange(invoice.id, status);
   }, [invoice.id, onStatusChange, triggerHaptic, translateX]);
 
-  // Pan gesture for swipe
   const panGesture = Gesture.Pan()
+    .activeOffsetX([-12, 12])
+    .failOffsetY([-10, 10])
     .onUpdate((event) => {
       if (disabled) return;
-
-      // Only allow left swipe
       const newTranslateX = event.translationX;
       if (newTranslateX < 0) {
-        // Add resistance when swiping beyond actions
         const maxSwipe = -ACTION_BUTTON_WIDTH * availableStatuses.length;
         if (newTranslateX < maxSwipe) {
-          translateX.value = maxSwipe + (newTranslateX - maxSwipe) * 0.1;
+          translateX.value = maxSwipe + (newTranslateX - maxSwipe) * 0.12;
         } else {
           translateX.value = newTranslateX;
         }
       } else {
-        // No right swipe
         translateX.value = 0;
       }
     })
     .onEnd((event) => {
       if (disabled) return;
-
-      // Snap to position based on velocity and position
       if (translateX.value < SWIPE_THRESHOLD || event.velocityX < -500) {
-        // Snap open
         translateX.value = withSpring(-ACTION_BUTTON_WIDTH * availableStatuses.length, SWIPE_SPRING_CONFIG);
         isSwipedRef.current = true;
       } else {
-        // Snap closed
         translateX.value = withSpring(0, SWIPE_SPRING_CONFIG);
         isSwipedRef.current = false;
       }
     });
 
-  // Tap gesture for card press
   const tapGesture = Gesture.Tap()
     .enabled(!disabled)
-    .onBegin(() => {
-      'worklet';
-      cardPressed.value = true;
-    })
-    .onFinalize(() => {
-      'worklet';
-      cardPressed.value = false;
-    })
     .onEnd(() => {
       'worklet';
-      // Only trigger press if not swiped
       if (Math.abs(translateX.value) < 10) {
         runOnJS(triggerHaptic)(Haptics.ImpactFeedbackStyle.Light);
         runOnJS(handleCardPress)();
       }
     });
 
-  // Combine gestures - pan takes priority
-  const composedGesture = Gesture.Race(panGesture, tapGesture);
-
-  // Animated style for card translation (swipe)
+  const composedGesture = Gesture.Exclusive(panGesture, tapGesture);
   const cardSwipeStyle = useAnimatedStyle(() => ({
     transform: [{ translateX: translateX.value }],
   }));
 
-  // Animated style for press feedback
-  const cardPressStyle = useAnimatedStyle(() => {
-    'worklet';
-    const scale = withSpring(
-      cardPressed.value ? SCALE.cardPressed : 1,
-      SPRING_CONFIG.gentle
-    );
-
-    const shadowOpacity = interpolate(
-      cardPressed.value ? 1 : 0,
-      [0, 1],
-      [0.1, 0.05]
-    );
-
-    return {
-      transform: [{ scale }],
-      shadowOpacity,
-    };
-  });
-
-  // Animated style for actions container
-  const actionsAnimatedStyle = useAnimatedStyle(() => {
-    const opacity = Math.min(Math.abs(translateX.value) / 100, 1);
-    return {
-      opacity,
-    };
-  });
-
-  // Animated style for action buttons
-  const getActionButtonStyle = (index: number) => {
-    return useAnimatedStyle(() => {
-      const progress = Math.min(Math.abs(translateX.value) / (ACTION_BUTTON_WIDTH * (index + 1)), 1);
-      const scale = interpolate(progress, [0, 0.5, 1], [0.8, 0.95, 1]);
-      
-      return {
-        transform: [{ scale }],
-      };
-    });
-  };
+  const statusColor = getStatusColor(invoice.status);
 
   return (
-    <View style={styles.container}>
-      {/* Action Buttons (Behind) */}
-      <Animated.View style={[styles.actionsContainer, actionsAnimatedStyle]}>
-        {availableStatuses.map((status, index) => (
+    <View
+      style={[
+        styles.container,
+        isFirst && styles.first,
+        isLast && styles.last,
+      ]}
+    >
+      <View style={styles.actionsContainer}>
+        {availableStatuses.map((status) => (
           <GestureDetector
             key={status.value}
-            gesture={Gesture.Tap()
-              .onEnd(() => {
-                'worklet';
-                runOnJS(handleStatusPress)(status.value);
-              })}
+            gesture={Gesture.Tap().onEnd(() => {
+              'worklet';
+              runOnJS(handleStatusPress)(status.value);
+            })}
           >
-            <Animated.View
-              style={[
-                styles.actionButton,
-                { backgroundColor: status.color },
-                getActionButtonStyle(index),
-              ]}
-            >
-              <Text style={styles.actionIcon}>{status.icon}</Text>
+            <View style={[styles.actionButton, { backgroundColor: status.color }]}>
+              <Feather name={status.icon} size={16} color={palette.surface} />
               <Text style={styles.actionLabel}>{status.label}</Text>
-            </Animated.View>
+            </View>
           </GestureDetector>
         ))}
-      </Animated.View>
+      </View>
 
-      {/* Swipeable Card */}
       <GestureDetector gesture={composedGesture}>
-        <Animated.View style={[styles.card, cardSwipeStyle, cardPressStyle]}>
-          <View style={styles.cardContent}>
-            {/* Gradient Header */}
-            <View
-              style={[
-                styles.cardHeader,
-                { backgroundColor: getStatusColor(invoice.status) + '15' },
-              ]}
-            >
-              <View style={styles.cardHeaderTop}>
-                <Text style={styles.invoiceNumber}>{invoice.invoiceNumber}</Text>
-                <View
-                  style={[
-                    styles.statusBadge,
-                    { backgroundColor: getStatusColor(invoice.status) },
-                  ]}
-                >
-                  <Text style={styles.statusText}>
-                    {invoice.status.toUpperCase()}
-                  </Text>
-                </View>
-              </View>
-              <Text style={styles.customerName}>{invoice.customer?.name || 'Unknown'}</Text>
-            </View>
-
-            {/* Card Body */}
-            <View style={styles.cardBody}>
-              <View style={styles.amountContainer}>
-                <Text style={styles.amountLabel}>Amount</Text>
-                <Text style={styles.amountValue}>
-                  {formatCurrency(invoice.total || 0, invoice.currency || 'NZD')}
-                </Text>
-              </View>
-
-              <View style={styles.datesContainer}>
-                <View style={styles.dateItem}>
-                  <Text style={styles.dateLabel}>Date</Text>
-                  <Text style={styles.dateValue}>{formatDate(invoice.date)}</Text>
-                </View>
-                <View style={styles.dateDivider} />
-                <View style={styles.dateItem}>
-                  <Text style={styles.dateLabel}>Due</Text>
-                  <Text style={styles.dateValue}>{formatDate(invoice.dueDate)}</Text>
-                </View>
-              </View>
-            </View>
+        <Animated.View
+          style={[
+            styles.row,
+            cardSwipeStyle,
+            !isLast && styles.rowBorder,
+          ]}
+        >
+          <View style={[styles.dot, { backgroundColor: statusColor }]} />
+          <View style={styles.copy}>
+            <Text style={styles.title} numberOfLines={1}>
+              {invoice.customer?.name || 'No customer'}
+            </Text>
+            <Text style={styles.meta} numberOfLines={1}>
+              {invoice.invoiceNumber} · {formatDate(invoice.dueDate)}
+            </Text>
+          </View>
+          <View style={styles.trailing}>
+            <Text style={styles.amount}>
+              {formatCurrency(invoice.total || 0, invoice.currency || 'NZD')}
+            </Text>
+            <Text style={[styles.status, { color: statusColor }]}>
+              {getStatusLabel(invoice.status)}
+            </Text>
           </View>
         </Animated.View>
       </GestureDetector>
@@ -279,8 +167,17 @@ export default function SwipeableInvoiceCard({
 
 const styles = StyleSheet.create({
   container: {
-    marginBottom: 16,
     position: 'relative',
+    backgroundColor: palette.surface,
+    overflow: 'hidden',
+  },
+  first: {
+    borderTopLeftRadius: radius.group,
+    borderTopRightRadius: radius.group,
+  },
+  last: {
+    borderBottomLeftRadius: radius.group,
+    borderBottomRightRadius: radius.group,
   },
   actionsContainer: {
     position: 'absolute',
@@ -288,111 +185,62 @@ const styles = StyleSheet.create({
     top: 0,
     bottom: 0,
     flexDirection: 'row',
-    alignItems: 'center',
   },
   actionButton: {
     width: ACTION_BUTTON_WIDTH,
-    height: '100%',
     justifyContent: 'center',
     alignItems: 'center',
-    paddingHorizontal: 8,
-  },
-  actionIcon: {
-    fontSize: 24,
-    marginBottom: 4,
+    gap: 4,
   },
   actionLabel: {
-    color: '#ffffff',
+    color: palette.surface,
     fontSize: 11,
-    fontWeight: '700',
-    textAlign: 'center',
-  },
-  card: {
-    backgroundColor: '#ffffff',
-    borderRadius: 16,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 8,
-    elevation: 3,
-    overflow: 'hidden',
-  },
-  cardContent: {
-    flex: 1,
-  },
-  cardHeader: {
-    padding: 16,
-    borderTopLeftRadius: 16,
-    borderTopRightRadius: 16,
-  },
-  cardHeaderTop: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'flex-start',
-    marginBottom: 8,
-  },
-  invoiceNumber: {
-    fontSize: 20,
-    fontWeight: '700',
-    color: '#0f172a',
-  },
-  statusBadge: {
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 12,
-  },
-  statusText: {
-    fontSize: 10,
-    fontWeight: '700',
-    color: '#ffffff',
-    letterSpacing: 0.5,
-  },
-  customerName: {
-    fontSize: 15,
-    color: '#64748b',
-    fontWeight: '500',
-  },
-  cardBody: {
-    padding: 16,
-    backgroundColor: '#ffffff',
-  },
-  amountContainer: {
-    marginBottom: 16,
-  },
-  amountLabel: {
-    fontSize: 12,
-    color: '#64748b',
-    marginBottom: 4,
-    fontWeight: '500',
-    textTransform: 'uppercase',
-    letterSpacing: 0.5,
-  },
-  amountValue: {
-    fontSize: 28,
-    fontWeight: '700',
-    color: '#0f172a',
-  },
-  datesContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  dateItem: {
-    flex: 1,
-  },
-  dateLabel: {
-    fontSize: 12,
-    color: '#64748b',
-    marginBottom: 4,
-  },
-  dateValue: {
-    fontSize: 14,
-    color: '#0f172a',
     fontWeight: '600',
   },
-  dateDivider: {
-    width: 1,
-    height: 32,
-    backgroundColor: '#e2e8f0',
-    marginHorizontal: 16,
+  row: {
+    minHeight: 68,
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    backgroundColor: palette.surface,
+    gap: 12,
+  },
+  rowBorder: {
+    borderBottomWidth: hairline,
+    borderBottomColor: palette.separator,
+  },
+  dot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+  },
+  copy: {
+    flex: 1,
+    minWidth: 0,
+  },
+  title: {
+    fontSize: 17,
+    fontWeight: '600',
+    color: palette.text,
+  },
+  meta: {
+    fontSize: 13,
+    color: palette.textSecondary,
+    marginTop: 2,
+  },
+  trailing: {
+    alignItems: 'flex-end',
+  },
+  amount: {
+    fontSize: 17,
+    fontWeight: '600',
+    color: palette.text,
+    fontVariant: ['tabular-nums'],
+  },
+  status: {
+    fontSize: 12,
+    fontWeight: '600',
+    marginTop: 2,
   },
 });

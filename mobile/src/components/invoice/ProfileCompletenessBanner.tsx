@@ -1,10 +1,11 @@
 import React, { useState } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
+import { View, Text, Pressable, StyleSheet } from 'react-native';
 import {
   describeMissingFields,
   getMissingProfileFields,
   type ProfileCompletenessInput,
 } from '@/utils/profileCompleteness';
+import { palette, radius, space } from '@/theme/tokens';
 
 let dismissedThisSession = false;
 
@@ -33,20 +34,20 @@ export function ProfileCompletenessBanner({
     <View style={styles.banner} testID="profile-completeness-banner">
       <View style={styles.copy}>
         <Text style={styles.title}>Add {describeMissingFields(missing)} before you send</Text>
-        <Text style={styles.subtitle}>Optional, but it makes invoices look complete.</Text>
-        {onCompleteProfile && (
-          <TouchableOpacity onPress={onCompleteProfile} activeOpacity={0.7}>
-            <Text style={styles.link}>Update in settings</Text>
-          </TouchableOpacity>
-        )}
+        <Text style={styles.subtitle}>Optional, but invoices look complete with it.</Text>
+        {onCompleteProfile ? (
+          <Pressable onPress={onCompleteProfile} hitSlop={8}>
+            <Text style={styles.link}>Update in Settings</Text>
+          </Pressable>
+        ) : null}
       </View>
-      <TouchableOpacity
+      <Pressable
         onPress={handleDismiss}
         hitSlop={8}
         testID="profile-completeness-dismiss"
       >
-        <Text style={styles.dismiss}>Dismiss</Text>
-      </TouchableOpacity>
+        <Text style={styles.dismiss}>Skip</Text>
+      </Pressable>
     </View>
   );
 }
@@ -55,14 +56,12 @@ const styles = StyleSheet.create({
   banner: {
     flexDirection: 'row',
     alignItems: 'flex-start',
-    gap: 12,
-    backgroundColor: '#F8FAFC',
-    borderWidth: 1,
-    borderColor: '#E2E8F0',
-    borderRadius: 12,
+    gap: space.md,
+    backgroundColor: palette.accentFill,
+    borderRadius: radius.md,
     paddingHorizontal: 14,
     paddingVertical: 12,
-    marginBottom: 12,
+    marginBottom: space.lg,
   },
   copy: {
     flex: 1,
@@ -70,22 +69,22 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 14,
     fontWeight: '600',
-    color: '#1E293B',
+    color: palette.text,
   },
   subtitle: {
     fontSize: 13,
-    color: '#64748B',
-    marginTop: 4,
+    color: palette.textSecondary,
+    marginTop: 3,
   },
   link: {
     marginTop: 8,
     fontSize: 13,
     fontWeight: '600',
-    color: '#5B72EE',
+    color: palette.accent,
   },
   dismiss: {
-    fontSize: 12,
-    color: '#64748B',
+    fontSize: 13,
+    color: palette.textSecondary,
     fontWeight: '500',
   },
 });

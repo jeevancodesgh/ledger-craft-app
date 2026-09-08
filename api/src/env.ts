@@ -25,6 +25,7 @@ export function getAdminDatabaseUrl(): string | undefined {
 }
 
 export const apiPort = Number(process.env.API_PORT ?? 3001);
+export const apiHost = process.env.API_HOST ?? '127.0.0.1';
 
 const DEV_BETTER_AUTH_SECRET = 'dev-only-better-auth-secret-32ch';
 

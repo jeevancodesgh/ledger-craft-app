@@ -18,14 +18,14 @@ import { paymentService } from '@/services/paymentService';
 import type { Invoice } from '@/types/invoice';
 import type { CreatePaymentRequest } from '@/types/payment';
 import type { BusinessProfile } from '@/types/invoice';
-import { ModernButton } from '@/components/ui/ModernButton';
 import InvoicePreviewWithTemplates from '@/components/invoice/InvoicePreviewWithTemplates';
 import { shareInvoicePDF, downloadInvoicePDF } from '@/utils/pdfUtils';
 import { businessProfileService } from '@/services/businessProfileService';
 import StatusPicker from '@/components/invoice/StatusPicker';
 import PaymentCaptureModal from '@/components/invoice/PaymentCaptureModal';
-import { getStatusColor } from '@/utils/statusUtils';
+import { getStatusColor, getStatusLabel } from '@/utils/statusUtils';
 import { ProfileCompletenessBanner } from '@/components/invoice/ProfileCompletenessBanner';
+import { palette, radius, space } from '@/theme/tokens';
 
 type InvoiceDetailNavigationProp = NativeStackNavigationProp<InvoiceStackParamList, 'InvoiceDetail'>;
 type InvoiceDetailRouteProp = RouteProp<InvoiceStackParamList, 'InvoiceDetail'>;
@@ -84,24 +84,12 @@ export default function InvoiceDetailScreen() {
     }
   };
 
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'paid':
-        return '#10b981';
-      case 'sent':
-        return '#3b82f6';
-      case 'draft':
-        return '#6b7280';
-      case 'overdue':
-        return '#ef4444';
-      default:
-        return '#6b7280';
-    }
-  };
-
   const formatCurrency = (amount: number, currency: string) => {
-    const symbol = currency === 'NZD' ? '$' : currency;
-    return `${symbol}${amount.toFixed(2)}`;
+    return new Intl.NumberFormat('en-NZ', {
+      style: 'currency',
+      currency: currency || 'NZD',
+      minimumFractionDigits: 2,
+    }).format(amount);
   };
 
   const formatDate = (dateString: string) => {
@@ -195,8 +183,8 @@ export default function InvoiceDetailScreen() {
   if (loading) {
     return (
       <View style={styles.centerContainer}>
-        <ActivityIndicator size="large" color="#33415C" />
-        <Text style={styles.loadingText}>Loading invoice...</Text>
+        <ActivityIndicator size="large" color={palette.accent} />
+        <Text style={styles.loadingText}>Loading invoice</Text>
       </View>
     );
   }
@@ -216,27 +204,22 @@ export default function InvoiceDetailScreen() {
         contentContainerStyle={styles.scrollContent}
         contentInsetAdjustmentBehavior="automatic"
       >
-        {/* Header Card */}
-        <View style={styles.headerCard}>
-          <View style={styles.headerRow}>
-            <View>
-              <Text style={styles.invoiceNumber}>{invoice.invoiceNumber || 'N/A'}</Text>
-              <Text style={styles.customerName}>{invoice.customer?.name || 'No customer'}</Text>
-            </View>
-            <View style={[styles.statusBadge, { backgroundColor: getStatusColor(invoice.status) }]}>
-              <Text style={styles.statusText}>{(invoice.status || 'draft').toUpperCase()}</Text>
-            </View>
-          </View>
-
-          <View style={styles.amountContainer}>
-            <Text style={styles.amountLabel}>Total Amount</Text>
-            <Text style={styles.amountValue}>{formatCurrency(invoice.total || 0, invoice.currency || 'NZD')}</Text>
-          </View>
+        <View style={styles.hero}>
+          <Text style={styles.customerName}>{invoice.customer?.name || 'No customer'}</Text>
+          <Text style={styles.amountValue}>
+            {formatCurrency(invoice.total || 0, invoice.currency || 'NZD')}
+          </Text>
+          <Text style={styles.heroMeta}>
+            {invoice.invoiceNumber}
+            {' · '}
+            <Text style={{ color: getStatusColor(invoice.status) }}>
+              {getStatusLabel(invoice.status)}
+            </Text>
+          </Text>
         </View>
 
-        {/* Status Section */}
         <View style={styles.card}>
-          <Text style={styles.sectionTitle}>Invoice Status</Text>
+          <Text style={styles.sectionTitle}>Status</Text>
           <Pressable
             style={styles.statusButton}
             onPress={() => setStatusPickerVisible(true)}
@@ -244,45 +227,38 @@ export default function InvoiceDetailScreen() {
             accessibilityRole="button"
             accessibilityLabel="Change invoice status"
           >
-            <View style={styles.statusButtonLeft}>
-              <View style={[styles.statusDot, { backgroundColor: getStatusColor(invoice.status) }]} />
-              <View>
-                <Text style={styles.statusButtonLabel}>Current Status</Text>
-                <Text style={styles.statusButtonValue}>
-                  {invoice.status.toUpperCase()}
-                </Text>
-              </View>
-            </View>
-            <Text style={styles.changeText}>Change</Text>
+            <View style={[styles.statusDot, { backgroundColor: getStatusColor(invoice.status) }]} />
+            <Text style={styles.statusButtonValue}>{getStatusLabel(invoice.status)}</Text>
+            <Feather name="chevron-right" size={18} color={palette.textTertiary} />
           </Pressable>
-          {updatingStatus && (
+          {updatingStatus ? (
             <View style={styles.statusLoading}>
-              <ActivityIndicator size="small" color="#5B72EE" />
-              <Text style={styles.statusLoadingText}>Updating status...</Text>
+              <ActivityIndicator size="small" color={palette.accent} />
+              <Text style={styles.statusLoadingText}>Updating status</Text>
             </View>
-          )}
+          ) : null}
         </View>
 
         {/* Customer Details Card */}
         <View style={styles.card}>
           <Text style={styles.sectionTitle}>Customer Details</Text>
           <View style={styles.detailRow}>
-            <Text style={styles.detailLabel}>Name:</Text>
+            <Text style={styles.detailLabel}>Name</Text>
             <Text style={styles.detailValue}>{invoice.customer?.name || 'N/A'}</Text>
           </View>
           <View style={styles.detailRow}>
-            <Text style={styles.detailLabel}>Email:</Text>
+            <Text style={styles.detailLabel}>Email</Text>
             <Text style={styles.detailValue}>{invoice.customer?.email || 'N/A'}</Text>
           </View>
           {invoice.customer?.phone && (
             <View style={styles.detailRow}>
-              <Text style={styles.detailLabel}>Phone:</Text>
+              <Text style={styles.detailLabel}>Phone</Text>
               <Text style={styles.detailValue}>{invoice.customer.phone}</Text>
             </View>
           )}
           {invoice.customer?.address && (
             <View style={styles.detailRow}>
-              <Text style={styles.detailLabel}>Address:</Text>
+              <Text style={styles.detailLabel}>Address</Text>
               <Text style={styles.detailValue}>
                 {[
                   invoice.customer.address,
@@ -302,15 +278,15 @@ export default function InvoiceDetailScreen() {
         <View style={styles.card}>
           <Text style={styles.sectionTitle}>Invoice Details</Text>
           <View style={styles.detailRow}>
-            <Text style={styles.detailLabel}>Date:</Text>
+            <Text style={styles.detailLabel}>Date</Text>
             <Text style={styles.detailValue}>{invoice.date ? formatDate(invoice.date) : 'N/A'}</Text>
           </View>
           <View style={styles.detailRow}>
-            <Text style={styles.detailLabel}>Due Date:</Text>
+            <Text style={styles.detailLabel}>Due</Text>
             <Text style={styles.detailValue}>{invoice.dueDate ? formatDate(invoice.dueDate) : 'N/A'}</Text>
           </View>
           <View style={styles.detailRow}>
-            <Text style={styles.detailLabel}>Currency:</Text>
+            <Text style={styles.detailLabel}>Currency</Text>
             <Text style={styles.detailValue}>{invoice.currency || 'NZD'}</Text>
           </View>
         </View>
@@ -335,31 +311,31 @@ export default function InvoiceDetailScreen() {
         <View style={styles.card}>
           <Text style={styles.sectionTitle}>Summary</Text>
           <View style={styles.summaryRow}>
-            <Text style={styles.summaryLabel}>Subtotal:</Text>
+            <Text style={styles.summaryLabel}>Subtotal</Text>
             <Text style={styles.summaryValue}>{formatCurrency(invoice.subtotal || 0, invoice.currency)}</Text>
           </View>
           {(invoice.taxAmount || 0) > 0 && (
             <View style={styles.summaryRow}>
-              <Text style={styles.summaryLabel}>Tax:</Text>
+              <Text style={styles.summaryLabel}>Tax</Text>
               <Text style={styles.summaryValue}>{formatCurrency(invoice.taxAmount || 0, invoice.currency)}</Text>
             </View>
           )}
           {(invoice.discount || 0) > 0 && (
             <View style={styles.summaryRow}>
-              <Text style={styles.summaryLabel}>Discount:</Text>
+              <Text style={styles.summaryLabel}>Discount</Text>
               <Text style={styles.summaryValue}>-{formatCurrency(invoice.discount || 0, invoice.currency)}</Text>
             </View>
           )}
           {(invoice.additionalCharges || 0) > 0 && (
             <View style={styles.summaryRow}>
-              <Text style={styles.summaryLabel}>Additional Charges:</Text>
+              <Text style={styles.summaryLabel}>Additional</Text>
               <Text style={styles.summaryValue}>
                 {formatCurrency(invoice.additionalCharges || 0, invoice.currency)}
               </Text>
             </View>
           )}
           <View style={[styles.summaryRow, styles.totalRow]}>
-            <Text style={styles.totalLabel}>Total:</Text>
+            <Text style={styles.totalLabel}>Total</Text>
             <Text style={styles.totalValue}>{formatCurrency(invoice.total || 0, invoice.currency)}</Text>
           </View>
         </View>
@@ -382,7 +358,7 @@ export default function InvoiceDetailScreen() {
           </View>
         )}
 
-        <View style={{ paddingHorizontal: 16, paddingBottom: 8 }}>
+        <View style={{ paddingBottom: 8 }}>
           <ProfileCompletenessBanner
             profile={businessProfile}
             onCompleteProfile={() => {
@@ -401,7 +377,7 @@ export default function InvoiceDetailScreen() {
           accessibilityRole="button"
           accessibilityLabel="Preview"
         >
-          <Feather name="eye" size={20} color="#5B72EE" />
+          <Feather name="eye" size={20} color={palette.accent} />
           <Text style={styles.bottomBarLabel}>Preview</Text>
         </Pressable>
 
@@ -413,9 +389,9 @@ export default function InvoiceDetailScreen() {
           accessibilityLabel="Share"
         >
           {generatingPdf ? (
-            <ActivityIndicator size="small" color="#5B72EE" />
+            <ActivityIndicator size="small" color={palette.accent} />
           ) : (
-            <Feather name="share" size={20} color="#5B72EE" />
+            <Feather name="share" size={20} color={palette.accent} />
           )}
           <Text style={styles.bottomBarLabel}>Share</Text>
         </Pressable>
@@ -426,7 +402,7 @@ export default function InvoiceDetailScreen() {
           accessibilityRole="button"
           accessibilityLabel="Edit"
         >
-          <Feather name="edit-2" size={20} color="#5B72EE" />
+          <Feather name="edit-2" size={20} color={palette.accent} />
           <Text style={styles.bottomBarLabel}>Edit</Text>
         </Pressable>
 
@@ -437,7 +413,7 @@ export default function InvoiceDetailScreen() {
             accessibilityRole="button"
             accessibilityLabel="Mark as paid"
           >
-            <Feather name="check" size={18} color="#FFFFFF" />
+            <Feather name="check" size={18} color={palette.surface} />
             <Text style={styles.bottomBarPrimaryLabel}>Paid</Text>
           </Pressable>
         )}
@@ -485,143 +461,88 @@ export default function InvoiceDetailScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f8fafc',
+    backgroundColor: palette.background,
   },
   centerContainer: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: '#f8fafc',
+    backgroundColor: palette.background,
   },
   loadingText: {
     marginTop: 12,
     fontSize: 16,
-    color: '#64748b',
+    color: palette.textSecondary,
   },
   errorText: {
-    fontSize: 18,
-    color: '#ef4444',
+    fontSize: 17,
+    color: palette.danger,
     fontWeight: '600',
   },
   scrollView: {
     flex: 1,
   },
   scrollContent: {
-    padding: 16,
-    paddingTop: 0,
+    padding: space.screen,
+    paddingTop: 8,
   },
-  topHeader: {
-    backgroundColor: '#1E2875',
-    paddingHorizontal: 24,
-    paddingTop: 48,
-    paddingBottom: 32,
-  },
-  titleSection: {
-    marginBottom: 8,
-  },
-  headerTitle: {
-    fontSize: 30,
-    fontWeight: '800',
-    color: '#FFFFFF',
-    marginBottom: 4,
-  },
-  dateText: {
-    fontSize: 14,
-    color: 'rgba(255, 255, 255, 0.7)',
-  },
-  headerCard: {
-    backgroundColor: '#ffffff',
-    borderRadius: 12,
-    padding: 20,
-    marginBottom: 16,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 2,
-  },
-  headerRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'flex-start',
-    marginBottom: 20,
-  },
-  invoiceNumber: {
-    fontSize: 24,
-    fontWeight: '700',
-    color: '#0f172a',
-    marginBottom: 4,
+  hero: {
+    marginBottom: 24,
   },
   customerName: {
-    fontSize: 16,
-    color: '#64748b',
-  },
-  statusBadge: {
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 12,
-  },
-  statusText: {
-    fontSize: 11,
-    fontWeight: '700',
-    color: '#ffffff',
-    letterSpacing: 0.5,
-  },
-  amountContainer: {
-    borderTopWidth: 1,
-    borderTopColor: '#e2e8f0',
-    paddingTop: 16,
-  },
-  amountLabel: {
-    fontSize: 14,
-    color: '#64748b',
+    fontSize: 15,
+    color: palette.textSecondary,
     marginBottom: 4,
   },
   amountValue: {
-    fontSize: 32,
+    fontSize: 40,
     fontWeight: '700',
-    color: '#33415C',
+    color: palette.text,
+    letterSpacing: -1.2,
+    fontVariant: ['tabular-nums'],
+  },
+  heroMeta: {
+    fontSize: 15,
+    color: palette.textSecondary,
+    marginTop: 6,
   },
   card: {
-    backgroundColor: '#ffffff',
-    borderRadius: 12,
-    padding: 16,
-    marginBottom: 16,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 2,
+    backgroundColor: palette.surface,
+    borderRadius: radius.group,
+    padding: space.lg,
+    marginBottom: space.lg,
   },
   sectionTitle: {
-    fontSize: 18,
-    fontWeight: '700',
-    color: '#0f172a',
+    fontSize: 13,
+    fontWeight: '500',
+    color: palette.textSecondary,
+    letterSpacing: -0.08,
+    textTransform: 'uppercase',
     marginBottom: 12,
   },
   detailRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    paddingVertical: 8,
-    borderBottomWidth: 1,
-    borderBottomColor: '#f1f5f9',
+    paddingVertical: 10,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderBottomColor: palette.separator,
   },
   detailLabel: {
-    fontSize: 14,
-    color: '#64748b',
-    fontWeight: '500',
+    fontSize: 15,
+    color: palette.textSecondary,
   },
   detailValue: {
-    fontSize: 14,
-    color: '#0f172a',
-    fontWeight: '600',
+    fontSize: 15,
+    color: palette.text,
+    fontWeight: '500',
     flex: 1,
     textAlign: 'right',
+    marginLeft: 16,
   },
   lineItem: {
     paddingVertical: 12,
-    borderBottomWidth: 1,
-    borderBottomColor: '#f1f5f9',
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderBottomColor: palette.separator,
   },
   lineItemHeader: {
     flexDirection: 'row',
@@ -631,64 +552,67 @@ const styles = StyleSheet.create({
   },
   lineItemDescription: {
     fontSize: 16,
-    fontWeight: '600',
-    color: '#0f172a',
+    fontWeight: '500',
+    color: palette.text,
     flex: 1,
   },
   lineItemTotal: {
     fontSize: 16,
-    fontWeight: '700',
-    color: '#33415C',
+    fontWeight: '600',
+    color: palette.text,
+    fontVariant: ['tabular-nums'],
   },
   lineItemDetails: {
-    fontSize: 14,
-    color: '#64748b',
+    fontSize: 13,
+    color: palette.textSecondary,
   },
   summaryRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    paddingVertical: 8,
+    paddingVertical: 6,
   },
   summaryLabel: {
-    fontSize: 14,
-    color: '#64748b',
+    fontSize: 15,
+    color: palette.textSecondary,
   },
   summaryValue: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: '#0f172a',
+    fontSize: 15,
+    fontWeight: '500',
+    color: palette.text,
+    fontVariant: ['tabular-nums'],
   },
   totalRow: {
-    borderTopWidth: 2,
-    borderTopColor: '#e2e8f0',
+    borderTopWidth: StyleSheet.hairlineWidth,
+    borderTopColor: palette.separator,
     marginTop: 8,
     paddingTop: 12,
   },
   totalLabel: {
-    fontSize: 18,
-    fontWeight: '700',
-    color: '#0f172a',
+    fontSize: 17,
+    fontWeight: '600',
+    color: palette.text,
   },
   totalValue: {
     fontSize: 20,
     fontWeight: '700',
-    color: '#33415C',
+    color: palette.text,
+    fontVariant: ['tabular-nums'],
   },
   notesText: {
-    fontSize: 14,
-    color: '#0f172a',
-    lineHeight: 20,
+    fontSize: 15,
+    color: palette.text,
+    lineHeight: 22,
   },
   bottomBar: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-around',
-    backgroundColor: '#ffffff',
+    backgroundColor: palette.surface,
     paddingVertical: 8,
     paddingHorizontal: 8,
     paddingBottom: 24,
-    borderTopWidth: 1,
-    borderTopColor: '#f1f5f9',
+    borderTopWidth: StyleSheet.hairlineWidth,
+    borderTopColor: palette.separator,
   },
   bottomBarButton: {
     alignItems: 'center',
@@ -697,95 +621,43 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     minWidth: 64,
   },
-  bottomBarIcon: {
-    fontSize: 20,
-    marginBottom: 2,
-  },
   bottomBarLabel: {
     fontSize: 11,
     fontWeight: '600',
-    color: '#64748b',
+    color: palette.textSecondary,
+    marginTop: 2,
   },
   bottomBarPrimaryButton: {
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: '#10b981',
+    backgroundColor: palette.success,
     paddingVertical: 8,
     paddingHorizontal: 20,
-    borderRadius: 20,
+    borderRadius: radius.pill,
     minWidth: 72,
-  },
-  bottomBarPrimaryIcon: {
-    fontSize: 14,
-    color: '#ffffff',
-    fontWeight: '700',
   },
   bottomBarPrimaryLabel: {
     fontSize: 11,
     fontWeight: '700',
-    color: '#ffffff',
-  },
-  buttonRow: {
-    flexDirection: 'row',
-  },
-  modalContainer: {
-    flex: 1,
-    backgroundColor: '#f8fafc',
-  },
-  modalHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    padding: 16,
-    backgroundColor: '#ffffff',
-    borderBottomWidth: 1,
-    borderBottomColor: '#e2e8f0',
-  },
-  modalTitle: {
-    fontSize: 20,
-    fontWeight: '700',
-    color: '#0f172a',
-  },
-  closeButton: {
-    fontSize: 28,
-    color: '#64748b',
-    fontWeight: '300',
+    color: palette.surface,
+    marginTop: 2,
   },
   statusButton: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingVertical: 16,
-    paddingHorizontal: 16,
-    backgroundColor: '#f8fafc',
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: '#e2e8f0',
-  },
-  statusButtonLeft: {
-    flexDirection: 'row',
-    alignItems: 'center',
     gap: 12,
+    minHeight: 48,
   },
   statusDot: {
-    width: 14,
-    height: 14,
-    borderRadius: 7,
-  },
-  statusButtonLabel: {
-    fontSize: 13,
-    color: '#64748b',
-    marginBottom: 4,
+    width: 8,
+    height: 8,
+    borderRadius: 4,
   },
   statusButtonValue: {
+    flex: 1,
     fontSize: 17,
-    fontWeight: '700',
-    color: '#0f172a',
-  },
-  changeText: {
-    fontSize: 15,
-    fontWeight: '600',
-    color: '#5B72EE',
+    fontWeight: '500',
+    color: palette.text,
   },
   statusLoading: {
     flexDirection: 'row',
@@ -796,7 +668,7 @@ const styles = StyleSheet.create({
   },
   statusLoadingText: {
     fontSize: 14,
-    color: '#64748b',
+    color: palette.textSecondary,
   },
 });
 

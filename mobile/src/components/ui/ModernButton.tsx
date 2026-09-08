@@ -1,14 +1,3 @@
-/**
- * ModernButton - Revolut-Style Animated Button Component
- * 
- * Features:
- * - Scale animation on press (0.97)
- * - Shadow depth animation
- * - Haptic feedback
- * - Multiple variants: primary, secondary, outline, ghost
- * - Loading state with smooth transition
- */
-
 import React, { useCallback } from 'react';
 import {
   Text,
@@ -17,17 +6,16 @@ import {
   StyleSheet,
   Platform,
 } from 'react-native';
-import { LinearGradient } from 'expo-linear-gradient';
 import Animated, {
   useSharedValue,
   useAnimatedStyle,
   withSpring,
-  interpolate,
   runOnJS,
 } from 'react-native-reanimated';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 import * as Haptics from 'expo-haptics';
-import { SPRING_CONFIG, SCALE, OPACITY, SHADOWS } from '@/utils/animations';
+import { SPRING_CONFIG, SCALE, OPACITY } from '@/utils/animations';
+import { palette, radius } from '@/theme/tokens';
 
 interface ModernButtonProps {
   onPress: () => void;
@@ -39,10 +27,8 @@ interface ModernButtonProps {
   fullWidth?: boolean;
   icon?: React.ReactNode;
   iconPosition?: 'left' | 'right';
+  style?: object;
 }
-
-// Create animated LinearGradient
-const AnimatedLinearGradient = Animated.createAnimatedComponent(LinearGradient);
 
 export function ModernButton({
   onPress,
@@ -54,29 +40,23 @@ export function ModernButton({
   fullWidth = false,
   icon,
   iconPosition = 'left',
+  style,
 }: ModernButtonProps) {
   const isDisabled = disabled || loading;
   const pressed = useSharedValue(false);
 
-  // Trigger haptic feedback
   const triggerHaptic = useCallback(() => {
     if (Platform.OS !== 'web') {
-      try {
-        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-      } catch (error) {
-        // Haptic feedback not available
-      }
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => undefined);
     }
   }, []);
 
-  // Handle press
   const handlePress = useCallback(() => {
     if (!isDisabled) {
       onPress();
     }
   }, [isDisabled, onPress]);
 
-  // Tap gesture
   const tapGesture = Gesture.Tap()
     .enabled(!isDisabled)
     .onBegin(() => {
@@ -93,112 +73,18 @@ export function ModernButton({
       runOnJS(handlePress)();
     });
 
-  // Animated scale style
   const animatedScaleStyle = useAnimatedStyle(() => {
     'worklet';
-    const scale = withSpring(
-      pressed.value ? SCALE.pressed : 1,
-      SPRING_CONFIG.snappy
-    );
+    const scale = withSpring(pressed.value ? SCALE.pressed : 1, SPRING_CONFIG.snappy);
     return {
       transform: [{ scale }],
     };
   });
 
-  // Animated shadow style for primary button
-  const animatedShadowStyle = useAnimatedStyle(() => {
-    'worklet';
-    const shadowOpacity = interpolate(
-      pressed.value ? 1 : 0,
-      [0, 1],
-      [SHADOWS.button.shadowOpacity, SHADOWS.buttonPressed.shadowOpacity]
-    );
-    const shadowRadius = interpolate(
-      pressed.value ? 1 : 0,
-      [0, 1],
-      [SHADOWS.button.shadowRadius, SHADOWS.buttonPressed.shadowRadius]
-    );
-    const elevation = interpolate(
-      pressed.value ? 1 : 0,
-      [0, 1],
-      [SHADOWS.button.elevation, SHADOWS.buttonPressed.elevation]
-    );
-
-    return {
-      shadowOpacity,
-      shadowRadius,
-      elevation,
-    };
-  });
-
   const padding = {
-    sm: { paddingHorizontal: 12, paddingVertical: 8 },
-    md: { paddingHorizontal: 16, paddingVertical: 12 },
-    lg: { paddingHorizontal: 24, paddingVertical: 16 },
-  };
-
-  const buttonContent = (
-    <View style={[
-      styles.buttonContent,
-      padding[size],
-      fullWidth && styles.fullWidth,
-    ]}>
-      {loading && (
-        <ActivityIndicator
-          size="small"
-          color={variant === 'primary' ? '#ffffff' : '#33415C'}
-          style={{ marginRight: 8 }}
-        />
-      )}
-      {!loading && icon && iconPosition === 'left' && (
-        <View style={{ marginRight: 8 }}>{icon}</View>
-      )}
-      <Text
-        style={[
-          styles.buttonText,
-          variant === 'primary' && styles.primaryText,
-          variant !== 'primary' && styles.secondaryText,
-          size === 'lg' && { fontSize: 16 },
-        ]}
-      >
-        {children}
-      </Text>
-      {!loading && icon && iconPosition === 'right' && (
-        <View style={{ marginLeft: 8 }}>{icon}</View>
-      )}
-    </View>
-  );
-
-  if (variant === 'primary') {
-    return (
-      <GestureDetector gesture={tapGesture}>
-        <Animated.View
-          style={[
-            styles.button,
-            styles.primaryShadow,
-            fullWidth && styles.fullWidth,
-            isDisabled && styles.disabled,
-            animatedScaleStyle,
-            animatedShadowStyle,
-          ]}
-        >
-          <LinearGradient
-            colors={['#5B72EE', '#4A5FD8']}
-            start={{ x: 0, y: 0 }}
-            end={{ x: 1, y: 1 }}
-            style={styles.gradient}
-          >
-            {buttonContent}
-          </LinearGradient>
-        </Animated.View>
-      </GestureDetector>
-    );
-  }
-
-  const variantStyles = {
-    secondary: styles.secondary,
-    outline: styles.outline,
-    ghost: styles.ghost,
+    sm: { paddingHorizontal: 14, height: 36 },
+    md: { paddingHorizontal: 18, height: 48 },
+    lg: { paddingHorizontal: 22, height: 52 },
   };
 
   return (
@@ -206,13 +92,40 @@ export function ModernButton({
       <Animated.View
         style={[
           styles.button,
-          variantStyles[variant as keyof typeof variantStyles],
+          variant === 'primary' && styles.primary,
+          variant === 'secondary' && styles.secondary,
+          variant === 'outline' && styles.outline,
+          variant === 'ghost' && styles.ghost,
           fullWidth && styles.fullWidth,
           isDisabled && styles.disabled,
           animatedScaleStyle,
+          style,
         ]}
       >
-        {buttonContent}
+        <View style={[styles.buttonContent, padding[size], fullWidth && styles.fullWidth]}>
+          {loading ? (
+            <ActivityIndicator
+              size="small"
+              color={variant === 'primary' ? palette.surface : palette.text}
+              style={{ marginRight: 8 }}
+            />
+          ) : null}
+          {!loading && icon && iconPosition === 'left' ? (
+            <View style={{ marginRight: 8 }}>{icon}</View>
+          ) : null}
+          <Text
+            style={[
+              styles.buttonText,
+              variant === 'primary' ? styles.primaryText : styles.secondaryText,
+              size === 'lg' && { fontSize: 17 },
+            ]}
+          >
+            {children}
+          </Text>
+          {!loading && icon && iconPosition === 'right' ? (
+            <View style={{ marginLeft: 8 }}>{icon}</View>
+          ) : null}
+        </View>
       </Animated.View>
     </GestureDetector>
   );
@@ -220,15 +133,8 @@ export function ModernButton({
 
 const styles = StyleSheet.create({
   button: {
-    borderRadius: 12,
+    borderRadius: radius.pill,
     overflow: 'hidden',
-  },
-  primaryShadow: {
-    shadowColor: '#5B72EE',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
-    elevation: 4,
   },
   buttonContent: {
     flexDirection: 'row',
@@ -238,29 +144,27 @@ const styles = StyleSheet.create({
   buttonText: {
     fontWeight: '600',
     textAlign: 'center',
-    fontSize: 14,
+    fontSize: 16,
+  },
+  primary: {
+    backgroundColor: palette.accent,
   },
   primaryText: {
-    color: '#ffffff',
-  },
-  secondaryText: {
-    color: '#0f172a',
-  },
-  gradient: {
-    borderRadius: 12,
+    color: palette.surface,
   },
   secondary: {
-    backgroundColor: '#f1f5f9',
-    borderWidth: 1,
-    borderColor: '#e2e8f0',
+    backgroundColor: palette.fill,
   },
   outline: {
     backgroundColor: 'transparent',
-    borderWidth: 2,
-    borderColor: '#e2e8f0',
+    borderWidth: 1,
+    borderColor: palette.separator,
   },
   ghost: {
     backgroundColor: 'transparent',
+  },
+  secondaryText: {
+    color: palette.text,
   },
   fullWidth: {
     width: '100%',

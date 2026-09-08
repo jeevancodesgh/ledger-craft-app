@@ -27,7 +27,7 @@ Skip a layer only if it cannot exist yet (example: no session bind → cannot pe
 ```bash
 pnpm install
 pnpm db:up
-pnpm verify:w4          # current green alias. Use verify:w5 when that script exists.
+pnpm verify:w5          # current green alias. Use verify:w6 when that script exists.
 ```
 
 | Layer | What it must prove |
@@ -66,7 +66,7 @@ Migrator on an old volume needs `GRANT CREATE ON DATABASE ledgercraft TO ledgerc
 | Invoice PDF | Preview shows the same numbers as the downloaded `%PDF` file |
 | Protected UI | Logged-out `/invoices` and `/customers` redirect to `/login` |
 
-Web and mobile email login/signup are Better Auth. Web customers, business profile, items, invoices go through Hono. Mobile customers go through Hono with a SecureStore cookie jar. Do not authorize product data with both Better Auth and Supabase sessions.
+Web and mobile email login/signup are Better Auth. Web customers, business profile, items, invoices go through Hono (including share tokens). Mobile customers and invoices go through Hono with a SecureStore cookie jar. Do not authorize product data with both Better Auth and Supabase sessions.
 
 ## Evidence
 

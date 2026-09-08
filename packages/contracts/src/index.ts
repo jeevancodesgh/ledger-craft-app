@@ -59,18 +59,24 @@ export {
 
 export {
   createInvoiceRequestSchema,
+  createShareInvoiceRequestSchema,
   invoiceLineInputSchema,
   invoiceLineSchema,
   invoiceListResponseSchema,
   invoiceSchema,
   nextInvoiceNumberResponseSchema,
+  publicSharedInvoiceSchema,
   sendInvoiceRequestSchema,
+  shareInvoiceResponseSchema,
   updateInvoiceRequestSchema,
   type CreateInvoiceRequest,
+  type CreateShareInvoiceRequest,
   type InvoiceDto,
   type InvoiceListResponse,
   type NextInvoiceNumberResponse,
+  type PublicSharedInvoice,
   type SendInvoiceRequest,
+  type ShareInvoiceResponse,
   type UpdateInvoiceRequest,
 } from './invoice';
 

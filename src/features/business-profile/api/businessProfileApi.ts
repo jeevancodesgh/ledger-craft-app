@@ -15,7 +15,7 @@ export class BusinessProfileApiError extends Error {
   }
 }
 
-function toProfile(dto: BusinessProfileDto): BusinessProfile {
+export function toProfile(dto: BusinessProfileDto): BusinessProfile {
   return {
     id: dto.id,
     name: dto.name,

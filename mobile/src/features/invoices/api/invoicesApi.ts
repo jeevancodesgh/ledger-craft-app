@@ -133,6 +133,7 @@ export const invoicesApi = {
     return toInvoice(
       await apiRequest<MobileInvoiceDto>('/api/invoices', {
         method: 'POST',
+        headers: { 'Idempotency-Key': crypto.randomUUID() },
         body: JSON.stringify(toCreateBody(invoice, lineItems)),
       }),
     );

@@ -19,7 +19,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { useToast } from '@/hooks/use-toast';
-import { sharedInvoiceService } from '@/services/supabaseService';
+import { invoicesApi } from '@/features/invoices/api/invoicesApi';
 import { Invoice, InvoiceTemplateName } from '@/types';
 import EmailInputModal from './EmailInputModal';
 import { emailService } from '@/services/emailService';
@@ -101,11 +101,10 @@ const ShareInvoiceModal: React.FC<ShareInvoiceModalProps> = ({
         ? new Date(Date.now() + expirationDays * 24 * 60 * 60 * 1000).toISOString()
         : undefined;
 
-      const sharedInvoice = await sharedInvoiceService.createSharedInvoice(
-        invoice.id,
-        selectedTemplate,
-        expiresAt
-      );
+      const sharedInvoice = await invoicesApi.share(invoice.id, {
+        templateName: selectedTemplate,
+        expiresAt,
+      });
 
       const url = `${window.location.origin}/shared/invoice/${sharedInvoice.shareToken}`;
       setShareUrl(url);
@@ -195,11 +194,10 @@ const ShareInvoiceModal: React.FC<ShareInvoiceModalProps> = ({
           ? new Date(Date.now() + expirationDays * 24 * 60 * 60 * 1000).toISOString()
           : undefined;
 
-        const sharedInvoice = await sharedInvoiceService.createSharedInvoice(
-          invoice.id,
-          selectedTemplate,
-          expiresAt
-        );
+        const sharedInvoice = await invoicesApi.share(invoice.id, {
+          templateName: selectedTemplate,
+          expiresAt,
+        });
         url = `${window.location.origin}/shared/invoice/${sharedInvoice.shareToken}`;
         setShareUrl(url);
       }

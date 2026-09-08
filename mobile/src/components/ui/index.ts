@@ -24,6 +24,10 @@ export { FloatingActionButton } from './FloatingActionButton';
 export { ConfirmDialog } from './ConfirmDialog';
 export { EmptyState } from './EmptyState';
 export { LoadingOverlay } from './LoadingOverlay';
+export { GroupedSection } from './GroupedSection';
+export { ListRow } from './ListRow';
+export { FilterPills } from './FilterPills';
+export { QuickAction } from './QuickAction';
 
 // Date/Time Components
 export { SmartDatePicker } from './SmartDatePicker';

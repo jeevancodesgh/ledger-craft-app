@@ -408,4 +408,137 @@ describe('invoice routes', () => {
       }
     });
   });
+
+  it('retried create with the same Idempotency-Key returns the original invoice', async () => {
+    await assertLocalDatabaseReachable();
+    await withTestDb(async () => {
+      const { db, sql } = createDb(getDatabaseUrl());
+      try {
+        const auth = createAuth(db);
+        const app = createApp({ auth, db, checkDatabase: async () => true });
+        const owner = await signUp(app, 'Owner Idempotent');
+        const customer = await seedCustomerAndProfile(app, owner.cookie);
+        const payload = {
+          customerId: customer.id,
+          date: '2026-09-08',
+          dueDate: '2026-10-08',
+          taxInclusive: false,
+          taxRate: '15',
+          items: [{ description: 'Brand identity', quantity: '1', rate: '4500' }],
+        };
+        const headers = {
+          ...originHeaders,
+          Cookie: owner.cookie,
+          'Idempotency-Key': 'create-invoice-retry-1',
+        };
+
+        const first = await app.request('/api/invoices', {
+          method: 'POST',
+          headers,
+          body: JSON.stringify(payload),
+        });
+        expect(first.status).toBe(201);
+        const original = invoiceSchema.parse(await first.json());
+
+        const retry = await app.request('/api/invoices', {
+          method: 'POST',
+          headers,
+          body: JSON.stringify(payload),
+        });
+        expect(retry.status).toBe(201);
+        const replayed = invoiceSchema.parse(await retry.json());
+        expect(replayed.id).toBe(original.id);
+        expect(replayed.invoiceNumber).toBe(original.invoiceNumber);
+
+        const listed = await app.request('/api/invoices', { headers: { Cookie: owner.cookie } });
+        const body = (await listed.json()) as { invoices: unknown[] };
+        expect(body.invoices).toHaveLength(1);
+
+        const conflict = await app.request('/api/invoices', {
+          method: 'POST',
+          headers,
+          body: JSON.stringify({ ...payload, notes: 'different payload' }),
+        });
+        expect(conflict.status).toBe(409);
+        expect(errorEnvelopeSchema.parse(await conflict.json()).error.code).toBe('IDEMPOTENCY_CONFLICT');
+      } finally {
+        await sql.end({ timeout: 5 });
+      }
+    });
+  });
+
+  it('share tokens expire and do not leak other organisations', async () => {
+    await assertLocalDatabaseReachable();
+    await withTestDb(async () => {
+      const { db, sql } = createDb(getDatabaseUrl());
+      try {
+        const auth = createAuth(db);
+        const app = createApp({ auth, db, checkDatabase: async () => true });
+        const ownerA = await signUp(app, 'Owner Share A');
+        const ownerB = await signUp(app, 'Owner Share B');
+        const customer = await seedCustomerAndProfile(app, ownerA.cookie);
+        const created = await app.request('/api/invoices', {
+          method: 'POST',
+          headers: { ...originHeaders, Cookie: ownerA.cookie },
+          body: JSON.stringify({
+            customerId: customer.id,
+            date: '2026-09-08',
+            dueDate: '2026-10-08',
+            taxInclusive: false,
+            taxRate: '15',
+            items: [{ description: 'Brand identity', quantity: '1', rate: '4500' }],
+          }),
+        });
+        const invoice = invoiceSchema.parse(await created.json());
+
+        const unauthenticatedShare = await createApp().request(`/api/invoices/${invoice.id}/share`, {
+          method: 'POST',
+          headers: originHeaders,
+          body: JSON.stringify({ templateName: 'classic' }),
+        });
+        expect(unauthenticatedShare.status).toBe(401);
+
+        const leakedShare = await app.request(`/api/invoices/${invoice.id}/share`, {
+          method: 'POST',
+          headers: { ...originHeaders, Cookie: ownerB.cookie },
+          body: JSON.stringify({ templateName: 'classic' }),
+        });
+        expect(leakedShare.status).toBe(404);
+
+        const shared = await app.request(`/api/invoices/${invoice.id}/share`, {
+          method: 'POST',
+          headers: { ...originHeaders, Cookie: ownerA.cookie },
+          body: JSON.stringify({ templateName: 'classic' }),
+        });
+        expect(shared.status).toBe(201);
+        const share = (await shared.json()) as { shareToken: string };
+        expect(share.shareToken).toMatch(/^[0-9a-f-]{32,}$/i);
+
+        const publicView = await app.request(`/api/public/invoices/${share.shareToken}`);
+        expect(publicView.status).toBe(200);
+        const snapshot = (await publicView.json()) as { invoice: { id: string }; templateName: string };
+        expect(snapshot.invoice.id).toBe(invoice.id);
+        expect(snapshot.templateName).toBe('classic');
+
+        const expired = await app.request(`/api/invoices/${invoice.id}/share`, {
+          method: 'POST',
+          headers: { ...originHeaders, Cookie: ownerA.cookie },
+          body: JSON.stringify({
+            templateName: 'classic',
+            expiresAt: '2020-01-01T00:00:00.000Z',
+          }),
+        });
+        expect(expired.status).toBe(201);
+        const expiredShare = (await expired.json()) as { shareToken: string };
+        const expiredView = await app.request(`/api/public/invoices/${expiredShare.shareToken}`);
+        expect(expiredView.status).toBe(404);
+        expect(errorEnvelopeSchema.parse(await expiredView.json()).error.code).toBe('NOT_FOUND');
+
+        const missing = await app.request('/api/public/invoices/does-not-exist-token');
+        expect(missing.status).toBe(404);
+      } finally {
+        await sql.end({ timeout: 5 });
+      }
+    });
+  });
 });

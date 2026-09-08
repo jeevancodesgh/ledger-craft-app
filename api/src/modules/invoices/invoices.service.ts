@@ -1,17 +1,17 @@
-import {
-  invoiceListResponseSchema,
-  type CreateInvoiceRequest,
-  type InvoiceDto,
-  type InvoiceListResponse,
-  type SendInvoiceRequest,
-  type UpdateInvoiceRequest,
-} from '@ledgercraft/contracts';
+import type { CreateInvoiceRequest, InvoiceDto, InvoiceListResponse, SendInvoiceRequest, UpdateInvoiceRequest } from '@ledgercraft/contracts';
+import { invoiceListResponseSchema, invoiceSchema } from '@ledgercraft/contracts';
 import { HTTPException } from 'hono/http-exception';
 import { apiError } from '../../http-error';
 import type { Database } from '../../db/client';
 import { withOrganisationTx } from '../auth/bind-organisation';
 import * as profileRepo from '../business-profile/business-profile.repository';
 import * as customersRepo from '../customers/customers.repository';
+import {
+  assertReplayMatches,
+  getIdempotencyRecord,
+  insertIdempotencyRecord,
+  type IdempotencyScope,
+} from './idempotency';
 import { postInvoiceJournal } from './invoices.journal';
 import * as invoicesRepo from './invoices.repository';
 import type { InvoiceMailer } from './mailer';
@@ -67,8 +67,17 @@ export async function createInvoiceForUser(
   db: Database,
   userId: string,
   input: CreateInvoiceRequest,
+  idempotency?: IdempotencyScope,
 ): Promise<InvoiceDto> {
   return withOrganisationTx(db, userId, async (tx, ctx) => {
+    if (idempotency) {
+      const existing = await getIdempotencyRecord(tx, ctx, idempotency);
+      if (existing) {
+        assertReplayMatches(existing.requestHash, idempotency.requestHash);
+        return invoiceSchema.parse(existing.responseBody);
+      }
+    }
+
     const customer = await customersRepo.getCustomer(tx, ctx.organisationId, input.customerId);
     if (!customer) throw new HTTPException(400, { message: 'Customer not found' });
 
@@ -114,6 +123,10 @@ export async function createInvoiceForUser(
       taxAmount: invoice.taxAmount,
       total: invoice.total,
     });
+
+    if (idempotency) {
+      await insertIdempotencyRecord(tx, ctx, idempotency, { status: 201, body: invoice });
+    }
 
     return invoice;
   });

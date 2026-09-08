@@ -31,6 +31,8 @@ import { CompactLineItem } from '@/components/invoice/CompactLineItem';
 import { TaxConfigCard } from '@/components/invoice/TaxConfigCard';
 import { ProgressIndicator } from '@/components/invoice/ProgressIndicator';
 import { ProfileCompletenessBanner } from '@/components/invoice/ProfileCompletenessBanner';
+import { Feather } from '@expo/vector-icons';
+import { palette, radius, space } from '@/theme/tokens';
 
 type InvoiceCreateNavigationProp = NativeStackNavigationProp<InvoiceStackParamList, 'InvoiceCreate'>;
 type InvoiceEditRouteProp = RouteProp<{ InvoiceEdit: { invoiceId?: string } }, 'InvoiceEdit'>;
@@ -405,8 +407,8 @@ export default function InvoiceCreateScreen() {
   if (loadingCustomers) {
     return (
       <View style={styles.centerContainer}>
-        <ActivityIndicator size="large" color="#5B72EE" />
-        <Text style={styles.loadingText}>Loading...</Text>
+        <ActivityIndicator size="large" color={palette.accent} />
+        <Text style={styles.loadingText}>Loading invoice</Text>
       </View>
     );
   }
@@ -473,7 +475,7 @@ export default function InvoiceCreateScreen() {
                       <Text style={styles.customerEmail}>{selectedCustomer.email}</Text>
                     )}
                   </View>
-                  <Text style={styles.changeText}>Change</Text>
+                  <Feather name="chevron-right" size={18} color={palette.textTertiary} />
                 </View>
               ) : (
                 <Text style={styles.placeholderText}>Tap to select customer</Text>
@@ -633,55 +635,49 @@ export default function InvoiceCreateScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f8fafc',
+    backgroundColor: palette.background,
   },
   centerContainer: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: '#f8fafc',
+    backgroundColor: palette.background,
   },
   loadingText: {
     marginTop: 12,
     fontSize: 16,
-    color: '#64748b',
+    color: palette.textSecondary,
   },
   scrollView: {
     flex: 1,
   },
   scrollContent: {
-    padding: 16,
+    padding: space.screen,
   },
   card: {
-    backgroundColor: '#ffffff',
-    borderRadius: 16,
-    padding: 18,
-    marginBottom: 16,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.08,
-    shadowRadius: 8,
-    elevation: 3,
+    backgroundColor: palette.surface,
+    borderRadius: radius.group,
+    padding: space.lg,
+    marginBottom: space.lg,
   },
   sectionHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 16,
+    marginBottom: 8,
   },
   sectionTitle: {
-    fontSize: 19,
-    fontWeight: '700',
-    color: '#0f172a',
+    fontSize: 13,
+    fontWeight: '500',
+    color: palette.textSecondary,
+    letterSpacing: -0.08,
+    textTransform: 'uppercase',
+    marginBottom: 12,
   },
   itemCount: {
-    fontSize: 15,
+    fontSize: 13,
     fontWeight: '600',
-    color: '#5B72EE',
-    backgroundColor: '#EEF2FF',
-    paddingHorizontal: 10,
-    paddingVertical: 4,
-    borderRadius: 12,
+    color: palette.textSecondary,
   },
   row: {
     flexDirection: 'row',
@@ -694,21 +690,19 @@ const styles = StyleSheet.create({
     marginBottom: 16,
   },
   inputLabel: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: '#334155',
-    marginBottom: 8,
+    fontSize: 13,
+    fontWeight: '500',
+    color: palette.textSecondary,
+    marginBottom: 6,
   },
   required: {
-    color: '#ef4444',
+    color: palette.danger,
   },
   customerButton: {
-    backgroundColor: '#ffffff',
-    borderWidth: 1,
-    borderColor: '#cbd5e1',
-    borderRadius: 12,
-    padding: 16,
-    minHeight: 60,
+    backgroundColor: palette.fillMuted,
+    borderRadius: radius.md,
+    padding: 14,
+    minHeight: 52,
     justifyContent: 'center',
   },
   selectedCustomerContainer: {
@@ -716,40 +710,35 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   customerAvatar: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: '#DBEAFE',
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: palette.accentFill,
     alignItems: 'center',
     justifyContent: 'center',
     marginRight: 12,
   },
   customerAvatarText: {
-    fontSize: 14,
+    fontSize: 13,
     fontWeight: '700',
-    color: '#1E3A8A',
+    color: palette.accent,
   },
   customerInfo: {
     flex: 1,
   },
   customerName: {
-    fontSize: 16,
+    fontSize: 17,
     fontWeight: '600',
-    color: '#0f172a',
+    color: palette.text,
     marginBottom: 2,
   },
   customerEmail: {
-    fontSize: 12,
-    color: '#64748b',
-  },
-  changeText: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: '#5B72EE',
+    fontSize: 13,
+    color: palette.textSecondary,
   },
   placeholderText: {
-    fontSize: 16,
-    color: '#94a3b8',
+    fontSize: 17,
+    color: palette.textTertiary,
   },
   lineItemActions: {
     flexDirection: 'row',
@@ -758,14 +747,14 @@ const styles = StyleSheet.create({
     marginTop: 8,
   },
   lineItemAction: {
-    paddingVertical: 10,
-    paddingHorizontal: 14,
-    borderRadius: 12,
-    backgroundColor: '#EEF2FF',
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+    borderRadius: radius.pill,
+    backgroundColor: palette.accentFill,
   },
   lineItemActionText: {
     fontSize: 14,
     fontWeight: '600',
-    color: '#5B72EE',
+    color: palette.accent,
   },
 });

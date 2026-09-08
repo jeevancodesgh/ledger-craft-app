@@ -6,6 +6,7 @@ import {
   RefreshControl,
   Pressable,
   ActivityIndicator,
+  StyleSheet,
 } from 'react-native';
 import { CompositeNavigationProp, useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
@@ -16,9 +17,11 @@ import { invoiceService } from '@/services/invoiceService';
 import type { Invoice } from '@/types/invoice';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { BalanceCard } from '@/components/dashboard/BalanceCard';
+import { QuickAction } from '@/components/ui/QuickAction';
 import { NativeHeaderButton } from '@/components/ui/NativeHeaderButton';
 import { getStatusColor, getStatusLabel } from '@/utils/statusUtils';
 import type { HomeStackParamList, MainTabParamList } from '@/navigation/types';
+import { palette, radius, space } from '@/theme/tokens';
 
 type DashboardNavigation = CompositeNavigationProp<
   NativeStackNavigationProp<HomeStackParamList, 'DashboardHome'>,
@@ -51,10 +54,14 @@ export default function DashboardScreen() {
     navigation.navigate('Invoices', { screen: 'InvoiceCreate' });
   }, [navigation]);
 
+  const openExpense = useCallback(() => {
+    navigation.navigate('Expenses', { screen: 'ExpenseCreate' });
+  }, [navigation]);
+
   useLayoutEffect(() => {
     navigation.setOptions({
       headerRight: () => (
-        <NativeHeaderButton label="New" onPress={openCreate} primary />
+        <NativeHeaderButton label="Invoice" onPress={openCreate} primary />
       ),
     });
   }, [navigation, openCreate]);
@@ -100,52 +107,70 @@ export default function DashboardScreen() {
     return 'Good evening';
   })();
 
+  const firstName = user?.user_metadata?.full_name?.split(' ')[0];
+  const greetingLine =
+    firstName && firstName.length > 1 ? `${greeting}, ${firstName}` : greeting;
+
   if (loading) {
     return (
-      <View className="flex-1 bg-slate-50 items-center justify-center">
-        <ActivityIndicator size="large" color="#5B72EE" />
-        <Text className="text-slate-500 mt-4">Loading home</Text>
+      <View style={styles.center}>
+        <ActivityIndicator size="large" color={palette.accent} />
       </View>
     );
   }
 
   return (
-    <View className="flex-1 bg-slate-50">
+    <View style={styles.screen}>
       <ScrollView
-        className="flex-1"
+        style={styles.screen}
         contentInsetAdjustmentBehavior="automatic"
         refreshControl={
-          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#5B72EE" />
+          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={palette.accent} />
         }
       >
-        <View className="px-5 pt-2 pb-8">
-          <Text className="text-slate-500 text-base mb-4">
-            {greeting}
-            {user?.email ? `. ${user.email.split('@')[0]}` : ''}
-          </Text>
+        <View style={styles.content}>
+          <Text style={styles.greeting}>{greetingLine}</Text>
 
           <BalanceCard
-            totalBalance={totalEarnings}
+            totalBalance={pendingAmount > 0 ? pendingAmount : totalEarnings}
             availableBalance={totalEarnings}
             pendingBalance={pendingAmount}
+            label={pendingAmount > 0 ? 'You are owed' : 'Paid this period'}
           />
 
-          <View className="flex-row items-center justify-between mb-3 mt-2">
-            <Text className="text-lg font-semibold text-slate-800">Needs action</Text>
+          <View style={styles.actions}>
+            <QuickAction
+              label="Invoice"
+              primary
+              onPress={openCreate}
+              icon={<Feather name="plus" size={22} color={palette.surface} />}
+            />
+            <QuickAction
+              label="Expense"
+              onPress={openExpense}
+              icon={<Feather name="credit-card" size={22} color={palette.accent} />}
+            />
+            <QuickAction
+              label="Invoices"
+              onPress={() => navigation.navigate('Invoices', { screen: 'InvoiceList' })}
+              icon={<Feather name="file-text" size={22} color={palette.accent} />}
+            />
+          </View>
+
+          <View style={styles.sectionHead}>
+            <Text style={styles.sectionTitle}>Needs action</Text>
             <Pressable
-              onPress={() =>
-                navigation.navigate('Invoices', { screen: 'InvoiceList' })
-              }
+              onPress={() => navigation.navigate('Invoices', { screen: 'InvoiceList' })}
               hitSlop={8}
               accessibilityRole="button"
               accessibilityLabel="See all invoices"
             >
-              <Text className="text-[#5B72EE] font-semibold">See all</Text>
+              <Text style={styles.seeAll}>See all</Text>
             </Pressable>
           </View>
 
           {workItems.length === 0 ? (
-            <View className="bg-white rounded-2xl">
+            <View style={styles.emptyCard}>
               <EmptyState
                 title="You're clear"
                 description="Create an invoice when you're ready to get paid."
@@ -154,7 +179,7 @@ export default function DashboardScreen() {
               />
             </View>
           ) : (
-            <View className="bg-white rounded-2xl overflow-hidden">
+            <View style={styles.group}>
               {workItems.map((invoice, index) => (
                 <Pressable
                   key={invoice.id}
@@ -164,36 +189,32 @@ export default function DashboardScreen() {
                       params: { invoiceId: invoice.id },
                     })
                   }
-                  className={`flex-row items-center px-4 py-3.5 ${
-                    index !== workItems.length - 1 ? 'border-b border-slate-100' : ''
-                  }`}
+                  style={({ pressed }) => [
+                    styles.row,
+                    index !== workItems.length - 1 && styles.rowBorder,
+                    pressed && styles.rowPressed,
+                  ]}
                   accessibilityRole="button"
                   accessibilityLabel={`Invoice ${invoice.invoiceNumber}`}
                 >
                   <View
-                    className="w-2.5 h-2.5 rounded-full mr-3"
-                    style={{ backgroundColor: getStatusColor(invoice.status) }}
+                    style={[styles.statusDot, { backgroundColor: getStatusColor(invoice.status) }]}
                   />
-                  <View className="flex-1">
-                    <Text className="font-semibold text-slate-800">
-                      {invoice.invoiceNumber}
-                    </Text>
-                    <Text className="text-xs text-slate-500 mt-0.5">
+                  <View style={styles.rowCopy}>
+                    <Text style={styles.rowTitle}>{invoice.invoiceNumber}</Text>
+                    <Text style={styles.rowMeta}>
                       {invoice.customer?.name || 'No customer'} · {formatDate(invoice.date)}
                     </Text>
                   </View>
-                  <View className="items-end">
-                    <Text className="font-bold text-slate-800">
+                  <View style={styles.rowAmount}>
+                    <Text style={styles.amount}>
                       {formatMoney(invoice.total, invoice.currency || 'NZD')}
                     </Text>
-                    <Text
-                      className="text-xs font-semibold mt-0.5"
-                      style={{ color: getStatusColor(invoice.status) }}
-                    >
+                    <Text style={[styles.status, { color: getStatusColor(invoice.status) }]}>
                       {getStatusLabel(invoice.status)}
                     </Text>
                   </View>
-                  <Feather name="chevron-right" size={18} color="#94A3B8" style={{ marginLeft: 6 }} />
+                  <Feather name="chevron-right" size={18} color={palette.textTertiary} />
                 </Pressable>
               ))}
             </View>
@@ -203,3 +224,105 @@ export default function DashboardScreen() {
     </View>
   );
 }
+
+const styles = StyleSheet.create({
+  screen: {
+    flex: 1,
+    backgroundColor: palette.background,
+  },
+  center: {
+    flex: 1,
+    backgroundColor: palette.background,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  content: {
+    paddingHorizontal: space.screen,
+    paddingTop: 8,
+    paddingBottom: 40,
+  },
+  greeting: {
+    fontSize: 15,
+    color: palette.textSecondary,
+    marginBottom: space.lg,
+  },
+  actions: {
+    flexDirection: 'row',
+    justifyContent: 'flex-start',
+    gap: 28,
+    marginBottom: 28,
+  },
+  sectionHead: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: 10,
+  },
+  sectionTitle: {
+    fontSize: 13,
+    fontWeight: '500',
+    color: palette.textSecondary,
+    letterSpacing: -0.08,
+    textTransform: 'uppercase',
+  },
+  seeAll: {
+    fontSize: 15,
+    fontWeight: '500',
+    color: palette.accent,
+  },
+  emptyCard: {
+    backgroundColor: palette.surface,
+    borderRadius: radius.group,
+  },
+  group: {
+    backgroundColor: palette.surface,
+    borderRadius: radius.group,
+    overflow: 'hidden',
+  },
+  row: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 16,
+    paddingVertical: 14,
+    gap: 10,
+  },
+  rowBorder: {
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderBottomColor: palette.separator,
+  },
+  rowPressed: {
+    backgroundColor: palette.fillMuted,
+  },
+  statusDot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+  },
+  rowCopy: {
+    flex: 1,
+  },
+  rowTitle: {
+    fontSize: 17,
+    fontWeight: '600',
+    color: palette.text,
+  },
+  rowMeta: {
+    fontSize: 13,
+    color: palette.textSecondary,
+    marginTop: 2,
+  },
+  rowAmount: {
+    alignItems: 'flex-end',
+  },
+  amount: {
+    fontSize: 17,
+    fontWeight: '600',
+    color: palette.text,
+    fontVariant: ['tabular-nums'],
+  },
+  status: {
+    fontSize: 12,
+    fontWeight: '600',
+    marginTop: 2,
+  },
+});

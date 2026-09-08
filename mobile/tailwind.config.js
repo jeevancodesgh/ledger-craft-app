@@ -49,7 +49,7 @@ module.exports = {
         },
         revolut: {
           blue: {
-            50: '#EEF2FF',
+            50: '#EEF0FE',
             100: '#E0E7FF',
             200: '#C7D2FE',
             300: '#A5B4FC',
@@ -58,9 +58,13 @@ module.exports = {
             600: '#4158D0',
             700: '#2E4CEE',
             800: '#1E3A8A',
-            900: '#1E2875',
-            950: '#0F172A'
+            900: '#1C1C1E',
+            950: '#1C1C1E'
           }
+        },
+        ios: {
+          grouped: '#F2F2F7',
+          fill: '#E8E8ED',
         }
       },
       borderRadius: {

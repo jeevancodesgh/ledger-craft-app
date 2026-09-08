@@ -3,7 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Download, FileText, AlertCircle, Loader2 } from 'lucide-react';
-import { sharedInvoiceService } from '@/services/supabaseService';
+import { invoicesApi } from '@/features/invoices/api/invoicesApi';
 import { Invoice, BusinessProfile } from '@/types';
 import { generateInvoicePdf } from '@/utils/pdfUtils';
 import { useToast } from '@/hooks/use-toast';
@@ -37,7 +37,7 @@ const SharedInvoice: React.FC = () => {
       }
 
       try {
-        const result = await sharedInvoiceService.getSharedInvoiceByToken(shareToken);
+        const result = await invoicesApi.getShared(shareToken);
         
         if (!result) {
           setError('Invoice not found or link has expired');

@@ -7,7 +7,7 @@ import {
   StyleSheet,
   TextInput,
   Alert,
-  ScrollView,
+  ActivityIndicator,
   Platform,
 } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
@@ -22,8 +22,9 @@ import type { CreatePaymentRequest } from '@/types/payment';
 import { useFocusEffect } from '@react-navigation/native';
 import SwipeableInvoiceCard from '@/components/invoice/SwipeableInvoiceCard';
 import PaymentCaptureModal from '@/components/invoice/PaymentCaptureModal';
-import { AnimatedFilterButton } from '@/components/ui/AnimatedFilterButton';
+import { FilterPills } from '@/components/ui/FilterPills';
 import { EmptyState } from '@/components/ui/EmptyState';
+import { palette, space } from '@/theme/tokens';
 
 type InvoiceListNavigationProp = NativeStackNavigationProp<InvoiceStackParamList, 'InvoiceList'>;
 
@@ -97,11 +98,14 @@ export default function InvoiceListScreen() {
 
   useLayoutEffect(() => {
     navigation.setOptions({
-      headerSearchBarOptions: {
-        placeholder: 'Search invoices',
-        hideWhenScrolling: true,
-        onChangeText: (event) => handleSearch(event.nativeEvent.text),
-      },
+      headerSearchBarOptions:
+        invoices.length > 0
+          ? {
+              placeholder: 'Search invoices',
+              hideWhenScrolling: true,
+              onChangeText: (event) => handleSearch(event.nativeEvent.text),
+            }
+          : undefined,
       headerRight: () => (
         <NativeHeaderButton
           label="New"
@@ -160,8 +164,11 @@ export default function InvoiceListScreen() {
   };
 
   const formatCurrency = (amount: number, currency: string) => {
-    const symbol = currency === 'NZD' ? '$' : currency;
-    return `${symbol}${amount.toFixed(2)}`;
+    return new Intl.NumberFormat('en-NZ', {
+      style: 'currency',
+      currency: currency || 'NZD',
+      minimumFractionDigits: 2,
+    }).format(amount);
   };
 
   const formatDate = (dateString: string) => {
@@ -174,49 +181,43 @@ export default function InvoiceListScreen() {
   };
 
 
-  const renderInvoiceCard = ({ item }: { item: Invoice }) => (
+  const renderInvoiceCard = ({ item, index }: { item: Invoice; index: number }) => (
     <SwipeableInvoiceCard
       invoice={item}
       onPress={() => {
-        // @ts-ignore - Navigation types will be properly typed
         navigation.navigate('InvoiceDetail', { invoiceId: item.id });
       }}
       onStatusChange={handleStatusChange}
       disabled={updatingStatus[item.id]}
       formatCurrency={formatCurrency}
       formatDate={formatDate}
+      isFirst={index === 0}
+      isLast={index === filteredInvoices.length - 1}
     />
   );
 
-  const renderFilterButtons = () => (
-    <ScrollView
-      horizontal
-      showsHorizontalScrollIndicator={false}
-      contentContainerStyle={styles.filterContainer}
-    >
-      {(['all', 'draft', 'sent', 'paid', 'overdue'] as const).map((filterOption) => (
-        <AnimatedFilterButton
-          key={filterOption}
-          label={filterOption.charAt(0).toUpperCase() + filterOption.slice(1)}
-          active={filter === filterOption}
-          onPress={() => handleFilterChange(filterOption)}
-          variant="light"
-        />
-      ))}
-    </ScrollView>
-  );
+  const renderFilterButtons = () => {
+    if (invoices.length === 0) return null;
+    return (
+      <FilterPills
+        options={['all', 'draft', 'sent', 'paid', 'overdue'] as const}
+        value={filter}
+        onChange={handleFilterChange}
+      />
+    );
+  };
 
   if (loading) {
     return (
       <View style={styles.centerContainer}>
-        <Text>Loading invoices...</Text>
+        <ActivityIndicator size="large" color={palette.accent} />
       </View>
     );
   }
 
   return (
     <View style={styles.container}>
-      {Platform.OS === 'android' && (
+      {Platform.OS === 'android' && invoices.length > 0 && (
         <View style={styles.androidSearch}>
           <Feather name="search" size={18} color="#64748B" />
           <TextInput
@@ -236,7 +237,7 @@ export default function InvoiceListScreen() {
         contentContainerStyle={styles.listContent}
         contentInsetAdjustmentBehavior="automatic"
         refreshControl={
-          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#5B72EE" />
+          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={palette.accent} />
         }
         ListEmptyComponent={
           invoices.length === 0 ? (
@@ -274,149 +275,49 @@ export default function InvoiceListScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#F8FAFC',
+    backgroundColor: palette.background,
   },
   centerContainer: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: '#F8FAFC',
+    backgroundColor: palette.background,
   },
   androidSearch: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginHorizontal: 16,
+    marginHorizontal: space.screen,
     marginTop: 8,
     marginBottom: 4,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: palette.fill,
     borderRadius: 12,
     paddingHorizontal: 12,
     height: 44,
-    borderWidth: 1,
-    borderColor: '#E2E8F0',
     gap: 8,
   },
   androidSearchInput: {
     flex: 1,
     fontSize: 16,
-    color: '#1E293B',
-  },
-  filterContainer: {
-    flexDirection: 'row',
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    gap: 10,
+    color: palette.text,
   },
   listContent: {
-    padding: 16,
-  },
-  invoiceCard: {
-    backgroundColor: '#FFFFFF',
-    borderRadius: 16,
-    marginBottom: 16,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.08,
-    shadowRadius: 12,
-    elevation: 3,
-    overflow: 'hidden',
-  },
-  cardHeader: {
-    padding: 16,
-    paddingBottom: 12,
-  },
-  cardHeaderTop: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 8,
-  },
-  invoiceNumber: {
-    fontSize: 20,
-    fontWeight: '800',
-    color: '#0F172A',
-  },
-  customerName: {
-    fontSize: 15,
-    color: '#64748B',
-    fontWeight: '500',
-  },
-  statusBadge: {
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 16,
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  statusText: {
-    fontSize: 11,
-    fontWeight: '800',
-    color: '#FFFFFF',
-    letterSpacing: 0.5,
-  },
-  cardBody: {
-    padding: 16,
-    paddingTop: 12,
-    backgroundColor: '#FFFFFF',
-  },
-  amountContainer: {
-    marginBottom: 16,
-  },
-  amountLabel: {
-    fontSize: 12,
-    color: '#94A3B8',
-    fontWeight: '600',
-    textTransform: 'uppercase',
-    letterSpacing: 0.5,
-    marginBottom: 4,
-  },
-  amountValue: {
-    fontSize: 26,
-    fontWeight: '800',
-    color: '#0F172A',
-  },
-  datesContainer: {
-    flexDirection: 'row',
-    backgroundColor: '#F8FAFC',
-    borderRadius: 12,
-    padding: 12,
-  },
-  dateItem: {
-    flex: 1,
-  },
-  dateDivider: {
-    width: 1,
-    backgroundColor: '#E2E8F0',
-    marginHorizontal: 12,
-  },
-  dateLabel: {
-    fontSize: 12,
-    color: '#64748B',
-    marginBottom: 4,
-    fontWeight: '500',
-  },
-  dateValue: {
-    fontSize: 14,
-    fontWeight: '700',
-    color: '#0F172A',
+    paddingHorizontal: space.screen,
+    paddingTop: 8,
+    paddingBottom: 32,
   },
   emptyContainer: {
     padding: 48,
     alignItems: 'center',
   },
-  emptyIcon: {
-    fontSize: 64,
-    marginBottom: 16,
-  },
   emptyText: {
-    fontSize: 20,
-    fontWeight: '700',
-    color: '#0F172A',
+    fontSize: 17,
+    fontWeight: '600',
+    color: palette.text,
     marginBottom: 8,
   },
   emptySubtext: {
     fontSize: 15,
-    color: '#64748B',
+    color: palette.textSecondary,
     textAlign: 'center',
   },
 });

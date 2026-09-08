@@ -10,8 +10,8 @@ This document provides comprehensive guidance for AI agents (LLMs) working on th
 | --- | --- |
 | Spec | `TARGET_ARCHITECTURE.md` — end state and gates. Not optional. |
 | Live DB | Hosted `public` is empty (2026-09-03). Greenfield. Do not replay Git SQL. No UUID import. |
-| Now | W1–W4 **verified**. Web invoices: Hono create/list/status/send, payment terms, percent/fixed discount, server GST. Remaining W5 gates: idempotency + share tokens. |
-| Blocked | None for remaining W5 invoice gates. |
+| Now | W1–W4 **verified**. W5 invoice gates: idempotency + share tokens on Hono. Next: W6 payments/expenses. |
+| Blocked | None for W6. |
 | Clients | Web and mobile email auth are Better Auth. Mobile invoices → Hono. Mobile expenses still `supabase-js`. No new client SQL, Storage SDK, Edge Functions, or `VITE_OPENAI_*`. |
 | Ports | Postgres **55432**, API **3001**, Vite **8080** (`/api` proxy). |
 | Package manager | **pnpm** workspace (`api`, `packages/contracts`). `mobile/` is not in the workspace yet. |
@@ -1069,7 +1069,7 @@ Parent chat is Orchestrator. Launch specialists with Task `generalPurpose` using
 | Mobile | `mobile/` Query hooks and screens |
 | Verification | Vitest, RLS tests, Playwright, RN tests, live smoke (`ledgercraft-verify`) |
 
-**Waves:** W0 knowledge (done) → W1 platform scaffolding (**verified**) → W2 compatibility schema (**verified**) → W3 identity (**verified**) → W4 customers (**verified**) → W5 invoices (gate, **next**) → W6 payments/expenses/accounts → W7 bank/recon/tax → W8 storage/email/AI → W9 client consolidation.
+**Waves:** W0 knowledge (done) → W1 platform scaffolding (**verified**) → W2 compatibility schema (**verified**) → W3 identity (**verified**) → W4 customers (**verified**) → W5 invoices (idempotency + share) → W6 payments/expenses/accounts (**next**) → W7 bank/recon/tax → W8 storage/email/AI → W9 client consolidation.
 
 **TDD:** failing tests first; real Postgres for SQL/RLS. **Knowledge:** a wave is not done if docs are stale.
 
@@ -1151,9 +1151,9 @@ Customers CRUD through Hono, scoped to the session organisation. Ownership IDs c
 
 **W4 out of scope (still):** TanStack Router, `apps/` move, UI redesign.
 
-### W5 status (invoices — in progress)
+### W5 status (invoices)
 
-Web invoice create/list/status/send is Hono: sequence lock, line items, server GST totals, balanced journal, payment terms, percent or fixed discount. `POST /api/invoices` stays `draft`. `POST /api/invoices/:id/send` emails then sets `sent` (mailer injected; default logs). Client-supplied totals are rejected. Cross-org get is 404. Remaining gates: idempotency key replay, share tokens. Mobile invoices list/create/update go through Hono (`EXPO_PUBLIC_INVOICES_API`).
+Web and mobile invoice create/list/status/send is Hono: sequence lock, line items, server GST totals, balanced journal, payment terms, percent or fixed discount. `POST /api/invoices` stays `draft`. `Idempotency-Key` replay returns the original invoice; a reused key with a different body is 409 `IDEMPOTENCY_CONFLICT`. `POST /api/invoices/:id/share` snapshots the invoice; public `GET /api/public/invoices/:token` is 404 when expired, inactive, or unknown. Client-supplied totals are rejected. Cross-org get/share is 404. Cloudflare-ready: `Dockerfile`, Pages Function `/api` proxy, NetworkOnly PWA for `/api`.
 
 ### Hard no (still)
 

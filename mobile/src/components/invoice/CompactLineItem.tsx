@@ -7,6 +7,7 @@ import {
   StyleSheet,
   Platform,
 } from 'react-native';
+import { Feather } from '@expo/vector-icons';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 import Animated, {
   useSharedValue,
@@ -18,6 +19,7 @@ import Animated, {
 import * as Haptics from 'expo-haptics';
 import { ModernInput } from '@/components/ui/ModernInput';
 import type { LineItem } from '@/types/invoice';
+import { palette, radius } from '@/theme/tokens';
 
 interface CompactLineItemProps {
   item: LineItem;
@@ -101,7 +103,7 @@ export function CompactLineItem({
             <View style={styles.content}>
               <View style={styles.leftSection}>
                 <Text style={styles.description} numberOfLines={1}>
-                  {item.description || '📦 Tap to add item'}
+                  {item.description || 'Tap to add item'}
                 </Text>
                 <Text style={styles.details}>
                   {item.quantity} × {formatCurrency(item.rate)}
@@ -121,7 +123,7 @@ export function CompactLineItem({
       {/* Delete button behind */}
       {canRemove && (
         <Animated.View style={[styles.deleteButton, deleteButtonStyle]}>
-          <Text style={styles.deleteIcon}>🗑️</Text>
+          <Text style={styles.deleteLabel}>Delete</Text>
         </Animated.View>
       )}
 
@@ -145,7 +147,7 @@ export function CompactLineItem({
                 onPress={() => setShowEditModal(false)}
                 hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
               >
-                <Text style={styles.closeButton}>✕</Text>
+                <Text style={styles.closeButton}>Close</Text>
               </TouchableOpacity>
             </View>
 
@@ -156,9 +158,9 @@ export function CompactLineItem({
                 activeOpacity={0.7}
               >
                 <Text style={styles.itemSelectorLabel}>
-                  {item.description || '📦 Select from catalog'}
+                  {item.description || 'Select from catalog'}
                 </Text>
-                <Text style={styles.itemSelectorIcon}>›</Text>
+                <Feather name="chevron-right" size={18} color={palette.textTertiary} />
               </TouchableOpacity>
 
               <ModernInput
@@ -218,21 +220,18 @@ export function CompactLineItem({
 
 const styles = StyleSheet.create({
   container: {
-    marginBottom: 12,
+    marginBottom: 2,
     position: 'relative',
   },
   card: {
-    backgroundColor: '#ffffff',
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: '#e2e8f0',
+    backgroundColor: palette.surface,
     overflow: 'hidden',
   },
   touchable: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingVertical: 12,
-    paddingHorizontal: 12,
+    paddingVertical: 14,
+    paddingHorizontal: 4,
   },
   dragHandle: {
     marginRight: 12,
@@ -255,28 +254,29 @@ const styles = StyleSheet.create({
     marginRight: 12,
   },
   description: {
-    fontSize: 15,
-    fontWeight: '600',
-    color: '#0f172a',
-    marginBottom: 4,
+    fontSize: 17,
+    fontWeight: '500',
+    color: palette.text,
+    marginBottom: 2,
   },
   details: {
     fontSize: 13,
-    color: '#64748b',
+    color: palette.textSecondary,
   },
   rightSection: {
     alignItems: 'flex-end',
   },
   amount: {
-    fontSize: 18,
-    fontWeight: '700',
-    color: '#0f172a',
+    fontSize: 17,
+    fontWeight: '600',
+    color: palette.text,
     marginBottom: 2,
+    fontVariant: ['tabular-nums'],
   },
   editLabel: {
-    fontSize: 12,
-    fontWeight: '600',
-    color: '#5B72EE',
+    fontSize: 13,
+    fontWeight: '500',
+    color: palette.accent,
   },
   deleteButton: {
     position: 'absolute',
@@ -286,8 +286,10 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
   },
-  deleteIcon: {
-    fontSize: 28,
+  deleteLabel: {
+    fontSize: 13,
+    fontWeight: '600',
+    color: palette.danger,
   },
   modalOverlay: {
     flex: 1,
@@ -330,9 +332,9 @@ const styles = StyleSheet.create({
     color: '#0f172a',
   },
   closeButton: {
-    fontSize: 24,
-    color: '#64748b',
-    fontWeight: '300',
+    fontSize: 17,
+    color: palette.accent,
+    fontWeight: '500',
   },
   modalBody: {
     paddingHorizontal: 20,
@@ -392,9 +394,9 @@ const styles = StyleSheet.create({
     color: '#5B72EE',
   },
   doneButton: {
-    backgroundColor: '#5B72EE',
+    backgroundColor: palette.accent,
     paddingVertical: 16,
-    borderRadius: 12,
+    borderRadius: radius.pill,
     alignItems: 'center',
     ...Platform.select({
       ios: {

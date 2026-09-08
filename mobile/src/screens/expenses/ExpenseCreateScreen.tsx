@@ -9,11 +9,12 @@ import {
   StyleSheet,
   Alert,
   Switch,
-  ActivityIndicator,
   Modal,
+  TextInput,
 } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import { Feather } from '@expo/vector-icons';
 import { AppTabParamList } from '@/navigation/types';
 import { expenseService } from '@/services/expenseService';
 import type { ExpenseCategory, Account, PaymentMethod } from '@/types/expense';
@@ -25,6 +26,7 @@ import { CustomerPicker } from '@/components/customers/CustomerPicker';
 import { ReceiptScanner } from '@/components/expense/ReceiptScanner';
 import { Customer } from '@/services/customerService';
 import { ReceiptScanResult } from '@/types/receipt';
+import { palette, radius, space } from '@/theme/tokens';
 
 type ExpenseCreateNavigationProp = NativeStackNavigationProp<AppTabParamList, 'ExpenseCreate'>;
 
@@ -155,12 +157,8 @@ export default function ExpenseCreateScreen() {
 
   const getAccountDisplay = () => {
     if (selectedAccount) {
-      const typeIcon = selectedAccount.type === 'bank' ? '🏦' : 
-                      selectedAccount.type === 'cash' ? '💵' : 
-                      selectedAccount.type === 'credit_card' ? '💳' : '💼';
       return (
         <View style={styles.selectedItemContainer}>
-          <Text style={styles.iconText}>{typeIcon}</Text>
           <Text style={styles.selectedItemText}>{selectedAccount.name}</Text>
         </View>
       );
@@ -208,7 +206,24 @@ export default function ExpenseCreateScreen() {
       >
         {/* Basic Info Card */}
         <View style={styles.card}>
-          <Text style={styles.cardTitle}>Expense Details</Text>
+          <Text style={styles.amountLabel}>Amount</Text>
+          <View style={styles.amountRow}>
+            <Text style={styles.currencyMark}>$</Text>
+            <TextInput
+              value={amount}
+              onChangeText={(text) => {
+                setAmount(text);
+                if (errors.amount) setErrors({ ...errors, amount: '' });
+              }}
+              placeholder="0.00"
+              placeholderTextColor={palette.textTertiary}
+              keyboardType="decimal-pad"
+              style={styles.amountInput}
+              accessibilityLabel="Expense amount"
+            />
+            <Text style={styles.currencyCode}>{currency}</Text>
+          </View>
+          {errors.amount ? <Text style={styles.amountError}>{errors.amount}</Text> : null}
 
           <ModernInput
             label="Description"
@@ -217,33 +232,9 @@ export default function ExpenseCreateScreen() {
               setDescription(text);
               if (errors.description) setErrors({ ...errors, description: '' });
             }}
-            placeholder="Enter expense description"
+            placeholder="What was this for"
             error={errors.description}
           />
-
-          <View style={styles.row}>
-            <View style={styles.halfWidth}>
-              <ModernInput
-                label="Amount"
-                value={amount}
-                onChangeText={(text) => {
-                  setAmount(text);
-                  if (errors.amount) setErrors({ ...errors, amount: '' });
-                }}
-                placeholder="0.00"
-                keyboardType="decimal-pad"
-                error={errors.amount}
-              />
-            </View>
-            <View style={styles.halfWidth}>
-              <ModernInput
-                label="Currency"
-                value={currency}
-                onChangeText={setCurrency}
-                placeholder="NZD"
-              />
-            </View>
-          </View>
 
           <ModernInput
             label="Date"
@@ -260,7 +251,7 @@ export default function ExpenseCreateScreen() {
             label="Vendor"
             value={vendorName}
             onChangeText={setVendorName}
-            placeholder="Vendor name (optional)"
+            placeholder="Who you paid"
           />
         </View>
 
@@ -278,7 +269,7 @@ export default function ExpenseCreateScreen() {
               activeOpacity={0.7}
             >
               {getCategoryDisplay()}
-              <Text style={styles.changeText}>Change</Text>
+              <Feather name="chevron-right" size={18} color={palette.textTertiary} />
             </TouchableOpacity>
           </View>
 
@@ -290,7 +281,7 @@ export default function ExpenseCreateScreen() {
               activeOpacity={0.7}
             >
               {getAccountDisplay()}
-              <Text style={styles.changeText}>Change</Text>
+              <Feather name="chevron-right" size={18} color={palette.textTertiary} />
             </TouchableOpacity>
           </View>
         </View>
@@ -313,7 +304,7 @@ export default function ExpenseCreateScreen() {
               ) : (
                 <Text style={styles.placeholderText}>Select payment method</Text>
               )}
-              <Text style={styles.changeText}>Change</Text>
+              <Feather name="chevron-right" size={18} color={palette.textTertiary} />
             </TouchableOpacity>
           </View>
 
@@ -325,7 +316,7 @@ export default function ExpenseCreateScreen() {
             <Switch
               value={taxEnabled}
               onValueChange={setTaxEnabled}
-              trackColor={{ false: '#e2e8f0', true: '#5B72EE' }}
+              trackColor={{ false: palette.fill, true: palette.accent }}
               thumbColor="#ffffff"
             />
           </View>
@@ -360,7 +351,7 @@ export default function ExpenseCreateScreen() {
             <Switch
               value={isBillable}
               onValueChange={setIsBillable}
-              trackColor={{ false: '#e2e8f0', true: '#5B72EE' }}
+              trackColor={{ false: palette.fill, true: palette.accent }}
               thumbColor="#ffffff"
             />
           </View>
@@ -376,7 +367,7 @@ export default function ExpenseCreateScreen() {
                 activeOpacity={0.7}
               >
                 {getCustomerDisplay()}
-                <Text style={styles.changeText}>Change</Text>
+                <Feather name="chevron-right" size={18} color={palette.textTertiary} />
               </TouchableOpacity>
             </View>
           )}
@@ -388,7 +379,7 @@ export default function ExpenseCreateScreen() {
           {receiptUrl ? (
             <View style={styles.receiptContainer}>
               <View style={styles.receiptInfo}>
-                <Text style={styles.receiptIcon}>📄</Text>
+                <Feather name="paperclip" size={18} color={palette.accent} />
                 <Text style={styles.receiptText}>Receipt attached</Text>
               </View>
               <TouchableOpacity
@@ -403,7 +394,7 @@ export default function ExpenseCreateScreen() {
               onPress={() => setShowReceiptScanner(true)}
               variant="outline"
               fullWidth
-              icon={<Text style={styles.scanIcon}>📷</Text>}
+              icon={<Feather name="camera" size={18} color={palette.text} />}
             >
               Scan Receipt with AI
             </ModernButton>
@@ -498,7 +489,7 @@ export default function ExpenseCreateScreen() {
             >
               <Text style={styles.methodOptionText}>None</Text>
               {paymentMethod === null && (
-                <Text style={styles.methodOptionCheck}>✓</Text>
+                <Feather name="check" size={18} color={palette.accent} />
               )}
             </TouchableOpacity>
             {PAYMENT_METHODS.map((method) => (
@@ -515,7 +506,7 @@ export default function ExpenseCreateScreen() {
               >
                 <Text style={styles.methodOptionText}>{method.label}</Text>
                 {paymentMethod === method.value && (
-                  <Text style={styles.methodOptionCheck}>✓</Text>
+                  <Feather name="check" size={18} color={palette.accent} />
                 )}
               </TouchableOpacity>
             ))}
@@ -574,56 +565,67 @@ export default function ExpenseCreateScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#F8FAFC',
-  },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingTop: 48,
-    paddingBottom: 16,
-    paddingHorizontal: 24,
-    backgroundColor: '#1E2875',
-  },
-  backButton: {
-    padding: 8,
-  },
-  backButtonText: {
-    fontSize: 24,
-    color: '#FFFFFF',
-    fontWeight: '600',
-  },
-  headerTitle: {
-    fontSize: 20,
-    fontWeight: '700',
-    color: '#FFFFFF',
-  },
-  headerSpacer: {
-    width: 40,
+    backgroundColor: palette.background,
   },
   scrollView: {
     flex: 1,
   },
   scrollContent: {
-    padding: 16,
+    padding: space.screen,
     paddingBottom: 32,
   },
   card: {
-    backgroundColor: '#FFFFFF',
-    borderRadius: 16,
-    padding: 20,
-    marginBottom: 16,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.05,
-    shadowRadius: 8,
-    elevation: 2,
+    backgroundColor: palette.surface,
+    borderRadius: radius.group,
+    padding: space.lg,
+    marginBottom: space.lg,
   },
   cardTitle: {
-    fontSize: 18,
-    fontWeight: '700',
-    color: '#1E293B',
+    fontSize: 13,
+    fontWeight: '500',
+    color: palette.textSecondary,
+    letterSpacing: -0.08,
+    textTransform: 'uppercase',
     marginBottom: 16,
+  },
+  amountLabel: {
+    fontSize: 13,
+    fontWeight: '500',
+    color: palette.textSecondary,
+    marginBottom: 4,
+  },
+  amountRow: {
+    flexDirection: 'row',
+    alignItems: 'flex-end',
+    marginBottom: 20,
+  },
+  currencyMark: {
+    fontSize: 34,
+    fontWeight: '600',
+    color: palette.textTertiary,
+    marginRight: 4,
+    marginBottom: 4,
+  },
+  amountInput: {
+    flex: 1,
+    fontSize: 40,
+    fontWeight: '700',
+    color: palette.text,
+    letterSpacing: -1.2,
+    paddingVertical: 0,
+    fontVariant: ['tabular-nums'],
+  },
+  currencyCode: {
+    fontSize: 15,
+    fontWeight: '600',
+    color: palette.textSecondary,
+    marginBottom: 10,
+  },
+  amountError: {
+    color: palette.danger,
+    fontSize: 13,
+    marginTop: -12,
+    marginBottom: 12,
   },
   row: {
     flexDirection: 'row',
@@ -636,23 +638,22 @@ const styles = StyleSheet.create({
     marginBottom: 16,
   },
   fieldLabel: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: '#64748B',
+    fontSize: 13,
+    fontWeight: '500',
+    color: palette.textSecondary,
     marginBottom: 8,
   },
   required: {
-    color: '#EF4444',
+    color: palette.danger,
   },
   pickerButton: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    backgroundColor: '#F8FAFC',
-    borderRadius: 12,
-    padding: 16,
-    borderWidth: 1,
-    borderColor: '#E2E8F0',
+    backgroundColor: palette.fillMuted,
+    borderRadius: radius.md,
+    padding: 14,
+    minHeight: 52,
   },
   selectedItemContainer: {
     flexDirection: 'row',
@@ -660,41 +661,32 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   colorIndicator: {
-    width: 16,
-    height: 16,
-    borderRadius: 8,
-    marginRight: 12,
-  },
-  iconText: {
-    fontSize: 20,
+    width: 12,
+    height: 12,
+    borderRadius: 6,
     marginRight: 12,
   },
   selectedItemText: {
-    fontSize: 16,
+    fontSize: 17,
     fontWeight: '500',
-    color: '#1E293B',
+    color: palette.text,
   },
   placeholderText: {
-    fontSize: 16,
-    color: '#94A3B8',
-  },
-  changeText: {
-    fontSize: 14,
-    color: '#5B72EE',
-    fontWeight: '600',
+    fontSize: 17,
+    color: palette.textTertiary,
   },
   customerAvatar: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: '#5B72EE',
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: palette.accent,
     justifyContent: 'center',
     alignItems: 'center',
     marginRight: 12,
   },
   customerAvatarText: {
-    color: '#FFFFFF',
-    fontSize: 16,
+    color: palette.surface,
+    fontSize: 13,
     fontWeight: '700',
   },
   customerInfo: {
@@ -702,7 +694,7 @@ const styles = StyleSheet.create({
   },
   customerEmail: {
     fontSize: 12,
-    color: '#64748B',
+    color: palette.textSecondary,
     marginTop: 2,
   },
   switchRow: {
@@ -715,18 +707,18 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   switchLabel: {
-    fontSize: 16,
+    fontSize: 17,
     fontWeight: '500',
-    color: '#1E293B',
-    marginBottom: 4,
+    color: palette.text,
+    marginBottom: 2,
   },
   switchSubtext: {
-    fontSize: 12,
-    color: '#64748B',
+    fontSize: 13,
+    color: palette.textSecondary,
   },
   taxInfo: {
-    backgroundColor: '#F8FAFC',
-    borderRadius: 12,
+    backgroundColor: palette.fillMuted,
+    borderRadius: radius.md,
     padding: 16,
     marginTop: 8,
   },
@@ -737,16 +729,17 @@ const styles = StyleSheet.create({
   },
   taxLabel: {
     fontSize: 14,
-    color: '#64748B',
+    color: palette.textSecondary,
   },
   taxValue: {
     fontSize: 14,
     fontWeight: '600',
-    color: '#1E293B',
+    color: palette.text,
+    fontVariant: ['tabular-nums'],
   },
   taxTotal: {
-    borderTopWidth: 1,
-    borderTopColor: '#E2E8F0',
+    borderTopWidth: StyleSheet.hairlineWidth,
+    borderTopColor: palette.separator,
     paddingTop: 8,
     marginTop: 8,
     marginBottom: 0,
@@ -754,12 +747,13 @@ const styles = StyleSheet.create({
   taxTotalLabel: {
     fontSize: 16,
     fontWeight: '700',
-    color: '#1E293B',
+    color: palette.text,
   },
   taxTotalValue: {
     fontSize: 16,
     fontWeight: '700',
-    color: '#5B72EE',
+    color: palette.text,
+    fontVariant: ['tabular-nums'],
   },
   submitButton: {
     marginTop: 8,
@@ -767,86 +761,72 @@ const styles = StyleSheet.create({
   },
   modalContent: {
     flex: 1,
-    backgroundColor: '#FFFFFF',
-    borderTopLeftRadius: 24,
-    borderTopRightRadius: 24,
+    backgroundColor: palette.surface,
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
   },
   modalHeader: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
     padding: 20,
-    borderBottomWidth: 1,
-    borderBottomColor: '#E2E8F0',
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderBottomColor: palette.separator,
   },
   modalTitle: {
-    fontSize: 20,
-    fontWeight: '700',
-    color: '#1E293B',
+    fontSize: 17,
+    fontWeight: '600',
+    color: palette.text,
   },
   modalCloseButton: {
     padding: 8,
   },
   modalCloseText: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#5B72EE',
+    fontSize: 17,
+    fontWeight: '500',
+    color: palette.accent,
   },
   methodOption: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    padding: 20,
-    borderBottomWidth: 1,
-    borderBottomColor: '#F1F5F9',
+    padding: 18,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderBottomColor: palette.separator,
   },
   methodOptionSelected: {
-    backgroundColor: '#F8FAFC',
+    backgroundColor: palette.fillMuted,
   },
   methodOptionText: {
-    fontSize: 16,
-    color: '#1E293B',
-  },
-  methodOptionCheck: {
-    fontSize: 16,
-    color: '#5B72EE',
-    fontWeight: '700',
+    fontSize: 17,
+    color: palette.text,
   },
   receiptContainer: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    backgroundColor: '#F8FAFC',
-    borderRadius: 12,
+    backgroundColor: palette.fillMuted,
+    borderRadius: radius.md,
     padding: 16,
-    borderWidth: 1,
-    borderColor: '#E2E8F0',
   },
   receiptInfo: {
     flexDirection: 'row',
     alignItems: 'center',
     flex: 1,
-  },
-  receiptIcon: {
-    fontSize: 20,
-    marginRight: 12,
+    gap: 10,
   },
   receiptText: {
     fontSize: 16,
     fontWeight: '500',
-    color: '#1E293B',
+    color: palette.text,
   },
   removeReceiptButton: {
     padding: 8,
   },
   removeReceiptText: {
     fontSize: 14,
-    color: '#EF4444',
+    color: palette.danger,
     fontWeight: '600',
-  },
-  scanIcon: {
-    fontSize: 18,
-    marginRight: 8,
   },
 });
 

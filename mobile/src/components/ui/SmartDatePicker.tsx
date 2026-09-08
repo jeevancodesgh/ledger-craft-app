@@ -9,7 +9,9 @@ import {
   ScrollView,
 } from 'react-native';
 import DateTimePicker from '@react-native-community/datetimepicker';
+import { Feather } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
+import { palette, radius } from '@/theme/tokens';
 
 interface SmartDatePickerProps {
   label: string;
@@ -21,14 +23,13 @@ interface SmartDatePickerProps {
 type DatePreset = {
   label: string;
   days: number;
-  icon: string;
 };
 
 const DATE_PRESETS: DatePreset[] = [
-  { label: 'Due on Receipt', days: 0, icon: '⚡' },
-  { label: 'Net 7', days: 7, icon: '📅' },
-  { label: 'Net 15', days: 15, icon: '📆' },
-  { label: 'Net 30', days: 30, icon: '🗓️' },
+  { label: 'Due on receipt', days: 0 },
+  { label: 'Net 7', days: 7 },
+  { label: 'Net 15', days: 15 },
+  { label: 'Net 30', days: 30 },
 ];
 
 export function SmartDatePicker({
@@ -105,9 +106,8 @@ export function SmartDatePicker({
         }}
         activeOpacity={0.7}
       >
-        <Text style={styles.buttonIcon}>📅</Text>
         <Text style={styles.buttonText}>{formatDate(value)}</Text>
-        <Text style={styles.chevron}>›</Text>
+        <Feather name="chevron-right" size={18} color={palette.textTertiary} />
       </TouchableOpacity>
 
       {/* Presets Modal */}
@@ -130,7 +130,7 @@ export function SmartDatePicker({
                 onPress={() => setShowModal(false)}
                 hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
               >
-                <Text style={styles.closeButton}>✕</Text>
+                <Text style={styles.closeButton}>Close</Text>
               </TouchableOpacity>
             </View>
 
@@ -143,7 +143,6 @@ export function SmartDatePicker({
                   activeOpacity={0.7}
                 >
                   <View style={styles.presetLeft}>
-                    <Text style={styles.presetIcon}>{preset.icon}</Text>
                     <View>
                       <Text style={styles.presetLabel}>{preset.label}</Text>
                       <Text style={styles.presetSubtext}>
@@ -151,7 +150,7 @@ export function SmartDatePicker({
                       </Text>
                     </View>
                   </View>
-                  <Text style={styles.presetChevron}>›</Text>
+                  <Feather name="chevron-right" size={18} color={palette.textTertiary} />
                 </TouchableOpacity>
               ))}
 
@@ -161,13 +160,12 @@ export function SmartDatePicker({
                 activeOpacity={0.7}
               >
                 <View style={styles.presetLeft}>
-                  <Text style={styles.presetIcon}>🗓️</Text>
                   <View>
-                    <Text style={styles.presetLabel}>Custom Date</Text>
+                    <Text style={styles.presetLabel}>Custom date</Text>
                     <Text style={styles.presetSubtext}>Pick a specific date</Text>
                   </View>
                 </View>
-                <Text style={styles.presetChevron}>›</Text>
+                <Feather name="chevron-right" size={18} color={palette.textTertiary} />
               </TouchableOpacity>
             </ScrollView>
 
@@ -210,35 +208,24 @@ const styles = StyleSheet.create({
     marginBottom: 16,
   },
   label: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: '#334155',
-    marginBottom: 8,
+    fontSize: 13,
+    fontWeight: '500',
+    color: palette.textSecondary,
+    marginBottom: 6,
   },
   button: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#ffffff',
-    borderWidth: 1,
-    borderColor: '#cbd5e1',
-    borderRadius: 12,
-    paddingHorizontal: 16,
-    paddingVertical: 14,
-  },
-  buttonIcon: {
-    fontSize: 20,
-    marginRight: 12,
+    backgroundColor: palette.fillMuted,
+    borderRadius: radius.md,
+    paddingHorizontal: 14,
+    minHeight: 48,
   },
   buttonText: {
     flex: 1,
-    fontSize: 16,
+    fontSize: 17,
     fontWeight: '500',
-    color: '#0f172a',
-  },
-  chevron: {
-    fontSize: 20,
-    color: '#94a3b8',
-    fontWeight: '300',
+    color: palette.text,
   },
   modalOverlay: {
     flex: 1,
@@ -249,9 +236,9 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(0, 0, 0, 0.5)',
   },
   modalContent: {
-    backgroundColor: '#ffffff',
-    borderTopLeftRadius: 24,
-    borderTopRightRadius: 24,
+    backgroundColor: palette.surface,
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
     maxHeight: '80%',
     ...Platform.select({
       ios: {
@@ -281,9 +268,9 @@ const styles = StyleSheet.create({
     color: '#0f172a',
   },
   closeButton: {
-    fontSize: 24,
-    color: '#64748b',
-    fontWeight: '300',
+    fontSize: 17,
+    color: palette.accent,
+    fontWeight: '500',
   },
   presetsContainer: {
     paddingHorizontal: 20,
@@ -294,41 +281,27 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
     paddingVertical: 16,
-    paddingHorizontal: 16,
-    borderRadius: 12,
-    marginVertical: 6,
-    backgroundColor: '#f8fafc',
-    borderWidth: 1,
-    borderColor: '#e2e8f0',
+    paddingHorizontal: 4,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderBottomColor: palette.separator,
   },
   customButton: {
-    backgroundColor: '#EEF2FF',
-    borderColor: '#C7D2FE',
-    marginTop: 8,
+    borderBottomWidth: 0,
   },
   presetLeft: {
     flexDirection: 'row',
     alignItems: 'center',
     flex: 1,
   },
-  presetIcon: {
-    fontSize: 24,
-    marginRight: 12,
-  },
   presetLabel: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#0f172a',
+    fontSize: 17,
+    fontWeight: '500',
+    color: palette.text,
     marginBottom: 2,
   },
   presetSubtext: {
     fontSize: 13,
-    color: '#64748b',
-  },
-  presetChevron: {
-    fontSize: 20,
-    color: '#94a3b8',
-    fontWeight: '300',
+    color: palette.textSecondary,
   },
   iosPickerContainer: {
     borderTopWidth: 1,
@@ -342,8 +315,8 @@ const styles = StyleSheet.create({
     marginHorizontal: 20,
     marginTop: 12,
     paddingVertical: 14,
-    backgroundColor: '#5B72EE',
-    borderRadius: 12,
+    backgroundColor: palette.accent,
+    borderRadius: radius.pill,
     alignItems: 'center',
   },
   iosConfirmText: {

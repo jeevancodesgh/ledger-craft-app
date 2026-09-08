@@ -1,35 +1,16 @@
-/**
- * ModernInput - Revolut-Style Animated Input Component
- * 
- * Features:
- * - Animated border color on focus (gray -> blue)
- * - Subtle scale animation on focus
- * - Floating label animation
- * - Smooth shadow transitions
- * - Haptic feedback on focus
- */
-
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useCallback } from 'react';
 import {
   View,
   Text,
   TextInput,
-  TouchableOpacity,
+  Pressable,
   TextInputProps,
   StyleSheet,
   Platform,
 } from 'react-native';
 import { Feather } from '@expo/vector-icons';
-import Animated, {
-  useSharedValue,
-  useAnimatedStyle,
-  withTiming,
-  withSpring,
-  interpolateColor,
-  interpolate,
-} from 'react-native-reanimated';
 import * as Haptics from 'expo-haptics';
-import { TIMING_CONFIG, SPRING_CONFIG, SCALE, COLORS, EASING } from '@/utils/animations';
+import { palette, radius, space } from '@/theme/tokens';
 
 interface ModernInputProps extends Omit<TextInputProps, 'onChange'> {
   label: string;
@@ -39,10 +20,6 @@ interface ModernInputProps extends Omit<TextInputProps, 'onChange'> {
   error?: string;
   showPasswordToggle?: boolean;
 }
-
-// Create animated components
-const AnimatedView = Animated.View;
-const AnimatedText = Animated.Text;
 
 export function ModernInput({
   label,
@@ -60,228 +37,100 @@ export function ModernInput({
   const [showPassword, setShowPassword] = useState(false);
   const inputType = showPasswordToggle ? !showPassword : !secureTextEntry;
 
-  // Animation shared values
-  const focusProgress = useSharedValue(0);
-  const labelPosition = useSharedValue(value ? 1 : 0);
-  const containerScale = useSharedValue(1);
-  const errorShake = useSharedValue(0);
-
-  // Trigger haptic feedback
   const triggerHaptic = useCallback(() => {
     if (Platform.OS !== 'web') {
-      try {
-        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-      } catch (error) {
-        // Haptic feedback not available
-      }
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => undefined);
     }
   }, []);
 
-  // Update animations when focus changes
-  useEffect(() => {
-    focusProgress.value = withTiming(isFocused ? 1 : 0, {
-      duration: TIMING_CONFIG.normal,
-      easing: EASING.easeOut,
-    });
-
-    if (isFocused) {
-      // Subtle scale pulse on focus
-      containerScale.value = withSpring(SCALE.focus, SPRING_CONFIG.gentle);
-      setTimeout(() => {
-        containerScale.value = withSpring(1, SPRING_CONFIG.gentle);
-      }, 150);
-    }
-  }, [isFocused]);
-
-  // Update label position when value changes
-  useEffect(() => {
-    const shouldFloat = isFocused || value.length > 0;
-    labelPosition.value = withTiming(shouldFloat ? 1 : 0, {
-      duration: TIMING_CONFIG.fast,
-      easing: EASING.easeOut,
-    });
-  }, [isFocused, value]);
-
-  // Shake animation on error
-  useEffect(() => {
-    if (error) {
-      errorShake.value = withTiming(1, { duration: 50 }, () => {
-        errorShake.value = withTiming(-1, { duration: 50 }, () => {
-          errorShake.value = withTiming(0.5, { duration: 50 }, () => {
-            errorShake.value = withTiming(-0.5, { duration: 50 }, () => {
-              errorShake.value = withTiming(0, { duration: 50 });
-            });
-          });
-        });
-      });
-    }
-  }, [error]);
-
-  // Animated container style (border color, shadow, scale)
-  const animatedContainerStyle = useAnimatedStyle(() => {
-    'worklet';
-    const borderColor = error
-      ? COLORS.danger
-      : interpolateColor(
-          focusProgress.value,
-          [0, 1],
-          [COLORS.border, COLORS.primary]
-        );
-
-    const shadowOpacity = interpolate(
-      focusProgress.value,
-      [0, 1],
-      [0, 0.15]
-    );
-
-    const translateX = errorShake.value * 4;
-
-    return {
-      borderColor,
-      transform: [
-        { scale: containerScale.value },
-        { translateX },
-      ],
-      shadowColor: error ? COLORS.danger : COLORS.primary,
-      shadowOpacity,
-      shadowOffset: { width: 0, height: 2 },
-      shadowRadius: 8,
-    };
-  });
-
-  // Animated label style (position, size, color)
-  const animatedLabelStyle = useAnimatedStyle(() => {
-    'worklet';
-    const top = interpolate(labelPosition.value, [0, 1], [16, 8]);
-    const fontSize = interpolate(labelPosition.value, [0, 1], [14, 12]);
-    const color = error
-      ? COLORS.danger
-      : interpolateColor(
-          focusProgress.value,
-          [0, 1],
-          [COLORS.textSecondary, COLORS.primary]
-        );
-
-    return {
-      top,
-      fontSize,
-      color,
-    };
-  });
-
-  const handleFocus = () => {
-    setIsFocused(true);
-    triggerHaptic();
-  };
-
-  const handleBlur = () => {
-    setIsFocused(false);
-  };
-
-  const togglePasswordVisibility = () => {
-    setShowPassword(!showPassword);
-    triggerHaptic();
-  };
-
   return (
     <View style={styles.container}>
-      <AnimatedView
+      {label ? <Text style={styles.label}>{label}</Text> : null}
+      <View
         style={[
-          styles.inputContainer,
-          animatedContainerStyle,
+          styles.field,
+          isFocused && styles.fieldFocused,
+          error ? styles.fieldError : null,
         ]}
       >
-        {/* Animated Label */}
-        <AnimatedText
-          style={[
-            styles.label,
-            animatedLabelStyle,
-          ]}
-        >
-          {label}
-        </AnimatedText>
-
-        {/* Input */}
         <TextInput
           value={value}
           onChangeText={onChangeText}
-          placeholder={isFocused ? placeholder : ''}
-          placeholderTextColor="#94a3b8"
+          placeholder={placeholder}
+          placeholderTextColor={palette.textTertiary}
           secureTextEntry={!inputType}
           autoCapitalize={autoCapitalize}
           keyboardType={keyboardType}
-          onFocus={handleFocus}
-          onBlur={handleBlur}
+          onFocus={() => {
+            setIsFocused(true);
+            triggerHaptic();
+          }}
+          onBlur={() => setIsFocused(false)}
           style={styles.input}
           {...props}
         />
-
-        {/* Password Toggle */}
-        {showPasswordToggle && (
-          <TouchableOpacity
-            onPress={togglePasswordVisibility}
+        {showPasswordToggle ? (
+          <Pressable
+            onPress={() => {
+              setShowPassword((current) => !current);
+              triggerHaptic();
+            }}
+            hitSlop={8}
             style={styles.passwordToggle}
-            activeOpacity={0.7}
           >
             <Feather
               name={showPassword ? 'eye-off' : 'eye'}
-              size={20}
-              color="#64748B"
+              size={18}
+              color={palette.textSecondary}
             />
-          </TouchableOpacity>
-        )}
-      </AnimatedView>
-
-      {/* Error Message with fade-in */}
-      {error && (
-        <Animated.Text
-          style={styles.errorText}
-        >
-          {error}
-        </Animated.Text>
-      )}
+          </Pressable>
+        ) : null}
+      </View>
+      {error ? <Text style={styles.errorText}>{error}</Text> : null}
     </View>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
-    marginBottom: 16,
-  },
-  inputContainer: {
-    position: 'relative',
-    backgroundColor: '#ffffff',
-    borderWidth: 1.5,
-    borderRadius: 12,
-    borderColor: '#e2e8f0',
-    overflow: 'visible',
+    marginBottom: space.lg,
   },
   label: {
-    position: 'absolute',
-    left: 12,
-    zIndex: 1,
-    backgroundColor: '#ffffff',
-    paddingHorizontal: 4,
+    fontSize: 13,
     fontWeight: '500',
+    color: palette.textSecondary,
+    marginBottom: 6,
+  },
+  field: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: palette.fillMuted,
+    borderRadius: radius.md,
+    borderWidth: 1,
+    borderColor: 'transparent',
+    minHeight: 48,
+  },
+  fieldFocused: {
+    borderColor: palette.accent,
+    backgroundColor: palette.surface,
+  },
+  fieldError: {
+    borderColor: palette.danger,
   },
   input: {
-    paddingHorizontal: 12,
-    paddingTop: 24,
-    paddingBottom: 8,
-    fontSize: 16,
-    color: '#0f172a',
+    flex: 1,
+    paddingHorizontal: space.md,
+    paddingVertical: 12,
+    fontSize: 17,
+    color: palette.text,
   },
   passwordToggle: {
-    position: 'absolute',
-    right: 12,
-    top: 20,
-    padding: 4,
+    paddingHorizontal: space.md,
   },
   errorText: {
-    color: '#ef4444',
+    color: palette.danger,
     fontSize: 12,
     marginTop: 6,
-    marginLeft: 4,
     fontWeight: '500',
   },
 });

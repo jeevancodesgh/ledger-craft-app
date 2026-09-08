@@ -1,17 +1,18 @@
 import { DefaultTheme, Theme } from '@react-navigation/native';
 import { NativeStackNavigationOptions } from '@react-navigation/native-stack';
 import { Platform } from 'react-native';
+import { palette } from '@/theme/tokens';
 
 export const COLORS = {
-  accent: '#5B72EE',
-  background: '#F8FAFC',
-  surface: '#FFFFFF',
-  text: '#1E293B',
-  textSecondary: '#64748B',
-  border: '#E2E8F0',
-  danger: '#EF4444',
-  success: '#10B981',
-  warning: '#F59E0B',
+  accent: palette.accent,
+  background: palette.background,
+  surface: palette.surface,
+  text: palette.text,
+  textSecondary: palette.textSecondary,
+  border: palette.separator,
+  danger: palette.danger,
+  success: palette.success,
+  warning: palette.warning,
 } as const;
 
 export const revolutNavigationTheme: Theme = {
@@ -20,9 +21,9 @@ export const revolutNavigationTheme: Theme = {
     ...DefaultTheme.colors,
     primary: COLORS.accent,
     background: COLORS.background,
-    card: COLORS.surface,
+    card: COLORS.background,
     text: COLORS.text,
-    border: COLORS.border,
+    border: 'transparent',
     notification: COLORS.danger,
   },
 };
@@ -33,11 +34,11 @@ export const nativeHeaderOptions: NativeStackNavigationOptions = {
   headerBackTitle: 'Back',
   headerTintColor: COLORS.accent,
   headerTitleStyle: {
-    fontWeight: '700',
+    fontWeight: '600',
     color: COLORS.text,
   },
   headerLargeTitleStyle: {
-    fontWeight: '800',
+    fontWeight: '700',
     color: COLORS.text,
   },
   headerStyle: {
@@ -47,7 +48,7 @@ export const nativeHeaderOptions: NativeStackNavigationOptions = {
     backgroundColor: COLORS.background,
   },
   animation: 'slide_from_right',
-  animationDuration: 250,
+  animationDuration: 220,
   gestureEnabled: true,
   fullScreenGestureEnabled: Platform.OS === 'ios',
 };

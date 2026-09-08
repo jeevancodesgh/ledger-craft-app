@@ -8,7 +8,7 @@ The hosted `public` schema is empty. Rebuild toward `TARGET_ARCHITECTURE.md`. Do
 2. `AGENTS.md` — file map, commands, specialist roster
 3. Matching skill in `.cursor/skills/ledgercraft-*`
 
-**Now:** W1–W4 verified. Web Hono covers customers, business profile, items, and invoices (server GST). Web and mobile email auth are Better Auth. Remaining W5: idempotency + share tokens. Pickup: `AGENTS.md` § Reconstruction agents. Postgres host port **55432**. API **3001**. Vite **8080**.
+**Now:** W1–W5 invoices (idempotency + share tokens). Web Hono covers customers, business profile, items, and invoices. Next: W6 payments/expenses. Pickup: `AGENTS.md` § Reconstruction agents. Postgres host port **55432**. API **3001**. Vite **8080**.
 
 New domain work goes through Hono (`api/`), not new `supabase.from` / Storage / Edge Functions / client OpenAI.
 

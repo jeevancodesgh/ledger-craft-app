@@ -1,5 +1,6 @@
 import React from 'react';
-import { View, Text, TouchableOpacity } from 'react-native';
+import { View, Text, Pressable, StyleSheet } from 'react-native';
+import { palette, radius, space, type } from '@/theme/tokens';
 
 interface EmptyStateProps {
   icon?: React.ReactNode;
@@ -11,26 +12,60 @@ interface EmptyStateProps {
 
 export function EmptyState({ icon, title, description, actionLabel, onAction }: EmptyStateProps) {
   return (
-    <View className="flex-1 items-center justify-center py-12 px-6">
-      {icon && <View className="mb-4">{icon}</View>}
-      <Text className="text-lg font-semibold text-gray-900 text-center mb-2">
-        {title}
-      </Text>
-      {description && (
-        <Text className="text-sm text-gray-500 text-center mb-6">
-          {description}
-        </Text>
-      )}
-      {actionLabel && onAction && (
-        <TouchableOpacity
+    <View style={styles.wrap}>
+      {icon ? <View style={styles.icon}>{icon}</View> : null}
+      <Text style={styles.title}>{title}</Text>
+      {description ? <Text style={styles.description}>{description}</Text> : null}
+      {actionLabel && onAction ? (
+        <Pressable
           onPress={onAction}
-          className="bg-revolut-blue-600 px-6 py-3 rounded-xl"
-          activeOpacity={0.7}
+          accessibilityRole="button"
+          accessibilityLabel={actionLabel}
+          style={({ pressed }) => [styles.button, pressed && styles.pressed]}
         >
-          <Text className="text-white font-semibold">{actionLabel}</Text>
-        </TouchableOpacity>
-      )}
+          <Text style={styles.buttonLabel}>{actionLabel}</Text>
+        </Pressable>
+      ) : null}
     </View>
   );
 }
 
+const styles = StyleSheet.create({
+  wrap: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: space.xxl,
+    paddingVertical: 40,
+  },
+  icon: {
+    marginBottom: space.md,
+  },
+  title: {
+    ...type.headline,
+    textAlign: 'center',
+  },
+  description: {
+    ...type.subhead,
+    textAlign: 'center',
+    marginTop: 6,
+    maxWidth: 280,
+  },
+  button: {
+    marginTop: space.lg,
+    backgroundColor: palette.accent,
+    paddingHorizontal: 20,
+    height: 44,
+    borderRadius: radius.pill,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  pressed: {
+    opacity: 0.82,
+    transform: [{ scale: 0.98 }],
+  },
+  buttonLabel: {
+    color: palette.surface,
+    fontSize: 16,
+    fontWeight: '600',
+  },
+});

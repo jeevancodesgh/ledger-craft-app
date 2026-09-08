@@ -1,5 +1,12 @@
 import { describe, expect, it } from 'vitest';
-import { createInvoiceRequestSchema, invoiceSchema, sendInvoiceRequestSchema } from './invoice';
+import {
+  createInvoiceRequestSchema,
+  createShareInvoiceRequestSchema,
+  invoiceSchema,
+  publicSharedInvoiceSchema,
+  sendInvoiceRequestSchema,
+  shareInvoiceResponseSchema,
+} from './invoice';
 
 describe('invoice contracts', () => {
   const invoice = {
@@ -97,5 +104,56 @@ describe('invoice contracts', () => {
   it('accepts send recipients and rejects invalid emails', () => {
     expect(sendInvoiceRequestSchema.parse({ to: ['hello@nhcafe.nz'] }).to).toEqual(['hello@nhcafe.nz']);
     expect(sendInvoiceRequestSchema.safeParse({ to: ['not-an-email'] }).success).toBe(false);
+  });
+
+  it('accepts a share create body without ownership ids', () => {
+    expect(
+      createShareInvoiceRequestSchema.parse({
+        templateName: 'classic',
+        expiresAt: '2026-10-08T00:00:00.000Z',
+      }).templateName,
+    ).toBe('classic');
+    expect(
+      createShareInvoiceRequestSchema.safeParse({ organisationId: invoice.customerId }).success,
+    ).toBe(false);
+  });
+
+  it('accepts a public shared invoice snapshot', () => {
+    const shared = shareInvoiceResponseSchema.parse({
+      shareToken: 'a1b2c3d4e5f6789012345678abcdef01',
+      expiresAt: null,
+      isActive: true,
+    });
+    expect(shared.isActive).toBe(true);
+    expect(
+      publicSharedInvoiceSchema.safeParse({
+        invoice,
+        templateName: 'classic',
+        businessProfile: {
+          id: '66666666-6666-6666-6666-666666666666',
+          name: 'Kauri Studio Ltd',
+          email: 'hello@kauristudio.nz',
+          phone: null,
+          address: null,
+          city: null,
+          state: null,
+          zip: null,
+          country: 'NZ',
+          taxId: null,
+          logoUrl: null,
+          website: null,
+          defaultTaxRate: '15',
+          defaultTerms: null,
+          paymentTermDays: 30,
+          defaultNotes: null,
+          bankInfo: null,
+          theme: null,
+          invoiceNumberFormat: 'INV-{YYYY}-{SEQ}',
+          invoiceNumberSequence: 1,
+          createdAt: '2026-09-07T00:00:00.000Z',
+          updatedAt: '2026-09-07T00:00:00.000Z',
+        },
+      }).success,
+    ).toBe(true);
   });
 });
