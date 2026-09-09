@@ -16,10 +16,12 @@ import { useAuth } from '@/store';
 import { invoiceService } from '@/services/invoiceService';
 import type { Invoice } from '@/types/invoice';
 import { EmptyState } from '@/components/ui/EmptyState';
+import { IconWell } from '@/components/ui/IconWell';
 import { BalanceCard } from '@/components/dashboard/BalanceCard';
 import { QuickAction } from '@/components/ui/QuickAction';
 import { NativeHeaderButton } from '@/components/ui/NativeHeaderButton';
-import { getStatusColor, getStatusLabel } from '@/utils/statusUtils';
+import { getStatusColor, getStatusIcon, getStatusLabel } from '@/utils/statusUtils';
+import { formatMoney } from '@/utils/money';
 import type { HomeStackParamList, MainTabParamList } from '@/navigation/types';
 import { palette, radius, space } from '@/theme/tokens';
 
@@ -27,14 +29,6 @@ type DashboardNavigation = CompositeNavigationProp<
   NativeStackNavigationProp<HomeStackParamList, 'DashboardHome'>,
   NativeBottomTabNavigationProp<MainTabParamList>
 >;
-
-function formatMoney(amount: number, currency = 'NZD') {
-  return new Intl.NumberFormat('en-NZ', {
-    style: 'currency',
-    currency,
-    minimumFractionDigits: 2,
-  }).format(amount);
-}
 
 function formatDate(dateString: string) {
   return new Date(dateString).toLocaleDateString('en-NZ', {
@@ -114,7 +108,7 @@ export default function DashboardScreen() {
   if (loading) {
     return (
       <View style={styles.center}>
-        <ActivityIndicator size="large" color={palette.accent} />
+        <ActivityIndicator size="large" color={palette.accentForeground} />
       </View>
     );
   }
@@ -125,7 +119,11 @@ export default function DashboardScreen() {
         style={styles.screen}
         contentInsetAdjustmentBehavior="automatic"
         refreshControl={
-          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={palette.accent} />
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={onRefresh}
+            tintColor={palette.accentForeground}
+          />
         }
       >
         <View style={styles.content}>
@@ -133,7 +131,7 @@ export default function DashboardScreen() {
 
           <BalanceCard
             totalBalance={pendingAmount > 0 ? pendingAmount : totalEarnings}
-            availableBalance={totalEarnings}
+            paidBalance={totalEarnings}
             pendingBalance={pendingAmount}
             label={pendingAmount > 0 ? 'You are owed' : 'Paid this period'}
           />
@@ -143,17 +141,17 @@ export default function DashboardScreen() {
               label="Invoice"
               primary
               onPress={openCreate}
-              icon={<Feather name="plus" size={22} color={palette.surface} />}
+              icon={<Feather name="plus" size={22} color={palette.accentForeground} />}
             />
             <QuickAction
               label="Expense"
               onPress={openExpense}
-              icon={<Feather name="credit-card" size={22} color={palette.accent} />}
+              icon={<Feather name="credit-card" size={22} color={palette.accentForeground} />}
             />
             <QuickAction
-              label="Invoices"
+              label="See all"
               onPress={() => navigation.navigate('Invoices', { screen: 'InvoiceList' })}
-              icon={<Feather name="file-text" size={22} color={palette.accent} />}
+              icon={<Feather name="file-text" size={22} color={palette.accentForeground} />}
             />
           </View>
 
@@ -180,43 +178,45 @@ export default function DashboardScreen() {
             </View>
           ) : (
             <View style={styles.group}>
-              {workItems.map((invoice, index) => (
-                <Pressable
-                  key={invoice.id}
-                  onPress={() =>
-                    navigation.navigate('Invoices', {
-                      screen: 'InvoiceDetail',
-                      params: { invoiceId: invoice.id },
-                    })
-                  }
-                  style={({ pressed }) => [
-                    styles.row,
-                    index !== workItems.length - 1 && styles.rowBorder,
-                    pressed && styles.rowPressed,
-                  ]}
-                  accessibilityRole="button"
-                  accessibilityLabel={`Invoice ${invoice.invoiceNumber}`}
-                >
-                  <View
-                    style={[styles.statusDot, { backgroundColor: getStatusColor(invoice.status) }]}
-                  />
-                  <View style={styles.rowCopy}>
-                    <Text style={styles.rowTitle}>{invoice.invoiceNumber}</Text>
-                    <Text style={styles.rowMeta}>
-                      {invoice.customer?.name || 'No customer'} · {formatDate(invoice.date)}
-                    </Text>
-                  </View>
-                  <View style={styles.rowAmount}>
-                    <Text style={styles.amount}>
-                      {formatMoney(invoice.total, invoice.currency || 'NZD')}
-                    </Text>
-                    <Text style={[styles.status, { color: getStatusColor(invoice.status) }]}>
-                      {getStatusLabel(invoice.status)}
-                    </Text>
-                  </View>
-                  <Feather name="chevron-right" size={18} color={palette.textTertiary} />
-                </Pressable>
-              ))}
+              {workItems.map((invoice, index) => {
+                const statusColor = getStatusColor(invoice.status);
+                return (
+                  <Pressable
+                    key={invoice.id}
+                    onPress={() =>
+                      navigation.navigate('Invoices', {
+                        screen: 'InvoiceDetail',
+                        params: { invoiceId: invoice.id },
+                      })
+                    }
+                    style={({ pressed }) => [
+                      styles.row,
+                      index !== workItems.length - 1 && styles.rowBorder,
+                      pressed && styles.rowPressed,
+                    ]}
+                    accessibilityRole="button"
+                    accessibilityLabel={`Invoice ${invoice.invoiceNumber}`}
+                  >
+                    <IconWell size={40} color={`${statusColor}22`}>
+                      <Feather name={getStatusIcon(invoice.status)} size={16} color={statusColor} />
+                    </IconWell>
+                    <View style={styles.rowCopy}>
+                      <Text style={styles.rowTitle}>{invoice.customer?.name || invoice.invoiceNumber}</Text>
+                      <Text style={styles.rowMeta}>
+                        {invoice.invoiceNumber} · {formatDate(invoice.date)}
+                      </Text>
+                    </View>
+                    <View style={styles.rowAmount}>
+                      <Text style={styles.amount}>
+                        {formatMoney(invoice.total, invoice.currency || 'NZD')}
+                      </Text>
+                      <Text style={[styles.status, { color: statusColor }]}>
+                        {getStatusLabel(invoice.status)}
+                      </Text>
+                    </View>
+                  </Pressable>
+                );
+              })}
             </View>
           )}
         </View>
@@ -268,7 +268,7 @@ const styles = StyleSheet.create({
   seeAll: {
     fontSize: 15,
     fontWeight: '500',
-    color: palette.accent,
+    color: palette.accentForeground,
   },
   emptyCard: {
     backgroundColor: palette.surface,
@@ -284,7 +284,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingHorizontal: 16,
     paddingVertical: 14,
-    gap: 10,
+    gap: 12,
   },
   rowBorder: {
     borderBottomWidth: StyleSheet.hairlineWidth,
@@ -292,11 +292,6 @@ const styles = StyleSheet.create({
   },
   rowPressed: {
     backgroundColor: palette.fillMuted,
-  },
-  statusDot: {
-    width: 8,
-    height: 8,
-    borderRadius: 4,
   },
   rowCopy: {
     flex: 1,

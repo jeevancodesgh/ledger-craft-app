@@ -10,8 +10,9 @@ import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 import { Feather } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import type { Invoice } from '@/types/invoice';
-import { STATUS_OPTIONS, getStatusColor, getStatusLabel } from '@/utils/statusUtils';
+import { STATUS_OPTIONS, getStatusColor, getStatusIcon, getStatusLabel } from '@/utils/statusUtils';
 import { hairline, palette, radius } from '@/theme/tokens';
+import { IconWell } from '@/components/ui/IconWell';
 
 interface SwipeableInvoiceCardProps {
   invoice: Invoice;
@@ -142,7 +143,9 @@ export default function SwipeableInvoiceCard({
             !isLast && styles.rowBorder,
           ]}
         >
-          <View style={[styles.dot, { backgroundColor: statusColor }]} />
+          <IconWell size={40} color={`${statusColor}22`}>
+            <Feather name={getStatusIcon(invoice.status)} size={16} color={statusColor} />
+          </IconWell>
           <View style={styles.copy}>
             <Text style={styles.title} numberOfLines={1}>
               {invoice.customer?.name || 'No customer'}
@@ -209,11 +212,6 @@ const styles = StyleSheet.create({
   rowBorder: {
     borderBottomWidth: hairline,
     borderBottomColor: palette.separator,
-  },
-  dot: {
-    width: 8,
-    height: 8,
-    borderRadius: 4,
   },
   copy: {
     flex: 1,

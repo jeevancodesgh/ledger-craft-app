@@ -1,5 +1,6 @@
 import OpenAI from 'openai';
 import { ReceiptScanResult, ReceiptScanError, ReceiptScanOptions } from '@/types/receipt';
+import { aiApiEnabled, scanReceiptImage } from '@/features/ai/api/receiptScanApi';
 
 class OpenAIReceiptService {
   private openai: OpenAI | null = null;
@@ -10,6 +11,7 @@ class OpenAIReceiptService {
   }
 
   private initialize() {
+    if (aiApiEnabled()) return;
     const apiKey = import.meta.env.VITE_OPENAI_API_KEY;
     
     console.log('OpenAI Service initialization:', {
@@ -36,6 +38,7 @@ class OpenAIReceiptService {
   }
 
   public isAvailable(): boolean {
+    if (aiApiEnabled()) return true;
     return this.isInitialized && this.openai !== null;
   }
 
@@ -78,6 +81,20 @@ IMPORTANT RULES:
   ): Promise<ReceiptScanResult> {
     console.log('Starting receipt scan with options:', options);
     
+    if (aiApiEnabled()) {
+      const base64Data = imageData.startsWith('data:')
+        ? imageData
+        : `data:image/jpeg;base64,${imageData}`;
+      try {
+        return await scanReceiptImage(base64Data);
+      } catch (error) {
+        throw new ReceiptScanError({
+          code: 'API_ERROR',
+          message: error instanceof Error ? error.message : 'Receipt scanning failed',
+        });
+      }
+    }
+
     if (!this.isAvailable()) {
       console.error('OpenAI service not available');
       throw new ReceiptScanError({

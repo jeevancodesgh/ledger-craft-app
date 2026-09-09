@@ -140,9 +140,8 @@ export default function AppNavigator() {
     <Tab.Navigator
       labeled
       hapticFeedbackEnabled
-      tabBarActiveTintColor={COLORS.accent}
+      tabBarActiveTintColor={COLORS.accentForeground}
       tabBarInactiveTintColor={COLORS.textSecondary}
-      tabBarStyle={{ backgroundColor: COLORS.surface }}
     >
       <Tab.Screen
         name="Dashboard"
@@ -165,7 +164,7 @@ export default function AppNavigator() {
         component={ExpenseNavigator}
         options={{
           title: 'Expenses',
-          tabBarIcon: tabIcon('creditcard.fill', require('../../assets/tabs/expenses.png')),
+          tabBarIcon: tabIcon('dollarsign.circle.fill', require('../../assets/tabs/expenses.png')),
         }}
       />
       <Tab.Screen

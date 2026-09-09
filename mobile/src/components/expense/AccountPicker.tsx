@@ -20,18 +20,18 @@ interface AccountPickerProps {
   selectedAccountId?: string | null;
 }
 
-const getAccountTypeIcon = (type: string) => {
+const getAccountTypeIcon = (type: string): keyof typeof Feather.glyphMap => {
   switch (type) {
     case 'bank':
-      return '🏦';
+      return 'home';
     case 'cash':
-      return '💵';
+      return 'dollar-sign';
     case 'credit_card':
-      return '💳';
+      return 'credit-card';
     case 'loan':
-      return '📋';
+      return 'file-text';
     default:
-      return '💼';
+      return 'briefcase';
   }
 };
 
@@ -91,7 +91,7 @@ export function AccountPicker({
           <View className="flex-row items-center justify-between mb-3">
             <Text className="text-xl font-bold">Select Account</Text>
             <TouchableOpacity onPress={onClose} className="p-2">
-              <Text className="text-revolut-blue-600 font-semibold">Done</Text>
+              <Text className="text-lime-700 font-semibold">Done</Text>
             </TouchableOpacity>
           </View>
 
@@ -118,7 +118,7 @@ export function AccountPicker({
               }}
               className={`bg-white rounded-xl p-4 mb-2 flex-row items-center ${
                 selectedAccountId === null
-                  ? 'border-2 border-revolut-blue-600'
+                  ? 'border-2 border-lime-700'
                   : 'border border-gray-200'
               }`}
               activeOpacity={0.7}
@@ -128,15 +128,15 @@ export function AccountPicker({
                 <Text className="text-sm text-gray-500">No account assigned</Text>
               </View>
               {selectedAccountId === null && (
-                <View className="bg-revolut-blue-600 w-6 h-6 rounded-full items-center justify-center">
-                  <Text className="text-white text-xs">✓</Text>
+                <View className="bg-lime-700 w-6 h-6 rounded-full items-center justify-center">
+                  <Feather name="check" size={12} color="#163300" />
                 </View>
               )}
             </TouchableOpacity>
 
             {loading ? (
               <View className="py-12 items-center">
-                <ActivityIndicator size="large" color="#5B72EE" />
+                <ActivityIndicator size="large" color="#163300" />
               </View>
             ) : filteredAccounts.length === 0 ? (
               <View className="py-12 items-center">
@@ -160,15 +160,18 @@ export function AccountPicker({
                     }}
                     className={`bg-white rounded-xl p-4 flex-row items-center ${
                       selectedAccountId === account.id
-                        ? 'border-2 border-revolut-blue-600'
+                        ? 'border-2 border-lime-700'
                         : 'border border-gray-200'
                     }`}
                     activeOpacity={0.7}
                   >
                     {/* Icon */}
-                    <Text className="text-2xl mr-3">
-                      {getAccountTypeIcon(account.type)}
-                    </Text>
+                    <Feather
+                      name={getAccountTypeIcon(account.type)}
+                      size={20}
+                      color="#163300"
+                      style={{ marginRight: 12 }}
+                    />
 
                     {/* Info */}
                     <View className="flex-1">
@@ -182,8 +185,8 @@ export function AccountPicker({
 
                     {/* Check mark if selected */}
                     {selectedAccountId === account.id && (
-                      <View className="bg-revolut-blue-600 w-6 h-6 rounded-full items-center justify-center">
-                        <Text className="text-white text-xs">✓</Text>
+                      <View className="bg-lime-500 w-6 h-6 rounded-full items-center justify-center">
+                        <Feather name="check" size={12} color="#163300" />
                       </View>
                     )}
                   </TouchableOpacity>

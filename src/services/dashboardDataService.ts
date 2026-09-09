@@ -1,5 +1,7 @@
 import { supabase } from '@/lib/supabase';
 import { startOfMonth, endOfMonth, format, subMonths, startOfWeek, endOfWeek, eachDayOfInterval, eachMonthOfInterval, subDays } from 'date-fns';
+import { bankAccountService } from '@/services/bankAccountService';
+import { bankApiEnabled } from '@/features/bank/api/bankApi';
 
 export interface RevenueExpenseData {
   month: string;
@@ -203,12 +205,15 @@ export class DashboardDataService {
 
   async getAccountTypeData(): Promise<AccountTypeData[]> {
     try {
-      // Get bank account balances (assets)
-      const { data: bankAccounts, error: bankError } = await supabase
-        .from('bank_accounts')
-        .select('balance, account_type');
-
-      if (bankError) throw bankError;
+      const cashAssets = bankApiEnabled()
+        ? (await bankAccountService.getBankAccounts()).reduce((sum, account) => sum + (account.currentBalance || 0), 0)
+        : await (async () => {
+            const { data: bankAccounts, error: bankError } = await supabase
+              .from('bank_accounts')
+              .select('balance, account_type');
+            if (bankError) throw bankError;
+            return bankAccounts?.reduce((sum, account) => sum + (account.balance || 0), 0) || 0;
+          })();
 
       // Get accounts receivable (assets)
       const { data: unpaidInvoices, error: invoiceError } = await supabase
@@ -226,8 +231,6 @@ export class DashboardDataService {
 
       if (expenseError) throw expenseError;
 
-      // Calculate totals
-      const cashAssets = bankAccounts?.reduce((sum, account) => sum + (account.balance || 0), 0) || 0;
       const receivables = unpaidInvoices?.reduce((sum, invoice) => sum + (invoice.total_amount || 0), 0) || 0;
       const totalAssets = cashAssets + receivables;
 

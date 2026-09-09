@@ -22,7 +22,8 @@ import { RootStackParamList } from './types';
 import { useAuth, useStore } from '@/store';
 import AuthNavigator from './AuthNavigator';
 import AppNavigator from './AppNavigator';
-import { revolutNavigationTheme } from '@/theme/navigation';
+import { appNavigationTheme } from '@/theme/navigation';
+import { palette } from '@/theme/tokens';
 import { rootNavigatorOptions } from '@/utils/navigationAnimations';
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
@@ -55,12 +56,12 @@ function AnimatedLoadingScreen() {
     <View style={styles.loadingContainer}>
       <Animated.View style={[styles.logoContainer, animatedStyle]}>
         <View style={styles.logo}>
-          <Animated.Text style={styles.logoText}>EBI</Animated.Text>
+          <Animated.Text style={styles.logoText}>LC</Animated.Text>
         </View>
       </Animated.View>
       <ActivityIndicator
         size="large"
-        color="#5B72EE"
+        color={palette.accentForeground}
         style={styles.activityIndicator}
       />
     </View>
@@ -84,7 +85,7 @@ export default function RootNavigator() {
   }
 
   return (
-    <NavigationContainer theme={revolutNavigationTheme}>
+    <NavigationContainer theme={appNavigationTheme}>
       <Stack.Navigator
         screenOptions={{
           ...rootNavigatorOptions,
@@ -134,7 +135,7 @@ const styles = StyleSheet.create({
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: '#F8FAFC',
+    backgroundColor: palette.surface,
   },
   logoContainer: {
     marginBottom: 32,
@@ -142,20 +143,15 @@ const styles = StyleSheet.create({
   logo: {
     width: 80,
     height: 80,
-    backgroundColor: '#5B72EE',
-    borderRadius: 20,
+    backgroundColor: palette.accent,
+    borderRadius: 28,
     alignItems: 'center',
     justifyContent: 'center',
-    shadowColor: '#5B72EE',
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.3,
-    shadowRadius: 16,
-    elevation: 8,
   },
   logoText: {
     fontSize: 28,
     fontWeight: '700',
-    color: '#FFFFFF',
+    color: palette.accentForeground,
   },
   activityIndicator: {
     marginTop: 16,

@@ -25,6 +25,8 @@ import { CustomerPicker } from '@/components/customers/CustomerPicker';
 import { ReceiptScanner } from '@/components/expense/ReceiptScanner';
 import { Customer } from '@/services/customerService';
 import { ReceiptScanResult } from '@/types/receipt';
+import { Feather } from '@expo/vector-icons';
+import { palette } from '@/theme/tokens';
 
 type ExpenseEditNavigationProp = NativeStackNavigationProp<AppTabParamList, 'ExpenseEdit'>;
 type ExpenseEditRouteProp = RouteProp<AppTabParamList, 'ExpenseEdit'>;
@@ -229,12 +231,9 @@ export default function ExpenseEditScreen() {
 
   const getAccountDisplay = () => {
     if (selectedAccount) {
-      const typeIcon = selectedAccount.type === 'bank' ? '🏦' : 
-                      selectedAccount.type === 'cash' ? '💵' : 
-                      selectedAccount.type === 'credit_card' ? '💳' : '💼';
       return (
         <View style={styles.selectedItemContainer}>
-          <Text style={styles.iconText}>{typeIcon}</Text>
+          <Feather name="briefcase" size={16} color={palette.accentForeground} />
           <Text style={styles.selectedItemText}>{selectedAccount.name}</Text>
         </View>
       );
@@ -271,7 +270,7 @@ export default function ExpenseEditScreen() {
   if (loadingExpense) {
     return (
       <View style={styles.centerContainer}>
-        <ActivityIndicator size="large" color="#5B72EE" />
+        <ActivityIndicator size="large" color="#163300" />
         <Text style={styles.loadingText}>Loading expense...</Text>
       </View>
     );
@@ -408,7 +407,7 @@ export default function ExpenseEditScreen() {
             <Switch
               value={taxEnabled}
               onValueChange={setTaxEnabled}
-              trackColor={{ false: '#e2e8f0', true: '#5B72EE' }}
+              trackColor={{ false: '#e2e8f0', true: '#163300' }}
               thumbColor="#ffffff"
             />
           </View>
@@ -443,7 +442,7 @@ export default function ExpenseEditScreen() {
             <Switch
               value={isBillable}
               onValueChange={setIsBillable}
-              trackColor={{ false: '#e2e8f0', true: '#5B72EE' }}
+              trackColor={{ false: '#e2e8f0', true: '#163300' }}
               thumbColor="#ffffff"
             />
           </View>
@@ -471,7 +470,7 @@ export default function ExpenseEditScreen() {
           {receiptUrl ? (
             <View style={styles.receiptContainer}>
               <View style={styles.receiptInfo}>
-                <Text style={styles.receiptIcon}>📄</Text>
+                <Feather name="file-text" size={18} color={palette.accentForeground} />
                 <Text style={styles.receiptText}>Receipt attached</Text>
               </View>
               <TouchableOpacity
@@ -486,7 +485,7 @@ export default function ExpenseEditScreen() {
               onPress={() => setShowReceiptScanner(true)}
               variant="outline"
               fullWidth
-              icon={<Text style={styles.scanIcon}>📷</Text>}
+              icon={<Feather name="camera" size={18} color={palette.accentForeground} />}
             >
               Scan Receipt with AI
             </ModernButton>
@@ -581,7 +580,7 @@ export default function ExpenseEditScreen() {
             >
               <Text style={styles.methodOptionText}>None</Text>
               {paymentMethod === null && (
-                <Text style={styles.methodOptionCheck}>✓</Text>
+                <Feather name="check" size={16} color={palette.accentForeground} />
               )}
             </TouchableOpacity>
             {PAYMENT_METHODS.map((method) => (
@@ -598,7 +597,7 @@ export default function ExpenseEditScreen() {
               >
                 <Text style={styles.methodOptionText}>{method.label}</Text>
                 {paymentMethod === method.value && (
-                  <Text style={styles.methodOptionCheck}>✓</Text>
+                  <Feather name="check" size={16} color={palette.accentForeground} />
                 )}
               </TouchableOpacity>
             ))}
@@ -775,14 +774,14 @@ const styles = StyleSheet.create({
   },
   changeText: {
     fontSize: 14,
-    color: '#5B72EE',
+    color: '#163300',
     fontWeight: '600',
   },
   customerAvatar: {
     width: 40,
     height: 40,
     borderRadius: 20,
-    backgroundColor: '#5B72EE',
+    backgroundColor: '#163300',
     justifyContent: 'center',
     alignItems: 'center',
     marginRight: 12,
@@ -854,7 +853,7 @@ const styles = StyleSheet.create({
   taxTotalValue: {
     fontSize: 16,
     fontWeight: '700',
-    color: '#5B72EE',
+    color: '#163300',
   },
   receiptContainer: {
     flexDirection: 'row',
@@ -921,7 +920,7 @@ const styles = StyleSheet.create({
   modalCloseText: {
     fontSize: 16,
     fontWeight: '600',
-    color: '#5B72EE',
+    color: '#163300',
   },
   methodOption: {
     flexDirection: 'row',
@@ -940,7 +939,7 @@ const styles = StyleSheet.create({
   },
   methodOptionCheck: {
     fontSize: 16,
-    color: '#5B72EE',
+    color: '#163300',
     fontWeight: '700',
   },
 });

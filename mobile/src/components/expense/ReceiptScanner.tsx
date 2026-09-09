@@ -190,14 +190,14 @@ export function ReceiptScanner({ visible, onScanComplete, onClose }: ReceiptScan
           {!isAvailable && (
             <View style={styles.warningContainer}>
               <Text style={styles.warningText}>
-                ⚠️ Receipt scanning is not available. Please configure your OpenAI API key.
+                Receipt scanning is not available. Please configure your OpenAI API key.
               </Text>
             </View>
           )}
 
           {!selectedImage && (
             <View style={styles.placeholderContainer}>
-              <Text style={styles.placeholderIcon}>📄</Text>
+              <Text style={styles.placeholderIcon}>Receipt</Text>
               <Text style={styles.placeholderText}>Select a receipt image to scan</Text>
               <ModernButton
                 onPress={showImagePickerOptions}
@@ -249,7 +249,7 @@ export function ReceiptScanner({ visible, onScanComplete, onClose }: ReceiptScan
 
           {isScanning && (
             <View style={styles.loadingContainer}>
-              <ActivityIndicator size="large" color="#5B72EE" />
+              <ActivityIndicator size="large" color="#163300" />
               <Text style={styles.loadingText}>Analyzing receipt with AI...</Text>
             </View>
           )}
@@ -257,7 +257,7 @@ export function ReceiptScanner({ visible, onScanComplete, onClose }: ReceiptScan
           {scanResult && (
             <View style={styles.resultContainer}>
               <View style={styles.resultHeader}>
-                <Text style={styles.resultHeaderText}>✓ Scan Complete</Text>
+                <Text style={styles.resultHeaderText}>Scan complete</Text>
                 <Text style={styles.confidenceText}>
                   Confidence: {scanResult.confidence}%
                 </Text>
@@ -311,7 +311,7 @@ export function ReceiptScanner({ visible, onScanComplete, onClose }: ReceiptScan
 
               {isUploading && (
                 <View style={styles.uploadingContainer}>
-                  <ActivityIndicator size="small" color="#5B72EE" />
+                  <ActivityIndicator size="small" color="#163300" />
                   <Text style={styles.uploadingText}>Uploading receipt...</Text>
                 </View>
               )}

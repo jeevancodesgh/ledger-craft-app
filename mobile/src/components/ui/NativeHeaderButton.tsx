@@ -19,9 +19,7 @@ export function NativeHeaderButton({
 }: NativeHeaderButtonProps) {
   const color = destructive
     ? COLORS.danger
-    : primary
-      ? COLORS.accent
-      : COLORS.accent;
+    : COLORS.text;
 
   return (
     <Pressable

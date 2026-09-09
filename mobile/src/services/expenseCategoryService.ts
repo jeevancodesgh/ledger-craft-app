@@ -1,3 +1,4 @@
+import { expensesApi, expensesApiEnabled } from '@/features/expenses/api/expensesApi';
 import { supabase } from './supabaseClient';
 import type { ExpenseCategory } from '@/types/expense';
 
@@ -16,6 +17,10 @@ export class ExpenseCategoryService {
   // Fetch all expense categories for the current user
   async fetchExpenseCategories(): Promise<ExpenseCategory[]> {
     try {
+      if (expensesApiEnabled()) {
+        return expensesApi.listCategories();
+      }
+
       const { data: { user } } = await supabase.auth.getUser();
       
       if (!user) {
@@ -41,6 +46,11 @@ export class ExpenseCategoryService {
   // Fetch a single expense category by ID
   async fetchExpenseCategoryById(id: string): Promise<ExpenseCategory | null> {
     try {
+      if (expensesApiEnabled()) {
+        const categories = await expensesApi.listCategories();
+        return categories.find((category) => category.id === id) ?? null;
+      }
+
       const { data: { user } } = await supabase.auth.getUser();
       
       if (!user) {
@@ -73,6 +83,14 @@ export class ExpenseCategoryService {
   // Create a new expense category
   async createExpenseCategory(category: Omit<ExpenseCategory, 'id' | 'createdAt' | 'updatedAt'>): Promise<ExpenseCategory> {
     try {
+      if (expensesApiEnabled()) {
+        return expensesApi.createCategory({
+          name: category.name,
+          description: category.description ?? null,
+          color: category.color ?? null,
+        });
+      }
+
       const { data: { user } } = await supabase.auth.getUser();
       
       if (!user) {
@@ -105,6 +123,14 @@ export class ExpenseCategoryService {
   // Update an existing expense category
   async updateExpenseCategory(id: string, category: Partial<Omit<ExpenseCategory, 'id' | 'createdAt' | 'updatedAt'>>): Promise<ExpenseCategory> {
     try {
+      if (expensesApiEnabled()) {
+        const input: Record<string, unknown> = {};
+        if (category.name !== undefined) input.name = category.name;
+        if (category.description !== undefined) input.description = category.description ?? null;
+        if (category.color !== undefined) input.color = category.color ?? null;
+        return expensesApi.updateCategory(id, input);
+      }
+
       const { data: { user } } = await supabase.auth.getUser();
       
       if (!user) {
@@ -138,6 +164,11 @@ export class ExpenseCategoryService {
   // Delete an expense category
   async deleteExpenseCategory(id: string): Promise<void> {
     try {
+      if (expensesApiEnabled()) {
+        await expensesApi.removeCategory(id);
+        return;
+      }
+
       const { data: { user } } = await supabase.auth.getUser();
       
       if (!user) {

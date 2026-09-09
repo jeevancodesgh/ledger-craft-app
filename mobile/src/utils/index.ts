@@ -14,6 +14,8 @@ export * from './invoiceTemplates';
 // Status utilities
 export * from './statusUtils';
 
+export * from './money';
+
 // PDF utilities
 export * from './pdfUtils';
 

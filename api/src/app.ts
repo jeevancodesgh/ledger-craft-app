@@ -6,9 +6,18 @@ import { requestContext } from './middleware/request-context';
 import { sessionRoutes } from './modules/auth/session.routes';
 import { businessProfileRoutes } from './modules/business-profile/business-profile.routes';
 import { customerRoutes } from './modules/customers/customers.routes';
+import { expenseRoutes } from './modules/expenses/expenses.routes';
 import { healthRoutes } from './modules/health/health.routes';
 import { invoiceRoutes } from './modules/invoices/invoices.routes';
 import { itemRoutes } from './modules/items/items.routes';
+import { paymentRoutes } from './modules/payments/payments.routes';
+import { accountRoutes } from './modules/accounts/accounts.routes';
+import { bankRoutes } from './modules/bank/bank.routes';
+import { reconciliationRoutes } from './modules/reconciliation/reconciliation.routes';
+import { taxRoutes } from './modules/tax/tax.routes';
+import { objectRoutes } from './modules/storage/objects.routes';
+import { receiptRoutes } from './modules/receipts/receipts.routes';
+import { aiRoutes } from './modules/ai/ai.routes';
 import { getBetterAuthTrustedOrigins } from './env';
 import type { AppDependencies, AppEnv } from './types';
 
@@ -28,6 +37,12 @@ export function createApp(deps: AppDependencies = {}) {
     }
     if (deps.invoiceMailer) {
       c.set('invoiceMailer', deps.invoiceMailer);
+    }
+    if (deps.objectStore) {
+      c.set('objectStore', deps.objectStore);
+    }
+    if (deps.receiptScanner) {
+      c.set('receiptScanner', deps.receiptScanner);
     }
     await next();
   });
@@ -57,6 +72,15 @@ export function createApp(deps: AppDependencies = {}) {
   app.route('/', businessProfileRoutes());
   app.route('/', itemRoutes());
   app.route('/', invoiceRoutes());
+  app.route('/', expenseRoutes());
+  app.route('/', paymentRoutes());
+  app.route('/', accountRoutes());
+  app.route('/', bankRoutes());
+  app.route('/', reconciliationRoutes());
+  app.route('/', taxRoutes());
+  app.route('/', objectRoutes());
+  app.route('/', receiptRoutes());
+  app.route('/', aiRoutes());
 
   if (process.env.NODE_ENV === 'test') {
     app.get('/api/__test/boom', () => {

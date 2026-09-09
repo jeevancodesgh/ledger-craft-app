@@ -3,6 +3,8 @@ import { Payment, Receipt, CreatePaymentRequest, EnhancedInvoice } from '@/types
 import { Invoice } from '@/types';
 import { invoiceService } from './supabaseService';
 import { accountingJournalService } from './accountingJournalService';
+import { paymentsApi, paymentsApiEnabled, toCreatePaymentRequest } from '@/features/payments/api/paymentsApi';
+import { receiptsApi, receiptsApiEnabled } from '@/features/receipts/api/receiptsApi';
 
 // Map Supabase payment to Payment type
 const mapSupabasePaymentToPayment = (payment: any): Payment => ({
@@ -35,6 +37,13 @@ const mapSupabaseReceiptToReceipt = (receipt: any): Receipt => ({
 export class PaymentService {
   // Create a new payment and automatically update invoice status
   async createPayment(paymentData: CreatePaymentRequest): Promise<Payment> {
+    if (paymentsApiEnabled()) {
+      const payment = await paymentsApi.create(toCreatePaymentRequest(paymentData));
+      if (receiptsApiEnabled() && paymentData.generateReceipt !== false) {
+        await receiptsApi.create({ paymentId: payment.id });
+      }
+      return payment;
+    }
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) throw new Error('User not authenticated');
 
@@ -90,6 +99,9 @@ export class PaymentService {
 
   // Get all payments for a user
   async getPayments(): Promise<Payment[]> {
+    if (paymentsApiEnabled()) {
+      return paymentsApi.list();
+    }
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) throw new Error('User not authenticated');
 
@@ -112,6 +124,9 @@ export class PaymentService {
 
   // Get payments for a specific invoice
   async getPaymentsByInvoice(invoiceId: string): Promise<Payment[]> {
+    if (paymentsApiEnabled()) {
+      return paymentsApi.list(invoiceId);
+    }
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) throw new Error('User not authenticated');
 
@@ -128,6 +143,9 @@ export class PaymentService {
 
   // Get a specific payment
   async getPayment(paymentId: string): Promise<Payment | null> {
+    if (paymentsApiEnabled()) {
+      return paymentsApi.get(paymentId);
+    }
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) throw new Error('User not authenticated');
 
@@ -274,6 +292,9 @@ export class PaymentService {
 
   // Get all receipts for user
   async getReceipts(): Promise<Receipt[]> {
+    if (receiptsApiEnabled()) {
+      return receiptsApi.list();
+    }
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) throw new Error('User not authenticated');
 
@@ -289,6 +310,9 @@ export class PaymentService {
 
   // Get receipt by ID
   async getReceipt(receiptId: string): Promise<Receipt | null> {
+    if (receiptsApiEnabled()) {
+      return receiptsApi.get(receiptId);
+    }
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) throw new Error('User not authenticated');
 
@@ -309,6 +333,10 @@ export class PaymentService {
 
   // Get receipt by payment ID
   async getReceiptByPayment(paymentId: string): Promise<Receipt | null> {
+    if (receiptsApiEnabled()) {
+      const receipts = await receiptsApi.list();
+      return receipts.find((receipt) => receipt.paymentId === paymentId) ?? null;
+    }
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) throw new Error('User not authenticated');
 
@@ -329,6 +357,9 @@ export class PaymentService {
 
   // Mark receipt as emailed
   async markReceiptAsEmailed(receiptId: string): Promise<void> {
+    if (receiptsApiEnabled()) {
+      return;
+    }
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) throw new Error('User not authenticated');
 

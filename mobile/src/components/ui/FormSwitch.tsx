@@ -20,8 +20,8 @@ export function FormSwitch({ label, value, onValueChange, description }: FormSwi
       <Switch
         value={value}
         onValueChange={onValueChange}
-        trackColor={{ false: '#D1D5DB', true: '#5B72EE' }}
-        thumbColor={value ? '#FFFFFF' : '#F3F4F6'}
+        trackColor={{ false: '#D1D5DB', true: '#9FE870' }}
+        thumbColor={value ? '#163300' : '#F3F4F6'}
       />
     </View>
   );

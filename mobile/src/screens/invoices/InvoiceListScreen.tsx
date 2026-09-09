@@ -25,6 +25,7 @@ import PaymentCaptureModal from '@/components/invoice/PaymentCaptureModal';
 import { FilterPills } from '@/components/ui/FilterPills';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { palette, space } from '@/theme/tokens';
+import { formatMoney } from '@/utils/money';
 
 type InvoiceListNavigationProp = NativeStackNavigationProp<InvoiceStackParamList, 'InvoiceList'>;
 
@@ -39,14 +40,17 @@ export default function InvoiceListScreen() {
   const [updatingStatus, setUpdatingStatus] = useState<Record<string, boolean>>({});
   const [paymentModalVisible, setPaymentModalVisible] = useState(false);
   const [selectedInvoiceForPayment, setSelectedInvoiceForPayment] = useState<Invoice | null>(null);
+  const [loadError, setLoadError] = useState<string | null>(null);
 
   const loadInvoices = async () => {
     try {
       const data = await invoiceService.fetchInvoices();
       setInvoices(data);
+      setLoadError(null);
       applyFilters(data, searchQuery, filter);
     } catch (error) {
       console.error('Error loading invoices:', error);
+      setLoadError('Could not load invoices. Pull to retry.');
     } finally {
       setLoading(false);
       setRefreshing(false);
@@ -163,13 +167,7 @@ export default function InvoiceListScreen() {
     }
   };
 
-  const formatCurrency = (amount: number, currency: string) => {
-    return new Intl.NumberFormat('en-NZ', {
-      style: 'currency',
-      currency: currency || 'NZD',
-      minimumFractionDigits: 2,
-    }).format(amount);
-  };
+  const formatCurrency = (amount: number, currency: string) => formatMoney(amount, currency);
 
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
@@ -210,7 +208,7 @@ export default function InvoiceListScreen() {
   if (loading) {
     return (
       <View style={styles.centerContainer}>
-        <ActivityIndicator size="large" color={palette.accent} />
+        <ActivityIndicator size="large" color={palette.accentForeground} />
       </View>
     );
   }
@@ -237,10 +235,17 @@ export default function InvoiceListScreen() {
         contentContainerStyle={styles.listContent}
         contentInsetAdjustmentBehavior="automatic"
         refreshControl={
-          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={palette.accent} />
+          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={palette.accentForeground} />
         }
         ListEmptyComponent={
-          invoices.length === 0 ? (
+          loadError ? (
+            <EmptyState
+              title="Couldn't load invoices"
+              description={loadError}
+              actionLabel="Try again"
+              onAction={onRefresh}
+            />
+          ) : invoices.length === 0 ? (
             <EmptyState
               title="Create your first invoice"
               description="Send it, get paid, GST-ready."

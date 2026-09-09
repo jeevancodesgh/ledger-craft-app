@@ -11,6 +11,7 @@ import { Feather } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import type { Expense } from '@/types/expense';
 import { hairline, palette, radius } from '@/theme/tokens';
+import { IconWell } from '@/components/ui/IconWell';
 
 interface SwipeableExpenseCardProps {
   expense: Expense;
@@ -159,8 +160,8 @@ export default function SwipeableExpenseCard({
           })}
         >
           <View style={[styles.actionButton, { backgroundColor: palette.accent }]}>
-            <Feather name="edit-2" size={16} color={palette.surface} />
-            <Text style={styles.actionLabel}>Edit</Text>
+            <Feather name="edit-2" size={16} color={palette.accentForeground} />
+            <Text style={[styles.actionLabel, { color: palette.accentForeground }]}>Edit</Text>
           </View>
         </GestureDetector>
         <GestureDetector
@@ -184,7 +185,9 @@ export default function SwipeableExpenseCard({
             !isLast && styles.rowBorder,
           ]}
         >
-          <View style={[styles.dot, { backgroundColor: statusColor }]} />
+          <IconWell size={40} color={`${statusColor}22`}>
+            <Feather name="credit-card" size={16} color={statusColor} />
+          </IconWell>
           <View style={styles.copy}>
             <Text style={styles.title} numberOfLines={1}>
               {expense.description}
@@ -255,11 +258,6 @@ const styles = StyleSheet.create({
   rowBorder: {
     borderBottomWidth: hairline,
     borderBottomColor: palette.separator,
-  },
-  dot: {
-    width: 8,
-    height: 8,
-    borderRadius: 4,
   },
   copy: {
     flex: 1,

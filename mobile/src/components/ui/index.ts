@@ -18,11 +18,11 @@ export { FormSwitch } from './FormSwitch';
 
 // Action Components
 export { ActionButton } from './ActionButton';
-export { FloatingActionButton } from './FloatingActionButton';
 
 // Feedback Components
 export { ConfirmDialog } from './ConfirmDialog';
 export { EmptyState } from './EmptyState';
+export { IconWell } from './IconWell';
 export { LoadingOverlay } from './LoadingOverlay';
 export { GroupedSection } from './GroupedSection';
 export { ListRow } from './ListRow';

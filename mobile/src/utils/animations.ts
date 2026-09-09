@@ -1,8 +1,5 @@
 /**
- * Revolut-Style Animation Utilities
- * 
- * Centralized animation configurations for consistent, professional
- * micro-interactions throughout the app.
+ * Animation utilities for consistent micro-interactions.
  */
 
 import { Easing } from 'react-native-reanimated';
@@ -80,7 +77,7 @@ export const EASING = {
 
 /**
  * Scale values for press/touch feedback.
- * Revolut-style: subtle, professional scales.
+ * Subtle press scales.
  */
 export const SCALE = {
   /** Button press scale (subtle) */
@@ -121,18 +118,18 @@ export const OPACITY = {
  * Brand colors for animations.
  */
 export const COLORS = {
-  primary: '#5B72EE',
-  primaryDark: '#4A5FD8',
-  secondary: '#1E2875',
-  success: '#10B981',
-  warning: '#F59E0B',
-  danger: '#EF4444',
-  border: '#E2E8F0',
-  borderFocus: '#5B72EE',
-  background: '#F8FAFC',
+  primary: '#9FE870',
+  primaryDark: '#163300',
+  secondary: '#163300',
+  success: '#34C759',
+  warning: '#FF9F0A',
+  danger: '#FF3B30',
+  border: 'rgba(22, 51, 0, 0.12)',
+  borderFocus: '#163300',
+  background: '#F2F2F2',
   surface: '#FFFFFF',
-  text: '#1E293B',
-  textSecondary: '#64748B',
+  text: '#163300',
+  textSecondary: '#62605B',
 } as const;
 
 // ============================================
@@ -179,14 +176,14 @@ export const SHADOWS = {
     elevation: 1,
   },
   button: {
-    shadowColor: '#5B72EE',
+    shadowColor: '#163300',
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.3,
     shadowRadius: 8,
     elevation: 4,
   },
   buttonPressed: {
-    shadowColor: '#5B72EE',
+    shadowColor: '#163300',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.2,
     shadowRadius: 4,

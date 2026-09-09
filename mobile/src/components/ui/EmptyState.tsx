@@ -64,7 +64,7 @@ const styles = StyleSheet.create({
     transform: [{ scale: 0.98 }],
   },
   buttonLabel: {
-    color: palette.surface,
+    color: palette.accentForeground,
     fontSize: 16,
     fontWeight: '600',
   },

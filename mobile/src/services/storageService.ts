@@ -1,20 +1,18 @@
 import { supabase } from './supabaseClient';
 import { decode } from 'base64-arraybuffer';
+import { objectsApi, storageApiEnabled } from '@/features/storage/api/objectsApi';
 
 export const storageService = {
   // Receipt-specific upload with React Native compatibility
   async uploadReceipt(uri: string, expenseId?: string): Promise<{ url: string; path: string } | null> {
     try {
-      // Fetch the image from URI
       const response = await fetch(uri);
       const blob = await response.blob();
       
-      // Convert blob to base64
       const reader = new FileReader();
       const base64Promise = new Promise<string>((resolve, reject) => {
         reader.onloadend = () => {
           const base64data = reader.result as string;
-          // Remove the data URL prefix (e.g., "data:image/jpeg;base64,")
           const base64 = base64data.split(',')[1];
           resolve(base64);
         };
@@ -23,13 +21,23 @@ export const storageService = {
       });
 
       const base64 = await base64Promise;
-
-      // Generate unique filename
       const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
       const ext = uri.split('.').pop()?.split('?')[0] || 'jpg';
       const fileName = expenseId 
         ? `receipt-${expenseId}-${timestamp}.${ext}`
         : `receipt-${timestamp}.${ext}`;
+
+      if (storageApiEnabled()) {
+        const dto = await objectsApi.upload({
+          kind: 'receipt',
+          filename: fileName,
+          contentType: `image/${ext === 'jpg' ? 'jpeg' : ext}`,
+          contentBase64: base64,
+        });
+        return { url: dto.url, path: dto.key };
+      }
+
+      const filePath = `receipts/${fileName}`;
       const filePath = `receipts/${fileName}`;
 
       // Convert base64 to ArrayBuffer
@@ -66,6 +74,9 @@ export const storageService = {
 
   // Delete receipt with path extraction
   async deleteReceipt(urlOrPath: string): Promise<boolean> {
+    if (storageApiEnabled()) {
+      return objectsApi.delete(urlOrPath);
+    }
     try {
       let filePath = urlOrPath;
       

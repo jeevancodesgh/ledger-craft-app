@@ -1,5 +1,5 @@
 import React from 'react';
-import { ScrollView, Pressable, Text, StyleSheet } from 'react-native';
+import { ScrollView, Pressable, Text, StyleSheet, View } from 'react-native';
 import { palette, radius, space } from '@/theme/tokens';
 
 interface FilterPillsProps<T extends string> {
@@ -22,26 +22,28 @@ export function FilterPills<T extends string>({
       contentContainerStyle={styles.row}
       style={styles.scroller}
     >
-      {options.map((option) => {
-        const active = option === value;
-        const label = labels?.[option] ?? option.charAt(0).toUpperCase() + option.slice(1);
-        return (
-          <Pressable
-            key={option}
-            onPress={() => onChange(option)}
-            accessibilityRole="button"
-            accessibilityState={{ selected: active }}
-            accessibilityLabel={label}
-            style={({ pressed }) => [
-              styles.pill,
-              active && styles.pillActive,
-              pressed && styles.pressed,
-            ]}
-          >
-            <Text style={[styles.label, active && styles.labelActive]}>{label}</Text>
-          </Pressable>
-        );
-      })}
+      <View style={styles.track}>
+        {options.map((option) => {
+          const active = option === value;
+          const label = labels?.[option] ?? option.charAt(0).toUpperCase() + option.slice(1);
+          return (
+            <Pressable
+              key={option}
+              onPress={() => onChange(option)}
+              accessibilityRole="button"
+              accessibilityState={{ selected: active }}
+              accessibilityLabel={label}
+              style={({ pressed }) => [
+                styles.pill,
+                active && styles.pillActive,
+                pressed && styles.pressed,
+              ]}
+            >
+              <Text style={[styles.label, active && styles.labelActive]}>{label}</Text>
+            </Pressable>
+          );
+        })}
+      </View>
     </ScrollView>
   );
 }
@@ -51,22 +53,27 @@ const styles = StyleSheet.create({
     flexGrow: 0,
   },
   row: {
-    flexDirection: 'row',
-    alignItems: 'center',
     paddingHorizontal: space.screen,
     paddingVertical: space.sm,
-    gap: space.sm,
+  },
+  track: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: palette.fill,
+    borderRadius: radius.pill,
+    padding: 3,
+    gap: 2,
   },
   pill: {
     height: 32,
     paddingHorizontal: 14,
     borderRadius: radius.pill,
-    backgroundColor: palette.fill,
+    backgroundColor: 'transparent',
     alignItems: 'center',
     justifyContent: 'center',
   },
   pillActive: {
-    backgroundColor: palette.text,
+    backgroundColor: palette.surface,
   },
   pressed: {
     opacity: 0.72,
@@ -74,9 +81,9 @@ const styles = StyleSheet.create({
   label: {
     fontSize: 14,
     fontWeight: '600',
-    color: palette.text,
+    color: palette.textSecondary,
   },
   labelActive: {
-    color: palette.surface,
+    color: palette.text,
   },
 });

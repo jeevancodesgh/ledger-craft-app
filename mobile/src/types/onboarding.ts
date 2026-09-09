@@ -32,7 +32,7 @@ export interface OnboardingStepProps {
 
 export const DEFAULT_THEME: BusinessTheme = {
   name: 'Professional',
-  primary: '#5B72EE',
+  primary: '#163300',
   secondary: '#3B4DE6',
   accent: '#4F63D7',
   surface: '#FFFFFF',

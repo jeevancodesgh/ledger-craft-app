@@ -22,7 +22,7 @@ export const STATUS_OPTIONS: StatusOption[] = [
     value: 'sent',
     label: 'Sent',
     icon: 'send',
-    color: '#5B72EE',
+    color: '#163300',
     description: 'Sent and awaiting payment',
   },
   {

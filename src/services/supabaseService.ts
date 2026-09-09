@@ -24,6 +24,14 @@ import {
   toUpdateItemRequest,
 } from '@/features/items/api/itemsApi';
 import { invoicesApi, invoicesApiEnabled } from '@/features/invoices/api/invoicesApi';
+import {
+  expensesApi,
+  expensesApiEnabled,
+  toCreateExpenseCategoryRequest,
+  toCreateExpenseRequest,
+  toUpdateExpenseRequest,
+} from '@/features/expenses/api/expensesApi';
+import { accountsApi, accountsApiEnabled } from '@/features/payments/api/paymentsApi';
 
 const mapSupabaseCustomerToCustomer = (customer: SupabaseCustomer): Customer => ({
   id: customer.id,
@@ -1419,6 +1427,9 @@ export const dashboardService = {
 
 export const accountService = {
   async getAccounts(): Promise<Account[]> {
+    if (accountsApiEnabled()) {
+      return accountsApi.list();
+    }
     const { data: { user } } = await supabase.auth.getUser();
     if (!user?.id) {
       console.error('No authenticated user found');
@@ -1521,6 +1532,9 @@ export const accountService = {
 
 export const expenseCategoryService = {
   async getExpenseCategories(): Promise<ExpenseCategory[]> {
+    if (expensesApiEnabled()) {
+      return expensesApi.listCategories();
+    }
     const { data: { user } } = await supabase.auth.getUser();
     if (!user?.id) {
       console.error('No authenticated user found');
@@ -1542,6 +1556,10 @@ export const expenseCategoryService = {
   },
 
   async getExpenseCategory(id: string): Promise<ExpenseCategory | null> {
+    if (expensesApiEnabled()) {
+      const categories = await expensesApi.listCategories();
+      return categories.find((category) => category.id === id) ?? null;
+    }
     const { data: { user } } = await supabase.auth.getUser();
     if (!user?.id) {
       console.error('No authenticated user found');
@@ -1567,6 +1585,9 @@ export const expenseCategoryService = {
   },
 
   async createExpenseCategory(category: Omit<ExpenseCategory, 'id' | 'createdAt' | 'updatedAt'>): Promise<ExpenseCategory> {
+    if (expensesApiEnabled()) {
+      return expensesApi.createCategory(toCreateExpenseCategoryRequest(category));
+    }
     const supabaseCategory = await mapExpenseCategoryToSupabaseExpenseCategory(category);
     
     const { data, error } = await supabase
@@ -1584,6 +1605,13 @@ export const expenseCategoryService = {
   },
 
   async updateExpenseCategory(id: string, category: Partial<Omit<ExpenseCategory, 'id' | 'createdAt' | 'updatedAt'>>): Promise<ExpenseCategory> {
+    if (expensesApiEnabled()) {
+      const input: { name?: string; description?: string | null; color?: string | null } = {};
+      if (category.name !== undefined) input.name = category.name;
+      if (category.description !== undefined) input.description = category.description ?? null;
+      if (category.color !== undefined) input.color = category.color ?? null;
+      return expensesApi.updateCategory(id, input);
+    }
     const { data: { user } } = await supabase.auth.getUser();
     if (!user?.id) {
       throw new Error('No authenticated user found');
@@ -1611,6 +1639,10 @@ export const expenseCategoryService = {
   },
 
   async deleteExpenseCategory(id: string): Promise<void> {
+    if (expensesApiEnabled()) {
+      await expensesApi.removeCategory(id);
+      return;
+    }
     const { data: { user } } = await supabase.auth.getUser();
     if (!user?.id) {
       throw new Error('No authenticated user found');
@@ -1638,6 +1670,16 @@ export const expenseService = {
     dateFrom?: string; 
     dateTo?: string; 
   }): Promise<Expense[]> {
+    if (expensesApiEnabled()) {
+      let rows = await expensesApi.listExpenses();
+      if (filters?.categoryId) rows = rows.filter((row) => row.categoryId === filters.categoryId);
+      if (filters?.accountId) rows = rows.filter((row) => row.accountId === filters.accountId);
+      if (filters?.customerId) rows = rows.filter((row) => row.customerId === filters.customerId);
+      if (filters?.status) rows = rows.filter((row) => row.status === filters.status);
+      if (filters?.dateFrom) rows = rows.filter((row) => row.expenseDate >= filters.dateFrom!);
+      if (filters?.dateTo) rows = rows.filter((row) => row.expenseDate <= filters.dateTo!);
+      return rows;
+    }
     const { data: { user } } = await supabase.auth.getUser();
     if (!user?.id) {
       console.error('No authenticated user found');
@@ -1684,6 +1726,9 @@ export const expenseService = {
   },
 
   async getExpense(id: string): Promise<Expense | null> {
+    if (expensesApiEnabled()) {
+      return expensesApi.get(id);
+    }
     const { data: { user } } = await supabase.auth.getUser();
     if (!user?.id) {
       console.error('No authenticated user found');
@@ -1714,6 +1759,9 @@ export const expenseService = {
   },
 
   async createExpense(expense: Omit<Expense, 'id' | 'createdAt' | 'updatedAt' | 'category' | 'account' | 'customer'>): Promise<Expense> {
+    if (expensesApiEnabled()) {
+      return expensesApi.create(toCreateExpenseRequest(expense));
+    }
     const supabaseExpense = await mapExpenseToSupabaseExpense(expense);
     
     const { data, error } = await supabase
@@ -1736,6 +1784,9 @@ export const expenseService = {
   },
 
   async updateExpense(id: string, expense: Partial<Omit<Expense, 'id' | 'createdAt' | 'updatedAt' | 'category' | 'account' | 'customer'>>): Promise<Expense> {
+    if (expensesApiEnabled()) {
+      return expensesApi.update(id, toUpdateExpenseRequest(expense));
+    }
     const { data: { user } } = await supabase.auth.getUser();
     if (!user?.id) {
       throw new Error('No authenticated user found');
@@ -1779,6 +1830,10 @@ export const expenseService = {
   },
 
   async deleteExpense(id: string): Promise<void> {
+    if (expensesApiEnabled()) {
+      await expensesApi.remove(id);
+      return;
+    }
     const { data: { user } } = await supabase.auth.getUser();
     if (!user?.id) {
       throw new Error('No authenticated user found');
@@ -1812,6 +1867,23 @@ export const expenseService = {
   },
 
   async getExpensesByCategory(): Promise<{ category: string; amount: number; count: number }[]> {
+    if (expensesApiEnabled()) {
+      const rows = await expensesApi.listExpenses();
+      const categoryTotals = new Map<string, { amount: number; count: number }>();
+      rows.forEach((expense) => {
+        const categoryName = expense.category?.name || 'Uncategorized';
+        const existing = categoryTotals.get(categoryName) || { amount: 0, count: 0 };
+        categoryTotals.set(categoryName, {
+          amount: existing.amount + expense.amount,
+          count: existing.count + 1,
+        });
+      });
+      return Array.from(categoryTotals.entries()).map(([category, data]) => ({
+        category,
+        amount: data.amount,
+        count: data.count,
+      }));
+    }
     const { data: { user } } = await supabase.auth.getUser();
     if (!user?.id) {
       console.error('No authenticated user found');
@@ -1850,6 +1922,16 @@ export const expenseService = {
   },
 
   async getMonthlyExpenseTotals(year: number): Promise<{ month: number; amount: number }[]> {
+    if (expensesApiEnabled()) {
+      const rows = await expensesApi.listExpenses();
+      const monthlyTotals = new Array(12).fill(0);
+      rows.forEach((expense) => {
+        if (!expense.expenseDate.startsWith(String(year))) return;
+        const month = new Date(expense.expenseDate).getMonth();
+        monthlyTotals[month] += expense.amount;
+      });
+      return monthlyTotals.map((amount, index) => ({ month: index + 1, amount }));
+    }
     const { data: { user } } = await supabase.auth.getUser();
     if (!user?.id) {
       console.error('No authenticated user found');

@@ -1,6 +1,8 @@
 import { supabase } from '@/integrations/supabase/client';
 import { bankAccountService } from '@/services/bankAccountService';
 import { taxCalculationService } from '@/services/taxCalculationService';
+import { bankApi, bankApiEnabled } from '@/features/bank/api/bankApi';
+import { reconciliationApi, reconciliationApiEnabled } from '@/features/reconciliation/api/reconciliationApi';
 import {
   evaluateGstPeriodReconciliation,
   GstPeriod,
@@ -62,6 +64,19 @@ async function fetchOverlappingSessions(
   userId: string,
   period: GstPeriod
 ): Promise<GstReconSession[]> {
+  if (reconciliationApiEnabled()) {
+    const sessions = await reconciliationApi.listSessions();
+    return sessions
+      .filter((session) => session.statementStartDate <= period.endDate && session.statementEndDate >= period.startDate)
+      .map((session) => ({
+        id: session.id,
+        bankAccountId: session.bankAccountId,
+        statementStartDate: session.statementStartDate,
+        statementEndDate: session.statementEndDate,
+        status: session.status,
+        unmatchedBankCount: session.unmatchedBankCount,
+      }));
+  }
   const { data, error } = await supabase
     .from('reconciliation_sessions')
     .select('*')
@@ -81,6 +96,20 @@ async function fetchUnreconciledTransactions(
   userId: string,
   period: GstPeriod
 ): Promise<{ count: number; samples: UnreconciledSample[] }> {
+  if (bankApiEnabled()) {
+    const rows = (await bankApi.listTransactions({ from: period.startDate, to: period.endDate })).filter(
+      (row) => !row.isReconciled,
+    );
+    return {
+      count: rows.length,
+      samples: rows.slice(0, 5).map((row) => ({
+        id: row.id,
+        date: row.transactionDate,
+        description: row.description,
+        amount: row.amount,
+      })),
+    };
+  }
   const { data, error, count } = await supabase
     .from('bank_transactions')
     .select('id, transaction_date, description, amount', { count: 'exact' })

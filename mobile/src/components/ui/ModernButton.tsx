@@ -83,8 +83,8 @@ export function ModernButton({
 
   const padding = {
     sm: { paddingHorizontal: 14, height: 36 },
-    md: { paddingHorizontal: 18, height: 48 },
-    lg: { paddingHorizontal: 22, height: 52 },
+    md: { paddingHorizontal: 20, height: 52 },
+    lg: { paddingHorizontal: 24, height: 56 },
   };
 
   return (
@@ -106,7 +106,7 @@ export function ModernButton({
           {loading ? (
             <ActivityIndicator
               size="small"
-              color={variant === 'primary' ? palette.surface : palette.text}
+              color={variant === 'primary' ? palette.accentForeground : palette.text}
               style={{ marginRight: 8 }}
             />
           ) : null}
@@ -150,7 +150,7 @@ const styles = StyleSheet.create({
     backgroundColor: palette.accent,
   },
   primaryText: {
-    color: palette.surface,
+    color: palette.accentForeground,
   },
   secondary: {
     backgroundColor: palette.fill,

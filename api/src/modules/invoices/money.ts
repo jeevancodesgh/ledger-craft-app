@@ -15,3 +15,7 @@ export function moneyOrNull(value: string | number | null | undefined): string |
   if (value == null || value === '') return null;
   return roundMoney(parseMoney(value));
 }
+
+export function moneyToCents(value: string | number): number {
+  return Math.round(parseMoney(value) * 100);
+}

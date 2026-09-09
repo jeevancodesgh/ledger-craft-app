@@ -45,19 +45,19 @@ export default function SettingsScreen() {
         <ListRow
           label="Business"
           subtitle="Profile, GST, and invoice numbering"
-          icon={<Feather name="briefcase" size={15} color={palette.accent} />}
+          icon={<Feather name="briefcase" size={15} color={palette.accentForeground} />}
           onPress={() => navigation.navigate('BusinessSettings')}
         />
         <ListRow
           label="Account"
           subtitle="Coming soon"
-          icon={<Feather name="user" size={15} color={palette.accent} />}
+          icon={<Feather name="user" size={15} color={palette.accentForeground} />}
           disabled
         />
         <ListRow
           label="Notifications"
           subtitle="Coming soon"
-          icon={<Feather name="bell" size={15} color={palette.accent} />}
+          icon={<Feather name="bell" size={15} color={palette.accentForeground} />}
           disabled
         />
       </GroupedSection>
@@ -108,7 +108,7 @@ const styles = StyleSheet.create({
   avatarText: {
     fontSize: 24,
     fontWeight: '700',
-    color: palette.accent,
+    color: palette.accentForeground,
   },
   name: {
     fontSize: 22,

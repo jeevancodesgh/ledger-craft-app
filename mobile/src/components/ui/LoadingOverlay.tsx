@@ -14,7 +14,7 @@ export function LoadingOverlay({ visible }: LoadingOverlayProps) {
     >
       <View className="flex-1 bg-black/50 items-center justify-center">
         <View className="bg-white rounded-2xl p-6">
-          <ActivityIndicator size="large" color="#5B72EE" />
+          <ActivityIndicator size="large" color="#163300" />
         </View>
       </View>
     </Modal>

@@ -13,6 +13,7 @@ import { expenseCategoryService } from '@/services/expenseCategoryService';
 import { Feather } from '@expo/vector-icons';
 import type { ExpenseCategory } from '@/types/expense';
 
+
 interface CategoryPickerProps {
   visible: boolean;
   onSelect: (category: ExpenseCategory | null) => void;
@@ -76,7 +77,7 @@ export function CategoryPicker({
           <View className="flex-row items-center justify-between mb-3">
             <Text className="text-xl font-bold">Select Category</Text>
             <TouchableOpacity onPress={onClose} className="p-2">
-              <Text className="text-revolut-blue-600 font-semibold">Done</Text>
+              <Text className="text-lime-700 font-semibold">Done</Text>
             </TouchableOpacity>
           </View>
 
@@ -103,7 +104,7 @@ export function CategoryPicker({
               }}
               className={`bg-white rounded-xl p-4 mb-2 flex-row items-center ${
                 selectedCategoryId === null
-                  ? 'border-2 border-revolut-blue-600'
+                  ? 'border-2 border-lime-700'
                   : 'border border-gray-200'
               }`}
               activeOpacity={0.7}
@@ -113,15 +114,15 @@ export function CategoryPicker({
                 <Text className="text-sm text-gray-500">Uncategorized expense</Text>
               </View>
               {selectedCategoryId === null && (
-                <View className="bg-revolut-blue-600 w-6 h-6 rounded-full items-center justify-center">
-                  <Text className="text-white text-xs">✓</Text>
+                <View className="bg-lime-700 w-6 h-6 rounded-full items-center justify-center">
+                  <Feather name="check" size={12} color="#FFFFFF" />
                 </View>
               )}
             </TouchableOpacity>
 
             {loading ? (
               <View className="py-12 items-center">
-                <ActivityIndicator size="large" color="#5B72EE" />
+                <ActivityIndicator size="large" color="#163300" />
               </View>
             ) : filteredCategories.length === 0 ? (
               <View className="py-12 items-center">
@@ -145,7 +146,7 @@ export function CategoryPicker({
                     }}
                     className={`bg-white rounded-xl p-4 flex-row items-center ${
                       selectedCategoryId === category.id
-                        ? 'border-2 border-revolut-blue-600'
+                        ? 'border-2 border-lime-700'
                         : 'border border-gray-200'
                     }`}
                     activeOpacity={0.7}
@@ -172,8 +173,8 @@ export function CategoryPicker({
 
                     {/* Check mark if selected */}
                     {selectedCategoryId === category.id && (
-                      <View className="bg-revolut-blue-600 w-6 h-6 rounded-full items-center justify-center">
-                        <Text className="text-white text-xs">✓</Text>
+                      <View className="bg-lime-700 w-6 h-6 rounded-full items-center justify-center">
+                        <Feather name="check" size={12} color="#FFFFFF" />
                       </View>
                     )}
                   </TouchableOpacity>

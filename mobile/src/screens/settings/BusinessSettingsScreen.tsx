@@ -280,13 +280,13 @@ export default function BusinessSettingsScreen() {
             />
           ) : (
             <View style={styles.logoPlaceholder}>
-              <Text style={styles.logoPlaceholderText}>📷</Text>
+              <Feather name="camera" size={24} color="#163300" />
               <Text style={styles.logoPlaceholderSubtext}>Tap to upload</Text>
             </View>
           )}
         </TouchableOpacity>
         {imagePickerLoading && (
-          <ActivityIndicator style={styles.logoLoader} color="#5B72EE" />
+          <ActivityIndicator style={styles.logoLoader} color="#163300" />
         )}
       </View>
 
@@ -428,7 +428,7 @@ export default function BusinessSettingsScreen() {
   const renderAppearanceTab = () => (
     <View style={styles.tabContent}>
       <View style={styles.comingSoonContainer}>
-        <Feather name="sliders" size={32} color="#5B72EE" />
+        <Feather name="sliders" size={32} color="#163300" />
         <Text style={styles.comingSoonTitle}>Theme Customization</Text>
         <Text style={styles.comingSoonText}>
           Custom theme selection coming soon! You'll be able to personalize your brand colors and appearance.
@@ -557,7 +557,7 @@ const styles = StyleSheet.create({
     borderBottomColor: 'transparent',
   },
   tabActive: {
-    borderBottomColor: '#5B72EE',
+    borderBottomColor: '#163300',
   },
   tabText: {
     fontSize: 15,
@@ -565,7 +565,7 @@ const styles = StyleSheet.create({
     color: '#64748B',
   },
   tabTextActive: {
-    color: '#5B72EE',
+    color: '#163300',
   },
   scrollView: {
     flex: 1,
@@ -725,12 +725,12 @@ const styles = StyleSheet.create({
     elevation: 4,
   },
   saveButton: {
-    backgroundColor: '#5B72EE',
+    backgroundColor: '#163300',
     paddingVertical: 16,
     borderRadius: 12,
     alignItems: 'center',
     justifyContent: 'center',
-    shadowColor: '#5B72EE',
+    shadowColor: '#163300',
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.3,
     shadowRadius: 8,

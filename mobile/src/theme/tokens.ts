@@ -1,16 +1,17 @@
 import { Platform, StyleSheet } from 'react-native';
 
 export const palette = {
-  background: '#F2F2F7',
+  background: '#F2F2F2',
   surface: '#FFFFFF',
-  fill: '#E8E8ED',
-  fillMuted: '#F4F4F7',
-  accent: '#5B72EE',
-  accentFill: '#EEF0FE',
-  text: '#1C1C1E',
-  textSecondary: '#636366',
-  textTertiary: '#8E8E93',
-  separator: 'rgba(60, 60, 67, 0.18)',
+  fill: '#EDEDED',
+  fillMuted: '#F7F7F5',
+  accent: '#9FE870',
+  accentFill: '#E8F8D8',
+  accentForeground: '#163300',
+  text: '#163300',
+  textSecondary: '#62605B',
+  textTertiary: '#8A8880',
+  separator: 'rgba(22, 51, 0, 0.12)',
   danger: '#FF3B30',
   dangerFill: '#FFF2F1',
   success: '#34C759',
@@ -32,16 +33,17 @@ export const radius = {
   md: 12,
   lg: 16,
   xl: 20,
-  group: 12,
+  group: 16,
+  well: 28,
   pill: 980,
 } as const;
 
 export const type = {
   money: {
-    fontSize: 40,
+    fontSize: 44,
     fontWeight: '700' as const,
-    letterSpacing: -1.2,
-    lineHeight: 46,
+    letterSpacing: -1.4,
+    lineHeight: 50,
     color: palette.text,
   },
   title: {
@@ -94,7 +96,7 @@ export const hairline = StyleSheet.hairlineWidth;
 
 export const groupedShadow = Platform.select({
   ios: {
-    shadowColor: '#1C1C1E',
+    shadowColor: '#163300',
     shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.04,
     shadowRadius: 4,

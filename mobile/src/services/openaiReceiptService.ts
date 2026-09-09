@@ -1,4 +1,5 @@
 import { ReceiptScanResult, ReceiptScanOptions } from '@/types/receipt';
+import { aiApiEnabled, scanReceiptImage } from '@/features/ai/api/receiptScanApi';
 
 // Export error class before using it
 export class ReceiptScanError extends Error {
@@ -20,6 +21,7 @@ class OpenAIReceiptService {
   }
 
   private initialize() {
+    if (aiApiEnabled()) return;
     // In React Native/Expo, use environment variable
     const apiKey = process.env.EXPO_PUBLIC_OPENAI_API_KEY;
     
@@ -40,6 +42,7 @@ class OpenAIReceiptService {
   }
 
   public isAvailable(): boolean {
+    if (aiApiEnabled()) return true;
     return this.isInitialized && this.apiKey !== null;
   }
 
@@ -82,6 +85,20 @@ IMPORTANT RULES:
   ): Promise<ReceiptScanResult> {
     console.log('Starting receipt scan with options:', options);
     
+    if (aiApiEnabled()) {
+      const base64Data = imageBase64.startsWith('data:')
+        ? imageBase64
+        : `data:image/jpeg;base64,${imageBase64}`;
+      try {
+        return await scanReceiptImage(base64Data);
+      } catch (error) {
+        throw new ReceiptScanError({
+          code: 'API_ERROR',
+          message: error instanceof Error ? error.message : 'Receipt scanning failed',
+        });
+      }
+    }
+
     if (!this.isAvailable()) {
       console.error('OpenAI service not available');
       throw new ReceiptScanError({

@@ -142,7 +142,7 @@ export function CustomerPicker({
               {showCreateForm ? 'New Customer' : 'Select Customer'}
             </Text>
             <TouchableOpacity onPress={onClose} className="p-2">
-              <Text className="text-revolut-blue-600 font-semibold">Done</Text>
+              <Text className="text-lime-700 font-semibold">Done</Text>
             </TouchableOpacity>
           </View>
 
@@ -264,7 +264,7 @@ export function CustomerPicker({
               {/* Create New Button */}
               <TouchableOpacity
                 onPress={() => setShowCreateForm(true)}
-                className="bg-revolut-blue-600 rounded-xl p-4 mb-4 flex-row items-center justify-center"
+                className="bg-lime-700 rounded-xl p-4 mb-4 flex-row items-center justify-center"
                 activeOpacity={0.7}
               >
                 <Text className="text-white text-lg mr-2">+</Text>
@@ -275,7 +275,7 @@ export function CustomerPicker({
 
               {loading ? (
                 <View className="py-12 items-center">
-                  <ActivityIndicator size="large" color="#5B72EE" />
+                  <ActivityIndicator size="large" color="#163300" />
                 </View>
               ) : filteredCustomers.length === 0 ? (
                 <View className="py-12 items-center">
@@ -301,13 +301,13 @@ export function CustomerPicker({
                       }}
                       className={`bg-white rounded-xl p-4 flex-row items-center ${
                         selectedCustomerId === customer.id
-                          ? 'border-2 border-revolut-blue-600'
+                          ? 'border-2 border-lime-700'
                           : 'border border-gray-200'
                       }`}
                       activeOpacity={0.7}
                     >
                       {/* Avatar */}
-                      <View className="bg-revolut-blue-100 w-12 h-12 rounded-full items-center justify-center mr-3">
+                      <View className="bg-lime-100 w-12 h-12 rounded-full items-center justify-center mr-3">
                         <Text className="text-revolut-blue-700 font-bold">
                           {getInitials(customer.name)}
                         </Text>
@@ -333,8 +333,8 @@ export function CustomerPicker({
 
                       {/* Check mark if selected */}
                       {selectedCustomerId === customer.id && (
-                        <View className="bg-revolut-blue-600 w-6 h-6 rounded-full items-center justify-center">
-                          <Text className="text-white text-xs">✓</Text>
+                        <View className="bg-lime-700 w-6 h-6 rounded-full items-center justify-center">
+                          <Feather name="check" size={12} color="#FFFFFF" />
                         </View>
                       )}
                     </TouchableOpacity>

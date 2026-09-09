@@ -94,7 +94,7 @@ export default function CountryPicker({
                   {item}
                 </Text>
                 {selectedCountry === item && (
-                  <Text style={styles.checkmark}>✓</Text>
+                  <Text style={styles.checkmark}>Selected</Text>
                 )}
               </TouchableOpacity>
             )}
@@ -188,12 +188,12 @@ const styles = StyleSheet.create({
     color: '#1E293B',
   },
   countryTextSelected: {
-    color: '#5B72EE',
+    color: '#163300',
     fontWeight: '600',
   },
   checkmark: {
     fontSize: 18,
-    color: '#5B72EE',
+    color: '#163300',
     fontWeight: 'bold',
   },
 });

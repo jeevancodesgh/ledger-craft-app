@@ -391,7 +391,7 @@ const styles = StyleSheet.create({
   totalValue: {
     fontSize: 20,
     fontWeight: '700',
-    color: '#5B72EE',
+    color: '#163300',
   },
   doneButton: {
     backgroundColor: palette.accent,
@@ -400,7 +400,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     ...Platform.select({
       ios: {
-        shadowColor: '#5B72EE',
+        shadowColor: '#163300',
         shadowOffset: { width: 0, height: 4 },
         shadowOpacity: 0.3,
         shadowRadius: 8,

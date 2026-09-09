@@ -1,25 +1,19 @@
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import { palette, space, type } from '@/theme/tokens';
+import { formatMoney } from '@/utils/money';
 
 interface BalanceCardProps {
   totalBalance: number;
-  availableBalance?: number;
+  paidBalance?: number;
   pendingBalance?: number;
   currency?: string;
   label?: string;
 }
 
-function formatMoney(amount: number, currency = 'NZD') {
-  return new Intl.NumberFormat('en-NZ', {
-    style: 'currency',
-    currency,
-    minimumFractionDigits: 2,
-  }).format(amount);
-}
-
 export function BalanceCard({
   totalBalance,
+  paidBalance = 0,
   pendingBalance = 0,
   currency = 'NZD',
   label = 'You are owed',
@@ -37,7 +31,7 @@ export function BalanceCard({
         <View style={styles.metaItem}>
           <View style={[styles.dot, { backgroundColor: palette.success }]} />
           <Text style={styles.metaLabel}>Paid</Text>
-          <Text style={styles.metaValue}>{formatMoney(totalBalance, currency)}</Text>
+          <Text style={styles.metaValue}>{formatMoney(paidBalance, currency)}</Text>
         </View>
         <View style={styles.metaItem}>
           <View style={[styles.dot, { backgroundColor: palette.warning }]} />

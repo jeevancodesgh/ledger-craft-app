@@ -17,7 +17,7 @@ export function ActionButton({
   ...props 
 }: ActionButtonProps) {
   const variantStyles = {
-    primary: 'bg-revolut-blue-600',
+    primary: 'bg-lime-700',
     secondary: 'bg-gray-200',
     danger: 'bg-red-600',
   };

@@ -242,7 +242,7 @@ export default function InvoicePreviewWithTemplates({
       <View style={styles.previewContainer}>
         {webViewError ? (
           <View style={styles.errorContainer}>
-            <Text style={styles.errorIcon}>⚠️</Text>
+            <Text style={styles.errorIcon}>!</Text>
             <Text style={styles.errorText}>{webViewError}</Text>
             <TouchableOpacity style={styles.retryButton} onPress={handleRetry}>
               <Text style={styles.retryButtonText}>Retry</Text>
@@ -252,7 +252,7 @@ export default function InvoicePreviewWithTemplates({
           <>
             {isLoadingWebView && (
               <View style={styles.loadingContainer}>
-                <ActivityIndicator size="large" color="#5B72EE" />
+                <ActivityIndicator size="large" color="#163300" />
                 <Text style={styles.loadingText}>Loading preview...</Text>
               </View>
             )}
@@ -426,7 +426,7 @@ const styles = StyleSheet.create({
     marginBottom: 24,
   },
   retryButton: {
-    backgroundColor: '#5B72EE',
+    backgroundColor: '#163300',
     paddingVertical: 12,
     paddingHorizontal: 32,
     borderRadius: 10,

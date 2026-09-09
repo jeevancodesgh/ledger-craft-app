@@ -5,6 +5,7 @@ import { palette } from '@/theme/tokens';
 
 export const COLORS = {
   accent: palette.accent,
+  accentForeground: palette.accentForeground,
   background: palette.background,
   surface: palette.surface,
   text: palette.text,
@@ -15,7 +16,7 @@ export const COLORS = {
   warning: palette.warning,
 } as const;
 
-export const revolutNavigationTheme: Theme = {
+export const appNavigationTheme: Theme = {
   ...DefaultTheme,
   colors: {
     ...DefaultTheme.colors,
@@ -28,11 +29,20 @@ export const revolutNavigationTheme: Theme = {
   },
 };
 
+const iosGlassHeader =
+  Platform.OS === 'ios'
+    ? {}
+    : {
+        headerStyle: {
+          backgroundColor: COLORS.background,
+        },
+      };
+
 export const nativeHeaderOptions: NativeStackNavigationOptions = {
   headerShown: true,
   headerShadowVisible: false,
   headerBackTitle: 'Back',
-  headerTintColor: COLORS.accent,
+  headerTintColor: COLORS.text,
   headerTitleStyle: {
     fontWeight: '600',
     color: COLORS.text,
@@ -41,9 +51,7 @@ export const nativeHeaderOptions: NativeStackNavigationOptions = {
     fontWeight: '700',
     color: COLORS.text,
   },
-  headerStyle: {
-    backgroundColor: COLORS.background,
-  },
+  ...iosGlassHeader,
   contentStyle: {
     backgroundColor: COLORS.background,
   },

@@ -1,3 +1,4 @@
+import { accountsApi, accountsApiEnabled } from '@/features/payments/api/paymentsApi';
 import { supabase } from './supabaseClient';
 import type { Account } from '@/types/expense';
 
@@ -5,6 +6,10 @@ export class AccountService {
   // Fetch all accounts for the current user
   async fetchAccounts(): Promise<Account[]> {
     try {
+      if (accountsApiEnabled()) {
+        return accountsApi.list();
+      }
+
       const { data: { user } } = await supabase.auth.getUser();
       
       if (!user) {

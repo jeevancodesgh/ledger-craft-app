@@ -19,7 +19,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { useToast } from '@/hooks/use-toast';
-import { invoicesApi } from '@/features/invoices/api/invoicesApi';
+import { invoicesApi, invoicesApiEnabled } from '@/features/invoices/api/invoicesApi';
 import { Invoice, InvoiceTemplateName } from '@/types';
 import EmailInputModal from './EmailInputModal';
 import { emailService } from '@/services/emailService';
@@ -200,6 +200,15 @@ const ShareInvoiceModal: React.FC<ShareInvoiceModalProps> = ({
         });
         url = `${window.location.origin}/shared/invoice/${sharedInvoice.shareToken}`;
         setShareUrl(url);
+      }
+
+      if (invoicesApiEnabled()) {
+        await invoicesApi.send(invoice.id, { to: [email] });
+        toast({
+          title: 'Email sent successfully!',
+          description: `Invoice has been sent to ${email}`,
+        });
+        return;
       }
 
       // Get business profile for template rendering

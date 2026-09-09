@@ -16,6 +16,8 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import type { Invoice } from '@/types/invoice';
 import type { CreatePaymentRequest } from '@/types/payment';
 import { PAYMENT_METHOD_OPTIONS } from '@/utils/statusUtils';
+import { formatMoney } from '@/utils/money';
+import { palette } from '@/theme/tokens';
 
 interface PaymentCaptureModalProps {
   visible: boolean;
@@ -77,7 +79,7 @@ export default function PaymentCaptureModal({
     if (isPartialPayment) {
       Alert.alert(
         'Partial Payment',
-        `This is a partial payment. The remaining balance will be $${Math.abs(balanceAfterPayment).toFixed(2)}.`,
+        `This is a partial payment. The remaining balance will be ${formatMoney(Math.abs(balanceAfterPayment), invoice.currency || 'NZD')}.`,
         [
           { text: 'Cancel', style: 'cancel' },
           { text: 'Continue', onPress: () => submitPayment() },
@@ -90,7 +92,7 @@ export default function PaymentCaptureModal({
     if (isOverpayment) {
       Alert.alert(
         'Overpayment',
-        `The payment amount exceeds the invoice total by $${Math.abs(balanceAfterPayment).toFixed(2)}.`,
+        `The payment amount exceeds the invoice total by ${formatMoney(Math.abs(balanceAfterPayment), invoice.currency || 'NZD')}.`,
         [
           { text: 'Cancel', style: 'cancel' },
           { text: 'Continue', onPress: () => submitPayment() },
@@ -233,7 +235,7 @@ export default function PaymentCaptureModal({
           <View style={styles.field}>
             <Text style={styles.fieldLabel}>Payment Date *</Text>
             <View style={styles.inputContainer}>
-              <Text style={styles.inputPrefix}>📅</Text>
+              <Text style={styles.inputPrefix}>Date</Text>
               <TextInput
                 style={styles.input}
                 value={paymentDate}
@@ -285,7 +287,7 @@ export default function PaymentCaptureModal({
             <Text style={styles.summaryTitle}>Payment Summary</Text>
             <View style={styles.summaryRow}>
               <Text style={styles.summaryLabel}>Amount Paid:</Text>
-              <Text style={styles.summaryValue}>${parsedAmount.toFixed(2)}</Text>
+              <Text style={styles.summaryValue}>{formatMoney(parsedAmount, invoice.currency || 'NZD')}</Text>
             </View>
             <View style={styles.summaryRow}>
               <Text style={styles.summaryLabel}>Remaining Balance:</Text>
@@ -293,7 +295,7 @@ export default function PaymentCaptureModal({
                 styles.summaryValue,
                 balanceAfterPayment <= 0 && styles.summaryValueSuccess,
               ]}>
-                ${Math.max(0, balanceAfterPayment).toFixed(2)}
+                {formatMoney(Math.max(0, balanceAfterPayment), invoice.currency || 'NZD')}
               </Text>
             </View>
             <View style={styles.summaryDivider} />
@@ -303,7 +305,7 @@ export default function PaymentCaptureModal({
                 styles.statusBadge,
                 balanceAfterPayment <= 0 ? styles.statusBadgePaid : styles.statusBadgePartial,
               ]}>
-                {balanceAfterPayment <= 0 ? '✓ Paid in Full' : '⏳ Partially Paid'}
+                {balanceAfterPayment <= 0 ? 'Paid in full' : 'Partially paid'}
               </Text>
             </View>
           </View>
@@ -318,9 +320,9 @@ export default function PaymentCaptureModal({
             activeOpacity={0.8}
           >
             {loading ? (
-              <ActivityIndicator color="#ffffff" />
+              <ActivityIndicator color={palette.accentForeground} />
             ) : (
-              <Text style={styles.submitButtonText}>Record Payment</Text>
+              <Text style={styles.submitButtonText}>Record payment</Text>
             )}
           </TouchableOpacity>
         </View>
@@ -555,21 +557,16 @@ const styles = StyleSheet.create({
     borderTopColor: '#e2e8f0',
   },
   submitButton: {
-    backgroundColor: '#5B72EE',
+    backgroundColor: palette.accent,
     paddingVertical: 16,
-    borderRadius: 12,
+    borderRadius: 980,
     alignItems: 'center',
-    shadowColor: '#5B72EE',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
-    elevation: 4,
   },
   submitButtonDisabled: {
     opacity: 0.6,
   },
   submitButtonText: {
-    color: '#ffffff',
+    color: palette.accentForeground,
     fontSize: 17,
     fontWeight: '700',
   },

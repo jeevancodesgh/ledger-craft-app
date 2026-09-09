@@ -159,8 +159,8 @@ export function ItemPicker({
     return `$${price.toFixed(2)}`;
   };
 
-  const getItemIcon = (type: string) => {
-    return type === 'product' ? '📦' : '⚙️';
+  const getItemIcon = (type: string): keyof typeof Feather.glyphMap => {
+    return type === 'product' ? 'box' : 'settings';
   };
 
   if (!visible) return null;
@@ -175,7 +175,7 @@ export function ItemPicker({
               {showCreateForm ? 'New Item' : 'Select Item'}
             </Text>
             <TouchableOpacity onPress={onClose} className="p-2">
-              <Text className="text-revolut-blue-600 font-semibold">Done</Text>
+              <Text className="text-lime-700 font-semibold">Done</Text>
             </TouchableOpacity>
           </View>
 
@@ -198,7 +198,7 @@ export function ItemPicker({
                 <TouchableOpacity
                   onPress={() => setSelectedType('all')}
                   className={`flex-1 py-2 rounded-lg ${
-                    selectedType === 'all' ? 'bg-revolut-blue-600' : 'bg-gray-200'
+                    selectedType === 'all' ? 'bg-lime-700' : 'bg-gray-200'
                   }`}
                 >
                   <Text
@@ -212,7 +212,7 @@ export function ItemPicker({
                 <TouchableOpacity
                   onPress={() => setSelectedType('product')}
                   className={`flex-1 py-2 rounded-lg ${
-                    selectedType === 'product' ? 'bg-revolut-blue-600' : 'bg-gray-200'
+                    selectedType === 'product' ? 'bg-lime-700' : 'bg-gray-200'
                   }`}
                 >
                   <Text
@@ -220,13 +220,13 @@ export function ItemPicker({
                       selectedType === 'product' ? 'text-white' : 'text-gray-700'
                     }`}
                   >
-                    📦 Products
+                    Products
                   </Text>
                 </TouchableOpacity>
                 <TouchableOpacity
                   onPress={() => setSelectedType('service')}
                   className={`flex-1 py-2 rounded-lg ${
-                    selectedType === 'service' ? 'bg-revolut-blue-600' : 'bg-gray-200'
+                    selectedType === 'service' ? 'bg-lime-700' : 'bg-gray-200'
                   }`}
                 >
                   <Text
@@ -234,7 +234,7 @@ export function ItemPicker({
                       selectedType === 'service' ? 'text-white' : 'text-gray-700'
                     }`}
                   >
-                    ⚙️ Services
+                    Services
                   </Text>
                 </TouchableOpacity>
               </View>
@@ -275,21 +275,21 @@ export function ItemPicker({
                       onPress={() => setNewItem({ ...newItem, type: 'product' })}
                       className={`flex-1 py-3 rounded-xl border-2 ${
                         newItem.type === 'product'
-                          ? 'border-revolut-blue-600 bg-revolut-blue-50'
+                          ? 'border-lime-700 bg-lime-50'
                           : 'border-gray-300 bg-white'
                       }`}
                     >
-                      <Text className="text-center font-semibold">📦 Product</Text>
+                      <Text className="text-center font-semibold">Product</Text>
                     </TouchableOpacity>
                     <TouchableOpacity
                       onPress={() => setNewItem({ ...newItem, type: 'service' })}
                       className={`flex-1 py-3 rounded-xl border-2 ${
                         newItem.type === 'service'
-                          ? 'border-revolut-blue-600 bg-revolut-blue-50'
+                          ? 'border-lime-700 bg-lime-50'
                           : 'border-gray-300 bg-white'
                       }`}
                     >
-                      <Text className="text-center font-semibold">⚙️ Service</Text>
+                      <Text className="text-center font-semibold">Service</Text>
                     </TouchableOpacity>
                   </View>
                 </View>
@@ -364,7 +364,7 @@ export function ItemPicker({
               {/* Create New Button */}
               <TouchableOpacity
                 onPress={() => setShowCreateForm(true)}
-                className="bg-revolut-blue-600 rounded-xl p-4 mb-4 flex-row items-center justify-center"
+                className="bg-lime-700 rounded-xl p-4 mb-4 flex-row items-center justify-center"
                 activeOpacity={0.7}
               >
                 <Text className="text-white text-lg mr-2">+</Text>
@@ -375,7 +375,7 @@ export function ItemPicker({
 
               {loading ? (
                 <View className="py-12 items-center">
-                  <ActivityIndicator size="large" color="#5B72EE" />
+                  <ActivityIndicator size="large" color="#163300" />
                 </View>
               ) : filteredItems.length === 0 ? (
                 <View className="py-12 items-center">
@@ -401,14 +401,14 @@ export function ItemPicker({
                       }}
                       className={`bg-white rounded-xl p-4 flex-row items-center ${
                         selectedItemId === item.id
-                          ? 'border-2 border-revolut-blue-600'
+                          ? 'border-2 border-lime-700'
                           : 'border border-gray-200'
                       }`}
                       activeOpacity={0.7}
                     >
                       {/* Icon */}
                       <View className="bg-gray-100 w-12 h-12 rounded-xl items-center justify-center mr-3">
-                        <Text className="text-2xl">{getItemIcon(item.type)}</Text>
+                        <Feather name={getItemIcon(item.type)} size={20} color="#163300" />
                       </View>
 
                       {/* Info */}
@@ -440,8 +440,8 @@ export function ItemPicker({
 
                       {/* Check mark if selected */}
                       {selectedItemId === item.id && (
-                        <View className="bg-revolut-blue-600 w-6 h-6 rounded-full items-center justify-center">
-                          <Text className="text-white text-xs">✓</Text>
+                        <View className="bg-lime-700 w-6 h-6 rounded-full items-center justify-center">
+                          <Feather name="check" size={12} color="#FFFFFF" />
                         </View>
                       )}
                     </TouchableOpacity>

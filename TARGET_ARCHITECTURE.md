@@ -4,13 +4,13 @@
 
 **Reconstruction (2026-09-03):** the hosted project still exists (`viqckjmborlqaemavrzu`) but `public` has zero tables, `auth.users` is empty, storage is empty, and no app migrations are applied. Production rows and identities are unrecoverable unless a platform backup is found. Reconstruction is greenfield toward this document, not a forensic clone. Do not replay checked-in SQL in order. Derive compatibility columns from application TypeScript contracts (`src/types`, service mappers). Skip preserving old `auth.users` UUIDs.
 
-**W1–W4 verified (2026-09-07).** Web and mobile email login/signup are Better Auth. Hono slices: customers, business profile (`GET/PUT /api/business-profile`), items (`/api/items`), and invoices (`GET/POST /api/invoices`, `POST /api/invoices/:id/send`, server GST totals, sequence lock, journal). Invoice create stores payment terms (`payment_term_days`), percent or fixed discount (server math), and Save draft vs Send. Send marks `sent` only after the mailer accepts; the default mailer logs/queues and tests inject a mock. Logo is stored as a data URL on the profile (no Storage SDK). W5 invoice gates shipped (2026-09-08): `Idempotency-Key` replay on create, share tokens (`POST /api/invoices/:id/share`, public `GET /api/public/invoices/:token`). Nested expense joins and mobile expenses still use `supabase-js`. Mobile invoices use Hono. Do not authorize the same product data with both session systems. **Next:** W6 payments/expenses. Pickup: `AGENTS.md` § Reconstruction agents. Cloudflare hosting: Pages + Node container; runbook `deploy/cloudflare.md`.
+**W1–W8 verified (2026-09-09).** Web and mobile email login/signup are Better Auth. Hono slices: customers, business profile, items, invoices (GST, payment terms, discount, send, idempotency, share tokens), expenses + expense categories, invoice payments (atomic balance update), `GET /api/accounts`, bank accounts, transaction import, reconciliation persist, tax config/returns, object storage, payment receipts, and receipt-scan AI. Invoice send uses Resend when `RESEND_API_KEY` is set, otherwise a logging mailer. Do not authorize the same product data with both session systems. **Next:** W9 client consolidation. Pickup: `AGENTS.md` § Reconstruction agents. Cloudflare hosting: Pages + Node container; runbook `deploy/cloudflare.md`.
 
 Operating plan: specialist agents, two lanes (compatibility boot vs Hono target), TDD, and a knowledge loop. Session start: `.cursor/skills/ledgercraft-bootstrap/SKILL.md`. Other skills in `.cursor/skills/`. Roster and protocol in `AGENTS.md`.
 
 Current production uses Supabase Auth, PostgREST, Storage, Edge Functions, Vite, and Expo. Web and mobile clients call `supabase-js` directly. This document defines the final architecture and the safe path from that system.
 
-The existing Revolut-style web and mobile UI remains. The web router and repository layout may change after the API boundary is established; the product is not being rewritten in Next.js or TanStack Start.
+Web UI stays Revolut-inspired. Mobile UI is Wise-inspired (lime `#9FE870`, forest `#163300`, sparse whitespace) on native iOS 26 chrome (Liquid Glass tab bar, large titles). Do not copy the Wise wordmark or flag. The web router and repository layout may change after the API boundary is established; the product is not being rewritten in Next.js or TanStack Start.
 
 ---
 
@@ -649,7 +649,7 @@ The deployment is provider-portable:
 | Web | Static Vite deployment with same-origin `/api/*` routing |
 | Mobile | EAS release calling the public HTTPS API |
 
-The first production host is Cloudflare: **Pages** for the Vite SPA, a **Node container** for Hono (`Dockerfile`, `API_HOST=0.0.0.0`), and Postgres (Neon or equivalent) via `DATABASE_URL`. Same-origin `/api/*` is a Pages Function proxy (`functions/api/[[path]].ts`) so Better Auth cookies stay on the site origin. R2 is the S3 adapter when storage moves (W8). Operational runbook: `deploy/cloudflare.md`.
+The first production host is Cloudflare: **Pages** for the Vite SPA, a **Node container** for Hono (`Dockerfile`, `API_HOST=0.0.0.0`), and Postgres (Neon or equivalent) via `DATABASE_URL`. Same-origin `/api/*` is a Pages Function proxy (`functions/api/[[path]].ts`) so Better Auth cookies stay on the site origin. Object storage is a filesystem adapter locally; R2 is the S3 adapter when `S3_BUCKET` is wired. Operational runbook: `deploy/cloudflare.md`.
 
 D1 is not the database. Workers + Hyperdrive are a later option only if transaction-mode pooling is proven against `set_config('app.organisation_id', …, true)`. They are not the initial runtime.
 

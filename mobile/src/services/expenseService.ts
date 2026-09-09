@@ -1,3 +1,4 @@
+import { expensesApi, expensesApiEnabled } from '@/features/expenses/api/expensesApi';
 import { supabase } from './supabaseClient';
 import type { Expense, ExpenseCategory, Account, Customer } from '@/types/expense';
 import type { ExpenseStatus, PaymentMethod } from '@/types/expense';
@@ -77,6 +78,17 @@ export class ExpenseService {
   // Fetch all expenses for the current user with optional filters
   async fetchExpenses(filters?: ExpenseFilters): Promise<Expense[]> {
     try {
+      if (expensesApiEnabled()) {
+        let rows = await expensesApi.list();
+        if (filters?.categoryId) rows = rows.filter((row) => row.categoryId === filters.categoryId);
+        if (filters?.accountId) rows = rows.filter((row) => row.accountId === filters.accountId);
+        if (filters?.customerId) rows = rows.filter((row) => row.customerId === filters.customerId);
+        if (filters?.status) rows = rows.filter((row) => row.status === filters.status);
+        if (filters?.dateFrom) rows = rows.filter((row) => row.expenseDate >= filters.dateFrom!);
+        if (filters?.dateTo) rows = rows.filter((row) => row.expenseDate <= filters.dateTo!);
+        return rows;
+      }
+
       const { data: { user } } = await supabase.auth.getUser();
       
       if (!user) {
@@ -156,6 +168,10 @@ export class ExpenseService {
   // Fetch a single expense by ID
   async fetchExpenseById(id: string): Promise<Expense> {
     try {
+      if (expensesApiEnabled()) {
+        return expensesApi.get(id);
+      }
+
       const { data: { user } } = await supabase.auth.getUser();
       
       if (!user) {
@@ -215,6 +231,25 @@ export class ExpenseService {
   // Create a new expense
   async createExpense(expense: Omit<Expense, 'id' | 'createdAt' | 'updatedAt' | 'category' | 'account' | 'customer'>): Promise<Expense> {
     try {
+      if (expensesApiEnabled()) {
+        return expensesApi.create({
+          description: expense.description,
+          amount: String(expense.amount),
+          taxAmount: String(expense.taxAmount ?? 0),
+          currency: expense.currency || 'NZD',
+          expenseDate: expense.expenseDate,
+          status: expense.status,
+          isBillable: expense.isBillable,
+          categoryId: expense.categoryId ?? null,
+          accountId: expense.accountId ?? null,
+          customerId: expense.customerId ?? null,
+          vendorName: expense.vendorName ?? null,
+          receiptUrl: expense.receiptUrl ?? null,
+          paymentMethod: expense.paymentMethod ?? null,
+          notes: expense.notes ?? null,
+        });
+      }
+
       const { data: { user } } = await supabase.auth.getUser();
       
       if (!user) {
@@ -292,6 +327,25 @@ export class ExpenseService {
   // Update an existing expense
   async updateExpense(id: string, expense: Partial<Omit<Expense, 'id' | 'createdAt' | 'updatedAt' | 'category' | 'account' | 'customer'>>): Promise<Expense> {
     try {
+      if (expensesApiEnabled()) {
+        const input: Record<string, unknown> = {};
+        if (expense.description !== undefined) input.description = expense.description;
+        if (expense.amount !== undefined) input.amount = String(expense.amount);
+        if (expense.taxAmount !== undefined) input.taxAmount = String(expense.taxAmount);
+        if (expense.currency !== undefined) input.currency = expense.currency;
+        if (expense.expenseDate !== undefined) input.expenseDate = expense.expenseDate;
+        if (expense.status !== undefined) input.status = expense.status;
+        if (expense.isBillable !== undefined) input.isBillable = expense.isBillable;
+        if (expense.categoryId !== undefined) input.categoryId = expense.categoryId ?? null;
+        if (expense.accountId !== undefined) input.accountId = expense.accountId ?? null;
+        if (expense.customerId !== undefined) input.customerId = expense.customerId ?? null;
+        if (expense.vendorName !== undefined) input.vendorName = expense.vendorName ?? null;
+        if (expense.receiptUrl !== undefined) input.receiptUrl = expense.receiptUrl ?? null;
+        if (expense.paymentMethod !== undefined) input.paymentMethod = expense.paymentMethod ?? null;
+        if (expense.notes !== undefined) input.notes = expense.notes ?? null;
+        return expensesApi.update(id, input);
+      }
+
       const { data: { user } } = await supabase.auth.getUser();
       
       if (!user) {
@@ -370,6 +424,11 @@ export class ExpenseService {
   // Delete an expense
   async deleteExpense(id: string): Promise<void> {
     try {
+      if (expensesApiEnabled()) {
+        await expensesApi.remove(id);
+        return;
+      }
+
       const { data: { user } } = await supabase.auth.getUser();
       
       if (!user) {

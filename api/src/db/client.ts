@@ -14,6 +14,12 @@ import {
 } from './schema/identity';
 import { invoices, lineItems } from './schema/invoices';
 import { itemCategories, items } from './schema/items';
+import { bankAccounts, bankTransactions, transactionImportBatches } from './schema/bank';
+import { expenseCategories, expenses } from './schema/expenses';
+import { payments } from './schema/payments';
+import { reconciliationAdjustments, reconciliationMatches, reconciliationSessions } from './schema/reconciliation';
+import { receipts } from './schema/receipts';
+import { taxConfigurations, taxReturns } from './schema/tax';
 import { idempotencyKeys } from './schema/idempotency';
 import { rlsProbe } from './schema/probe';
 import { sharedInvoices } from './schema/shared-invoices';
@@ -35,6 +41,18 @@ export const schema = {
   accounts,
   journalEntries,
   journalEntryLines,
+  expenseCategories,
+  expenses,
+  payments,
+  receipts,
+  bankAccounts,
+  bankTransactions,
+  transactionImportBatches,
+  reconciliationSessions,
+  reconciliationMatches,
+  reconciliationAdjustments,
+  taxConfigurations,
+  taxReturns,
   idempotencyKeys,
   sharedInvoices,
 };

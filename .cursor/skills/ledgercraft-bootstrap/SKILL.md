@@ -7,7 +7,7 @@ description: Start-here operating instructions for LedgerCraft reconstruction. U
 
 Read this before writing code. Then follow the named skill for the wave you are on.
 
-## You are here (2026-09-07)
+## You are here (2026-09-09)
 
 | Fact | Detail |
 | --- | --- |
@@ -19,13 +19,16 @@ Read this before writing code. Then follow the named skill for the wave you are 
 | W3 | **Verified (2026-09-05).** `pnpm verify:w3` green. Better Auth email/password, `/api/me` binds org. |
 | W4 | **Verified (2026-09-07).** `pnpm verify:w4` green. Customers CRUD via Hono. |
 | W5 | **Verified (2026-09-08).** `pnpm verify:w5` green. Invoice idempotency + share tokens. |
-| Git | `origin/mobile-app` includes W4 customers. Working tree also has web Better Auth plus Hono business-profile / items / invoices / share. |
-| Clients | Web and mobile email login/signup → Better Auth (`/api/auth/*`). Web customers, business profile, items, invoices → Hono (payment terms, percent/fixed discount, Save draft / Send, idempotency, share tokens). Mobile customers and invoices → Hono (cookie jar). Mobile expenses still `supabase-js`. |
+| W6 | **Verified (2026-09-08).** `pnpm verify:w6` green. Expenses, payments, `GET /api/accounts`. |
+| W7 | **Verified (2026-09-09).** `pnpm verify:w7` green. Bank accounts, transaction import, recon persist, tax config/returns. |
+| W8 | **Verified (2026-09-09).** `pnpm verify:w8` green. Objects, payment receipts, Resend/logging mailer, receipt-scan AI. |
+| Git | `origin/mobile-app` includes W4 customers. Working tree also has web Better Auth plus Hono business-profile / items / invoices / share / expenses / payments / bank / recon / tax / objects / receipts / AI. |
+| Clients | Web and mobile email login/signup → Better Auth (`/api/auth/*`). Web customers, business profile, items, invoices, expenses, payments, accounts list, bank, recon persist, tax, objects, payment receipts, receipt-scan → Hono. Mobile customers, invoices, expenses, payments, accounts list, objects, receipts, receipt-scan → Hono (cookie jar). Conversations still `supabase-js`. |
 
 ## Pickup
 
-1. Read `AGENTS.md` § Reconstruction agents (what shipped, W6 payments/expenses, `accounts` name clash).
-2. If this clone does not contain `api/src/modules/customers/`, W4 is missing — do not start W5.
+1. Read `AGENTS.md` § Reconstruction agents (what shipped, W9 client consolidation).
+2. If this clone does not contain `api/src/modules/storage/`, W8 is missing — do not start W9.
 3. Commit/push if origin is behind and the user asks.
 
 ## First command
@@ -33,10 +36,10 @@ Read this before writing code. Then follow the named skill for the wave you are 
 ```bash
 pnpm install
 pnpm db:up
-pnpm verify:w5
+pnpm verify:w8
 ```
 
-If `pnpm-lock.yaml` changes, commit it. Next wave is W6 (payments/expenses). Dev smoke:
+If `pnpm-lock.yaml` changes, commit it. Next wave is W9 (client consolidation). Dev smoke:
 
 ```bash
 pnpm dev:api          # 127.0.0.1:3001
@@ -97,7 +100,10 @@ Parent chat = Orchestrator. Task `generalPurpose` + prompt in `ledgercraft-agent
 | --- | --- |
 | Finish W1/W2/W3/W4 | Done (`pnpm verify:w4`) |
 | W5 | Invoice idempotency + share (`pnpm verify:w5`) |
-| W6 | Payments, receipts, expenses |
+| W6 | Payments, expenses, accounts list (`pnpm verify:w6`) |
+| W7 | Bank, recon, tax (`pnpm verify:w7`) |
+| W8 | Storage, email, AI (`pnpm verify:w8`) |
+| W9 | Client consolidation |
 
 ## Hard no
 
@@ -107,7 +113,7 @@ Parent chat = Orchestrator. Task `generalPurpose` + prompt in `ledgercraft-agent
 - Better Auth + Supabase sessions both authorizing data
 - UI redesign + TanStack Router + `apps/` move + data cutover in one change
 - Mock Drizzle in SQL/RLS/transaction tests
-- Start W5 without W4 customers routes and a working `/api/me` session bind
+- Start W9 without W8 object/receipt/AI routes and a working `/api/me` session bind
 - Commit unless the user asked
 
 ## After any change

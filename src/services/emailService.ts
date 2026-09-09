@@ -21,6 +21,12 @@ export const emailService = {
     invoiceHtml,
     pdfBuffer
   }: SendInvoiceEmailParams): Promise<{ success: boolean; messageId?: string; error?: string }> {
+    if (import.meta.env.VITE_INVOICES_API !== 'false') {
+      return {
+        success: false,
+        error: 'Invoice email is sent through /api/invoices/:id/send',
+      };
+    }
     try {
       let pdfBase64 = '';
       

@@ -10,9 +10,9 @@ This document provides comprehensive guidance for AI agents (LLMs) working on th
 | --- | --- |
 | Spec | `TARGET_ARCHITECTURE.md` — end state and gates. Not optional. |
 | Live DB | Hosted `public` is empty (2026-09-03). Greenfield. Do not replay Git SQL. No UUID import. |
-| Now | W1–W4 **verified**. W5 invoice gates: idempotency + share tokens on Hono. Next: W6 payments/expenses. |
-| Blocked | None for W6. |
-| Clients | Web and mobile email auth are Better Auth. Mobile invoices → Hono. Mobile expenses still `supabase-js`. No new client SQL, Storage SDK, Edge Functions, or `VITE_OPENAI_*`. |
+| Now | W1–W8 **verified** (2026-09-09). Next: W9 client consolidation. |
+| Blocked | None for W9. |
+| Clients | Web and mobile email auth are Better Auth. Web/mobile customers, invoices, expenses, payments, accounts list → Hono. Web bank, recon persist, tax, objects, payment receipts, receipt-scan AI → Hono. Invoice send is Hono (Resend or logging mailer). Conversations still `supabase-js`. No new client SQL, Storage SDK, Edge Functions, or `VITE_OPENAI_*`. Mobile visual language is Wise lime/forest + iOS 26 native chrome; web stays Revolut. |
 | Ports | Postgres **55432**, API **3001**, Vite **8080** (`/api` proxy). |
 | Package manager | **pnpm** workspace (`api`, `packages/contracts`). `mobile/` is not in the workspace yet. |
 
@@ -113,10 +113,9 @@ Orchestrator (parent chat) sequences waves. Do not mix UI redesign, TanStack Rou
 
 ### Design System
 
-- **Inspiration**: Revolut-style modern fintech UI
-- **Color Palette**: Blue primary (#5B72EE), clean whites, subtle grays
-- **Typography**: Clear hierarchy with bold headings, medium body text
-- **Components**: Card-based layouts, rounded corners, subtle shadows
+- **Web**: Revolut-inspired (blue `#5B72EE`, cards, slate text)
+- **Mobile**: Wise-inspired lime/forest (`#9FE870` / `#163300`) on iOS grouped canvas. Native tabs/stack, large titles, Liquid Glass tab bar (no opaque `tabBarStyle` tint). Lime CTAs use forest text, never white. No emoji chrome.
+- **Typography**: System San Francisco on mobile; clear hierarchy with bold headings
 - **Animations**: Smooth transitions (200-300ms), micro-interactions
 
 ---
@@ -1069,7 +1068,7 @@ Parent chat is Orchestrator. Launch specialists with Task `generalPurpose` using
 | Mobile | `mobile/` Query hooks and screens |
 | Verification | Vitest, RLS tests, Playwright, RN tests, live smoke (`ledgercraft-verify`) |
 
-**Waves:** W0 knowledge (done) → W1 platform scaffolding (**verified**) → W2 compatibility schema (**verified**) → W3 identity (**verified**) → W4 customers (**verified**) → W5 invoices (idempotency + share) → W6 payments/expenses/accounts (**next**) → W7 bank/recon/tax → W8 storage/email/AI → W9 client consolidation.
+**Waves:** W0 knowledge (done) → W1 platform scaffolding (**verified**) → W2 compatibility schema (**verified**) → W3 identity (**verified**) → W4 customers (**verified**) → W5 invoices (idempotency + share, **verified**) → W6 payments/expenses/accounts (**verified**) → W7 bank/recon/tax (**verified**) → W8 storage/email/AI (**verified**) → W9 client consolidation (**next**).
 
 **TDD:** failing tests first; real Postgres for SQL/RLS. **Knowledge:** a wave is not done if docs are stale.
 
@@ -1129,7 +1128,7 @@ Hono binds a Better Auth session to `app.user_id` + `app.organisation_id`. Web a
 ```bash
 pnpm install
 pnpm db:up
-pnpm verify:w4          # alias of verify:w1; contracts + API + typecheck
+pnpm verify:w8          # alias of verify:w1; contracts + API + typecheck
 pnpm dev:api            # 127.0.0.1:3001
 pnpm dev                # Vite :8080, proxies /api
 curl -s localhost:8080/api/healthz
@@ -1155,6 +1154,18 @@ Customers CRUD through Hono, scoped to the session organisation. Ownership IDs c
 
 Web and mobile invoice create/list/status/send is Hono: sequence lock, line items, server GST totals, balanced journal, payment terms, percent or fixed discount. `POST /api/invoices` stays `draft`. `Idempotency-Key` replay returns the original invoice; a reused key with a different body is 409 `IDEMPOTENCY_CONFLICT`. `POST /api/invoices/:id/share` snapshots the invoice; public `GET /api/public/invoices/:token` is 404 when expired, inactive, or unknown. Client-supplied totals are rejected. Cross-org get/share is 404. Cloudflare-ready: `Dockerfile`, Pages Function `/api` proxy, NetworkOnly PWA for `/api`.
 
+### W6 status (payments / expenses / accounts)
+
+Expenses, expense categories, invoice payments, and chart-of-accounts list are Hono. Money stays string `NUMERIC`. Ownership IDs come from the session. `POST /api/payments` inserts the payment and recomputes invoice `total_paid` / `balance_due` / `payment_status` in one organisation transaction; amount above `balanceDue` is 400 `PAYMENT_EXCEEDS_BALANCE`. Cross-org expense/payment reads are 404. `GET /api/accounts` lists the org chart (journal create still seeds AR/GST/Sales). Rollback: `VITE_EXPENSES_API`, `VITE_PAYMENTS_API`, `VITE_ACCOUNTS_API`, `EXPO_PUBLIC_EXPENSES_API`, `EXPO_PUBLIC_PAYMENTS_API`, `EXPO_PUBLIC_ACCOUNTS_API`.
+
+### W7 status (bank / recon / tax)
+
+Bank accounts, parsed transaction import, reconciliation persist, and tax config/returns are Hono. CSV parse and auto-match stay on the client. Import body is `{ bankAccountId, transactions }`; duplicate skip is same date + description + amount. `POST /api/payments`-style money stays string `NUMERIC`. `reconciliation_matches.confidence_score` is stored 0–1 and exposed 0–100. Completing a session with |difference| ≥ 0.01 is `400 RECONCILIATION_UNBALANCED`. `GET /api/tax-configurations` creates NZ GST `0.15` when missing. Cross-org bank/recon/tax reads are 404. Mobile has no dedicated bank/tax/recon screens. Rollback: `VITE_BANK_API`, `VITE_RECONCILIATION_API`, `VITE_TAX_API`.
+
+### W8 status (storage / email / AI)
+
+Object uploads, payment receipts, receipt-scan AI, and invoice send mailer are Hono. Tests inject a memory object store; local runtime uses the filesystem (`OBJECT_STORE_DIR` or `api/.data/objects`). Keys are `{organisationId}/{receipts|logos}/{uuid}.ext`. `GET /api/objects?key=` streams bytes; other orgs get 404. `POST /api/receipts` `{ paymentId }` snapshots payment+invoice JSON and issues `REC-YYYYMM-####`. `POST /api/ai/receipt-scan` uses `OPENAI_API_KEY` on the API; missing scanner is `503 AI_UNAVAILABLE`. Invoice send uses Resend when `RESEND_API_KEY` is set, otherwise logs. Share/reminder email no longer calls Edge Functions when invoices API is on. Conversations and chat `aiService` still use Lane A. Rollback: `VITE_STORAGE_API`, `VITE_RECEIPTS_API`, `VITE_AI_API` (web `=== 'true'`). Restart Vite after changing flags.
+
 ### Hard no (still)
 
 - Replay Git SQL in order
@@ -1174,6 +1185,6 @@ Web and mobile invoice create/list/status/send is Hono: sequence lock, line item
 
 ---
 
-**Last Updated**: 2026-09-08
-**Version**: 1.4.1
+**Last Updated**: 2026-09-09
+**Version**: 1.7.0
 

@@ -1,0 +1,70 @@
+import { boolean, date, integer, numeric, pgTable, text, timestamp, uuid } from 'drizzle-orm/pg-core';
+
+const timestamptz = (name: string) => timestamp(name, { withTimezone: true, mode: 'date' });
+const money = (name: string) => numeric(name, { precision: 19, scale: 4, mode: 'string' });
+
+export const reconciliationSessions = pgTable('reconciliation_sessions', {
+  id: uuid('id').defaultRandom().primaryKey(),
+  organisationId: uuid('organisation_id').notNull(),
+  userId: uuid('user_id').notNull(),
+  bankAccountId: uuid('bank_account_id').notNull(),
+  statementStartDate: date('statement_start_date', { mode: 'string' }).notNull(),
+  statementEndDate: date('statement_end_date', { mode: 'string' }).notNull(),
+  statementOpeningBalance: money('statement_opening_balance').notNull(),
+  statementClosingBalance: money('statement_closing_balance').notNull(),
+  bookOpeningBalance: money('book_opening_balance').notNull(),
+  bookClosingBalance: money('book_closing_balance'),
+  totalDeposits: money('total_deposits').notNull().default('0'),
+  totalWithdrawals: money('total_withdrawals').notNull().default('0'),
+  status: text('status').notNull().default('in_progress'),
+  reconciledAt: timestamptz('reconciled_at'),
+  matchedCount: integer('matched_count').notNull().default(0),
+  unmatchedBankCount: integer('unmatched_bank_count').notNull().default(0),
+  unmatchedBookCount: integer('unmatched_book_count').notNull().default(0),
+  adjustmentCount: integer('adjustment_count').notNull().default(0),
+  difference: money('difference').notNull().default('0'),
+  notes: text('notes'),
+  createdAt: timestamptz('created_at').defaultNow().notNull(),
+  updatedAt: timestamptz('updated_at').defaultNow().notNull(),
+});
+
+export const reconciliationMatches = pgTable('reconciliation_matches', {
+  id: uuid('id').defaultRandom().primaryKey(),
+  organisationId: uuid('organisation_id').notNull(),
+  reconciliationId: uuid('reconciliation_id').notNull(),
+  bankTransactionId: uuid('bank_transaction_id'),
+  invoiceId: uuid('invoice_id'),
+  paymentId: uuid('payment_id'),
+  expenseId: uuid('expense_id'),
+  journalEntryId: uuid('journal_entry_id'),
+  matchType: text('match_type').notNull(),
+  confidenceScore: numeric('confidence_score', { precision: 5, scale: 4, mode: 'string' }).notNull().default('0'),
+  bankAmount: money('bank_amount'),
+  bookAmount: money('book_amount'),
+  difference: money('difference').notNull().default('0'),
+  status: text('status').notNull().default('pending'),
+  notes: text('notes'),
+  matchedBy: uuid('matched_by'),
+  matchedAt: timestamptz('matched_at').defaultNow().notNull(),
+  createdAt: timestamptz('created_at').defaultNow().notNull(),
+});
+
+export const reconciliationAdjustments = pgTable('reconciliation_adjustments', {
+  id: uuid('id').defaultRandom().primaryKey(),
+  organisationId: uuid('organisation_id').notNull(),
+  userId: uuid('user_id').notNull(),
+  reconciliationId: uuid('reconciliation_id').notNull(),
+  adjustmentType: text('adjustment_type').notNull(),
+  description: text('description').notNull(),
+  amount: money('amount').notNull(),
+  affectsBank: boolean('affects_bank').notNull().default(false),
+  affectsBook: boolean('affects_book').notNull().default(false),
+  referenceType: text('reference_type'),
+  referenceId: uuid('reference_id'),
+  referenceNumber: text('reference_number'),
+  journalEntryId: uuid('journal_entry_id'),
+  status: text('status').notNull().default('pending'),
+  appliedAt: timestamptz('applied_at'),
+  createdAt: timestamptz('created_at').defaultNow().notNull(),
+  updatedAt: timestamptz('updated_at').defaultNow().notNull(),
+});

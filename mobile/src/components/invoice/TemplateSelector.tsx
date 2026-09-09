@@ -45,7 +45,7 @@ export default function TemplateSelector({
               onPress={() => handleSelect(template.id)}
               activeOpacity={0.7}
             >
-              <Text style={styles.chipIcon}>📄</Text>
+              <Text style={styles.chipIcon}>PDF</Text>
               <Text
                 style={[
                   styles.chipText,
@@ -56,7 +56,7 @@ export default function TemplateSelector({
               </Text>
               {isSelected && (
                 <View style={styles.checkmark}>
-                  <Text style={styles.checkmarkText}>✓</Text>
+                  <Text style={styles.checkmarkText}>Selected</Text>
                 </View>
               )}
             </TouchableOpacity>
@@ -100,7 +100,7 @@ const styles = StyleSheet.create({
   },
   chipSelected: {
     backgroundColor: '#EEF2FF',
-    borderColor: '#5B72EE',
+    borderColor: '#163300',
   },
   chipIcon: {
     fontSize: 18,
@@ -111,14 +111,14 @@ const styles = StyleSheet.create({
     color: '#475569',
   },
   chipTextSelected: {
-    color: '#5B72EE',
+    color: '#163300',
     fontWeight: '700',
   },
   checkmark: {
     width: 20,
     height: 20,
     borderRadius: 10,
-    backgroundColor: '#5B72EE',
+    backgroundColor: '#163300',
     alignItems: 'center',
     justifyContent: 'center',
     marginLeft: 4,

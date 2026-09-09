@@ -2,7 +2,10 @@ import { serve } from '@hono/node-server';
 import { createApp } from './app';
 import { createAppDb } from './db/client';
 import { apiHost, apiPort } from './env';
+import { createOpenAiReceiptScanner } from './modules/ai/openai';
 import { createAuth } from './modules/auth/auth';
+import { createRuntimeInvoiceMailer } from './modules/invoices/resend';
+import { createFilesystemObjectStore } from './modules/storage/filesystem';
 
 function createRuntimeApp() {
   const { db, sql } = createAppDb();
@@ -10,6 +13,9 @@ function createRuntimeApp() {
   return createApp({
     auth,
     db,
+    invoiceMailer: createRuntimeInvoiceMailer(),
+    objectStore: createFilesystemObjectStore(),
+    receiptScanner: process.env.OPENAI_API_KEY ? createOpenAiReceiptScanner() : undefined,
     checkDatabase: async () => {
       try {
         await sql`SELECT 1`;

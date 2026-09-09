@@ -1,6 +1,7 @@
 import { supabase } from './supabaseClient';
 import { OnboardingData, BusinessTheme } from '@/types/onboarding';
 import { decode } from 'base64-arraybuffer';
+import { objectsApi, storageApiEnabled } from '@/features/storage/api/objectsApi';
 
 export interface BusinessProfile {
   id: string;
@@ -231,9 +232,18 @@ class BusinessProfileService {
       });
 
       const base64 = await base64Promise;
-
-      // Get file extension
       const ext = uri.split('.').pop()?.split('?')[0] || 'jpg';
+
+      if (storageApiEnabled()) {
+        const dto = await objectsApi.upload({
+          kind: 'logo',
+          filename: `${userId}-logo.${ext}`,
+          contentType: `image/${ext === 'jpg' ? 'jpeg' : ext}`,
+          contentBase64: base64,
+        });
+        return dto.url;
+      }
+
       const fileName = `business-logos/${userId}-logo.${ext}`;
 
       // Convert base64 to ArrayBuffer
@@ -275,7 +285,7 @@ class BusinessProfileService {
     let theme: BusinessTheme | undefined;
     if (data.primary_color || data.secondary_color || data.accent_color) {
       theme = {
-        primary: data.primary_color || '#5B72EE',
+        primary: data.primary_color || '#163300',
         secondary: data.secondary_color || '#4A5FD8',
         accent: data.accent_color || '#00D4FF',
         text: '#1E293B',

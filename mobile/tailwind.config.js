@@ -47,24 +47,22 @@ module.exports = {
           teal: '#5BC0BE',
           coral: '#F25F5C'
         },
-        revolut: {
-          blue: {
-            50: '#EEF0FE',
-            100: '#E0E7FF',
-            200: '#C7D2FE',
-            300: '#A5B4FC',
-            400: '#818CF8',
-            500: '#5B72EE',
-            600: '#4158D0',
-            700: '#2E4CEE',
-            800: '#1E3A8A',
-            900: '#1C1C1E',
-            950: '#1C1C1E'
-          }
+        lime: {
+          50: '#F4FBE8',
+          100: '#E8F8D8',
+          200: '#D4F2B0',
+          300: '#C4EE96',
+          400: '#B0EA7E',
+          500: '#9FE870',
+          600: '#7BC24E',
+          700: '#163300',
+          800: '#122800',
+          900: '#0E2E10',
+          950: '#0A1F0A'
         },
         ios: {
-          grouped: '#F2F2F7',
-          fill: '#E8E8ED',
+          grouped: '#F2F2F2',
+          fill: '#EDEDED',
         }
       },
       borderRadius: {

@@ -28,6 +28,19 @@ export async function withTestDb<T>(
     await migrator.sql`TRUNCATE TABLE rls_probe`;
     await migrator.sql`
       TRUNCATE TABLE
+        receipts,
+        payments,
+        expenses,
+        expense_categories,
+        reconciliation_matches,
+        reconciliation_adjustments,
+        reconciliation_sessions,
+        bank_transactions,
+        transaction_import_batches,
+        bank_accounts,
+        tax_adjustments,
+        tax_returns,
+        tax_configurations,
         journal_entry_lines,
         journal_entries,
         line_items,

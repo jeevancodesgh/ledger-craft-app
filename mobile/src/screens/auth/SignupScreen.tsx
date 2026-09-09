@@ -2,13 +2,13 @@ import React, { useState } from 'react';
 import {
   View,
   Text,
-  TouchableOpacity,
   Alert,
   KeyboardAvoidingView,
   Platform,
   ScrollView,
+  Pressable,
+  StyleSheet,
 } from 'react-native';
-import { LinearGradient } from 'expo-linear-gradient';
 import { useAuth } from '@/store';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
@@ -16,6 +16,7 @@ import { AuthStackParamList } from '@/navigation/types';
 import { ModernInput } from '@/components/ui/ModernInput';
 import { ModernButton } from '@/components/ui/ModernButton';
 import { authErrorMessage } from '@/features/auth/api/authApi';
+import { palette, radius, space, type } from '@/theme/tokens';
 
 type SignupScreenNavigationProp = NativeStackNavigationProp<AuthStackParamList, 'Signup'>;
 
@@ -78,100 +79,132 @@ export default function SignupScreen() {
   return (
     <KeyboardAvoidingView
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-      className="flex-1"
+      style={styles.screen}
     >
-      <LinearGradient
-        colors={['#ffffff', '#f8fafc', '#f1f5f9']}
-        className="flex-1"
+      <ScrollView
+        contentContainerStyle={styles.content}
+        keyboardShouldPersistTaps="handled"
+        showsVerticalScrollIndicator={false}
       >
-        <ScrollView
-          contentContainerClassName="flex-grow"
-          keyboardShouldPersistTaps="handled"
-          showsVerticalScrollIndicator={false}
-        >
-          <View className="flex-1 px-6 pt-20 pb-8">
-            {/* Logo & Brand */}
-            <View className="items-center mb-12">
-              <View className="w-16 h-16 bg-primary rounded-2xl items-center justify-center mb-4 shadow-lg">
-                <Text className="text-3xl text-white font-bold">EBI</Text>
-              </View>
-              <Text className="text-3xl font-bold text-foreground">EasyBizInvoice</Text>
-              <Text className="text-muted-foreground mt-2">Professional Business Solutions</Text>
-            </View>
-
-            {/* Form Card */}
-            <View className="bg-card/80 border border-border/50 rounded-2xl p-6 shadow-xl mb-6">
-              <View className="mb-6">
-                <Text className="text-2xl font-bold text-center text-foreground mb-2">
-                  Create Account
-                </Text>
-                <Text className="text-center text-muted-foreground">
-                  Sign up to get started
-                </Text>
-              </View>
-
-              {/* Full Name Input */}
-              <ModernInput
-                label="Full Name"
-                value={fullName}
-                onChangeText={setFullName}
-                placeholder="Enter your full name"
-                autoCapitalize="words"
-              />
-
-              {/* Email Input */}
-              <ModernInput
-                label="Email address"
-                value={email}
-                onChangeText={validateEmail}
-                placeholder="Enter your email"
-                keyboardType="email-address"
-                autoCapitalize="none"
-                error={emailError}
-              />
-
-              {/* Password Input */}
-              <ModernInput
-                label="Password"
-                value={password}
-                onChangeText={validatePassword}
-                placeholder="Enter your password"
-                secureTextEntry
-                showPasswordToggle
-                error={passwordError}
-              />
-
-              {/* Sign Up Button */}
-              <View className="mt-2">
-                <ModernButton
-                  onPress={handleSignup}
-                  variant="primary"
-                  size="lg"
-                  fullWidth
-                  loading={loading}
-                  disabled={!email || !password || !fullName || !!emailError || !!passwordError}
-                >
-                  {loading ? 'Creating account...' : 'Sign up'}
-                </ModernButton>
-              </View>
-
-              {/* Sign In Link */}
-              <View className="mt-6">
-                <Text className="text-center text-muted-foreground">
-                  Already have an account?{' '}
-                  <Text
-                    onPress={() => navigation.navigate('Login')}
-                    className="text-primary font-semibold"
-                  >
-                    Sign in
-                  </Text>
-                </Text>
-              </View>
-            </View>
+        <View style={styles.brand}>
+          <View style={styles.mark}>
+            <Text style={styles.markText}>LC</Text>
           </View>
-        </ScrollView>
-      </LinearGradient>
+          <Text style={styles.wordmark}>LedgerCraft</Text>
+        </View>
+
+        <Text style={styles.title}>Create account</Text>
+        <Text style={styles.subtitle}>Get started in a minute</Text>
+
+        <ModernInput
+          label="Full name"
+          value={fullName}
+          onChangeText={setFullName}
+          placeholder="Enter your full name"
+          autoCapitalize="words"
+        />
+
+        <ModernInput
+          label="Email address"
+          value={email}
+          onChangeText={validateEmail}
+          placeholder="Enter your email"
+          keyboardType="email-address"
+          autoCapitalize="none"
+          error={emailError}
+        />
+
+        <ModernInput
+          label="Password"
+          value={password}
+          onChangeText={validatePassword}
+          placeholder="Enter your password"
+          secureTextEntry
+          showPasswordToggle
+          error={passwordError}
+        />
+
+        <View style={styles.cta}>
+          <ModernButton
+            onPress={handleSignup}
+            variant="primary"
+            size="lg"
+            fullWidth
+            loading={loading}
+            disabled={!email || !password || !fullName || !!emailError || !!passwordError}
+          >
+            {loading ? 'Creating account...' : 'Continue'}
+          </ModernButton>
+        </View>
+
+        <Pressable
+          onPress={() => navigation.navigate('Login')}
+          accessibilityRole="button"
+          accessibilityLabel="Sign in"
+          style={styles.footerLink}
+        >
+          <Text style={styles.footer}>
+            Already have an account? <Text style={styles.footerAction}>Sign in</Text>
+          </Text>
+        </Pressable>
+      </ScrollView>
     </KeyboardAvoidingView>
   );
 }
 
+const styles = StyleSheet.create({
+  screen: {
+    flex: 1,
+    backgroundColor: palette.surface,
+  },
+  content: {
+    flexGrow: 1,
+    paddingHorizontal: space.xxl,
+    paddingTop: 72,
+    paddingBottom: 40,
+  },
+  brand: {
+    marginBottom: 36,
+  },
+  mark: {
+    width: 56,
+    height: 56,
+    borderRadius: radius.well,
+    backgroundColor: palette.accent,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: space.md,
+  },
+  markText: {
+    fontSize: 20,
+    fontWeight: '700',
+    color: palette.accentForeground,
+  },
+  wordmark: {
+    ...type.headline,
+  },
+  title: {
+    ...type.title,
+    marginBottom: 6,
+  },
+  subtitle: {
+    ...type.subhead,
+    marginBottom: 28,
+  },
+  cta: {
+    marginTop: 8,
+  },
+  footerLink: {
+    marginTop: 28,
+    minHeight: 44,
+    justifyContent: 'center',
+  },
+  footer: {
+    ...type.subhead,
+    textAlign: 'center',
+  },
+  footerAction: {
+    color: palette.accentForeground,
+    fontWeight: '600',
+  },
+});

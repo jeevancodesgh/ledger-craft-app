@@ -26,6 +26,8 @@ import PaymentCaptureModal from '@/components/invoice/PaymentCaptureModal';
 import { getStatusColor, getStatusLabel } from '@/utils/statusUtils';
 import { ProfileCompletenessBanner } from '@/components/invoice/ProfileCompletenessBanner';
 import { palette, radius, space } from '@/theme/tokens';
+import { formatMoney } from '@/utils/money';
+import { ModernButton } from '@/components/ui/ModernButton';
 
 type InvoiceDetailNavigationProp = NativeStackNavigationProp<InvoiceStackParamList, 'InvoiceDetail'>;
 type InvoiceDetailRouteProp = RouteProp<InvoiceStackParamList, 'InvoiceDetail'>;
@@ -84,13 +86,7 @@ export default function InvoiceDetailScreen() {
     }
   };
 
-  const formatCurrency = (amount: number, currency: string) => {
-    return new Intl.NumberFormat('en-NZ', {
-      style: 'currency',
-      currency: currency || 'NZD',
-      minimumFractionDigits: 2,
-    }).format(amount);
-  };
+  const formatCurrency = (amount: number, currency: string) => formatMoney(amount, currency);
 
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
@@ -183,7 +179,7 @@ export default function InvoiceDetailScreen() {
   if (loading) {
     return (
       <View style={styles.centerContainer}>
-        <ActivityIndicator size="large" color={palette.accent} />
+        <ActivityIndicator size="large" color={palette.accentForeground} />
         <Text style={styles.loadingText}>Loading invoice</Text>
       </View>
     );
@@ -369,54 +365,43 @@ export default function InvoiceDetailScreen() {
         <View style={{ height: 100 }} />
       </ScrollView>
 
-      {/* Compact Bottom Action Bar */}
       <View style={styles.bottomBar}>
-        <Pressable
-          style={styles.bottomBarButton}
-          onPress={() => setShowPreview(true)}
-          accessibilityRole="button"
-          accessibilityLabel="Preview"
-        >
-          <Feather name="eye" size={20} color={palette.accent} />
-          <Text style={styles.bottomBarLabel}>Preview</Text>
-        </Pressable>
-
-        <Pressable
-          style={styles.bottomBarButton}
-          onPress={handleSharePDF}
-          disabled={generatingPdf}
-          accessibilityRole="button"
-          accessibilityLabel="Share"
-        >
-          {generatingPdf ? (
-            <ActivityIndicator size="small" color={palette.accent} />
-          ) : (
-            <Feather name="share" size={20} color={palette.accent} />
-          )}
-          <Text style={styles.bottomBarLabel}>Share</Text>
-        </Pressable>
-
-        <Pressable
-          style={styles.bottomBarButton}
-          onPress={handleEdit}
-          accessibilityRole="button"
-          accessibilityLabel="Edit"
-        >
-          <Feather name="edit-2" size={20} color={palette.accent} />
-          <Text style={styles.bottomBarLabel}>Edit</Text>
-        </Pressable>
-
-        {invoice.status !== 'paid' && (
+        {invoice.status !== 'paid' ? (
+          <ModernButton onPress={handleMarkAsPaid} variant="primary" size="lg" fullWidth>
+            Record payment
+          </ModernButton>
+        ) : null}
+        <View style={styles.secondaryRow}>
           <Pressable
-            style={styles.bottomBarPrimaryButton}
-            onPress={handleMarkAsPaid}
+            onPress={() => setShowPreview(true)}
             accessibilityRole="button"
-            accessibilityLabel="Mark as paid"
+            accessibilityLabel="Preview"
+            style={({ pressed }) => [styles.secondaryAction, pressed && styles.secondaryPressed]}
           >
-            <Feather name="check" size={18} color={palette.surface} />
-            <Text style={styles.bottomBarPrimaryLabel}>Paid</Text>
+            <Text style={styles.secondaryLabel}>Preview</Text>
           </Pressable>
-        )}
+          <Pressable
+            onPress={handleSharePDF}
+            disabled={generatingPdf}
+            accessibilityRole="button"
+            accessibilityLabel="Share"
+            style={({ pressed }) => [styles.secondaryAction, pressed && styles.secondaryPressed]}
+          >
+            {generatingPdf ? (
+              <ActivityIndicator size="small" color={palette.accentForeground} />
+            ) : (
+              <Text style={styles.secondaryLabel}>Share</Text>
+            )}
+          </Pressable>
+          <Pressable
+            onPress={handleEdit}
+            accessibilityRole="button"
+            accessibilityLabel="Edit"
+            style={({ pressed }) => [styles.secondaryAction, pressed && styles.secondaryPressed]}
+          >
+            <Text style={styles.secondaryLabel}>Edit</Text>
+          </Pressable>
+        </View>
       </View>
 
       {/* Preview Modal */}
@@ -495,10 +480,10 @@ const styles = StyleSheet.create({
     marginBottom: 4,
   },
   amountValue: {
-    fontSize: 40,
+    fontSize: 44,
     fontWeight: '700',
     color: palette.text,
-    letterSpacing: -1.2,
+    letterSpacing: -1.4,
     fontVariant: ['tabular-nums'],
   },
   heroMeta: {
@@ -604,43 +589,31 @@ const styles = StyleSheet.create({
     lineHeight: 22,
   },
   bottomBar: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-around',
     backgroundColor: palette.surface,
-    paddingVertical: 8,
-    paddingHorizontal: 8,
-    paddingBottom: 24,
+    paddingHorizontal: space.screen,
+    paddingTop: 12,
+    paddingBottom: 28,
     borderTopWidth: StyleSheet.hairlineWidth,
     borderTopColor: palette.separator,
+    gap: 8,
   },
-  bottomBarButton: {
-    alignItems: 'center',
+  secondaryRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-around',
+    paddingTop: 4,
+  },
+  secondaryAction: {
+    minHeight: 44,
     justifyContent: 'center',
-    paddingVertical: 6,
-    paddingHorizontal: 16,
-    minWidth: 64,
+    paddingHorizontal: 12,
   },
-  bottomBarLabel: {
-    fontSize: 11,
+  secondaryPressed: {
+    opacity: 0.6,
+  },
+  secondaryLabel: {
+    fontSize: 16,
     fontWeight: '600',
-    color: palette.textSecondary,
-    marginTop: 2,
-  },
-  bottomBarPrimaryButton: {
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: palette.success,
-    paddingVertical: 8,
-    paddingHorizontal: 20,
-    borderRadius: radius.pill,
-    minWidth: 72,
-  },
-  bottomBarPrimaryLabel: {
-    fontSize: 11,
-    fontWeight: '700',
-    color: palette.surface,
-    marginTop: 2,
+    color: palette.accentForeground,
   },
   statusButton: {
     flexDirection: 'row',

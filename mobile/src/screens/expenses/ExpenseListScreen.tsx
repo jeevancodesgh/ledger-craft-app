@@ -21,6 +21,7 @@ import { expenseService } from '@/services/expenseService';
 import type { Expense } from '@/types/expense';
 import SwipeableExpenseCard from '@/components/expense/SwipeableExpenseCard';
 import { palette, space } from '@/theme/tokens';
+import { formatMoney } from '@/utils/money';
 
 type ExpenseListNavigationProp = NativeStackNavigationProp<ExpenseStackParamList, 'ExpenseList'>;
 
@@ -141,13 +142,7 @@ export default function ExpenseListScreen() {
     );
   };
 
-  const formatCurrency = (amount: number, currency: string) => {
-    return new Intl.NumberFormat('en-NZ', {
-      style: 'currency',
-      currency: currency || 'NZD',
-      minimumFractionDigits: 2,
-    }).format(amount);
-  };
+  const formatCurrency = (amount: number, currency: string) => formatMoney(amount, currency);
 
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
@@ -187,7 +182,7 @@ export default function ExpenseListScreen() {
   if (loading) {
     return (
       <View style={styles.centerContainer}>
-        <ActivityIndicator size="large" color="#5B72EE" />
+        <ActivityIndicator size="large" color={palette.accentForeground} />
         <Text style={styles.loadingText}>Loading expenses...</Text>
       </View>
     );

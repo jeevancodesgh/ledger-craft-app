@@ -235,3 +235,27 @@ export async function updateInvoiceStatus(
     .where(and(eq(invoices.id, id), eq(invoices.organisationId, organisationId)));
   return getInvoice(tx, organisationId, id);
 }
+
+export async function applyPaymentTotals(
+  tx: Database,
+  organisationId: string,
+  invoiceId: string,
+  input: {
+    totalPaid: string;
+    balanceDue: string;
+    paymentStatus: string;
+    status: string;
+  },
+): Promise<InvoiceDto | undefined> {
+  await tx
+    .update(invoices)
+    .set({
+      totalPaid: input.totalPaid,
+      balanceDue: input.balanceDue,
+      paymentStatus: input.paymentStatus,
+      status: input.status,
+      updatedAt: new Date(),
+    })
+    .where(and(eq(invoices.id, invoiceId), eq(invoices.organisationId, organisationId)));
+  return getInvoice(tx, organisationId, invoiceId);
+}

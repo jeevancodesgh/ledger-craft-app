@@ -28,7 +28,12 @@ import {
   AdjustmentType,
 } from '@/types/reconciliation';
 import { BankTransaction, SupabaseBankTransaction } from '@/types/bankTransaction';
-import { Invoice, Expense } from '@/types';
+import { bankApi, bankApiEnabled } from '@/features/bank/api/bankApi';
+import {
+  reconciliationApi,
+  reconciliationApiEnabled,
+  toCreateSessionRequest,
+} from '@/features/reconciliation/api/reconciliationApi';
 
 // ===============================
 // MAPPERS
@@ -142,6 +147,9 @@ export const reconciliationService = {
    * Create a new reconciliation session
    */
   async createSession(setup: ReconciliationSetup): Promise<ReconciliationSession> {
+    if (reconciliationApiEnabled()) {
+      return reconciliationApi.createSession(toCreateSessionRequest(setup));
+    }
     const { data: { user } } = await supabase.auth.getUser();
     if (!user?.id) throw new Error('Not authenticated');
 
@@ -176,6 +184,9 @@ export const reconciliationService = {
    * Get all reconciliation sessions for a bank account
    */
   async getSessions(bankAccountId: string): Promise<ReconciliationSession[]> {
+    if (reconciliationApiEnabled()) {
+      return reconciliationApi.listSessions(bankAccountId);
+    }
     const { data: { user } } = await supabase.auth.getUser();
     if (!user?.id) return [];
 
@@ -194,6 +205,9 @@ export const reconciliationService = {
    * Get a single reconciliation session
    */
   async getSession(sessionId: string): Promise<ReconciliationSession | null> {
+    if (reconciliationApiEnabled()) {
+      return reconciliationApi.getSession(sessionId);
+    }
     const { data: { user } } = await supabase.auth.getUser();
     if (!user?.id) return null;
 
@@ -283,6 +297,33 @@ export const reconciliationService = {
     endDate: string,
     filters?: ReconciliationFilters
   ): Promise<BankTransaction[]> {
+    if (bankApiEnabled()) {
+      let transactions = await bankApi.listTransactions({
+        bankAccountId,
+        from: startDate,
+        to: endDate,
+      });
+      if (filters?.showReconciled === false) {
+        transactions = transactions.filter((row) => !row.isReconciled);
+      }
+      if (filters?.transactionType && filters.transactionType !== 'all') {
+        transactions = transactions.filter((row) => row.type === filters.transactionType);
+      }
+      if (filters?.category) {
+        transactions = transactions.filter((row) => row.category === filters.category);
+      }
+      if (filters?.searchTerm) {
+        const term = filters.searchTerm.toLowerCase();
+        transactions = transactions.filter((row) => row.description.toLowerCase().includes(term));
+      }
+      if (filters?.amountMin !== undefined) {
+        transactions = transactions.filter((row) => row.amount >= filters.amountMin!);
+      }
+      if (filters?.amountMax !== undefined) {
+        transactions = transactions.filter((row) => row.amount <= filters.amountMax!);
+      }
+      return transactions;
+    }
     const { data: { user } } = await supabase.auth.getUser();
     if (!user?.id) return [];
 
@@ -332,6 +373,9 @@ export const reconciliationService = {
     startDate: string,
     endDate: string
   ): Promise<MatchableItem[]> {
+    if (reconciliationApiEnabled()) {
+      return reconciliationApi.listBookEntries(startDate, endDate);
+    }
     const { data: { user } } = await supabase.auth.getUser();
     if (!user?.id) return [];
 
@@ -690,6 +734,14 @@ export const reconciliationService = {
     bookItemId: string,
     notes?: string
   ): Promise<ReconciliationMatch> {
+    if (reconciliationApiEnabled()) {
+      return reconciliationApi.createMatch(sessionId, {
+        bankTransactionId,
+        bookItemType,
+        bookItemId,
+        notes: notes ?? null,
+      });
+    }
     const { data: { user } } = await supabase.auth.getUser();
     if (!user?.id) throw new Error('Not authenticated');
 
@@ -749,6 +801,9 @@ export const reconciliationService = {
     sessionId: string,
     matches: SuggestedMatch[]
   ): Promise<ReconciliationMatch[]> {
+    if (reconciliationApiEnabled()) {
+      return reconciliationApi.confirmMatches(sessionId, matches);
+    }
     const { data: { user } } = await supabase.auth.getUser();
     if (!user?.id) throw new Error('Not authenticated');
 
@@ -862,6 +917,16 @@ export const reconciliationService = {
       referenceNumber?: string;
     }
   ): Promise<ReconciliationAdjustment> {
+    if (reconciliationApiEnabled()) {
+      return reconciliationApi.createAdjustment(sessionId, {
+        adjustmentType: adjustment.adjustmentType,
+        description: adjustment.description,
+        amount: String(adjustment.amount),
+        affectsBank: adjustment.affectsBank,
+        affectsBook: adjustment.affectsBook,
+        referenceNumber: adjustment.referenceNumber ?? null,
+      });
+    }
     const { data: { user } } = await supabase.auth.getUser();
     if (!user?.id) throw new Error('Not authenticated');
 
@@ -909,6 +974,9 @@ export const reconciliationService = {
    * Get adjustments for a session
    */
   async getAdjustments(sessionId: string): Promise<ReconciliationAdjustment[]> {
+    if (reconciliationApiEnabled()) {
+      return reconciliationApi.listAdjustments(sessionId);
+    }
     const { data, error } = await supabase
       .from('reconciliation_adjustments')
       .select('*')
@@ -928,12 +996,16 @@ export const reconciliationService = {
     const session = await this.getSession(sessionId);
     if (!session) throw new Error('Session not found');
 
-    // Get bank account details
-    const { data: bankAccount } = await supabase
-      .from('bank_accounts')
-      .select('account_name, bank_name')
-      .eq('id', session.bankAccountId)
-      .single();
+    const bankAccount = bankApiEnabled()
+      ? await bankApi.getAccount(session.bankAccountId)
+      : null;
+    const { data: supabaseBankAccount } = bankApiEnabled()
+      ? { data: null }
+      : await supabase
+          .from('bank_accounts')
+          .select('account_name, bank_name')
+          .eq('id', session.bankAccountId)
+          .single();
 
     // Get adjustments
     const adjustments = await this.getAdjustments(sessionId);
@@ -959,8 +1031,8 @@ export const reconciliationService = {
 
     return {
       session,
-      bankAccountName: bankAccount?.account_name || '',
-      bankName: bankAccount?.bank_name || '',
+      bankAccountName: bankAccount?.accountName || supabaseBankAccount?.account_name || '',
+      bankName: bankAccount?.bankName || supabaseBankAccount?.bank_name || '',
       bankBalance: session.statementClosingBalance,
       adjustedBankBalance,
       bookBalance: session.bookClosingBalance || 0,
@@ -980,6 +1052,9 @@ export const reconciliationService = {
    * Complete reconciliation
    */
   async completeReconciliation(sessionId: string): Promise<ReconciliationSession> {
+    if (reconciliationApiEnabled()) {
+      return reconciliationApi.completeSession(sessionId);
+    }
     const summary = await this.generateSummary(sessionId);
     
     if (!summary.isReconciled) {

@@ -1,6 +1,7 @@
 import React from 'react';
-import { Pressable, View, Text, StyleSheet } from 'react-native';
+import { Pressable, Text, StyleSheet } from 'react-native';
 import { palette, space, type } from '@/theme/tokens';
+import { IconWell } from './IconWell';
 
 interface QuickActionProps {
   icon: React.ReactNode;
@@ -17,7 +18,9 @@ export function QuickAction({ icon, label, onPress, primary = false }: QuickActi
       accessibilityLabel={label}
       style={({ pressed }) => [styles.wrap, pressed && styles.pressed]}
     >
-      <View style={[styles.icon, primary && styles.iconPrimary]}>{icon}</View>
+      <IconWell size={56} primary={primary}>
+        {icon}
+      </IconWell>
       <Text style={styles.label}>{label}</Text>
     </Pressable>
   );
@@ -32,21 +35,10 @@ const styles = StyleSheet.create({
     opacity: 0.7,
     transform: [{ scale: 0.97 }],
   },
-  icon: {
-    width: 56,
-    height: 56,
-    borderRadius: 28,
-    backgroundColor: palette.accentFill,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: space.sm,
-  },
-  iconPrimary: {
-    backgroundColor: palette.accent,
-  },
   label: {
     ...type.caption,
     color: palette.text,
     fontWeight: '600',
+    marginTop: space.sm,
   },
 });

@@ -58,7 +58,7 @@ export function AnimatedFilterButton({
   // Default colors based on variant
   const colors = {
     light: {
-      activeBg: activeBackgroundColor || '#5B72EE',
+      activeBg: activeBackgroundColor || '#163300',
       inactiveBg: inactiveBackgroundColor || '#F1F5F9',
       activeText: activeTextColor || '#FFFFFF',
       inactiveText: inactiveTextColor || '#64748B',

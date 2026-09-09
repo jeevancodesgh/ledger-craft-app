@@ -1,3 +1,4 @@
+import { receiptsApi, receiptsApiEnabled } from '@/features/receipts/api/receiptsApi';
 import { supabase } from './supabaseClient';
 import type { Payment, Receipt, CreatePaymentRequest } from '@/types/payment';
 
@@ -32,6 +33,20 @@ const mapSupabaseReceiptToReceipt = (receipt: any): Receipt => ({
 export class PaymentService {
   // Create a new payment and automatically update invoice status
   async createPayment(paymentData: CreatePaymentRequest): Promise<Payment> {
+    if (paymentsApiEnabled()) {
+      const payment = await paymentsApi.create({
+        invoiceId: paymentData.invoiceId,
+        paymentMethod: paymentData.paymentMethod,
+        amount: String(paymentData.amount),
+        paymentDate: paymentData.paymentDate,
+        referenceNumber: paymentData.referenceNumber ?? null,
+        notes: paymentData.notes ?? null,
+      });
+      if (receiptsApiEnabled() && paymentData.generateReceipt !== false) {
+        await receiptsApi.create(payment.id);
+      }
+      return payment;
+    }
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) throw new Error('User not authenticated');
 
@@ -71,6 +86,9 @@ export class PaymentService {
 
   // Get all payments for a user
   async getPayments(): Promise<Payment[]> {
+    if (paymentsApiEnabled()) {
+      return paymentsApi.list();
+    }
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) throw new Error('User not authenticated');
 
@@ -86,6 +104,9 @@ export class PaymentService {
 
   // Get payments for a specific invoice
   async getPaymentsByInvoice(invoiceId: string): Promise<Payment[]> {
+    if (paymentsApiEnabled()) {
+      return paymentsApi.list(invoiceId);
+    }
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) throw new Error('User not authenticated');
 
@@ -102,6 +123,16 @@ export class PaymentService {
 
   // Get a single payment by ID
   async getPayment(paymentId: string): Promise<Payment | null> {
+    if (paymentsApiEnabled()) {
+      try {
+        return await paymentsApi.get(paymentId);
+      } catch (error) {
+        if (error instanceof Error && 'status' in error && (error as { status: number }).status === 404) {
+          return null;
+        }
+        throw error;
+      }
+    }
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) throw new Error('User not authenticated');
 
@@ -221,6 +252,10 @@ export class PaymentService {
 
   // Get receipt for a payment
   async getReceiptByPayment(paymentId: string): Promise<Receipt | null> {
+    if (receiptsApiEnabled()) {
+      const receipts = await receiptsApi.list();
+      return receipts.find((receipt) => receipt.paymentId === paymentId) ?? null;
+    }
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) throw new Error('User not authenticated');
 

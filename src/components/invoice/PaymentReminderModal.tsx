@@ -13,7 +13,7 @@ import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
 import { Invoice } from '@/types';
 import { paymentReminderService } from '@/services/paymentReminderService';
-import { emailService } from '@/services/emailService';
+import { invoicesApi, invoicesApiEnabled } from '@/features/invoices/api/invoicesApi';
 import { businessProfileService } from '@/services/supabaseService';
 
 interface PaymentReminderModalProps {
@@ -77,6 +77,16 @@ const PaymentReminderModal: React.FC<PaymentReminderModalProps> = ({
 
     setIsSending(true);
     try {
+      if (invoicesApiEnabled()) {
+        await invoicesApi.send(invoice.id, { to: [customerEmail] });
+        toast({
+          title: 'Payment reminder sent!',
+          description: `${reminderInfo.title} has been sent to ${customerEmail}`,
+        });
+        onOpenChange(false);
+        return;
+      }
+
       // Get business profile
       const businessProfile = await businessProfileService.getBusinessProfile();
 

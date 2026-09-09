@@ -37,23 +37,21 @@ Handoff: list files changed, tests run, blockers, knowledge-sync needed.
 Do not commit unless asked.
 ```
 
-## W5 launch (current wave)
+## W9 launch (next wave)
 
-Parent sequences in this order. Do not mix UI redesign.
+Parent sequences in this order. Do not mix UI redesign, TanStack Router, `apps/` moves, and a data cutover.
 
-1. **Contracts** — invoice Zod DTOs in `packages/contracts` (create request without client totals as authority).
-2. **Verification** — failing API tests for create isolation, idempotency, journal rollback, totals.
-3. **API** — invoices module: one transaction for sequence, lines, totals, journal.
-4. **Web** then **Mobile** — Query hooks; delete that domain from DataManager. Clients still must not add new `supabase.from`.
-5. **Knowledge Steward** — after `pnpm verify:w5` is green.
+1. **Platform** — `apps/` move only after every protected path is Hono.
+2. **Web** then **Mobile** — router/layout consolidation; purge leftover DataManager supabase paths.
+3. **Knowledge Steward** — after `pnpm verify:w9` is green.
 
 ```text
-You are the API specialist for LedgerCraft reconstruction.
+You are the Web specialist for LedgerCraft reconstruction.
 Read and follow: .cursor/skills/ledgercraft-bootstrap/SKILL.md, .cursor/skills/ledgercraft-architecture/SKILL.md, .cursor/skills/ledgercraft-tdd/SKILL.md, .cursor/skills/ledgercraft-vertical-slice/SKILL.md, AGENTS.md § Reconstruction agents, and TARGET_ARCHITECTURE.md.
-Wave: W5
-Goal: Invoice create through Hono in one transaction (sequence, lines, server totals, journal), scoped to the session organisation.
-In scope: packages/contracts invoice DTOs, api/src/modules/invoices, web Query hook
-Out of scope: TanStack Router, apps/ move, UI redesign. Do not authorize product data with both Better Auth and Supabase sessions.
+Wave: W9
+Goal: Consolidate clients onto the Hono boundary without mixing UI redesign, TanStack Router, and apps/ moves in one change.
+In scope: leftover supabase-js call sites, DataManager, feature flags
+Out of scope: new domains, replay Git SQL. Do not authorize product data with both Better Auth and Supabase sessions.
 TDD: write failing tests first; real Postgres for SQL/RLS.
 Handoff: list files changed, tests run, blockers, knowledge-sync needed.
 Do not commit unless asked.

@@ -274,11 +274,24 @@ rules:
   # REACT NATIVE MOBILE SPECIFIC
   # ========================================
 
+  # Wise + iOS mobile visual language
+  - description: "Mobile uses Wise-inspired lime/forest tokens and native iOS chrome, not Revolut blue or emoji."
+    match: "**/mobile/**/*.ts|**/mobile/**/*.tsx|**/mobile/tailwind.config.*"
+    completion_guidelines:
+      - Accent lime #9FE870; lime CTAs use forest text #163300, never white
+      - Canvas #FFFFFF / grouped #F2F2F2; text #163300; secondary #62605B
+      - Tokens live in mobile/src/theme/tokens.ts; format money with formatMoney
+      - Keep native tabs and native stack. Do not set tabBarStyle backgroundColor (kills iOS 26 Liquid Glass)
+      - Large titles on lists; iOS form screens stay modal; native headerSearchBarOptions
+      - No emoji as UI chrome; use Feather or SF Symbols in circular IconWells
+      - Prefer Pressable over TouchableOpacity
+      - Web Revolut rules do not apply inside mobile/
+
   # React Native Component Patterns
   - description: "Follow React Native best practices for mobile development."
     match: "**/mobile/**/*.tsx|**/mobile/**/*.ts"
     completion_guidelines:
-      - Use React Native core components: View, Text, TouchableOpacity, ScrollView, FlatList
+      - Use React Native core components: View, Text, Pressable, ScrollView, FlatList
       - Never use HTML elements (div, span, button) in mobile code
       - Import components from 'react-native', not 'react-native-web'
       - Use StyleSheet.create for performance and organization
