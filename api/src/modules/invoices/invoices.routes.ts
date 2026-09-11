@@ -1,6 +1,7 @@
 import {
   createInvoiceRequestSchema,
   createShareInvoiceRequestSchema,
+  remindInvoiceRequestSchema,
   sendInvoiceRequestSchema,
   updateInvoiceRequestSchema,
 } from '@ledgercraft/contracts';
@@ -79,6 +80,13 @@ export function invoiceRoutes() {
       const input = sendInvoiceRequestSchema.parse(body ?? {});
       const mailer = c.get('invoiceMailer') ?? fallbackMailer;
       return c.json(await invoicesService.sendInvoiceForUser(db, user.id, c.req.param('id'), input, mailer));
+    });
+
+    routes.post(`${prefix}/invoices/:id/remind`, async (c) => {
+      const { db, user } = await requireSession(c);
+      const input = remindInvoiceRequestSchema.parse(await c.req.json());
+      const mailer = c.get('invoiceMailer') ?? fallbackMailer;
+      return c.json(await invoicesService.remindInvoiceForUser(db, user.id, c.req.param('id'), input, mailer));
     });
 
     routes.patch(`${prefix}/invoices/:id`, async (c) => {

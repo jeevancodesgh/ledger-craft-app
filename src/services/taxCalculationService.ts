@@ -1,6 +1,7 @@
 import { TaxConfiguration, TaxCalculationRequest, TaxCalculationResult, TaxBreakdown, IRDReturnData } from '@/types/payment';
 import { supabaseDataService } from './supabaseDataService';
 import { expenseService, invoiceService } from './supabaseService';
+import { readMoney } from '@/features/tax/api/periodRows';
 
 export class TaxCalculationService {
   /**
@@ -258,13 +259,12 @@ export class TaxCalculationService {
       );
       const capitalExpenses = expenses.filter(expense => expense.is_capital_expense);
       
-      // Sum actual GST amounts from expenses (using stored tax_amount)
       const totalPurchases = expenses.reduce((sum, exp) => sum + (exp.amount || 0), 0);
       const gstOnPurchases = claimableExpenses.reduce((sum, exp) => 
-        sum + (exp.tax_amount || 0), 0
+        sum + readMoney(exp, 'taxAmount', 'tax_amount'), 0
       );
       const gstOnCapitalGoods = capitalExpenses.reduce((sum, exp) => 
-        sum + (exp.tax_amount || 0), 0
+        sum + readMoney(exp, 'taxAmount', 'tax_amount'), 0
       );
       
       // Calculate capital goods total
@@ -281,7 +281,7 @@ export class TaxCalculationService {
       // Calculate bad debts from written-off invoices
       const badDebts = invoices
         .filter(invoice => invoice.paymentStatus === 'written_off')
-        .reduce((sum, invoice) => sum + (invoice.tax_amount || 0), 0);
+        .reduce((sum, invoice) => sum + readMoney(invoice, 'taxAmount', 'tax_amount'), 0);
 
       return {
         gstReturn: {

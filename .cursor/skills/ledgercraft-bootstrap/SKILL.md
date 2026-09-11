@@ -7,7 +7,7 @@ description: Start-here operating instructions for LedgerCraft reconstruction. U
 
 Read this before writing code. Then follow the named skill for the wave you are on.
 
-## You are here (2026-09-09)
+## You are here (2026-09-11)
 
 | Fact | Detail |
 | --- | --- |
@@ -22,13 +22,18 @@ Read this before writing code. Then follow the named skill for the wave you are 
 | W6 | **Verified (2026-09-08).** `pnpm verify:w6` green. Expenses, payments, `GET /api/accounts`. |
 | W7 | **Verified (2026-09-09).** `pnpm verify:w7` green. Bank accounts, transaction import, recon persist, tax config/returns. |
 | W8 | **Verified (2026-09-09).** `pnpm verify:w8` green. Objects, payment receipts, Resend/logging mailer, receipt-scan AI. |
-| Git | `origin/mobile-app` includes W4 customers. Working tree also has web Better Auth plus Hono business-profile / items / invoices / share / expenses / payments / bank / recon / tax / objects / receipts / AI. |
-| Clients | Web and mobile email login/signup → Better Auth (`/api/auth/*`). Web customers, business profile, items, invoices, expenses, payments, accounts list, bank, recon persist, tax, objects, payment receipts, receipt-scan → Hono. Mobile customers, invoices, expenses, payments, accounts list, objects, receipts, receipt-scan → Hono (cookie jar). Conversations still `supabase-js`. |
+| W9 | **Verified (2026-09-10).** `pnpm verify:w9` green. Conversations Hono, Query-backed `useAppData`, reporting forks. |
+| W10 | **Done (2026-09-11).** Tax/IRD/GST period aliases; auth callback/confirm/classic signup off Supabase Auth. |
+| W11 | **Verified (2026-09-11).** Journals CRUD, account writes/initialize, invoice remind mailer. |
+| W12 | **Verified (2026-09-11).** `POST /api/ai/chat`; client OpenAI gone. |
+| W13 | **Verified (2026-09-11).** `@supabase/supabase-js` removed; hosted URL/anon key and Edge Function URLs gone. |
+| Git | `origin/mobile-app` includes W4 customers. Working tree also has web Better Auth plus Hono through W13. |
+| Clients | Web and mobile email login/signup → Better Auth (`/api/auth/*`). Product CRUD including journals, account writes, reminders, receipt-scan, and chat → Hono. `@supabase/supabase-js` is not installed. |
 
 ## Pickup
 
-1. Read `AGENTS.md` § Reconstruction agents (what shipped, W9 client consolidation).
-2. If this clone does not contain `api/src/modules/storage/`, W8 is missing — do not start W9.
+1. Read `AGENTS.md` § Reconstruction agents (TanStack Router / `apps/` only after leftover stubbed client SQL is gone if you want a clean cut).
+2. If this clone does not contain `src/features/journals/api/journalsApi.ts`, W11 is missing.
 3. Commit/push if origin is behind and the user asks.
 
 ## First command
@@ -36,10 +41,10 @@ Read this before writing code. Then follow the named skill for the wave you are 
 ```bash
 pnpm install
 pnpm db:up
-pnpm verify:w8
+pnpm verify:w13
 ```
 
-If `pnpm-lock.yaml` changes, commit it. Next wave is W9 (client consolidation). Dev smoke:
+If `pnpm-lock.yaml` changes, commit it. Next: TanStack Router / `apps/` only after leftover stubbed client SQL is gone if you want a clean cut. Dev smoke:
 
 ```bash
 pnpm dev:api          # 127.0.0.1:3001
@@ -58,6 +63,7 @@ See `.env.example`.
 | `DATABASE_URL` | `postgres://ledgercraft_app:app@127.0.0.1:55432/ledgercraft` |
 | `DATABASE_MIGRATE_URL` | `postgres://ledgercraft_migrator:migrator@127.0.0.1:55432/ledgercraft` |
 | `DATABASE_ADMIN_URL` | `postgres://postgres:postgres@127.0.0.1:55432/ledgercraft` (local only) |
+| Test DB | `ledgercraft_test` — Vitest only. `withTestDb` TRUNCATE stays off the app DB. |
 | `API_PORT` | `3001` |
 
 API process uses the **app** role. Migrations and test seed use the **migrator** role. Never connect the API as superuser, `BYPASSRLS`, or table owner.
@@ -103,7 +109,11 @@ Parent chat = Orchestrator. Task `generalPurpose` + prompt in `ledgercraft-agent
 | W6 | Payments, expenses, accounts list (`pnpm verify:w6`) |
 | W7 | Bank, recon, tax (`pnpm verify:w7`) |
 | W8 | Storage, email, AI (`pnpm verify:w8`) |
-| W9 | Client consolidation |
+| W9 | Client consolidation (**verified**, `pnpm verify:w9`) |
+| W10 | Leftover-screen rewire (**done**) |
+| W11 | Journals, accounts write, reminder mailer (**verified**) |
+| W12 | Chat completions behind Hono (**verified**) |
+| W13 | supabase-js burn (**verified**) |
 
 ## Hard no
 
@@ -113,7 +123,7 @@ Parent chat = Orchestrator. Task `generalPurpose` + prompt in `ledgercraft-agent
 - Better Auth + Supabase sessions both authorizing data
 - UI redesign + TanStack Router + `apps/` move + data cutover in one change
 - Mock Drizzle in SQL/RLS/transaction tests
-- Start W9 without W8 object/receipt/AI routes and a working `/api/me` session bind
+- Mix UI redesign, TanStack Router, `apps/` moves, and a data cutover
 - Commit unless the user asked
 
 ## After any change

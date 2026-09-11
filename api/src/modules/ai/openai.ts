@@ -1,5 +1,11 @@
-import { receiptScanResultSchema, type ReceiptScanResultDto, type ScanReceiptRequest } from '@ledgercraft/contracts';
+import {
+  receiptScanResultSchema,
+  type ChatCompletionRequest,
+  type ReceiptScanResultDto,
+  type ScanReceiptRequest,
+} from '@ledgercraft/contracts';
 import { apiError } from '../../http-error';
+import type { ChatCompleter } from './chat';
 import type { ReceiptScanner } from './scanner';
 
 const PROMPT = `You are a receipt data extraction expert. Analyze this receipt image and extract the following information in JSON format:
@@ -116,6 +122,45 @@ export function createOpenAiReceiptScanner(opts?: {
       } catch {
         throw apiError(502, 'AI_ERROR', 'Receipt scanning returned invalid JSON');
       }
+    },
+  };
+}
+
+export function createOpenAiChatCompleter(opts?: {
+  apiKey?: string;
+  fetchImpl?: typeof fetch;
+}): ChatCompleter {
+  const apiKey = opts?.apiKey ?? process.env.OPENAI_API_KEY;
+  const fetchImpl = opts?.fetchImpl ?? fetch;
+  return {
+    async complete(messages: ChatCompletionRequest['messages']) {
+      if (!apiKey) {
+        throw apiError(503, 'AI_UNAVAILABLE', 'Chat completions are not configured');
+      }
+      const response = await fetchImpl('https://api.openai.com/v1/chat/completions', {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${apiKey}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          model: 'gpt-3.5-turbo',
+          messages,
+          max_tokens: 500,
+          temperature: 0.3,
+        }),
+      });
+      if (!response.ok) {
+        throw apiError(502, 'AI_ERROR', 'Chat completion failed');
+      }
+      const body = (await response.json()) as {
+        choices?: Array<{ message?: { content?: string } }>;
+      };
+      const content = body.choices?.[0]?.message?.content;
+      if (content == null) {
+        throw apiError(502, 'AI_ERROR', 'Chat completion returned no content');
+      }
+      return content;
     },
   };
 }

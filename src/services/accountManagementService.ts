@@ -1,4 +1,5 @@
 import { supabase } from '@/integrations/supabase/client';
+import { accountsApi, accountsApiEnabled } from '@/features/payments/api/paymentsApi';
 
 interface AccountTemplate {
   id: string;
@@ -36,6 +37,33 @@ export class AccountManagementService {
     userId: string,
     accountNumber: string
   ): Promise<string> {
+    if (accountsApiEnabled()) {
+      const existing = (await accountsApi.list()).find(
+        (account) => account.accountNumber === accountNumber && account.isActive !== false,
+      );
+      if (existing) return existing.id;
+      const defaults: Record<string, { name: string; type: string; accountClass: string }> = {
+        '1200': { name: 'Accounts Receivable', type: 'asset', accountClass: 'asset' },
+        '2200': { name: 'GST Collected on Sales', type: 'liability', accountClass: 'liability' },
+        '4000': { name: 'Sales Revenue', type: 'revenue', accountClass: 'revenue' },
+        '4100': { name: 'Service Revenue', type: 'revenue', accountClass: 'revenue' },
+        '1110': { name: 'Bank Account - Current', type: 'bank', accountClass: 'asset' },
+        '1120': { name: 'Cash on Hand', type: 'cash', accountClass: 'asset' },
+        '2300': { name: 'Credit Card', type: 'credit_card', accountClass: 'liability' },
+      };
+      const seed = defaults[accountNumber] ?? {
+        name: `Account ${accountNumber}`,
+        type: 'custom',
+        accountClass: 'asset',
+      };
+      const created = await accountsApi.create({
+        name: seed.name,
+        type: seed.type,
+        accountNumber,
+        accountClass: seed.accountClass,
+      });
+      return created.id;
+    }
     try {
       // First, check if account exists for this user
       const { data: existingAccount, error: findError } = await supabase
@@ -146,6 +174,10 @@ export class AccountManagementService {
    * Creates essential accounts needed for invoicing and payments
    */
   async initializeUserAccounts(userId: string): Promise<void> {
+    if (accountsApiEnabled()) {
+      await accountsApi.initialize();
+      return;
+    }
     try {
       // Check if user already has accounts
       const { data: existingAccounts, error: checkError } = await supabase

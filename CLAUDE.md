@@ -8,12 +8,12 @@ The hosted `public` schema is empty. Rebuild toward `TARGET_ARCHITECTURE.md`. Do
 2. `AGENTS.md` — file map, commands, specialist roster
 3. Matching skill in `.cursor/skills/ledgercraft-*`
 
-**Now:** W1–W8 storage/email/AI. Web Hono covers customers, business profile, items, invoices, expenses, payments, `GET /api/accounts`, bank accounts, transaction import, reconciliation persist, tax, objects, payment receipts, and receipt-scan. Next: W9 client consolidation. Pickup: `AGENTS.md` § Reconstruction agents. Postgres host port **55432**. API **3001**. Vite **8080**.
+**Now:** W1–W13 verified. Web Hono covers customers, business profile, items, invoices (send + remind), expenses, payments, accounts list/write, journals, bank accounts, transaction import, reconciliation persist, tax, objects, payment receipts, receipt-scan, conversations, and chat. Live auth routes are Better Auth only. `@supabase/supabase-js` is not installed. Next: TanStack Router / `apps/`. Pickup: `AGENTS.md` § Reconstruction agents. Postgres host port **55432**. API **3001**. Vite **8080**.
 
 New domain work goes through Hono (`api/`), not new `supabase.from` / Storage / Edge Functions / client OpenAI.
 
 ## Project Overview
-Ledger Craft is a modern PWA expense tracking application built with React, TypeScript, and Supabase. The app helps users manage expenses, create invoices, and track financial data. Clients still talk to hosted Supabase; the Hono API (`api/`) is the reconstruction path.
+Ledger Craft is a modern PWA expense tracking application built with React, TypeScript, and Supabase. The app helps users manage expenses, create invoices, and track financial data. Clients talk to the Hono API (`api/`); hosted Supabase is gone.
 
 ## Tech Stack
 - **Frontend**: React 18, TypeScript, Tailwind CSS

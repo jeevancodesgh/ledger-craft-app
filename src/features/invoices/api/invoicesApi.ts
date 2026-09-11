@@ -2,6 +2,7 @@ import type {
   CreateInvoiceRequest,
   InvoiceDto,
   PublicSharedInvoice,
+  RemindInvoiceRequest,
   SendInvoiceRequest,
   ShareInvoiceResponse,
   UpdateInvoiceRequest,
@@ -217,6 +218,15 @@ export const invoicesApi = {
   async send(id: string, input: SendInvoiceRequest = {}): Promise<Invoice> {
     return toInvoice(
       await request<InvoiceDto>(`/api/invoices/${id}/send`, {
+        method: 'POST',
+        body: JSON.stringify(input),
+      }),
+    );
+  },
+
+  async remind(id: string, input: RemindInvoiceRequest): Promise<Invoice> {
+    return toInvoice(
+      await request<InvoiceDto>(`/api/invoices/${id}/remind`, {
         method: 'POST',
         body: JSON.stringify(input),
       }),

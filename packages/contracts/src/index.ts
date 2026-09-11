@@ -66,6 +66,7 @@ export {
   invoiceSchema,
   nextInvoiceNumberResponseSchema,
   publicSharedInvoiceSchema,
+  remindInvoiceRequestSchema,
   sendInvoiceRequestSchema,
   shareInvoiceResponseSchema,
   updateInvoiceRequestSchema,
@@ -75,6 +76,7 @@ export {
   type InvoiceListResponse,
   type NextInvoiceNumberResponse,
   type PublicSharedInvoice,
+  type RemindInvoiceRequest,
   type SendInvoiceRequest,
   type ShareInvoiceResponse,
   type UpdateInvoiceRequest,
@@ -100,14 +102,20 @@ export {
 export {
   accountListResponseSchema,
   accountSchema,
+  createAccountRequestSchema,
   createPaymentRequestSchema,
+  initializeAccountsRequestSchema,
   paymentListResponseSchema,
   paymentSchema,
+  updateAccountRequestSchema,
   type AccountDto,
   type AccountListResponse,
+  type CreateAccountRequest,
   type CreatePaymentRequest,
+  type InitializeAccountsRequest,
   type PaymentDto,
   type PaymentListResponse,
+  type UpdateAccountRequest,
 } from './payment';
 
 export {
@@ -184,9 +192,37 @@ export {
 } from './receipt';
 
 export {
+  chatCompletionRequestSchema,
+  chatCompletionResponseSchema,
   receiptScanResultSchema,
   scanReceiptRequestSchema,
+  type ChatCompletionRequest,
+  type ChatCompletionResponse,
   type ReceiptScanResultDto,
   type ScanReceiptRequest,
 } from './ai';
+
+export {
+  addConversationMessageRequestSchema,
+  conversationListResponseSchema,
+  conversationSchema,
+  createConversationRequestSchema,
+  updateConversationRequestSchema,
+  type AddConversationMessageRequest,
+  type ConversationDto,
+  type ConversationListResponse,
+  type CreateConversationRequest,
+  type UpdateConversationRequest,
+} from './conversation';
+
+export {
+  createJournalEntryRequestSchema,
+  journalEntryListResponseSchema,
+  journalEntrySchema,
+  updateJournalEntryRequestSchema,
+  type CreateJournalEntryRequest,
+  type JournalEntryDto,
+  type JournalEntryListResponse,
+  type UpdateJournalEntryRequest,
+} from './journal';
 

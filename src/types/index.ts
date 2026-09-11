@@ -345,6 +345,9 @@ export interface Account {
   currency: string;
   openingBalance: number;
   currentBalance: number;
+  accountNumber?: string | null;
+  accountClass?: string | null;
+  isActive?: boolean;
   userId?: string;
   createdAt?: string;
   updatedAt?: string;

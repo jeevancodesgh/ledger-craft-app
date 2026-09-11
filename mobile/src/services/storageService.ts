@@ -38,7 +38,6 @@ export const storageService = {
       }
 
       const filePath = `receipts/${fileName}`;
-      const filePath = `receipts/${fileName}`;
 
       // Convert base64 to ArrayBuffer
       const arrayBuffer = decode(base64);

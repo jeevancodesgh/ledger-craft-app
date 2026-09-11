@@ -27,7 +27,7 @@ Skip a layer only if it cannot exist yet (example: no session bind → cannot pe
 ```bash
 pnpm install
 pnpm db:up
-pnpm verify:w8          # current green alias.
+pnpm verify:w13         # current green alias.
 ```
 
 | Layer | What it must prove |

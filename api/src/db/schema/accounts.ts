@@ -37,6 +37,19 @@ export const journalEntries = pgTable('journal_entries', {
   updatedAt: timestamptz('updated_at').defaultNow().notNull(),
 });
 
+export const accountTemplates = pgTable('account_templates', {
+  id: uuid('id').defaultRandom().primaryKey(),
+  name: text('name').notNull(),
+  accountNumber: text('account_number').notNull(),
+  accountClass: text('account_class').notNull(),
+  accountType: text('account_type').notNull(),
+  normalBalance: text('normal_balance').notNull(),
+  description: text('description'),
+  isSystem: boolean('is_system').notNull().default(true),
+  countryCode: text('country_code').notNull().default('NZ'),
+  createdAt: timestamptz('created_at').defaultNow().notNull(),
+});
+
 export const journalEntryLines = pgTable('journal_entry_lines', {
   id: uuid('id').defaultRandom().primaryKey(),
   organisationId: uuid('organisation_id').notNull(),

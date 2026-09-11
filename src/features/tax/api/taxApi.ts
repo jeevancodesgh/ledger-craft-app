@@ -9,8 +9,8 @@ import type {
 import { expensesApi, expensesApiEnabled } from '@/features/expenses/api/expensesApi';
 import { invoicesApi, invoicesApiEnabled } from '@/features/invoices/api/invoicesApi';
 import { paymentsApi, paymentsApiEnabled } from '@/features/payments/api/paymentsApi';
-import type { Invoice } from '@/types';
-import type { EnhancedInvoice, Payment, TaxConfiguration, TaxReturn } from '@/types/payment';
+import type { Payment, TaxConfiguration, TaxReturn } from '@/types/payment';
+import { toPeriodExpense, toPeriodInvoice, type PeriodExpense, type PeriodInvoice } from './periodRows';
 
 export function taxApiEnabled(): boolean {
   return import.meta.env.VITE_TAX_API === 'true';
@@ -91,17 +91,6 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
   return (await response.json()) as T;
 }
 
-function toEnhancedInvoice(invoice: Invoice): EnhancedInvoice {
-  return {
-    ...invoice,
-    taxInclusive: true,
-    paymentStatus: invoice.status === 'paid' ? 'paid' : invoice.status === 'overdue' ? 'overdue' : 'unpaid',
-    totalPaid: 0,
-    balanceDue: invoice.total,
-    taxAmount: invoice.taxAmount,
-  };
-}
-
 export const taxApi = {
   async getConfiguration(countryCode = 'NZ'): Promise<TaxConfiguration> {
     const query = countryCode ? `?countryCode=${encodeURIComponent(countryCode)}` : '';
@@ -147,7 +136,7 @@ export const taxApi = {
     await request<void>(`/api/tax-returns/${id}`, { method: 'DELETE' });
   },
 
-  async invoicesByPeriod(periodStart: string, periodEnd: string): Promise<EnhancedInvoice[]> {
+  async invoicesByPeriod(periodStart: string, periodEnd: string): Promise<PeriodInvoice[]> {
     if (!invoicesApiEnabled() && !taxApiEnabled()) return [];
     const invoices = await invoicesApi.list();
     return invoices
@@ -155,10 +144,10 @@ export const taxApi = {
         const date = invoice.date.slice(0, 10);
         return date >= periodStart && date <= periodEnd;
       })
-      .map(toEnhancedInvoice);
+      .map(toPeriodInvoice);
   },
 
-  async expensesByPeriod(periodStart: string, periodEnd: string): Promise<Array<Record<string, unknown>>> {
+  async expensesByPeriod(periodStart: string, periodEnd: string): Promise<PeriodExpense[]> {
     if (!expensesApiEnabled() && !taxApiEnabled()) return [];
     const expenses = await expensesApi.listExpenses();
     return expenses
@@ -166,14 +155,7 @@ export const taxApi = {
         const date = String(expense.expenseDate).slice(0, 10);
         return date >= periodStart && date <= periodEnd;
       })
-      .map((expense) => ({
-        ...expense,
-        amount: expense.amount,
-        tax_amount: expense.taxAmount,
-        is_claimable: true,
-        is_capital_expense: false,
-        expense_date: expense.expenseDate,
-      }));
+      .map(toPeriodExpense);
   },
 
   async paymentsByPeriod(periodStart: string, periodEnd: string): Promise<Payment[]> {

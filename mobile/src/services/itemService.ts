@@ -1,3 +1,4 @@
+import { itemsApi, itemsApiEnabled } from '@/features/items/api/itemsApi';
 import { supabase } from './supabaseClient';
 
 export interface ItemCategory {
@@ -27,12 +28,49 @@ export interface Item {
   updatedAt?: string;
 }
 
+function fromRow(item: {
+  id: string;
+  name: string;
+  description?: string | null;
+  type?: string;
+  category_id?: string | null;
+  sale_price?: number | null;
+  purchase_price?: number | null;
+  tax_rate?: number | null;
+  enable_sale_info?: boolean;
+  enable_purchase_info?: boolean;
+  unit?: string;
+  user_id?: string;
+  created_at?: string;
+  updated_at?: string;
+}): Item {
+  return {
+    id: item.id,
+    name: item.name,
+    description: item.description,
+    type: item.type === 'service' ? 'service' : 'product',
+    categoryId: item.category_id,
+    category: undefined,
+    salePrice: item.sale_price,
+    purchasePrice: item.purchase_price,
+    taxRate: item.tax_rate,
+    enableSaleInfo: item.enable_sale_info !== false,
+    enablePurchaseInfo: item.enable_purchase_info || false,
+    unit: item.unit || 'unit',
+    userId: item.user_id,
+    createdAt: item.created_at,
+    updatedAt: item.updated_at,
+  };
+}
+
 export class ItemService {
-  // Fetch all items for the current user
   async fetchItems(): Promise<Item[]> {
     try {
+      if (itemsApiEnabled()) {
+        return (await itemsApi.list()).items;
+      }
+
       const { data: { user } } = await supabase.auth.getUser();
-      
       if (!user) {
         throw new Error('User not authenticated');
       }
@@ -44,34 +82,26 @@ export class ItemService {
         .order('name', { ascending: true });
 
       if (error) throw error;
-
-      // Transform snake_case to camelCase
-      return (data || []).map((item: any) => ({
-        id: item.id,
-        name: item.name,
-        description: item.description,
-        type: item.type || 'product',
-        categoryId: item.category_id,
-        category: undefined,
-        salePrice: item.sale_price,
-        purchasePrice: item.purchase_price,
-        taxRate: item.tax_rate,
-        enableSaleInfo: item.enable_sale_info !== false,
-        enablePurchaseInfo: item.enable_purchase_info || false,
-        unit: item.unit || 'unit',
-        userId: item.user_id,
-        createdAt: item.created_at,
-        updatedAt: item.updated_at,
-      }));
+      return (data || []).map(fromRow);
     } catch (error) {
       console.error('Error fetching items:', error);
       throw error;
     }
   }
 
-  // Fetch a single item by ID
+  async getItems(type?: 'product' | 'service'): Promise<Item[]> {
+    const items = await this.fetchItems();
+    return type ? items.filter((item) => item.type === type) : items;
+  }
+
   async fetchItemById(id: string): Promise<Item> {
     try {
+      if (itemsApiEnabled()) {
+        const item = (await itemsApi.list()).items.find((entry) => entry.id === id);
+        if (!item) throw new Error('Item not found');
+        return item;
+      }
+
       const { data, error } = await supabase
         .from('items')
         .select('*')
@@ -80,61 +110,43 @@ export class ItemService {
 
       if (error) throw error;
       if (!data) throw new Error('Item not found');
-
-      return {
-        id: data.id,
-        name: data.name,
-        description: data.description,
-        type: data.type || 'product',
-        categoryId: data.category_id,
-        category: undefined,
-        salePrice: data.sale_price,
-        purchasePrice: data.purchase_price,
-        taxRate: data.tax_rate,
-        enableSaleInfo: data.enable_sale_info !== false,
-        enablePurchaseInfo: data.enable_purchase_info || false,
-        unit: data.unit || 'unit',
-        userId: data.user_id,
-        createdAt: data.created_at,
-        updatedAt: data.updated_at,
-      };
+      return fromRow(data);
     } catch (error) {
       console.error('Error fetching item:', error);
       throw error;
     }
   }
 
-  // Create a new item
   async createItem(itemData: Omit<Item, 'id' | 'createdAt' | 'updatedAt' | 'userId' | 'category'>): Promise<Item> {
     try {
+      if (itemsApiEnabled()) {
+        return itemsApi.create(itemData);
+      }
+
       const { data: { user } } = await supabase.auth.getUser();
-      
       if (!user) {
         throw new Error('User not authenticated');
       }
 
-      const dbItemData = {
-        name: itemData.name,
-        description: itemData.description || null,
-        type: itemData.type,
-        category_id: itemData.categoryId || null,
-        sale_price: itemData.salePrice || null,
-        purchase_price: itemData.purchasePrice || null,
-        tax_rate: itemData.taxRate || null,
-        enable_sale_info: itemData.enableSaleInfo !== false,
-        enable_purchase_info: itemData.enablePurchaseInfo || false,
-        unit: itemData.unit || 'unit',
-        user_id: user.id,
-      };
-
       const { data, error } = await supabase
         .from('items')
-        .insert(dbItemData)
+        .insert({
+          name: itemData.name,
+          description: itemData.description || null,
+          type: itemData.type,
+          category_id: itemData.categoryId || null,
+          sale_price: itemData.salePrice || null,
+          purchase_price: itemData.purchasePrice || null,
+          tax_rate: itemData.taxRate || null,
+          enable_sale_info: itemData.enableSaleInfo !== false,
+          enable_purchase_info: itemData.enablePurchaseInfo || false,
+          unit: itemData.unit || 'unit',
+          user_id: user.id,
+        })
         .select()
         .single();
 
       if (error) throw error;
-
       return await this.fetchItemById(data.id);
     } catch (error) {
       console.error('Error creating item:', error);
@@ -142,11 +154,13 @@ export class ItemService {
     }
   }
 
-  // Update an existing item
   async updateItem(id: string, itemData: Partial<Omit<Item, 'id' | 'createdAt' | 'updatedAt' | 'userId' | 'category'>>): Promise<Item> {
     try {
-      const dbItemData: any = {};
-      
+      if (itemsApiEnabled()) {
+        return itemsApi.update(id, itemData);
+      }
+
+      const dbItemData: Record<string, unknown> = {};
       if (itemData.name !== undefined) dbItemData.name = itemData.name;
       if (itemData.description !== undefined) dbItemData.description = itemData.description || null;
       if (itemData.type !== undefined) dbItemData.type = itemData.type;
@@ -157,7 +171,6 @@ export class ItemService {
       if (itemData.enableSaleInfo !== undefined) dbItemData.enable_sale_info = itemData.enableSaleInfo;
       if (itemData.enablePurchaseInfo !== undefined) dbItemData.enable_purchase_info = itemData.enablePurchaseInfo;
       if (itemData.unit !== undefined) dbItemData.unit = itemData.unit;
-      
       dbItemData.updated_at = new Date().toISOString();
 
       const { error } = await supabase
@@ -166,7 +179,6 @@ export class ItemService {
         .eq('id', id);
 
       if (error) throw error;
-
       return await this.fetchItemById(id);
     } catch (error) {
       console.error('Error updating item:', error);
@@ -174,9 +186,13 @@ export class ItemService {
     }
   }
 
-  // Delete an item
   async deleteItem(id: string): Promise<void> {
     try {
+      if (itemsApiEnabled()) {
+        await itemsApi.remove(id);
+        return;
+      }
+
       const { error } = await supabase
         .from('items')
         .delete()
@@ -189,11 +205,13 @@ export class ItemService {
     }
   }
 
-  // Fetch all categories
   async fetchCategories(): Promise<ItemCategory[]> {
     try {
+      if (itemsApiEnabled()) {
+        return (await itemsApi.list()).categories;
+      }
+
       const { data: { user } } = await supabase.auth.getUser();
-      
       if (!user) {
         throw new Error('User not authenticated');
       }
@@ -206,11 +224,10 @@ export class ItemService {
 
       if (error) {
         console.error('Error fetching categories:', error);
-        // Return empty array if table doesn't exist
         return [];
       }
 
-      return (data || []).map((category: any) => ({
+      return (data || []).map((category) => ({
         id: category.id,
         name: category.name,
         color: category.color,
@@ -224,24 +241,28 @@ export class ItemService {
     }
   }
 
-  // Create a new category
+  async getItemCategories(): Promise<ItemCategory[]> {
+    return this.fetchCategories();
+  }
+
   async createCategory(categoryData: Omit<ItemCategory, 'id' | 'createdAt' | 'updatedAt' | 'userId'>): Promise<ItemCategory> {
     try {
+      if (itemsApiEnabled()) {
+        return itemsApi.createCategory(categoryData);
+      }
+
       const { data: { user } } = await supabase.auth.getUser();
-      
       if (!user) {
         throw new Error('User not authenticated');
       }
 
-      const dbCategoryData = {
-        name: categoryData.name,
-        color: categoryData.color || null,
-        user_id: user.id,
-      };
-
       const { data, error } = await supabase
         .from('item_categories')
-        .insert(dbCategoryData)
+        .insert({
+          name: categoryData.name,
+          color: categoryData.color || null,
+          user_id: user.id,
+        })
         .select()
         .single();
 
@@ -263,4 +284,3 @@ export class ItemService {
 }
 
 export const itemService = new ItemService();
-

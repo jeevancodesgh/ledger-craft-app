@@ -18,6 +18,8 @@ import { taxRoutes } from './modules/tax/tax.routes';
 import { objectRoutes } from './modules/storage/objects.routes';
 import { receiptRoutes } from './modules/receipts/receipts.routes';
 import { aiRoutes } from './modules/ai/ai.routes';
+import { conversationRoutes } from './modules/conversations/conversations.routes';
+import { journalRoutes } from './modules/journals/journals.routes';
 import { getBetterAuthTrustedOrigins } from './env';
 import type { AppDependencies, AppEnv } from './types';
 
@@ -43,6 +45,9 @@ export function createApp(deps: AppDependencies = {}) {
     }
     if (deps.receiptScanner) {
       c.set('receiptScanner', deps.receiptScanner);
+    }
+    if (deps.chatCompleter) {
+      c.set('chatCompleter', deps.chatCompleter);
     }
     await next();
   });
@@ -81,6 +86,8 @@ export function createApp(deps: AppDependencies = {}) {
   app.route('/', objectRoutes());
   app.route('/', receiptRoutes());
   app.route('/', aiRoutes());
+  app.route('/', conversationRoutes());
+  app.route('/', journalRoutes());
 
   if (process.env.NODE_ENV === 'test') {
     app.get('/api/__test/boom', () => {

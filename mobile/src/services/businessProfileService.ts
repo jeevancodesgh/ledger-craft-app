@@ -2,6 +2,10 @@ import { supabase } from './supabaseClient';
 import { OnboardingData, BusinessTheme } from '@/types/onboarding';
 import { decode } from 'base64-arraybuffer';
 import { objectsApi, storageApiEnabled } from '@/features/storage/api/objectsApi';
+import {
+  businessProfileApi,
+  businessProfileApiEnabled,
+} from '@/features/business-profile/api/businessProfileApi';
 
 export interface BusinessProfile {
   id: string;
@@ -52,6 +56,31 @@ class BusinessProfileService {
   // Create business profile from onboarding data
   async createBusinessProfile(data: OnboardingData): Promise<BusinessProfile> {
     try {
+      if (businessProfileApiEnabled()) {
+        let logoUrl: string | null = null;
+        if (data.logoUri) {
+          try {
+            logoUrl = await this.uploadLogo(data.logoUri, 'session');
+          } catch (error) {
+            console.warn('Logo upload failed - continuing without logo:', error);
+          }
+        }
+
+        return businessProfileApi.upsert({
+          name: data.businessName,
+          email: data.businessEmail,
+          country: data.country,
+          invoiceNumberFormat: data.invoiceNumberFormat,
+          defaultTaxRate: data.defaultTaxRate ?? null,
+          address: data.address ?? null,
+          city: data.city ?? null,
+          state: data.state ?? null,
+          zip: data.zip ?? null,
+          logoUrl,
+          theme: data.theme,
+        });
+      }
+
       const { data: { user } } = await supabase.auth.getUser();
       
       if (!user) {
@@ -110,6 +139,10 @@ class BusinessProfileService {
   // Get business profile for current user
   async getBusinessProfile(): Promise<BusinessProfile | null> {
     try {
+      if (businessProfileApiEnabled()) {
+        return businessProfileApi.get();
+      }
+
       const { data: { user } } = await supabase.auth.getUser();
       
       if (!user) {
@@ -139,6 +172,44 @@ class BusinessProfileService {
     updates: BusinessProfileUpdate | Partial<OnboardingData>
   ): Promise<BusinessProfile> {
     try {
+      if (businessProfileApiEnabled()) {
+        const current = await businessProfileApi.get();
+        let logoUrl = current?.logoUrl ?? null;
+        if (updates.logoUri) {
+          try {
+            logoUrl = await this.uploadLogo(updates.logoUri, 'session');
+          } catch (error) {
+            console.warn('Logo upload failed:', error);
+          }
+        }
+
+        const name = updates.businessName ?? current?.name;
+        const email = updates.businessEmail ?? current?.email;
+        if (!name || !email) {
+          throw new Error('Business name and email are required');
+        }
+
+        return businessProfileApi.upsert({
+          name,
+          email,
+          phone: updates.phone ?? current?.phone ?? null,
+          website: updates.website ?? current?.website ?? null,
+          taxId: updates.taxId ?? current?.taxId ?? null,
+          country: updates.country ?? current?.country ?? 'NZ',
+          address: updates.address ?? current?.address ?? null,
+          city: updates.city ?? current?.city ?? null,
+          state: updates.state ?? current?.state ?? null,
+          zip: updates.zip ?? current?.zip ?? null,
+          invoiceNumberFormat: updates.invoiceNumberFormat ?? current?.invoiceNumberFormat ?? null,
+          invoiceNumberSequence: updates.invoiceNumberSequence ?? current?.invoiceNumberSequence ?? undefined,
+          defaultTaxRate: updates.defaultTaxRate ?? current?.defaultTaxRate ?? null,
+          defaultTerms: updates.defaultTerms ?? current?.defaultTerms ?? null,
+          defaultNotes: updates.defaultNotes ?? current?.defaultNotes ?? null,
+          logoUrl,
+          theme: updates.theme ?? current?.theme ?? null,
+        });
+      }
+
       const { data: { user } } = await supabase.auth.getUser();
       
       if (!user) {

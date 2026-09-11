@@ -1,32 +1,58 @@
-import { createClient } from '@supabase/supabase-js';
-import * as SecureStore from 'expo-secure-store';
+const gone = { message: 'Hosted Supabase is removed. Use the Hono API.' };
 
-const SupabaseSecureStoreAdapter = {
-  getItem: async (key: string) => {
-    return await SecureStore.getItemAsync(key);
-  },
-  setItem: async (key: string, value: string) => {
-    await SecureStore.setItemAsync(key, value);
-  },
-  removeItem: async (key: string) => {
-    await SecureStore.deleteItemAsync(key);
-  },
-};
-
-// Fallback to web app values if env vars not loaded (Expo may need restart)
-const supabaseUrl = process.env.EXPO_PUBLIC_SUPABASE_URL || 'https://viqckjmborlqaemavrzu.supabase.co';
-const supabaseAnonKey = process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZpcWNram1ib3JscWFlbWF2cnp1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDQ4NjIxMzIsImV4cCI6MjA2MDQzODEzMn0.ccFdzJbDBjGzYaGenOz8Gnsuyj-LtljPeXAjcFyPllA';
-
-if (!supabaseUrl || !supabaseAnonKey) {
-  throw new Error('Missing Supabase environment variables');
+function query() {
+  const result = { data: null, error: gone, count: null, status: 410, statusText: 'Gone' };
+  const chain: Record<string, unknown> = {};
+  const next = () => chain;
+  for (const method of [
+    'select',
+    'insert',
+    'update',
+    'upsert',
+    'delete',
+    'eq',
+    'neq',
+    'gt',
+    'gte',
+    'lt',
+    'lte',
+    'in',
+    'is',
+    'like',
+    'ilike',
+    'or',
+    'order',
+    'limit',
+    'range',
+    'match',
+    'not',
+    'filter',
+  ]) {
+    chain[method] = next;
+  }
+  chain.single = async () => result;
+  chain.maybeSingle = async () => result;
+  chain.then = (resolve: (value: unknown) => unknown, reject?: (reason: unknown) => unknown) =>
+    Promise.resolve(result).then(resolve, reject);
+  return chain;
 }
 
-export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
+export const supabase = {
+  from: () => query(),
   auth: {
-    storage: SupabaseSecureStoreAdapter,
-    autoRefreshToken: false,
-    persistSession: false,
-    detectSessionInUrl: false,
+    getSession: async () => ({ data: { session: null }, error: null }),
+    getUser: async () => ({ data: { user: null }, error: gone }),
+    onAuthStateChange: () => ({ data: { subscription: { unsubscribe() {} } }, error: null }),
+    signInWithPassword: async () => ({ data: { user: null, session: null }, error: gone }),
+    signUp: async () => ({ data: { user: null, session: null }, error: gone }),
+    signOut: async () => ({ error: null }),
+    signInWithOAuth: async () => ({ data: { url: null, provider: 'google' }, error: gone }),
   },
-});
-
+  storage: {
+    from: () => ({
+      upload: async () => ({ data: null, error: gone }),
+      getPublicUrl: () => ({ data: { publicUrl: '' } }),
+      remove: async () => ({ data: null, error: gone }),
+    }),
+  },
+};

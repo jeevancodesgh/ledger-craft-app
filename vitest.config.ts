@@ -22,6 +22,8 @@ export default defineConfig({
       VITE_STORAGE_API: 'false',
       VITE_RECEIPTS_API: 'false',
       VITE_AI_API: 'false',
+      VITE_CONVERSATIONS_API: 'false',
+      VITE_JOURNALS_API: 'false',
     },
     include: ['src/**/*.{test,spec}.{js,mjs,cjs,ts,mts,cts,jsx,tsx}'],
     coverage: {

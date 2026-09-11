@@ -1,5 +1,6 @@
 import type { Database } from './db/client';
 import type { Auth } from './modules/auth/auth';
+import type { ChatCompleter } from './modules/ai/chat';
 import type { ReceiptScanner } from './modules/ai/scanner';
 import type { InvoiceMailer } from './modules/invoices/mailer';
 import type { ObjectStore } from './modules/storage/object-store';
@@ -13,6 +14,7 @@ export type AppEnv = {
     invoiceMailer?: InvoiceMailer;
     objectStore?: ObjectStore;
     receiptScanner?: ReceiptScanner;
+    chatCompleter?: ChatCompleter;
   };
 };
 
@@ -23,4 +25,5 @@ export type AppDependencies = {
   invoiceMailer?: InvoiceMailer;
   objectStore?: ObjectStore;
   receiptScanner?: ReceiptScanner;
+  chatCompleter?: ChatCompleter;
 };

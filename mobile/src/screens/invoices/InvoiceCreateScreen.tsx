@@ -87,10 +87,25 @@ export default function InvoiceCreateScreen() {
 
   const loadInitialData = async () => {
     try {
+      const fallbackNumber = () => {
+        const now = new Date();
+        const year = now.getFullYear();
+        return `INV-${year}-0001`;
+      };
+
       const [number, customerList, profile] = await Promise.all([
-        invoiceService.generateInvoiceNumber(),
-        invoiceService.fetchCustomers(),
-        businessProfileService.getBusinessProfile(),
+        invoiceService.generateInvoiceNumber().catch((error) => {
+          console.warn('Invoice number unavailable:', error);
+          return fallbackNumber();
+        }),
+        invoiceService.fetchCustomers().catch((error) => {
+          console.warn('Customers unavailable:', error);
+          return [];
+        }),
+        businessProfileService.getBusinessProfile().catch((error) => {
+          console.warn('Business profile unavailable:', error);
+          return null;
+        }),
       ]);
       
       setCustomers(customerList);

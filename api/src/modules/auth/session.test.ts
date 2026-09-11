@@ -59,9 +59,23 @@ describe('session routes', () => {
         expect(body.user.name).toBe('W3 Owner');
         expect(body.membership.role).toBe('owner');
         expect(body.organisation.name.length).toBeGreaterThan(0);
+
+        const signIn = await app.request('/api/auth/sign-in/email', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            Origin: 'http://localhost:8080',
+          },
+          body: JSON.stringify({ email, password: 'password123' }),
+        });
+        expect(signIn.status).toBe(200);
       } finally {
         await sql.end({ timeout: 5 });
       }
     });
+  });
+
+  it('does not point Vitest at the app database', () => {
+    expect(new URL(getDatabaseUrl()).pathname).toBe('/ledgercraft_test');
   });
 });

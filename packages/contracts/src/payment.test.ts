@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { createPaymentRequestSchema, paymentSchema } from './payment';
+import { createAccountRequestSchema, createPaymentRequestSchema, paymentSchema } from './payment';
 
 describe('payment contracts', () => {
   const payment = {
@@ -37,6 +37,18 @@ describe('payment contracts', () => {
         amount: '10.00',
         paymentDate: '2026-09-08',
         status: 'completed',
+      }).success,
+    ).toBe(false);
+  });
+});
+
+describe('account contracts', () => {
+  it('rejects ownership ids on account create', () => {
+    expect(
+      createAccountRequestSchema.safeParse({
+        name: 'Sales',
+        type: 'revenue',
+        organisationId: '11111111-1111-1111-1111-111111111111',
       }).success,
     ).toBe(false);
   });

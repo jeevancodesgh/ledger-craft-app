@@ -10,9 +10,9 @@ This document provides comprehensive guidance for AI agents (LLMs) working on th
 | --- | --- |
 | Spec | `TARGET_ARCHITECTURE.md` — end state and gates. Not optional. |
 | Live DB | Hosted `public` is empty (2026-09-03). Greenfield. Do not replay Git SQL. No UUID import. |
-| Now | W1–W8 **verified** (2026-09-09). Next: W9 client consolidation. |
-| Blocked | None for W9. |
-| Clients | Web and mobile email auth are Better Auth. Web/mobile customers, invoices, expenses, payments, accounts list → Hono. Web bank, recon persist, tax, objects, payment receipts, receipt-scan AI → Hono. Invoice send is Hono (Resend or logging mailer). Conversations still `supabase-js`. No new client SQL, Storage SDK, Edge Functions, or `VITE_OPENAI_*`. Mobile visual language is Wise lime/forest + iOS 26 native chrome; web stays Revolut. |
+| Now | W1–W13 **verified** (2026-09-11). Journals, account writes, reminders, and chat completions are Hono. `@supabase/supabase-js` is gone. Next: TanStack Router / `apps/`. |
+| Blocked | None. |
+| Clients | Web and mobile email auth are Better Auth. Live web auth routes do not call `supabase.auth`. Product CRUD (customers, invoices, expenses, payments, accounts, journals, bank, recon, tax, objects, receipts, receipt-scan, conversations, chat) → Hono. Invoice send and payment reminders use the Hono mailer. Web lists use TanStack Query when flags are on. `@supabase/supabase-js` is not a dependency. No new client SQL, Storage SDK, Edge Functions, or `VITE_OPENAI_*`. Mobile visual language is Wise lime/forest + iOS 26 native chrome; web stays Revolut. |
 | Ports | Postgres **55432**, API **3001**, Vite **8080** (`/api` proxy). |
 | Package manager | **pnpm** workspace (`api`, `packages/contracts`). `mobile/` is not in the workspace yet. |
 
@@ -1068,7 +1068,7 @@ Parent chat is Orchestrator. Launch specialists with Task `generalPurpose` using
 | Mobile | `mobile/` Query hooks and screens |
 | Verification | Vitest, RLS tests, Playwright, RN tests, live smoke (`ledgercraft-verify`) |
 
-**Waves:** W0 knowledge (done) → W1 platform scaffolding (**verified**) → W2 compatibility schema (**verified**) → W3 identity (**verified**) → W4 customers (**verified**) → W5 invoices (idempotency + share, **verified**) → W6 payments/expenses/accounts (**verified**) → W7 bank/recon/tax (**verified**) → W8 storage/email/AI (**verified**) → W9 client consolidation (**next**).
+**Waves:** W0 knowledge (done) → W1 platform scaffolding (**verified**) → W2 compatibility schema (**verified**) → W3 identity (**verified**) → W4 customers (**verified**) → W5 invoices (idempotency + share, **verified**) → W6 payments/expenses/accounts (**verified**) → W7 bank/recon/tax (**verified**) → W8 storage/email/AI (**verified**) → W9 client consolidation (**verified**) → W10 leftover-screen rewire (**done**) → W11 journals / accounts write / reminders (**verified**) → W12 chat completions (**verified**) → W13 supabase-js burn (**verified**, 2026-09-11).
 
 **TDD:** failing tests first; real Postgres for SQL/RLS. **Knowledge:** a wave is not done if docs are stale.
 
@@ -1135,7 +1135,7 @@ curl -s localhost:8080/api/healthz
 curl -s localhost:8080/api/me
 ```
 
-`.env.example` has the database URLs, `BETTER_AUTH_*`, and `VITE_CUSTOMERS_API` / `EXPO_PUBLIC_CUSTOMERS_API`. Tests fall back to defaults if `.env` is missing.
+`.env.example` has the database URLs, `BETTER_AUTH_*`, and `VITE_CUSTOMERS_API` / `EXPO_PUBLIC_CUSTOMERS_API`. Tests fall back to defaults if `.env` is missing. Vitest uses `ledgercraft_test` so `withTestDb` TRUNCATE cannot wipe accounts in `ledgercraft`.
 
 ### What W4 shipped (working tree, verified)
 
@@ -1164,7 +1164,27 @@ Bank accounts, parsed transaction import, reconciliation persist, and tax config
 
 ### W8 status (storage / email / AI)
 
-Object uploads, payment receipts, receipt-scan AI, and invoice send mailer are Hono. Tests inject a memory object store; local runtime uses the filesystem (`OBJECT_STORE_DIR` or `api/.data/objects`). Keys are `{organisationId}/{receipts|logos}/{uuid}.ext`. `GET /api/objects?key=` streams bytes; other orgs get 404. `POST /api/receipts` `{ paymentId }` snapshots payment+invoice JSON and issues `REC-YYYYMM-####`. `POST /api/ai/receipt-scan` uses `OPENAI_API_KEY` on the API; missing scanner is `503 AI_UNAVAILABLE`. Invoice send uses Resend when `RESEND_API_KEY` is set, otherwise logs. Share/reminder email no longer calls Edge Functions when invoices API is on. Conversations and chat `aiService` still use Lane A. Rollback: `VITE_STORAGE_API`, `VITE_RECEIPTS_API`, `VITE_AI_API` (web `=== 'true'`). Restart Vite after changing flags.
+Object uploads, payment receipts, receipt-scan AI, and invoice send mailer are Hono. Tests inject a memory object store; local runtime uses the filesystem (`OBJECT_STORE_DIR` or `api/.data/objects`). Keys are `{organisationId}/{receipts|logos}/{uuid}.ext`. `GET /api/objects?key=` streams bytes; other orgs get 404. `POST /api/receipts` `{ paymentId }` snapshots payment+invoice JSON and issues `REC-YYYYMM-####`. `POST /api/ai/receipt-scan` uses `OPENAI_API_KEY` on the API; missing scanner is `503 AI_UNAVAILABLE`. Invoice send uses Resend when `RESEND_API_KEY` is set, otherwise logs. Share/reminder email no longer calls Edge Functions. Conversations persist on Hono. Chat completions use `POST /api/ai/chat`. Rollback flags still exist for Vitest stubs. Restart Vite after changing flags.
+
+### W9 status (client consolidation)
+
+Conversations CRUD + messages are Hono (`GET/POST /api/conversations`, `POST /api/conversations/:id/messages`, `PATCH/DELETE /api/conversations/:id`). Ownership IDs are rejected on create/update. Cross-org get is 404. Web `conversationService` and conversation actions use Hono when flags are on. Dashboard, accounting, simple tax, and financial reports load invoices/expenses/payments/accounts from existing list APIs when those flags are on. `useAppData` reads lists from TanStack Query when domain flags are on; `DataManagerSOLID.initialize` skips those fetches. Rollback: `VITE_CONVERSATIONS_API` (`=== 'true'`). Do not start TanStack Router or `apps/` until leftover stubbed client SQL is gone if you want a clean cut.
+
+### W10 status (leftover-screen rewire)
+
+IRD/GST/tax widgets already had Hono forks; period rows now expose `tax_amount` / `expense_date` aliases so those screens do not read `0` GST from camelCase DTOs. `ExpenseGSTSummary` and `EnhancedExpensesPage` accept Hono or PostgREST shapes. `getAccounts` uses `GET /api/accounts` when the accounts flag is on. `/signup-classic`, `ConversationContext`, `/auth/callback`, and `/confirm-email` use Better Auth (`StableAuthContext` / `getMe`), not `supabase.auth`.
+
+### W11 status (journals / accounts write / reminders)
+
+Journals CRUD is Hono (`GET/POST /api/journal-entries`, `GET/PATCH/DELETE /api/journal-entries/:id`). Create writes two balanced lines as `draft`; ownership IDs are rejected; cross-org get is 404. `POST /api/accounts`, `PATCH /api/accounts/:id`, and `POST /api/accounts/initialize` seed 1110/1120/1200/2200/2300/4000/4100 when `account_templates` is empty. `POST /api/invoices/:id/remind` sends mail and does **not** change invoice status. Web journal UI and `accountManagementService` use those APIs when flags are on. Payment reminders always go through Hono.
+
+### W12 status (chat completions)
+
+`POST /api/ai/chat` takes `{ messages: [{ role, content }] }` and returns `{ content }`. Missing completer is `503 AI_UNAVAILABLE`. Unauthenticated is 401 envelope. Runtime injects OpenAI when `OPENAI_API_KEY` is set. Web `aiService` and receipt scanning call Hono; they do not call `api.openai.com` or `VITE_OPENAI_*`.
+
+### W13 status (supabase-js burn)
+
+`@supabase/supabase-js` is removed from root and `mobile/package.json`. Web `src/integrations/supabase/client.ts` and `mobile/src/services/supabaseClient.ts` are local stubs (no hosted URL, no anon JWT). Edge Function `send-invoice-email` URLs are gone. Vitest still sets domain flags `false` so leftover `supabase.from` tests hit the stub. Do not add the SDK back.
 
 ### Hard no (still)
 
@@ -1185,6 +1205,6 @@ Object uploads, payment receipts, receipt-scan AI, and invoice send mailer are H
 
 ---
 
-**Last Updated**: 2026-09-09
-**Version**: 1.7.0
+**Last Updated**: 2026-09-11
+**Version**: 1.10.0
 

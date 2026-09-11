@@ -1,6 +1,7 @@
 import { apiRequest } from '@/features/auth/api/http';
 import { customersApi, customersApiEnabled } from '@/features/customers/api/customersApi';
 import type { Customer, Invoice, InvoiceStatus, LineItem } from '@/types/invoice';
+import { randomId } from '@/utils/id';
 
 export interface MobileInvoiceDto {
   id: string;
@@ -133,7 +134,7 @@ export const invoicesApi = {
     return toInvoice(
       await apiRequest<MobileInvoiceDto>('/api/invoices', {
         method: 'POST',
-        headers: { 'Idempotency-Key': crypto.randomUUID() },
+        headers: { 'Idempotency-Key': randomId() },
         body: JSON.stringify(toCreateBody(invoice, lineItems)),
       }),
     );

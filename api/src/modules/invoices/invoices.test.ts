@@ -60,6 +60,50 @@ describe('invoice routes', () => {
     expect(errorEnvelopeSchema.parse(await response.json()).error.code).toBe('UNAUTHORIZED');
   });
 
+  it('peeks next invoice number and creates without a pre-seeded business profile', async () => {
+    await assertLocalDatabaseReachable();
+    await withTestDb(async () => {
+      const { db, sql } = createDb(getDatabaseUrl());
+      try {
+        const auth = createAuth(db);
+        const app = createApp({ auth, db, checkDatabase: async () => true });
+        const owner = await signUp(app, 'Owner Fresh');
+
+        const peeked = await app.request('/api/invoices/next-number', {
+          headers: { Cookie: owner.cookie },
+        });
+        expect(peeked.status).toBe(200);
+        expect((await peeked.json() as { invoiceNumber: string }).invoiceNumber).toMatch(/^INV-\d{4}-0001$/);
+
+        const customer = await app.request('/api/customers', {
+          method: 'POST',
+          headers: { ...originHeaders, Cookie: owner.cookie },
+          body: JSON.stringify({ name: 'Fresh Cafe', email: 'hello@freshcafe.nz', country: 'NZ' }),
+        });
+        expect(customer.status).toBe(201);
+        const customerId = ((await customer.json()) as { id: string }).id;
+
+        const created = await app.request('/api/invoices', {
+          method: 'POST',
+          headers: { ...originHeaders, Cookie: owner.cookie },
+          body: JSON.stringify({
+            customerId,
+            date: '2026-09-07',
+            dueDate: '2026-10-07',
+            taxInclusive: false,
+            taxRate: '15',
+            items: [{ description: 'Design', quantity: '1', rate: '100' }],
+          }),
+        });
+        expect(created.status).toBe(201);
+        const invoice = invoiceSchema.parse(await created.json());
+        expect(invoice.invoiceNumber).toBe('INV-2026-0001');
+      } finally {
+        await sql.end({ timeout: 5 });
+      }
+    });
+  });
+
   it('creates an invoice with server totals and isolates organisations', async () => {
     await assertLocalDatabaseReachable();
     await withTestDb(async () => {

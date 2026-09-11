@@ -1,10 +1,11 @@
-import { errorEnvelopeSchema, receiptScanResultSchema } from '@ledgercraft/contracts';
+import { chatCompletionResponseSchema, errorEnvelopeSchema, receiptScanResultSchema } from '@ledgercraft/contracts';
 import { describe, expect, it } from 'vitest';
 import { createApp } from '../../app';
 import { createDb } from '../../db/client';
 import { getDatabaseUrl } from '../../env';
 import { createAuth } from '../auth/auth';
 import { assertLocalDatabaseReachable, withTestDb } from '../../test/harness';
+import type { ChatCompleter } from './chat';
 import type { ReceiptScanner } from './scanner';
 
 function cookieHeader(response: Response): string {
@@ -81,6 +82,52 @@ describe('ai routes', () => {
         const result = receiptScanResultSchema.parse(await scanned.json());
         expect(result.merchantName).toBe('North Harbour Cafe');
         expect(result.total).toBe(12.5);
+      } finally {
+        await sql.end();
+      }
+    });
+  });
+
+  it('unauthenticated POST /api/ai/chat returns 401', async () => {
+    const response = await createApp().request('/api/ai/chat', {
+      method: 'POST',
+      headers: originHeaders,
+      body: JSON.stringify({ messages: [{ role: 'user', content: 'Hello' }] }),
+    });
+    expect(response.status).toBe(401);
+    expect(errorEnvelopeSchema.parse(await response.json()).error.code).toBe('UNAUTHORIZED');
+  });
+
+  it('returns chat content from the injected completer and 503 without one', async () => {
+    await assertLocalDatabaseReachable();
+    await withTestDb(async () => {
+      const { db, sql } = createDb(getDatabaseUrl());
+      try {
+        const auth = createAuth(db);
+        const missing = createApp({ auth, db, checkDatabase: async () => true });
+        const owner = await signUp(missing, 'Owner Chat');
+        const unavailable = await missing.request('/api/ai/chat', {
+          method: 'POST',
+          headers: { ...originHeaders, Cookie: owner.cookie },
+          body: JSON.stringify({ messages: [{ role: 'user', content: 'Hello' }] }),
+        });
+        expect(unavailable.status).toBe(503);
+        expect(errorEnvelopeSchema.parse(await unavailable.json()).error.code).toBe('AI_UNAVAILABLE');
+
+        const chatCompleter: ChatCompleter = {
+          async complete() {
+            return '{"intent":"create_invoice","entities":[],"confidence":0.9}';
+          },
+        };
+        const app = createApp({ auth, db, checkDatabase: async () => true, chatCompleter });
+        const completed = await app.request('/api/ai/chat', {
+          method: 'POST',
+          headers: { ...originHeaders, Cookie: owner.cookie },
+          body: JSON.stringify({ messages: [{ role: 'user', content: 'Create an invoice' }] }),
+        });
+        expect(completed.status).toBe(200);
+        const result = chatCompletionResponseSchema.parse(await completed.json());
+        expect(result.content).toContain('create_invoice');
       } finally {
         await sql.end();
       }

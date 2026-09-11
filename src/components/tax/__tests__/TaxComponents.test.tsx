@@ -202,10 +202,12 @@ describe('Tax Components', () => {
   });
 
   describe('ExpenseGSTSummary', () => {
-    it('should render GST summary with period selector', () => {
+    it('should render GST summary with period selector', async () => {
       render(<ExpenseGSTSummary userId="test-user" />);
 
-      expect(screen.getByText('GST Claimable Summary')).toBeInTheDocument();
+      await waitFor(() => {
+        expect(screen.getByText('GST Claimable Summary')).toBeInTheDocument();
+      });
       expect(screen.getByRole('combobox')).toBeInTheDocument();
       expect(screen.getByText('Export')).toBeInTheDocument();
     });

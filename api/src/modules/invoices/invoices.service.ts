@@ -1,4 +1,11 @@
-import type { CreateInvoiceRequest, InvoiceDto, InvoiceListResponse, SendInvoiceRequest, UpdateInvoiceRequest } from '@ledgercraft/contracts';
+import type {
+  CreateInvoiceRequest,
+  InvoiceDto,
+  InvoiceListResponse,
+  RemindInvoiceRequest,
+  SendInvoiceRequest,
+  UpdateInvoiceRequest,
+} from '@ledgercraft/contracts';
 import { invoiceListResponseSchema, invoiceSchema } from '@ledgercraft/contracts';
 import { HTTPException } from 'hono/http-exception';
 import { apiError } from '../../http-error';
@@ -49,13 +56,10 @@ export async function getInvoiceForUser(db: Database, userId: string, id: string
 export async function peekNextInvoiceNumber(db: Database, userId: string): Promise<{ invoiceNumber: string }> {
   return withOrganisationTx(db, userId, async (tx, ctx) => {
     const profile = await profileRepo.getBusinessProfile(tx, ctx.organisationId);
-    if (!profile) {
-      throw new HTTPException(400, { message: 'Set up your business profile first' });
-    }
-    const sequence = profile.invoiceNumberSequence ?? 1;
+    const sequence = profile?.invoiceNumberSequence ?? 1;
     return {
       invoiceNumber: formatInvoiceNumber(
-        profile.invoiceNumberFormat ?? 'INV-{YYYY}-{SEQ}',
+        profile?.invoiceNumberFormat ?? 'INV-{YYYY}-{SEQ}',
         sequence,
         new Date(),
       ),
@@ -81,7 +85,7 @@ export async function createInvoiceForUser(
     const customer = await customersRepo.getCustomer(tx, ctx.organisationId, input.customerId);
     if (!customer) throw new HTTPException(400, { message: 'Customer not found' });
 
-    const profile = await profileRepo.lockBusinessProfile(tx, ctx.organisationId);
+    const profile = await profileRepo.ensureBusinessProfile(tx, ctx);
     if (!profile) {
       throw new HTTPException(400, { message: 'Set up your business profile first' });
     }
@@ -244,4 +248,42 @@ export async function sendInvoiceForUser(
     if (!sent) throw new HTTPException(404, { message: 'Invoice not found' });
     return sent;
   });
+}
+
+export async function remindInvoiceForUser(
+  db: Database,
+  userId: string,
+  id: string,
+  input: RemindInvoiceRequest,
+  mailer: InvoiceMailer,
+): Promise<InvoiceDto> {
+  const prepared = await withOrganisationTx(db, userId, async (tx, ctx) => {
+    const invoice = await invoicesRepo.getInvoice(tx, ctx.organisationId, id);
+    if (!invoice) throw new HTTPException(404, { message: 'Invoice not found' });
+    const customer = await customersRepo.getCustomer(tx, ctx.organisationId, invoice.customerId);
+    if (!customer) throw new HTTPException(400, { message: 'Customer not found' });
+
+    const recipients = input.to && input.to.length > 0 ? input.to : [customer.email];
+    const validRecipients = recipients.map((address) => address.trim()).filter((address) => address.length > 0);
+    if (validRecipients.length === 0) {
+      throw apiError(400, 'customer_email_required', 'Add an email to this customer');
+    }
+
+    return { invoice, recipients: validRecipients };
+  });
+
+  try {
+    const sendReminder = mailer.sendReminder?.bind(mailer) ?? mailer.sendInvoice.bind(mailer);
+    await sendReminder({
+      invoiceId: prepared.invoice.id,
+      invoiceNumber: prepared.invoice.invoiceNumber,
+      to: prepared.recipients,
+      subject: input.subject,
+      html: input.html,
+    });
+  } catch {
+    throw apiError(502, 'email_failed', 'Failed to send payment reminder');
+  }
+
+  return prepared.invoice;
 }

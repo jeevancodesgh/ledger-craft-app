@@ -84,6 +84,16 @@ export const sendInvoiceRequestSchema = z
   })
   .strict();
 
+export const remindInvoiceRequestSchema = z
+  .object({
+    to: z.array(z.string().email()).max(5).optional(),
+    subject: z.string().min(1),
+    html: z.string().min(1),
+    reminderType: z.enum(['gentle', 'firm', 'final']).optional(),
+    daysPastDue: z.number().int().optional(),
+  })
+  .strict();
+
 export const invoiceLineSchema = z.object({
   id: z.string().uuid(),
   description: z.string(),
@@ -153,6 +163,7 @@ export const publicSharedInvoiceSchema = z.object({
 export type CreateInvoiceRequest = z.infer<typeof createInvoiceRequestSchema>;
 export type UpdateInvoiceRequest = z.infer<typeof updateInvoiceRequestSchema>;
 export type SendInvoiceRequest = z.infer<typeof sendInvoiceRequestSchema>;
+export type RemindInvoiceRequest = z.infer<typeof remindInvoiceRequestSchema>;
 export type InvoiceDto = z.infer<typeof invoiceSchema>;
 export type InvoiceListResponse = z.infer<typeof invoiceListResponseSchema>;
 export type NextInvoiceNumberResponse = z.infer<typeof nextInvoiceNumberResponseSchema>;

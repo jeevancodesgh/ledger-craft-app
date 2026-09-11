@@ -1,6 +1,5 @@
 import { customersApiEnabled, toCreateCustomerRequest, toUpdateCustomerRequest } from '../api/customersApi';
 import { useAppData } from '@/hooks/useAppData';
-import { solidDataManager } from '@/services/DataManagerSOLID';
 import type { Customer } from '@/types';
 import {
   useCreateCustomerMutation,
@@ -32,27 +31,21 @@ export function useCustomerDirectory() {
     isLoadingCustomers: query.isLoading,
     refreshCustomers: async () => {
       await query.refetch();
-      await solidDataManager.fetchCustomers();
     },
     createCustomer: async (customer: Omit<Customer, 'id' | 'createdAt' | 'updatedAt'>) => {
-      const created = await createMutation.mutateAsync(toCreateCustomerRequest(customer));
-      await solidDataManager.fetchCustomers();
-      return created;
+      return createMutation.mutateAsync(toCreateCustomerRequest(customer));
     },
     updateCustomer: async (
       id: string,
       customer: Partial<Omit<Customer, 'id' | 'createdAt' | 'updatedAt'>>,
     ) => {
-      const updated = await updateMutation.mutateAsync({
+      return updateMutation.mutateAsync({
         id,
         input: toUpdateCustomerRequest(customer),
       });
-      await solidDataManager.fetchCustomers();
-      return updated;
     },
     deleteCustomer: async (id: string) => {
       await deleteMutation.mutateAsync(id);
-      await solidDataManager.fetchCustomers();
     },
   };
 }

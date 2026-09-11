@@ -7,6 +7,7 @@ describe('ItemService', () => {
   const createdItemIds: string[] = [];
 
   beforeAll(async () => {
+    process.env.EXPO_PUBLIC_ITEMS_API = 'false';
     supabase = await getAuthenticatedSupabaseClient();
   });
 

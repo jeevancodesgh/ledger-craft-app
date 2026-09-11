@@ -14,6 +14,8 @@ interface ImportMetaEnv {
   readonly VITE_STORAGE_API?: string
   readonly VITE_RECEIPTS_API?: string
   readonly VITE_AI_API?: string
+  readonly VITE_CONVERSATIONS_API?: string
+  readonly VITE_JOURNALS_API?: string
 }
 
 // PWA Virtual Module Types

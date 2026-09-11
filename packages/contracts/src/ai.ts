@@ -26,6 +26,24 @@ export const scanReceiptRequestSchema = z
   })
   .strict();
 
+export const chatMessageSchema = z.object({
+  role: z.enum(['system', 'user', 'assistant']),
+  content: z.string().min(1),
+});
+
+export const chatCompletionRequestSchema = z
+  .object({
+    messages: z.array(chatMessageSchema).min(1),
+  })
+  .strict();
+
+export const chatCompletionResponseSchema = z.object({
+  content: z.string(),
+});
+
 export type ReceiptScanItemDto = z.infer<typeof receiptScanItemSchema>;
 export type ReceiptScanResultDto = z.infer<typeof receiptScanResultSchema>;
 export type ScanReceiptRequest = z.infer<typeof scanReceiptRequestSchema>;
+export type ChatMessageDto = z.infer<typeof chatMessageSchema>;
+export type ChatCompletionRequest = z.infer<typeof chatCompletionRequestSchema>;
+export type ChatCompletionResponse = z.infer<typeof chatCompletionResponseSchema>;

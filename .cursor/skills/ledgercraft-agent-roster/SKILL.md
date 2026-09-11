@@ -37,13 +37,21 @@ Handoff: list files changed, tests run, blockers, knowledge-sync needed.
 Do not commit unless asked.
 ```
 
-## W9 launch (next wave)
+## W13 done / next: router + apps layout
 
-Parent sequences in this order. Do not mix UI redesign, TanStack Router, `apps/` moves, and a data cutover.
+W11–W13 cut journals, account writes, reminders, and chat onto Hono and removed `@supabase/supabase-js`. Parent sequences TanStack Router / `apps/` only after leftover stubbed client SQL is gone if you want a clean cut. Do not mix UI redesign, TanStack Router, `apps/` moves, and a data cutover.
 
-1. **Platform** — `apps/` move only after every protected path is Hono.
-2. **Web** then **Mobile** — router/layout consolidation; purge leftover DataManager supabase paths.
-3. **Knowledge Steward** — after `pnpm verify:w9` is green.
+```text
+You are the API specialist for LedgerCraft reconstruction.
+Read and follow: .cursor/skills/ledgercraft-bootstrap/SKILL.md, .cursor/skills/ledgercraft-architecture/SKILL.md, .cursor/skills/ledgercraft-tdd/SKILL.md, .cursor/skills/ledgercraft-vertical-slice/SKILL.md, AGENTS.md § Reconstruction agents, and TARGET_ARCHITECTURE.md.
+Wave: W11
+Goal: Cut journals, chart-of-accounts writes, and payment reminders off supabase-js onto Hono.
+In scope: journal_entries, account templates/writes, reminder mailer
+Out of scope: TanStack Router, apps/ move, deleting @supabase/supabase-js
+TDD: write failing tests first; real Postgres for SQL/RLS.
+Handoff: list files changed, tests run, blockers, knowledge-sync needed.
+Do not commit unless asked.
+```
 
 ```text
 You are the Web specialist for LedgerCraft reconstruction.

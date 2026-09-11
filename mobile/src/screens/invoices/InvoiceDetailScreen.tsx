@@ -60,7 +60,10 @@ export default function InvoiceDetailScreen() {
     try {
       const [invoiceData, profileData] = await Promise.all([
         invoiceService.fetchInvoiceById(invoiceId),
-        businessProfileService.getBusinessProfile(),
+        businessProfileService.getBusinessProfile().catch((error) => {
+          console.warn('Business profile unavailable:', error);
+          return null;
+        }),
       ]);
       setInvoice(invoiceData);
       setBusinessProfile(profileData);

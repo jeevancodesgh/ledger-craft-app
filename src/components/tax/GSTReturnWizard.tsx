@@ -34,6 +34,7 @@ import { cn } from '@/lib/utils';
 import { useAuth } from "@/context/StableAuthContext";
 import { supabaseDataService } from '@/services/supabaseDataService';
 import { gstReconciliationService } from '@/services/gstReconciliationService';
+import { readMoney } from '@/features/tax/api/periodRows';
 import { GSTReconciliationPanel } from '@/components/tax/GSTReconciliationPanel';
 import {
   GstPeriodReconciliation,
@@ -230,22 +231,20 @@ export const GSTReturnWizard: React.FC<GSTReturnWizardProps> = ({
         supabaseDataService.getExpensesByPeriod(user.id, startDate, endDate)
       ]);
 
-      // Calculate sales data (using snake_case from Supabase)
-      const totalSales = invoices.reduce((sum, inv) => sum + (inv.total || inv.total_amount || 0), 0);
-      const gstOnSales = invoices.reduce((sum, inv) => sum + (inv.tax_amount || inv.gstAmount || 0), 0);
+      const totalSales = invoices.reduce((sum, inv) => sum + readMoney(inv, 'total', 'total_amount'), 0);
+      const gstOnSales = invoices.reduce((sum, inv) => sum + readMoney(inv, 'taxAmount', 'tax_amount', 'gstAmount'), 0);
       
-      // Calculate purchase data (using snake_case from Supabase)
-      const totalPurchases = expenses.reduce((sum, exp) => sum + (exp.amount || 0), 0);
+      const totalPurchases = expenses.reduce((sum, exp) => sum + readMoney(exp, 'amount'), 0);
       const gstOnPurchases = expenses
         .filter(exp => (exp.is_claimable !== false) && !exp.is_capital_expense)
-        .reduce((sum, exp) => sum + (exp.tax_amount || 0), 0);
+        .reduce((sum, exp) => sum + readMoney(exp, 'taxAmount', 'tax_amount'), 0);
       
       const capitalGoods = expenses
         .filter(exp => exp.is_capital_expense)
-        .reduce((sum, exp) => sum + (exp.amount || 0), 0);
+        .reduce((sum, exp) => sum + readMoney(exp, 'amount'), 0);
       const gstOnCapitalGoods = expenses
         .filter(exp => exp.is_capital_expense && (exp.is_claimable !== false))
-        .reduce((sum, exp) => sum + (exp.tax_amount || 0), 0);
+        .reduce((sum, exp) => sum + readMoney(exp, 'taxAmount', 'tax_amount'), 0);
 
       setReturnData(prev => ({
         ...prev,

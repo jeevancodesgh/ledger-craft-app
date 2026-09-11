@@ -6,6 +6,7 @@ describe('BusinessProfileService', () => {
   let supabase: Awaited<ReturnType<typeof getAuthenticatedSupabaseClient>>;
 
   beforeAll(async () => {
+    process.env.EXPO_PUBLIC_BUSINESS_API = 'false';
     supabase = await getAuthenticatedSupabaseClient();
   });
 

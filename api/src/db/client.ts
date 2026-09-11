@@ -19,6 +19,7 @@ import { expenseCategories, expenses } from './schema/expenses';
 import { payments } from './schema/payments';
 import { reconciliationAdjustments, reconciliationMatches, reconciliationSessions } from './schema/reconciliation';
 import { receipts } from './schema/receipts';
+import { conversationMessages, conversations } from './schema/conversations';
 import { taxConfigurations, taxReturns } from './schema/tax';
 import { idempotencyKeys } from './schema/idempotency';
 import { rlsProbe } from './schema/probe';
@@ -45,6 +46,8 @@ export const schema = {
   expenses,
   payments,
   receipts,
+  conversations,
+  conversationMessages,
   bankAccounts,
   bankTransactions,
   transactionImportBatches,

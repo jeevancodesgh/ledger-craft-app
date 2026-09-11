@@ -47,7 +47,7 @@ After the tests are green, prove the feature with `.cursor/skills/ledgercraft-ve
 ```bash
 pnpm install
 pnpm db:up
-pnpm verify:w8          # W1–W8.
+pnpm verify:w13         # W1–W13.
 ```
 
 Postgres host port is `55432`. API tests use `DATABASE_URL` (app role) and `DATABASE_MIGRATE_URL` (migrator). Do not mock Drizzle in `api/src/test`.

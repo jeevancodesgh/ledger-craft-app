@@ -8,6 +8,10 @@ import {
   IRDReturnData 
 } from '@/types/payment';
 import { taxApi, taxApiEnabled } from '@/features/tax/api/taxApi';
+import { summarizeGst } from '@/features/tax/api/periodRows';
+import { accountsApi, accountsApiEnabled } from '@/features/payments/api/paymentsApi';
+import { journalsApi, journalsApiEnabled } from '@/features/journals/api/journalsApi';
+import { businessProfileApi, businessProfileApiEnabled } from '@/features/business-profile/api/businessProfileApi';
 
 export class SupabaseDataService {
   /**
@@ -513,6 +517,17 @@ export class SupabaseDataService {
    * Utility Functions
    */
   async getUserBusinessProfile(userId: string): Promise<Tables<'business_profiles'> | null> {
+    if (businessProfileApiEnabled()) {
+      const profile = await businessProfileApi.get();
+      if (!profile) return null;
+      return {
+        id: profile.id,
+        user_id: userId,
+        name: profile.name,
+        email: profile.email,
+        country: profile.country,
+      } as Tables<'business_profiles'>;
+    }
     const { data, error } = await supabase
       .from('business_profiles')
       .select('*')
@@ -581,6 +596,17 @@ export class SupabaseDataService {
     periodStart?: string,
     periodEnd?: string
   ): Promise<any[]> {
+    if (journalsApiEnabled()) {
+      const entries = await journalsApi.list();
+      return entries
+        .filter((entry) => {
+          if (statusFilter && statusFilter !== 'all' && entry.status !== statusFilter) return false;
+          if (periodStart && entry.entryDate < periodStart) return false;
+          if (periodEnd && entry.entryDate > periodEnd) return false;
+          return true;
+        })
+        .slice(offset, offset + limit);
+    }
     let query = supabase
       .from('journal_entries')
       .select(`
@@ -658,6 +684,17 @@ export class SupabaseDataService {
       notes?: string;
     }
   ): Promise<any> {
+    if (journalsApiEnabled()) {
+      return journalsApi.create({
+        description: entryData.description,
+        entryDate: entryData.entryDate,
+        debitAccountId: entryData.debitAccountId,
+        creditAccountId: entryData.creditAccountId,
+        amount: String(entryData.amount),
+        referenceNumber: entryData.referenceNumber,
+        notes: entryData.notes,
+      });
+    }
     try {
       // Generate entry number
       const { data: existingEntries } = await supabase
@@ -759,6 +796,10 @@ export class SupabaseDataService {
   }
 
   async updateJournalEntryStatus(entryId: string, status: 'draft' | 'posted' | 'reversed'): Promise<void> {
+    if (journalsApiEnabled()) {
+      await journalsApi.update(entryId, { status });
+      return;
+    }
     const { error } = await supabase
       .from('journal_entries')
       .update({ 
@@ -773,6 +814,10 @@ export class SupabaseDataService {
   }
 
   async deleteJournalEntry(entryId: string): Promise<void> {
+    if (journalsApiEnabled()) {
+      await journalsApi.remove(entryId);
+      return;
+    }
     // First delete the lines (due to foreign key constraint)
     const { error: linesError } = await supabase
       .from('journal_entry_lines')
@@ -810,6 +855,17 @@ export class SupabaseDataService {
   }
 
   async getAccounts(userId: string): Promise<any[]> {
+    if (accountsApiEnabled()) {
+      return (await accountsApi.list())
+        .filter((account) => account.isActive !== false)
+        .map((account) => ({
+          id: account.id,
+          name: account.name,
+          number: account.accountNumber ?? null,
+          type: account.accountClass || account.type,
+          description: null,
+        }));
+    }
     const { data, error } = await supabase
       .from('accounts')
       .select('*')
@@ -846,26 +902,10 @@ export class SupabaseDataService {
   }> {
     const [invoices, expenses] = await Promise.all([
       this.getInvoicesByPeriod(userId, periodStart, periodEnd),
-      this.getExpensesByPeriod(userId, periodStart, periodEnd)
+      this.getExpensesByPeriod(userId, periodStart, periodEnd),
     ]);
 
-    const totalSales = invoices.reduce((sum, invoice) => sum + invoice.total, 0);
-    const gstOnSales = invoices.reduce((sum, invoice) => sum + invoice.tax_amount, 0);
-    
-    const totalPurchases = expenses.reduce((sum, expense) => sum + expense.amount, 0);
-    const gstOnPurchases = expenses
-      .filter(expense => expense.is_claimable)
-      .reduce((sum, expense) => sum + expense.tax_amount, 0);
-
-    const netGstPosition = gstOnSales - gstOnPurchases;
-
-    return {
-      totalSales,
-      totalPurchases,
-      gstOnSales,
-      gstOnPurchases,
-      netGstPosition
-    };
+    return summarizeGst(invoices, expenses);
   }
 }
 

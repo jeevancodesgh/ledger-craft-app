@@ -6,6 +6,7 @@ import {
 import { eq } from 'drizzle-orm';
 import type { Database } from '../../db/client';
 import { businessProfiles } from '../../db/schema/business-profiles';
+import { users } from '../../db/schema/identity';
 
 function toDto(row: typeof businessProfiles.$inferSelect): BusinessProfileDto {
   return businessProfileSchema.parse({
@@ -116,6 +117,26 @@ export async function upsertBusinessProfile(
     .returning();
   if (!row) throw new Error('Failed to insert business profile');
   return toDto(row);
+}
+
+export async function ensureBusinessProfile(
+  tx: Database,
+  ctx: { organisationId: string; userId: string },
+): Promise<typeof businessProfiles.$inferSelect | undefined> {
+  const existing = await lockBusinessProfile(tx, ctx.organisationId);
+  if (existing) return existing;
+
+  const [user] = await tx.select().from(users).where(eq(users.id, ctx.userId));
+  if (!user) return undefined;
+
+  await upsertBusinessProfile(tx, ctx, {
+    name: user.name.trim() || 'My business',
+    email: user.email,
+    country: 'NZ',
+    invoiceNumberFormat: 'INV-{YYYY}-{SEQ}',
+    invoiceNumberSequence: 1,
+  });
+  return lockBusinessProfile(tx, ctx.organisationId);
 }
 
 export async function lockBusinessProfile(

@@ -1,4 +1,11 @@
-import type { AccountDto, CreatePaymentRequest, PaymentDto } from '@ledgercraft/contracts';
+import type {
+  AccountDto,
+  CreateAccountRequest,
+  CreatePaymentRequest,
+  InitializeAccountsRequest,
+  PaymentDto,
+  UpdateAccountRequest,
+} from '@ledgercraft/contracts';
 import type { Account, AccountType } from '@/types';
 import type { CreatePaymentRequest as ClientPaymentRequest, Payment } from '@/types/payment';
 
@@ -46,6 +53,9 @@ function toAccount(dto: AccountDto): Account {
     currency: dto.currency,
     openingBalance: Number(dto.openingBalance),
     currentBalance: Number(dto.currentBalance),
+    accountNumber: dto.accountNumber,
+    accountClass: dto.accountClass,
+    isActive: dto.isActive,
     createdAt: undefined,
     updatedAt: undefined,
   };
@@ -115,6 +125,32 @@ export const paymentsApi = {
 export const accountsApi = {
   async list(): Promise<Account[]> {
     const body = await request<{ accounts: AccountDto[] }>('/api/accounts');
+    return body.accounts.map(toAccount);
+  },
+
+  async create(input: CreateAccountRequest): Promise<Account> {
+    return toAccount(
+      await request<AccountDto>('/api/accounts', {
+        method: 'POST',
+        body: JSON.stringify(input),
+      }),
+    );
+  },
+
+  async update(id: string, input: UpdateAccountRequest): Promise<Account> {
+    return toAccount(
+      await request<AccountDto>(`/api/accounts/${id}`, {
+        method: 'PATCH',
+        body: JSON.stringify(input),
+      }),
+    );
+  },
+
+  async initialize(input: InitializeAccountsRequest = {}): Promise<Account[]> {
+    const body = await request<{ accounts: AccountDto[] }>('/api/accounts/initialize', {
+      method: 'POST',
+      body: JSON.stringify(input),
+    });
     return body.accounts.map(toAccount);
   },
 };
